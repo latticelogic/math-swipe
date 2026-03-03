@@ -270,7 +270,7 @@ function genGcfLcm(): Problem {
     const a = factor * m1, b = factor * m2;
     if (useGcf) {
         const answer = gcd(a, b);
-        return pack(`GCF(${a}, ${b})`, answer, nearDistractors, `\\gcd(${a}, ${b})`);
+        return pack(`GCF*(${a}, ${b})`, answer, nearDistractors, `\\gcd(${a}, ${b})`);
     } else {
         const answer = (a * b) / gcd(a, b);
         return pack(`LCM(${a}, ${b})`, answer, nearDistractors, `\\text{lcm}(${a}, ${b})`);

@@ -43,7 +43,7 @@ export const GROUP_LABELS: Record<QuestionGroup, string> = {
 export const QUESTION_TYPES: ReadonlyArray<CategoryEntry<QuestionType>> = [
     // Daily
     { id: 'daily', icon: '📅', label: 'Daily', group: 'daily' },
-    // Young (K-2)
+    // Young (Ages 5–7)
     { id: 'add1', icon: '+', label: '1-Digit +', group: 'young' },
     { id: 'sub1', icon: '−', label: '1-Digit −', group: 'young' },
     { id: 'bonds', icon: '🔗', label: 'Bonds', group: 'young' },
@@ -55,7 +55,7 @@ export const QUESTION_TYPES: ReadonlyArray<CategoryEntry<QuestionType>> = [
     { id: 'subtract', icon: '−', label: 'Subtract', group: 'whole' },
     { id: 'multiply', icon: '×', label: 'Multiply', group: 'whole' },
     { id: 'divide', icon: '÷', label: 'Divide', group: 'whole' },
-    // Core (3-5)
+    // Core (Ages 8–10)
     { id: 'round', icon: '≈', label: 'Rounding', group: 'core' },
     { id: 'orderops', icon: '🔢', label: 'PEMDAS', group: 'core' },
     // Advanced
@@ -75,6 +75,26 @@ export const QUESTION_TYPES: ReadonlyArray<CategoryEntry<QuestionType>> = [
     { id: 'mix-all', icon: '🌀', label: 'All Mix', group: 'mixed' },
 ] as const;
 
+// ── Acronym glossary (shown as footnotes in the question type picker) ─────────
+
+/** Explanations for acronyms used in category labels/questions */
+export const ACRONYM_GLOSSARY: Record<string, string> = {
+    'PEMDAS': 'Parentheses, Exponents, Multiplication, Division, Addition, Subtraction — aka BODMAS / BIDMAS (order of operations)',
+    'GCF': 'Greatest Common Factor — aka HCF (Highest Common Factor)',
+    'LCM': 'Least Common Multiple',
+};
+
+/** Returns glossary entries relevant to the visible category IDs */
+export function glossaryForTypes(typeIds: readonly string[]): [string, string][] {
+    const entries: [string, string][] = [];
+    if (typeIds.some(id => id === 'orderops')) entries.push(['PEMDAS', ACRONYM_GLOSSARY['PEMDAS']]);
+    if (typeIds.some(id => id === 'gcflcm')) {
+        entries.push(['GCF', ACRONYM_GLOSSARY['GCF']]);
+        entries.push(['LCM', ACRONYM_GLOSSARY['LCM']]);
+    }
+    return entries;
+}
+
 // ── Band definitions ──────────────────────────────────────────────────────────
 
 export const AGE_BANDS: AgeBand[] = ['k2', '35', '6+'];
@@ -83,21 +103,21 @@ export const MATH_BANDS: ReadonlyArray<BandEntry<AgeBand>> = [
     {
         id: 'k2',
         emoji: '🐣',
-        label: 'K–2',
+        label: 'Ages 5–7',
         groups: new Set(['daily', 'young']),
         defaultCategoryId: 'add1',
     },
     {
         id: '35',
         emoji: '📚',
-        label: '3–5',
+        label: 'Ages 8–10',
         groups: new Set(['daily', 'whole', 'core', 'mixed']),
         defaultCategoryId: 'multiply',
     },
     {
         id: '6+',
         emoji: '🚀',
-        label: '6+',
+        label: 'Ages 11+',
         groups: new Set(['daily', 'whole', 'core', 'advanced', 'parts', 'mixed']),
         defaultCategoryId: 'multiply',
     },
@@ -105,9 +125,9 @@ export const MATH_BANDS: ReadonlyArray<BandEntry<AgeBand>> = [
 
 /** Band display labels — kept for UI components that need only emoji+label */
 export const BAND_LABELS: Record<AgeBand, { emoji: string; label: string }> = {
-    'k2': { emoji: '🐣', label: 'K–2' },
-    '35': { emoji: '📚', label: '3–5' },
-    '6+': { emoji: '🚀', label: '6+' },
+    'k2': { emoji: '🐣', label: 'Ages 5–7' },
+    '35': { emoji: '📚', label: 'Ages 8–10' },
+    '6+': { emoji: '🚀', label: 'Ages 11+' },
 };
 
 // ── Convenience wrappers (math-domain entry points) ───────────────────────────

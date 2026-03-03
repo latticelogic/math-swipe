@@ -35,13 +35,18 @@ description: How to deploy changes to production via PR workflow
    git push -u origin fix/description-of-change
    ```
 
-6. Open a PR on GitHub targeting `dev`.
+6. Open and merge a PR using the GitHub CLI:
+   ```bash
+   gh pr create --base master --title "fix: description" --body "Summary of changes"
+   gh pr merge --squash --delete-branch
+   ```
 
-7. After review, merge the PR (squash merge recommended).
+7. Cloudflare Pages will auto-deploy once the merge hits `master`.
 
-8. To deploy to production, open a PR from `dev` → `master` on GitHub.
-
-9. Merge the PR to `master`. Cloudflare Pages will auto-deploy.
+8. Pull master locally to stay in sync:
+   ```bash
+   git checkout master && git pull origin master
+   ```
 
 ## Important Rules
 

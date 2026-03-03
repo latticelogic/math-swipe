@@ -2,7 +2,7 @@ import { memo, useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { QuestionType, AgeBand } from '../utils/questionTypes';
-import { typesForBand, GROUP_LABELS, type QuestionGroup } from '../utils/questionTypes';
+import { typesForBand, GROUP_LABELS, glossaryForTypes, type QuestionGroup } from '../utils/questionTypes';
 
 /** Size class for each icon — keeps the grid visually balanced */
 function iconSizeClass(icon: string): string {
@@ -28,6 +28,7 @@ export const QuestionTypePicker = memo(function QuestionTypePicker({ current, on
     const [open, setOpen] = useState(false);
     const bandTypes = useMemo(() => typesForBand(ageBand), [ageBand]);
     const groups = useMemo(() => ALL_GROUPS.filter(g => bandTypes.some(t => t.group === g)), [bandTypes]);
+    const glossary = useMemo(() => glossaryForTypes(bandTypes.map(t => t.id)), [bandTypes]);
     const currentEntry = bandTypes.find(t => t.id === current);
     const currentIcon = currentEntry?.icon || '×';
 
@@ -111,6 +112,16 @@ export const QuestionTypePicker = memo(function QuestionTypePicker({ current, on
                                         </div>
                                     );
                                 })}
+                                {/* Acronym glossary footnotes */}
+                                {glossary.length > 0 && (
+                                    <div className="mt-4 pt-3 border-t border-[rgb(var(--color-fg))]/10 space-y-1 px-1">
+                                        {glossary.map(([term, def]) => (
+                                            <p key={term} className="text-[9px] ui text-[rgb(var(--color-fg))]/25 leading-snug">
+                                                <span className="text-[rgb(var(--color-fg))]/40">{term}</span> — {def}
+                                            </p>
+                                        ))}
+                                    </div>
+                                )}
                             </motion.div>
                         </>
                     )}

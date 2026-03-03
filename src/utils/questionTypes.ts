@@ -22,4 +22,5 @@ export {
     GROUP_LABELS,
     typesForBand,
     defaultTypeForBand,
+    glossaryForTypes,
 } from '../domains/math/mathCategories';
