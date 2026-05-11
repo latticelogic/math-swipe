@@ -4,7 +4,6 @@ import type { PanInfo } from 'framer-motion';
 import type { MagicTrick } from '../utils/mathTricks';
 import { TrickPractice } from './TrickPractice';
 import { MathExpr } from './MathExpr';
-import { AutoFitEquation } from './AutoFitEquation';
 
 interface Props {
     trick: MagicTrick;
@@ -64,25 +63,26 @@ export function TrickLesson({ trick, onClose }: Props) {
                 <div className="text-4xl mb-4">{trick.icon}</div>
                 <h2 className="chalk text-2xl text-[var(--color-gold)] mb-8">{trick.title}</h2>
 
-                {/* Example Equation — auto-scales to fit viewport.
+                {/* Example Equation — auto-fits to viewport via font-size clamp.
                     Long equations (e.g. "34 × 12 = 34 × 10 + 34 × 2") would
-                    otherwise clip off narrow phone viewports. AutoFitEquation
-                    measures the rendered KaTeX width and applies a CSS scale
-                    so it always fits without wrapping or scrolling. */}
-                <div className="mb-12 w-full">
-                    <AutoFitEquation>
+                    otherwise clip off narrow phone viewports. The fit-equation
+                    class (defined in index.css) uses font-size: clamp() based
+                    on viewport width so KaTeX renders smaller on narrow
+                    phones — KaTeX width scales linearly with font-size, so
+                    halving font-size halves rendered width. */}
+                <div className="mb-12 w-full px-2 flex items-center justify-center overflow-hidden">
+                    <div className="fit-equation">
                         {trick.lesson.latex ? (
                             <MathExpr
                                 latex={`${trick.lesson.latex} = ${isLastStep ? String.raw`{\color{gold} ${trick.lesson.result}}` : '?'}`}
                                 displayMode
-                                className="text-3xl sm:text-4xl whitespace-nowrap"
                             />
                         ) : (
-                            <div className="text-4xl sm:text-5xl chalk whitespace-nowrap">
+                            <div className="chalk whitespace-nowrap">
                                 {trick.lesson.equation} = {isLastStep ? <span className="text-[var(--color-gold)]">{trick.lesson.result}</span> : '?'}
                             </div>
                         )}
-                    </AutoFitEquation>
+                    </div>
                 </div>
 
                 {/* Steps Display */}

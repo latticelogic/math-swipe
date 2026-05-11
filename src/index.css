@@ -78,6 +78,23 @@
   }
 }
 
+/* ── Auto-fitting equations ──
+   For places where we render a long KaTeX equation that would clip off the
+   viewport on narrow phones. KaTeX width scales linearly with font-size,
+   so font-size: clamp() with vw upper bound keeps the equation inside the
+   viewport regardless of length. Tuned so equations like
+   "34 × 12 = 34 × 10 + 34 × 2" fit at ~360px viewport width. */
+.fit-equation {
+  font-size: clamp(0.875rem, 5vw, 2.25rem);
+  line-height: 1.2;
+  max-width: 100%;
+  text-align: center;
+}
+
+.fit-equation .katex-display {
+  margin: 0;
+}
+
 /* ── Themed scrollbars ──
    Default browser scrollbars (especially on Windows / desktop Android Chrome)
    look out of place against the chalkboard aesthetic. Slim themed scrollbars
