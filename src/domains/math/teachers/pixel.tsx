@@ -91,18 +91,27 @@ export const PIXEL: Teacher = {
                 {/* ── Mouth ── */}
                 <Mouth state={state} cx={50} cy={54} />
 
-                {/* ── Game controller in hand ── */}
+                {/* ── Game controller, gripped with both hands.
+                    Two short arm-strokes meet the controller's left and right
+                    grips so it visibly belongs to her, not floating to the side. */}
                 <g>
-                    <path d="M 86 102 Q 92 98 96 100" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" />
-                    {/* controller body */}
-                    <path d="M 76 110 Q 76 104 82 104 L 92 104 Q 98 104 98 110 Q 96 116 92 114 L 82 114 Q 78 116 76 110 Z"
-                        stroke="currentColor" strokeWidth="1.5" fill="currentColor" fillOpacity="0.15" strokeLinejoin="round" />
-                    {/* d-pad */}
-                    <line x1="81" y1="109" x2="84" y2="109" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                    <line x1="82.5" y1="107" x2="82.5" y2="111" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                    {/* buttons */}
-                    <circle cx="92" cy="108" r="1" fill="currentColor" />
-                    <circle cx="95" cy="111" r="1" fill="currentColor" />
+                    {/* Controller body — wider, classic two-grip silhouette */}
+                    <path d="M 28 102 Q 28 98 34 98 L 66 98 Q 72 98 72 102 Q 70 110 66 110 L 34 110 Q 30 110 28 102 Z"
+                        stroke="currentColor" strokeWidth="1.6" fill="currentColor" fillOpacity="0.18" strokeLinejoin="round" />
+                    {/* Left arm into left grip */}
+                    <path d="M 22 92 Q 26 96 30 100" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" />
+                    {/* Right arm into right grip */}
+                    <path d="M 78 92 Q 74 96 70 100" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" />
+                    {/* D-pad on the left */}
+                    <line x1="36" y1="104" x2="40" y2="104" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                    <line x1="38" y1="102" x2="38" y2="106" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                    {/* Action buttons on the right (diamond layout) */}
+                    <circle cx="60" cy="104" r="1" fill="currentColor" />
+                    <circle cx="63" cy="101" r="1" fill="currentColor" />
+                    <circle cx="63" cy="107" r="1" fill="currentColor" />
+                    <circle cx="66" cy="104" r="1" fill="currentColor" />
+                    {/* Centre share button */}
+                    <circle cx="50" cy="104" r="1" stroke="currentColor" strokeWidth="0.8" fill="none" />
                 </g>
 
                 {/* ── Streak: rainbow pixel sparkles around hood ── */}

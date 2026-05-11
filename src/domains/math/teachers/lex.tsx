@@ -93,19 +93,26 @@ export const LEX: Teacher = {
                     <Mouth state={state} cx={50} cy={64} />
                 )}
 
-                {/* ── Tail wrapped over the right shoulder like a scarf ── */}
-                <g>
-                    <path d="M 60 78 Q 80 76 90 88 Q 88 100 76 102 Q 64 100 60 94"
-                        stroke="currentColor" strokeWidth="2" fill="currentColor" fillOpacity="0.12" strokeLinejoin="round" />
-                    {/* White tail tip */}
-                    <path d="M 86 92 Q 90 92 90 96 Q 88 100 84 100"
-                        fill="currentColor" opacity="0.35" />
-                </g>
-
                 {/* ── Neck/shoulder ── */}
                 <g stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round">
                     <path d="M 40 72 L 38 80" />
-                    <path d="M 18 110 Q 28 84 38 80 Q 50 76 60 78 Q 65 80 60 92" />
+                    <path d="M 18 110 Q 28 84 38 80 Q 50 76 62 80 Q 70 86 70 100" />
+                </g>
+
+                {/* ── Bushy tail curling up from BEHIND the right shoulder, with
+                    a clearly fluffy white tip. Drawn last so it sits on top
+                    of the shoulder line — reads as "tail wrapping," not "pad." */}
+                <g>
+                    {/* Main tail body — thick S-curve up and over */}
+                    <path d="M 70 100 Q 86 96 92 80 Q 94 70 86 64 Q 76 64 74 74"
+                        stroke="currentColor" strokeWidth="2.2" fill="currentColor" fillOpacity="0.18" strokeLinejoin="round" strokeLinecap="round" />
+                    {/* Fur tufts along the spine of the tail */}
+                    <path d="M 84 96 Q 86 92 84 90" stroke="currentColor" strokeWidth="1" fill="none" opacity="0.6" />
+                    <path d="M 90 84 Q 92 80 89 78" stroke="currentColor" strokeWidth="1" fill="none" opacity="0.6" />
+                    <path d="M 88 72 Q 90 68 86 67" stroke="currentColor" strokeWidth="1" fill="none" opacity="0.6" />
+                    {/* White fluffy tip */}
+                    <ellipse cx="80" cy="68" rx="5" ry="4" fill="currentColor" opacity="0.45" />
+                    <path d="M 76 66 Q 78 63 81 64 M 80 64 Q 82 61 84 64" stroke="currentColor" strokeWidth="0.9" fill="none" opacity="0.7" strokeLinecap="round" />
                 </g>
 
                 {/* ── Tiny top hat behind ear (mascot of magic) on streak ── */}

@@ -117,24 +117,41 @@ export const BOSS_ROBO: Teacher = {
     Portrait({ state, streak }) {
         return (
             <g>
-                {/* ── Antenna with blinking light ── */}
-                <line x1="50" y1="10" x2="50" y2="22" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                <circle cx="50" cy="8" r="3" stroke="currentColor" strokeWidth="2" fill="currentColor" fillOpacity="0.3">
+                {/* ── Antenna with blinking light (offset right so the mortarboard
+                    can sit on the head without overlap) ── */}
+                <line x1="62" y1="14" x2="62" y2="22" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                <circle cx="62" cy="12" r="2.5" stroke="currentColor" strokeWidth="2" fill="currentColor" fillOpacity="0.3">
                     <animate attributeName="opacity" values="0.5;1;0.5" dur="1.5s" repeatCount="indefinite" />
                 </circle>
 
-                {/* ── Square head with rounded corners ── */}
-                <rect x="24" y="22" width="52" height="44" rx="8"
+                {/* ── Mortarboard graduation cap — reads as "teacher" instantly.
+                    Square plate with a tassel hanging on the right. */}
+                <g>
+                    {/* Square top plate */}
+                    <path d="M 22 18 L 50 12 L 78 18 L 50 24 Z"
+                        stroke="currentColor" strokeWidth="1.8" fill="currentColor" fillOpacity="0.18" strokeLinejoin="round" />
+                    {/* Centre button */}
+                    <circle cx="50" cy="18" r="1.5" fill="currentColor" />
+                    {/* Tassel hanging right */}
+                    <path d="M 64 20 Q 70 24 70 30" stroke="currentColor" strokeWidth="1.2" fill="none" />
+                    <line x1="68" y1="30" x2="72" y2="34" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                    <line x1="70" y1="30" x2="73" y2="34" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                    <line x1="72" y1="30" x2="74" y2="34" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                </g>
+
+                {/* ── Square head with rounded corners (pulled down to make room
+                    for the cap) ── */}
+                <rect x="24" y="24" width="52" height="42" rx="8"
                     stroke="currentColor" strokeWidth="2.2" fill="currentColor" fillOpacity="0.04" />
 
                 {/* ── Side bolts ── */}
-                <circle cx="22" cy="36" r="2.5" stroke="currentColor" strokeWidth="1.5" fill="none" />
-                <line x1="20.2" y1="34.2" x2="23.8" y2="37.8" stroke="currentColor" strokeWidth="1" />
-                <circle cx="78" cy="36" r="2.5" stroke="currentColor" strokeWidth="1.5" fill="none" />
-                <line x1="76.2" y1="34.2" x2="79.8" y2="37.8" stroke="currentColor" strokeWidth="1" />
+                <circle cx="22" cy="38" r="2.5" stroke="currentColor" strokeWidth="1.5" fill="none" />
+                <line x1="20.2" y1="36.2" x2="23.8" y2="39.8" stroke="currentColor" strokeWidth="1" />
+                <circle cx="78" cy="38" r="2.5" stroke="currentColor" strokeWidth="1.5" fill="none" />
+                <line x1="76.2" y1="36.2" x2="79.8" y2="39.8" stroke="currentColor" strokeWidth="1" />
 
                 {/* ── Visor (the defining feature) ── */}
-                <rect x="32" y="34" width="36" height="14" rx="2"
+                <rect x="32" y="36" width="36" height="14" rx="2"
                     stroke="currentColor" strokeWidth="2" fill="currentColor" fillOpacity="0.18" />
                 {visorContent(state)}
 

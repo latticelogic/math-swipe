@@ -96,15 +96,23 @@ export const MS_SIGMA: Teacher = {
                     <path d="M 36 86 L 50 102" opacity="0.5" />
                     <path d="M 64 86 L 50 102" opacity="0.5" />
                 </g>
-                {/* Coat-pocket Σ insignia */}
-                <text x="62" y="98" fontSize="9" fill="currentColor" opacity="0.7" fontFamily="serif" fontStyle="italic">Σ</text>
+                {/* Coat-pocket Σ insignia — hand-drawn so it doesn't depend on
+                    a specific serif font being loaded at small size */}
+                <g stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinecap="round" strokeLinejoin="round" opacity="0.75">
+                    <path d="M 60 92 L 66 92 L 62 96 L 66 100 L 60 100" />
+                </g>
 
                 {/* ── π scroll in hand ── */}
                 <g>
                     <path d="M 18 100 Q 14 102 12 108" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" />
                     <circle cx="12" cy="110" r="3" stroke="currentColor" strokeWidth="1.5" fill="none" />
                     <rect x="6" y="100" width="12" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.3" fill="currentColor" fillOpacity="0.1" />
-                    <text x="12" y="108" fontSize="8" textAnchor="middle" fill="currentColor" fontFamily="serif" fontStyle="italic">π</text>
+                    {/* Hand-drawn π glyph */}
+                    <g stroke="currentColor" strokeWidth="1.2" fill="none" strokeLinecap="round">
+                        <line x1="9" y1="103.5" x2="15" y2="103.5" />
+                        <line x1="11" y1="103.5" x2="11" y2="107.5" />
+                        <line x1="13.5" y1="103.5" x2="13" y2="107.5" />
+                    </g>
                 </g>
 
                 {sparkleStreak && (
