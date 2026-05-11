@@ -181,9 +181,15 @@ export const SessionSummary = memo(function SessionSummary({
             const blob = await generateImage();
             setShareImage(blob);
             setShareSheetOpen(true);
-        } catch {
+        } catch (err) {
             // User cancelled OR native share threw — fall back to opening
             // the modal so they always have a path to actually post the card.
+            // Log so real failures (permissions, file encoding, missing APIs)
+            // are diagnosable from a tester's DevTools instead of silent.
+            // AbortError = user-cancelled and isn't actually a problem.
+            if (!(err instanceof Error) || err.name !== 'AbortError') {
+                console.error('[share] native share failed, falling back to modal:', err);
+            }
             setShareSheetOpen(true);
         } finally {
             setIsSharing(false);

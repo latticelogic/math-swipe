@@ -120,8 +120,12 @@ export const ActionButtons = memo(function ActionButtons({
         }
     };
 
+    // z-40 (not z-20) so this sidebar stays above the score container
+    // (z-30 in App.tsx). At narrow viewports the score banner extends
+    // down past y≈160px and would otherwise eat clicks on the share
+    // button at top-right.
     return (
-        <div className="absolute right-3 top-[25%] -translate-y-1/2 flex flex-col gap-4 z-20">
+        <div className="absolute right-3 top-[25%] -translate-y-1/2 flex flex-col gap-4 z-40">
             {/* Share */}
             <ActionTooltip label="Share">
                 <motion.button
