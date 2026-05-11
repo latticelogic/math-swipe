@@ -69,7 +69,10 @@
   --color-overlay: rgba(0, 0, 0, 0.85);
   --color-overlay-dim: rgba(0, 0, 0, 0.60);
   --color-surface: rgba(255, 255, 255, 0.08);
-  --color-locked: rgba(255, 255, 255, 0.12);
+  /* Locked-state ink for achievement badges and similar. Bumped from 0.12 to
+     0.25 — at 12% the locked silhouettes were nearly invisible against the
+     dark background, undermining the achievement-driven retention loop. */
+  --color-locked: rgba(255, 255, 255, 0.25);
 }
 
 /* ── Light mode overrides ── */
@@ -84,7 +87,7 @@
   --color-overlay-dim: rgba(0, 0, 0, 0.35);
   --color-surface: rgba(249, 250, 251, 0.90);
   /* Gray-50 surface cards */
-  --color-locked: rgba(17, 24, 39, 0.06);
+  --color-locked: rgba(17, 24, 39, 0.20);
   --color-correct: #16a34a;
   --color-wrong: #dc2626;
   --color-gold: #b45309;

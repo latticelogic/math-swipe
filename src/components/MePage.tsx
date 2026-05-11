@@ -10,6 +10,7 @@ import { TEACHERS, DEFAULT_TEACHER_ID } from '../domains/math/teachers';
 import { RANKS, getRank } from '../domains/math/ranks';
 import { PushOptIn } from './PushOptIn';
 import { UsernameClaim } from './UsernameClaim';
+import { CategoryIcon } from './CategoryIcon';
 
 interface Props {
     stats: ReturnType<typeof useStats>['stats'];
@@ -305,8 +306,8 @@ export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked,
                         const pct = ts.solved > 0 ? Math.round((ts.correct / ts.solved) * 100) : 0;
                         return (
                             <div key={t.id} className="flex flex-col items-center gap-1">
-                                <div className={`chalk text-[rgb(var(--color-fg))]/50 ${t.icon.length === 1 ? 'text-xl' : 'text-lg'}`}>
-                                    {t.icon}
+                                <div className="text-[rgb(var(--color-fg))]/50">
+                                    <CategoryIcon id={t.id} size={22} />
                                 </div>
                                 <div className={`text-sm ui font-semibold ${ts.solved === 0 ? 'text-[rgb(var(--color-fg))]/20' :
                                     pct >= 80 ? 'text-[var(--color-correct)]' :
