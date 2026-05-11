@@ -159,7 +159,13 @@ service cloud.firestore {
                     && request.resource.data.name.size() <= 10
                     && request.resource.data.value is number
                     && request.resource.data.rating is string
-                    && request.resource.data.rating.size() <= 20;
+                    && request.resource.data.rating.size() <= 20
+                    && (!('navigationType' in request.resource.data)
+                        || (request.resource.data.navigationType is string
+                            && request.resource.data.navigationType.size() <= 30))
+                    && (!('userAgent' in request.resource.data)
+                        || (request.resource.data.userAgent is string
+                            && request.resource.data.userAgent.size() <= 200));
 
       allow update, delete: if false;
     }

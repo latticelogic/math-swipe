@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { generateProblem } from '../utils/mathGenerator';
+import { generateProblem, type QuestionType } from '../utils/mathGenerator';
+import { createSeededRng } from '../utils/seededRng';
 
 describe('mathGenerator.ts', () => {
 
@@ -73,4 +74,95 @@ describe('mathGenerator.ts', () => {
         });
     });
 
+    // ── Universal invariants: every question type must produce a valid problem ──
+
+    const ALL_TYPES: QuestionType[] = [
+        'add', 'subtract', 'multiply', 'divide', 'square', 'sqrt',
+        'fraction', 'decimal', 'percent', 'linear',
+        'add1', 'sub1', 'bonds', 'doubles', 'compare', 'skip',
+        'round', 'orderops',
+        'exponent', 'negatives', 'gcflcm', 'ratio',
+        'mix-basic', 'mix-all', 'daily', 'challenge',
+    ];
+
+    describe('Universal invariants — every type, every difficulty', () => {
+        for (const type of ALL_TYPES) {
+            it(`${type}: 30 samples × 5 difficulties × hard mode all valid`, () => {
+                for (let d = 1; d <= 5; d++) {
+                    for (const hard of [false, true]) {
+                        for (let i = 0; i < 30; i++) {
+                            const p = generateProblem(d, type, hard);
+                            // Three options
+                            expect(p.options).toHaveLength(3);
+                            // correctIndex points to the answer
+                            expect(p.options[p.correctIndex]).toBe(p.answer);
+                            // correctIndex in valid range
+                            expect(p.correctIndex).toBeGreaterThanOrEqual(0);
+                            expect(p.correctIndex).toBeLessThanOrEqual(2);
+                            // Three distinct options (the most common bug class)
+                            expect(new Set(p.options).size).toBe(3);
+                            // Expression non-empty
+                            expect(p.expression.length).toBeGreaterThan(0);
+                            // Answer is a finite number
+                            expect(Number.isFinite(p.answer)).toBe(true);
+                        }
+                    }
+                }
+            });
+        }
+    });
+
+    describe('Determinism with seeded RNG', () => {
+        it('same seed produces identical problem for every type', () => {
+            // mix-basic and mix-all dispatch internally based on the rng,
+            // which means two calls with the same seed *value* could produce
+            // different sub-types if the rng state was advanced differently.
+            // Test the leaf types here — composite types are covered by
+            // dailyChallenge.test.ts.
+            const LEAF_TYPES: QuestionType[] = [
+                'add', 'subtract', 'multiply', 'divide', 'square', 'sqrt',
+                'fraction', 'decimal', 'percent', 'linear',
+                'add1', 'sub1', 'bonds', 'doubles', 'compare', 'skip',
+                'round', 'orderops', 'exponent', 'negatives', 'gcflcm', 'ratio',
+            ];
+            for (const type of LEAF_TYPES) {
+                const rngA = createSeededRng(99);
+                const rngB = createSeededRng(99);
+                const a = generateProblem(3, type, false, rngA);
+                const b = generateProblem(3, type, false, rngB);
+                expect(a.expression).toBe(b.expression);
+                expect(a.answer).toBe(b.answer);
+                expect(a.options).toEqual(b.options);
+            }
+        });
+
+        it('different seeds produce different sequences (not just different ids)', () => {
+            const rngA = createSeededRng(1);
+            const rngB = createSeededRng(2);
+            const a = generateProblem(3, 'multiply', false, rngA);
+            const b = generateProblem(3, 'multiply', false, rngB);
+            expect(a.expression).not.toBe(b.expression);
+        });
+
+        it('seeding does not leak across generateProblem calls', () => {
+            // After calling with a seeded rng, subsequent unseeded calls must
+            // still use Math.random — no global state leaked.
+            const rng = createSeededRng(42);
+            generateProblem(2, 'add', false, rng);
+            // Two unseeded calls should (almost certainly) differ from each other
+            const a = generateProblem(2, 'add', false);
+            const b = generateProblem(2, 'add', false);
+            // 1-in-100 false-positive chance for two unrelated rolls to match;
+            // run a few to be safe.
+            let allMatch = true;
+            for (let i = 0; i < 5; i++) {
+                const x = generateProblem(2, 'add', false);
+                const y = generateProblem(2, 'add', false);
+                if (x.expression !== y.expression) { allMatch = false; break; }
+            }
+            // Cheap smoke check
+            void a; void b;
+            expect(allMatch).toBe(false);
+        });
+    });
 });

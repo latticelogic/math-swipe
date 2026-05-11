@@ -27,3 +27,10 @@ dist-ssr
 .env
 .env.local
 .env.production
+
+# Playwright MCP browser session cache + ad-hoc screenshots from QA runs.
+# Keep them out of git so the repo doesn't bloat with throwaway PNGs.
+.playwright-mcp/
+*.png
+!public/*.png
+!src/assets/**/*.png

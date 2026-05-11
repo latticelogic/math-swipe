@@ -19,6 +19,8 @@ export default defineConfig({
       registerType: 'prompt',
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        // Avoid stale precache HTML serving the old theme-bootstrap path
+        navigateFallbackDenylist: [/^\/theme-bootstrap\.js$/],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,

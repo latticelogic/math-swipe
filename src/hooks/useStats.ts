@@ -3,6 +3,7 @@ import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../utils/firebase';
 import { STORAGE_KEYS, FIRESTORE } from '../config';
 import { QUESTION_TYPES } from '../domains/math/mathCategories';
+import { safeGetItem, safeSetItem } from '../utils/safeStorage';
 
 interface TypeStat {
     solved: number;
@@ -101,31 +102,48 @@ const EMPTY_STATS: Stats = {
     speedrunHardMode: false,
 };
 
+/** Normalize a YYYY-M-D or YYYY-MM-DD string to zero-padded YYYY-MM-DD.
+ *  Older saves wrote unpadded dates; we migrate on read so all comparisons
+ *  are calendar-correct. */
+function padIsoDate(s: unknown): string {
+    if (typeof s !== 'string' || !s) return '';
+    const parts = s.split('-');
+    if (parts.length !== 3) return s;
+    const [y, m, d] = parts;
+    return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+}
+
 /** Load from localStorage (fast, synchronous) */
 function loadStatsLocal(): Stats {
     try {
-        const raw = localStorage.getItem(STORAGE_KEY);
+        const raw = safeGetItem(STORAGE_KEY);
         if (!raw) return EMPTY_STATS;
         const parsed = JSON.parse(raw);
         return {
             ...EMPTY_STATS,
             ...parsed,
             byType: { ...EMPTY_STATS.byType, ...parsed.byType },
+            // Migrate legacy unpadded date strings on read
+            lastPlayedDate: padIsoDate(parsed.lastPlayedDate),
+            lastDailyDate: padIsoDate(parsed.lastDailyDate),
         };
     } catch {
         return EMPTY_STATS;
     }
 }
 
-/** Save to localStorage (fast, synchronous) */
+/** Save to localStorage (fast, synchronous, never throws) */
 function saveStatsLocal(s: Stats) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
+    safeSetItem(STORAGE_KEY, JSON.stringify(s));
 }
 
 /** Save to Firestore (async, background — includes leaderboard fields at top level) */
 async function saveStatsCloud(uid: string, s: Stats) {
     try {
         const accuracy = s.totalSolved > 0 ? Math.round((s.totalCorrect / s.totalSolved) * 100) : 0;
+        // bestSpeedrunTime rule: must be 0 or >= 5000. Defensively clamp tiny values
+        // that could only arise from clock skew or a corrupted local store.
+        const safeSpeedrun = !s.bestSpeedrunTime || s.bestSpeedrunTime >= 5000 ? (s.bestSpeedrunTime || 0) : 0;
         await setDoc(doc(db, FIRESTORE.USERS, uid), {
             // Top-level leaderboard-queryable fields
             totalXP: s.totalXP,
@@ -136,7 +154,7 @@ async function saveStatsCloud(uid: string, s: Stats) {
             activeCostume: s.activeCostume || '',
             activeTrailId: s.activeTrailId || '',
             activeBadgeId: s.activeBadgeId || '',
-            bestSpeedrunTime: s.bestSpeedrunTime || 0,
+            bestSpeedrunTime: safeSpeedrun,
             speedrunHardMode: s.speedrunHardMode || false,
             streakShields: s.streakShields || 0,
             // Full stats blob — strip undefined values (Firestore rejects them)
@@ -158,6 +176,9 @@ async function loadStatsCloud(uid: string): Promise<Stats | null> {
                 ...EMPTY_STATS,
                 ...cloud,
                 byType: { ...EMPTY_STATS.byType, ...cloud.byType },
+                // Migrate legacy unpadded date strings
+                lastPlayedDate: padIsoDate(cloud.lastPlayedDate),
+                lastDailyDate: padIsoDate(cloud.lastDailyDate),
             };
         }
     } catch (err) {
@@ -230,28 +251,47 @@ export function useStats(uid: string | null) {
         uidRef.current = uid;
     }, [uid]);
 
-    // Phase 2: On mount, try to restore from Firestore if localStorage is stale
+    // Cloud restoration gate — prevents the local debounced cloud-write from
+    // overwriting cloud data with empty local stats before the merge completes.
+    // Per-uid: a fresh sign-in resets the gate so we re-fetch.
+    const cloudRestoredForRef = useRef<string | null>(null);
+
+    // On uid change, restore from Firestore (and merge into local) before
+    // permitting any cloud writes for this user.
     useEffect(() => {
         if (!uid) return;
+        let cancelled = false;
         loadStatsCloud(uid).then(cloud => {
-            if (!cloud) return;
-            setStats(prev => {
-                const merged = mergeStats(prev, cloud);
-                saveStatsLocal(merged); // update local cache
-                return merged;
-            });
+            if (cancelled) return;
+            if (cloud) {
+                setStats(prev => {
+                    const merged = mergeStats(prev, cloud);
+                    saveStatsLocal(merged); // update local cache
+                    return merged;
+                });
+            }
+            // Open the cloud-write gate for this uid (whether or not a cloud doc existed)
+            cloudRestoredForRef.current = uid;
+        }).catch(() => {
+            // Even on cloud error, open the gate so writes aren't blocked forever
+            cloudRestoredForRef.current = uid;
         });
+        return () => { cancelled = true; };
     }, [uid]);
 
     // Save to localStorage on every change + debounced Firestore sync
     const cloudTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
     useEffect(() => {
         saveStatsLocal(stats);
-        if (uidRef.current) {
+        const currentUid = uidRef.current;
+        // Only write to cloud if we've completed the restore handshake for this uid
+        if (currentUid && cloudRestoredForRef.current === currentUid) {
             // Debounce Firestore writes to reduce costs during rapid gameplay
             clearTimeout(cloudTimerRef.current);
             cloudTimerRef.current = setTimeout(() => {
-                if (uidRef.current) saveStatsCloud(uidRef.current, stats);
+                if (uidRef.current && cloudRestoredForRef.current === uidRef.current) {
+                    saveStatsCloud(uidRef.current, stats);
+                }
             }, 2000);
         }
         return () => clearTimeout(cloudTimerRef.current);
@@ -273,14 +313,16 @@ export function useStats(uid: string | null) {
         setStats(prev => {
             const prevType = prev.byType[questionType] || { ...EMPTY_TYPE };
             const today = new Date();
-            const todayStr = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
+            // Use zero-padded YYYY-MM-DD so lexicographic compare matches calendar order
+            const pad = (n: number) => String(n).padStart(2, '0');
+            const todayStr = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
             let dayStreak = prev.dayStreak;
             let streakShields = prev.streakShields || 0;
 
             if (prev.lastPlayedDate !== todayStr) {
                 const yest = new Date(today);
                 yest.setDate(yest.getDate() - 1);
-                const yesterdayStr = `${yest.getFullYear()}-${yest.getMonth() + 1}-${yest.getDate()}`;
+                const yesterdayStr = `${yest.getFullYear()}-${pad(yest.getMonth() + 1)}-${pad(yest.getDate())}`;
 
                 if (prev.lastPlayedDate === yesterdayStr) {
                     dayStreak = prev.dayStreak + 1;
@@ -288,20 +330,27 @@ export function useStats(uid: string | null) {
                         streakShields = Math.min(3, streakShields + 1);
                     }
                 } else if (prev.lastPlayedDate !== '') {
-                    // Missed one or more days (and not very first session ever)
-                    // Calculate exact gap in days
+                    // We're past yesterday — at least one day was missed.
+                    // Compute the missed-day count via UTC midnights to be DST-safe:
+                    // both Date.UTC values correspond to local Y/M/D at UTC 00:00,
+                    // so the divide is always an integer.
                     const lastParts = prev.lastPlayedDate.split('-').map(Number);
-                    const lastDate = new Date(lastParts[0], lastParts[1] - 1, lastParts[2]);
-                    const gap = Math.round((today.getTime() - lastDate.getTime()) / 86400000) - 1;
+                    const lastUTC = Date.UTC(lastParts[0], lastParts[1] - 1, lastParts[2]);
+                    const todayUTC = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+                    const daysSinceLast = Math.round((todayUTC - lastUTC) / 86400000);
+                    // daysMissed = number of full calendar days where the user did not play.
+                    // 1 = "skipped exactly one day" (lastPlayed = day before yesterday).
+                    const daysMissed = daysSinceLast - 1;
 
-                    if (gap <= 1 && streakShields > 0) {
+                    // Shield can rescue at most one missed day.
+                    if (daysMissed === 1 && streakShields > 0) {
                         streakShields -= 1;
                         dayStreak = prev.dayStreak + 1; // Shield consumed! Forgive and extend.
                         if (dayStreak % 7 === 0) {
                             streakShields = Math.min(3, streakShields + 1);
                         }
                     } else {
-                        dayStreak = 1; // Streak broken (gap too large or no shields)
+                        dayStreak = 1; // Streak broken (too many days missed or no shield)
                     }
                 } else {
                     dayStreak = 1; // First session ever

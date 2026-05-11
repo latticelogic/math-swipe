@@ -330,7 +330,7 @@ function genFraction(d: number, hard: boolean): Problem {
     const n2 = randInt(1, d2 - 1);
 
     // Bias towards addition at easy levels
-    const isAdd = d <= 2 ? Math.random() > 0.2 : Math.random() > 0.4;
+    const isAdd = d <= 2 ? _rng() > 0.2 : _rng() > 0.4;
     const resultNum = isAdd ? (n1 * d2 + n2 * d1) : (n1 * d2 - n2 * d1);
     const resultDen = d1 * d2;
 
@@ -383,7 +383,7 @@ function genFraction(d: number, hard: boolean): Problem {
 
 function genDecimal(_d: number, hard: boolean): Problem {
     // Decimal multiplication/addition with 1 decimal place
-    const isAdd = Math.random() > 0.5;
+    const isAdd = _rng() > 0.5;
     if (isAdd) {
         const a = randDecimal(hard ? [1, 50] : [1, 20]);
         const b = randDecimal(hard ? [1, 50] : [1, 20]);
@@ -449,7 +449,7 @@ function nearDistractors(answer: number): [number, number] {
     while (result.length < 2 && safety < 100) {
         safety++;
         const offset = Math.max(1, randInt(1, Math.max(3, Math.floor(Math.abs(answer) * 0.15))));
-        const d = answer + (Math.random() > 0.5 ? offset : -offset);
+        const d = answer + (_rng() > 0.5 ? offset : -offset);
         if (!used.has(d)) { used.add(d); result.push(d); }
     }
     // Deep fallback
@@ -484,10 +484,10 @@ function mulDistractors(a: number, b: number, answer: number): [number, number] 
     const used = new Set<number>([answer]);
     const result: number[] = [];
     const strategies = [
-        () => (a + (Math.random() > 0.5 ? 1 : -1)) * b,
-        () => a * (b + (Math.random() > 0.5 ? 1 : -1)),
-        () => answer + (Math.random() > 0.5 ? a : -a),
-        () => answer + (Math.random() > 0.5 ? b : -b),
+        () => (a + (_rng() > 0.5 ? 1 : -1)) * b,
+        () => a * (b + (_rng() > 0.5 ? 1 : -1)),
+        () => answer + (_rng() > 0.5 ? a : -a),
+        () => answer + (_rng() > 0.5 ? b : -b),
         () => answer + randInt(-5, 5),
     ];
     let safety = 0;
@@ -506,7 +506,7 @@ function decimalDistractors(answer: number): [number, number] {
     let safety = 0;
     while (result.length < 2 && safety < 50) {
         safety++;
-        const offset = Math.round(randInt(1, 5) * (Math.random() > 0.5 ? 1 : -1)) / 10;
+        const offset = Math.round(randInt(1, 5) * (_rng() > 0.5 ? 1 : -1)) / 10;
         const d = Math.round((answer + offset * randInt(1, 3)) * 10) / 10;
         if (d > 0 && !used.has(d)) { used.add(d); result.push(d); }
     }

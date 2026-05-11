@@ -10,6 +10,7 @@ import type { EngineItem, GameConfig, ChalkState, FeedbackFlash } from '../engin
 import { SWIPE_TO_INDEX, DEFAULT_GAME_CONFIG } from '../engine/domain';
 import { scoreCorrect, scorePenalty, FAST_ANSWER_MS } from '../engine/scoring';
 import { useDifficulty } from './useDifficulty';
+import { hapticTap, hapticCorrect, hapticWrong, hapticMilestone } from '../utils/haptics';
 
 // Re-export engine types so callers that import from useGameLoop still work
 export type { ChalkState, FeedbackFlash };
@@ -114,14 +115,14 @@ export function useGameLoop(
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    const isFinite = (id: string) => finiteTypeIds.includes(id);
+    const isFiniteSet = (id: string) => finiteTypeIds.includes(id);
     const isSpeedrun = (id: string) => id === speedrunTypeId;
 
     const buildInitialSet = useCallback((catId: string, hard: boolean): EngineItem[] => {
         if (isSpeedrun(catId)) {
             return Array.from({ length: speedrunCount }, () => generateItem(level, 'mix-all', hard));
         }
-        if (isFinite(catId) && generateFiniteSet) {
+        if (isFiniteSet(catId) && generateFiniteSet) {
             return generateFiniteSet(catId, challengeId);
         }
         return Array.from({ length: bufferSize }, () => generateItem(level, catId, hard));
@@ -138,7 +139,7 @@ export function useGameLoop(
             speedrunStartRef.current = Date.now();
             setSpeedrunFinalTime(null);
             correctCountRef.current = 0;
-        } else if (isFinite(categoryId)) {
+        } else if (isFiniteSet(categoryId)) {
             dailyRef.current = { dateLabel: '' }; // populated by generateFiniteSet if needed
         }
         setItems(initial);
@@ -167,7 +168,7 @@ export function useGameLoop(
 
     // ── Keep infinite buffer full ─────────────────────────────────────────────
     useEffect(() => {
-        if (isSpeedrun(categoryId) || isFinite(categoryId)) return;
+        if (isSpeedrun(categoryId) || isFiniteSet(categoryId)) return;
         if (items.length < bufferSize) {
             setItems(prev => [...prev, generateItem(level, categoryId, hardMode)]);
         }
@@ -204,6 +205,7 @@ export function useGameLoop(
 
         // Up = skip
         if (direction === 'up') {
+            hapticTap();
             frozenRef.current = true;
             setGs(prev => ({ ...prev, streak: 0, chalkState: 'idle', frozen: true }));
             if (isSpeedrun(categoryId)) {
@@ -231,6 +233,9 @@ export function useGameLoop(
             setGs(prev => {
                 newStreak = prev.streak + 1;
                 milestoneEmoji = milestones[newStreak] ?? '';
+                // Haptic: louder buzz on milestones, normal pulse otherwise.
+                if (milestoneEmoji) hapticMilestone();
+                else hapticCorrect();
                 return {
                     ...prev,
                     streak: newStreak,
@@ -266,6 +271,7 @@ export function useGameLoop(
                 advanceProblem();
             }, autoAdvanceMs);
         } else {
+            hapticWrong();
             setGs(prev => {
                 const isTutorial = prev.totalAnswered === 0;
                 if (isTutorial) {
@@ -403,7 +409,7 @@ export function useGameLoop(
     }, []);
 
     const dailyComplete =
-        (isFinite(categoryId)) &&
+        (isFiniteSet(categoryId)) &&
         gs.totalAnswered > 0 &&
         items.length === 0;
 

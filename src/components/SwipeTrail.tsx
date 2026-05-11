@@ -48,19 +48,29 @@ export const SwipeTrail = memo(function SwipeTrail({ streak, activeTrailId, base
         const ctx = canvas.getContext('2d', { alpha: true });
         if (!ctx) return;
 
+        // Cap stored points so a long, fast swipe can't unboundedly grow the array.
+        // At 350ms lifetime and ~120 events/sec the steady-state ceiling is ~42, but
+        // a stuck active pointer or background tab catch-up could still spike.
+        const MAX_POINTS = 200;
+
         // Pointer tracking
         const handlePointerMove = (e: PointerEvent) => {
             // Only capture if primary pointer (prevent multi-touch noise)
             if (!e.isPrimary) return;
+            if (document.hidden) return;
 
             pointsRef.current.push({
                 x: e.clientX,
                 y: e.clientY,
                 timestamp: performance.now()
             });
+            if (pointsRef.current.length > MAX_POINTS) {
+                pointsRef.current.splice(0, pointsRef.current.length - MAX_POINTS);
+            }
         };
 
         const handleTouchMove = (e: TouchEvent) => {
+            if (document.hidden) return;
             // Fallback for some mobile browsers treating touch indiscriminately
             if (e.touches.length > 0) {
                 const touch = e.touches[0];
@@ -69,6 +79,9 @@ export const SwipeTrail = memo(function SwipeTrail({ streak, activeTrailId, base
                     y: touch.clientY,
                     timestamp: performance.now()
                 });
+                if (pointsRef.current.length > MAX_POINTS) {
+                    pointsRef.current.splice(0, pointsRef.current.length - MAX_POINTS);
+                }
             }
         };
 
