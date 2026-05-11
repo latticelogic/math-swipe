@@ -259,7 +259,7 @@ export const ProfilePage = memo(function ProfilePage({ slug, onChallenge, onBack
                 <Stat
                     label={`⏱️ speedrun${profile.speedrunHardMode ? ' 💀' : ''}`}
                     value={profile.bestSpeedrunTime && profile.bestSpeedrunTime > 0 ? formatTime(profile.bestSpeedrunTime) : '—'}
-                    color="#FF00FF"
+                    color="var(--color-speedrun)"
                 />
             </div>
 

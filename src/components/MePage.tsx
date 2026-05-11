@@ -456,7 +456,7 @@ export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked,
                 <div className="text-sm ui text-[rgb(var(--color-fg))]/50 uppercase tracking-widest text-center mb-3">
                     CHALK COLOR
                 </div>
-                <div className="flex justify-center gap-2.5 flex-wrap">
+                <div className="grid grid-cols-6 gap-2.5 justify-items-center max-w-[300px] mx-auto">
                     {CHALK_THEMES.map(t => {
                         const rankIdx = RANKS.findIndex(r => r.name === rank.name);
                         const rankOk = rankIdx >= (t.minLevel - 1);
