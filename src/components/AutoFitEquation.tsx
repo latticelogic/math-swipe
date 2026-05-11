@@ -28,23 +28,30 @@ export function AutoFitEquation({ children, minScale = 0.4, className = '' }: Pr
     const outerRef = useRef<HTMLDivElement>(null);
     const innerRef = useRef<HTMLDivElement>(null);
     const [scale, setScale] = useState(1);
+    // Keep a ref so async callbacks (timeouts, ResizeObserver, fonts.ready)
+    // always see the current scale, not the one captured at effect-setup time.
+    const scaleRef = useRef(scale);
+    scaleRef.current = scale;
 
     // Measurement function — pulled out so the multiple effects share it.
+    // Computes against the unscaled natural width by dividing the observed
+    // scrollWidth by the current scale (so we don't have to mutate the DOM
+    // to "reset" the transform — which would fight React's controlled style).
     const measure = () => {
         const outer = outerRef.current;
         const inner = innerRef.current;
         if (!outer || !inner) return;
-        // Reset transform first so we measure natural width
-        inner.style.transform = '';
-        const naturalWidth = inner.scrollWidth;
+        const currentScale = scaleRef.current;
+        const observedWidth = inner.scrollWidth;
+        const naturalWidth = observedWidth / Math.max(currentScale, 0.001);
         const availableWidth = outer.clientWidth;
-        if (availableWidth === 0) return;
+        if (availableWidth === 0 || naturalWidth === 0) return;
         if (naturalWidth <= availableWidth) {
-            setScale(1);
+            if (currentScale !== 1) setScale(1);
             return;
         }
         const next = Math.max(minScale, availableWidth / naturalWidth);
-        setScale(next);
+        if (Math.abs(next - currentScale) > 0.005) setScale(next);
     };
 
     // Sync layout pass — covers the synchronous render case.
@@ -62,22 +69,27 @@ export function AutoFitEquation({ children, minScale = 0.4, className = '' }: Pr
         if ('fonts' in document) {
             document.fonts.ready.then(safeMeasure);
         }
-        // Belt-and-suspenders timeouts to catch post-KaTeX stabilization.
-        const t1 = setTimeout(safeMeasure, 80);
-        const t2 = setTimeout(safeMeasure, 300);
+        // Multiple timeouts to catch post-KaTeX stabilization at any point.
+        // KaTeX renders via dynamic import + setHtml; it can finish anywhere
+        // from ~10ms to several hundred ms depending on cache state.
+        const timeouts = [50, 150, 400, 800].map(ms => setTimeout(safeMeasure, ms));
 
-        // Re-measure on resize.
+        // Re-measure on resize of EITHER the outer (viewport change) OR the
+        // inner (KaTeX finished rendering and the content grew). Observing
+        // both is critical — KaTeX injects HTML into the inner asynchronously,
+        // so the inner's size change is our main "content settled" signal.
         const outer = outerRef.current;
+        const inner = innerRef.current;
         let ro: ResizeObserver | null = null;
-        if (outer && 'ResizeObserver' in window) {
+        if ('ResizeObserver' in window) {
             ro = new ResizeObserver(safeMeasure);
-            ro.observe(outer);
+            if (outer) ro.observe(outer);
+            if (inner) ro.observe(inner);
         }
 
         return () => {
             cancelled = true;
-            clearTimeout(t1);
-            clearTimeout(t2);
+            timeouts.forEach(clearTimeout);
             ro?.disconnect();
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
