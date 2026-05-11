@@ -146,21 +146,41 @@ function App() {
   );
 
   // ── Shield consumed toast ──
+  // Edge-triggered toast: open on the rising edge of `shieldBroken`, auto-close
+  // after 3s. The setState here is a one-shot synchronization with the prop
+  // edge, not a feedback loop, so the lint rule's worry doesn't apply.
   const [shieldToast, setShieldToast] = useState(false);
   useEffect(() => {
-    if (shieldBroken) {
-      queueMicrotask(() => {
-        setShieldToast(true);
-        const t = setTimeout(() => setShieldToast(false), 3000);
-        return () => clearTimeout(t);
-      });
-    }
+    if (!shieldBroken) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setShieldToast(true);
+    const t = setTimeout(() => setShieldToast(false), 3000);
+    return () => clearTimeout(t);
   }, [shieldBroken]);
 
   const currentProblem = problems[0];
   const isFirstQuestion = totalAnswered === 0;
   const toggleHardMode = useCallback(() => setHardMode(h => !h), []);
   const toggleTimedMode = useCallback(() => setTimedMode(t => !t), []);
+
+  // ── First-run coach gating ──
+  // Show the swipe-to-answer gesture hint only for genuinely new users — those
+  // who have never solved 3+ problems before. We persist the "graduated" flag
+  // so returning players don't see it on every fresh session.
+  const COACH_KEY = 'math-swipe-coached';
+  const hasGraduated = stats.totalSolved >= 3;
+  const [showCoach, setShowCoach] = useState(() => {
+    try { return !localStorage.getItem(COACH_KEY); } catch { return false; }
+  });
+  // One-shot graduation: when totalSolved crosses the coach threshold we
+  // persist the flag and turn the coach off. Pure derived edge — not a loop.
+  useEffect(() => {
+    if (hasGraduated && showCoach) {
+      try { localStorage.setItem(COACH_KEY, '1'); } catch { /* private mode */ }
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setShowCoach(false);
+    }
+  }, [hasGraduated, showCoach]);
 
   // ── Score floater ──
   const prevScoreRef = useRef(0);
@@ -198,20 +218,29 @@ function App() {
       orderBy('createdAt', 'desc'),
       limit(1)
     );
+    let clearTimer: ReturnType<typeof setTimeout> | undefined;
     const unsub = onSnapshot(q, (snap) => {
-      if (!snap.empty) {
-        const pingDoc = snap.docs[0];
-        const data = pingDoc.data();
-        setPingMessage(`${data.senderName} challenged you! ⚔️`);
+      if (snap.empty) return;
+      const pingDoc = snap.docs[0];
+      const data = pingDoc.data();
+      // Sanitize incoming senderName: it's user-controlled; render as text only.
+      // React already escapes it, but cap the length defensively.
+      const senderName = String(data.senderName ?? 'Someone').slice(0, 20);
+      setPingMessage(`${senderName} challenged you! ⚔️`);
 
-        // Mark as read so it doesn't pop again
-        updateDoc(doc(db, 'pings', pingDoc.id), { read: true }).catch(console.error);
+      // Mark as read so it doesn't pop again
+      updateDoc(doc(db, FIRESTORE.PINGS, pingDoc.id), { read: true }).catch(() => { /* silent */ });
 
-        // Clear after 6 seconds
-        setTimeout(() => setPingMessage(null), 6000);
-      }
+      // Clear after 6 seconds (replace any in-flight clear timer)
+      if (clearTimer) clearTimeout(clearTimer);
+      clearTimer = setTimeout(() => setPingMessage(null), 6000);
+    }, (err) => {
+      console.warn('Ping listener failed:', err);
     });
-    return unsub;
+    return () => {
+      unsub();
+      if (clearTimer) clearTimeout(clearTimer);
+    };
   }, [uid]);
 
   // Track previous tab for session recording (handled in handleTabChange)
@@ -446,7 +475,12 @@ function App() {
                 </div>
               )}
 
-              {/* Streak display */}
+              {/* Streak display.
+                  Tiers:
+                    2     → two dim dots (subtle "you're on a thing")
+                    3-5   → bright dots + gold "×N" label (visible reward)
+                    6-9   → "N×" pill in gold
+                    10+   → "🔥 N×" with the on-fire glow */}
               <AnimatePresence>
                 {streak > 1 && (
                   <motion.div
@@ -454,21 +488,34 @@ function App() {
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.8 }}
-                    className="mt-2 flex items-center gap-1"
+                    className="mt-2 flex items-center gap-1.5"
                   >
                     {streak <= 5 ? (
-                      /* Dots for small streaks */
-                      <div className="flex gap-1">
-                        {Array.from({ length: streak }, (_, i) => (
-                          <motion.div
-                            key={i}
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            transition={{ delay: i * 0.04 }}
-                            className="w-2 h-2 rounded-full bg-[var(--color-gold)]/60"
-                          />
-                        ))}
-                      </div>
+                      <>
+                        {/* Dots — saturate fully at streak ≥ 3 to celebrate earlier wins */}
+                        <div className="flex gap-1">
+                          {Array.from({ length: streak }, (_, i) => (
+                            <motion.div
+                              key={i}
+                              initial={{ scale: 0 }}
+                              animate={{ scale: 1 }}
+                              transition={{ delay: i * 0.04 }}
+                              className={`w-2 h-2 rounded-full ${streak >= 3 ? 'bg-[var(--color-gold)]' : 'bg-[var(--color-gold)]/60'}`}
+                            />
+                          ))}
+                        </div>
+                        {/* Gold "×N" appears at 3 to make the streak feel rewarding before reaching 6 */}
+                        {streak >= 3 && (
+                          <motion.span
+                            key={`mini-mult-${streak}`}
+                            initial={{ opacity: 0, x: -4 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            className="text-xs ui font-semibold text-[var(--color-gold)]"
+                          >
+                            {streak}×
+                          </motion.span>
+                        )}
+                      </>
                     ) : (
                       /* Multiplier label for 6+ */
                       <span
@@ -480,8 +527,8 @@ function App() {
                         {streak >= 10 ? `🔥 ${streak}×` : `${streak}×`}
                       </span>
                     )}
-                    {/* Milestone pulse */}
-                    {[5, 10, 20, 50].includes(streak) && (
+                    {/* Milestone pulse — added 3 so the first sub-milestone gets a celebration too */}
+                    {[3, 5, 10, 20, 50].includes(streak) && (
                       <motion.div
                         key={`milestone-glow-${streak}`}
                         className="absolute inset-0 rounded-full pointer-events-none"
@@ -506,8 +553,26 @@ function App() {
                   )}
                 </div>
               )}
-              {/* Level Up suggestion — only visible when idle */}
-              {isFirstQuestion && levelUpSuggestion && questionType !== 'speedrun' && questionType !== 'challenge' && (
+
+              {/* Speedrun discoverability — only surfaces once the player has shown
+                  competence (5+ streak this session) and isn't already in a special mode.
+                  Tapping switches to speedrun which auto-starts the 10-question timer. */}
+              {streak >= 5 && questionType !== 'speedrun' && questionType !== 'challenge' && questionType !== 'daily' && (
+                <motion.button
+                  key="speedrun-cta"
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  className="mt-1 text-[10px] ui text-[#FF00FF]/80 hover:text-[#FF00FF] transition-colors flex items-center gap-1"
+                  onClick={() => setQuestionType('speedrun' as QuestionType)}
+                  aria-label="Try speedrun mode"
+                >
+                  <span>⚡</span>
+                  <span>You're hot — try speedrun?</span>
+                </motion.button>
+              )}
+              {/* Level Up suggestion — only visible when idle, never in hard/timed/daily/challenge contexts */}
+              {isFirstQuestion && !hardMode && !timedMode && levelUpSuggestion && questionType !== 'speedrun' && questionType !== 'challenge' && questionType !== 'daily' && (
                 <motion.button
                   initial={{ opacity: 0, y: -5 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -519,18 +584,40 @@ function App() {
                   <span className="text-[rgb(var(--color-fg))]/20">({Math.round(levelUpSuggestion.acc * 100)}%)</span>
                 </motion.button>
               )}
-              {/* Daily challenge callout — subtle, only when idle and not already on daily */}
-              {isFirstQuestion && questionType !== 'daily' && questionType !== 'speedrun' && questionType !== 'challenge' && (
-                <motion.button
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.5 }}
-                  className="mt-1.5 text-[10px] ui text-[rgb(var(--color-fg))]/25 hover:text-[rgb(var(--color-fg))]/40 transition-colors"
-                  onClick={() => setQuestionType('daily' as QuestionType)}
-                >
-                  📅 Daily challenge available
-                </motion.button>
-              )}
+              {/* Daily challenge callout. Three states:
+                    - not started today      → "📅 Daily challenge available"
+                    - started but unfinished → "📅 Daily: 3/10 — finish it"
+                    - completed today        → suppressed (no point re-pitching)
+                  Hidden in hard/timed mode because the daily set isn't designed for those modifiers. */}
+              {(() => {
+                if (!isFirstQuestion || hardMode || timedMode) return null;
+                if (questionType === 'daily' || questionType === 'speedrun' || questionType === 'challenge') return null;
+                const today = (() => {
+                  const d = new Date();
+                  const pad = (n: number) => String(n).padStart(2, '0');
+                  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+                })();
+                const startedToday = stats.lastDailyDate === today && stats.todayDailySolved > 0;
+                const dailyTotal = 10; // Matches DAILY_COUNT in mathDailyConfig
+                const completedToday = startedToday && stats.todayDailySolved >= dailyTotal;
+                if (completedToday) return null;
+                const inProgressLabel = startedToday
+                  ? `📅 Daily: ${stats.todayDailySolved}/${dailyTotal} — finish it`
+                  : '📅 Daily challenge available';
+                return (
+                  <motion.button
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.5 }}
+                    className={`mt-1.5 text-[10px] ui transition-colors ${startedToday
+                      ? 'text-[var(--color-gold)]/70 hover:text-[var(--color-gold)]'
+                      : 'text-[rgb(var(--color-fg))]/25 hover:text-[rgb(var(--color-fg))]/40'}`}
+                    onClick={() => setQuestionType('daily' as QuestionType)}
+                  >
+                    {inProgressLabel}
+                  </motion.button>
+                );
+              })()}
             </div>
 
             {/* ── Points earned floater ── */}
@@ -565,6 +652,7 @@ function App() {
                       frozen={frozen}
                       highlightCorrect={isFirstQuestion}
                       showHints={totalCorrect < 4}
+                      coachSwipe={showCoach && isFirstQuestion && questionType !== 'speedrun' && questionType !== 'challenge'}
                       onSwipe={handleSwipe}
                     />
                   </motion.div>
@@ -698,8 +786,8 @@ function App() {
           isNewSpeedrunRecord={isNewSpeedrunRecord}
         />
 
-        {/* ── Weekly recap (first open of the week) ── */}
-        <WeeklyRecap stats={stats} />
+        {/* ── Weekly recap (first open of the week, only when idle on game tab) ── */}
+        <WeeklyRecap stats={stats} suppress={activeTab !== 'game' || isMagicLessonActive} />
 
         {/* ── Achievement unlock toast ── */}
         <AnimatePresence>

@@ -12,12 +12,34 @@ const KEY_MAP: Record<string, 'left' | 'right' | 'up' | 'down'> = {
     ArrowDown: 'down',
     ArrowUp: 'up',
 };
+
+/**
+ * Convert the visible plain-text expression into a screen-reader-friendly
+ * announcement. The display uses Unicode math symbols (÷, ×, −, ²) which most
+ * AT will read out OK, but the LaTeX source piped into KaTeX is announced as
+ * raw `\div` / `\times`. Replacing those with English keeps things consistent.
+ */
+function friendlyAriaLabel(expression: string): string {
+    return expression
+        .replace(/×/g, ' times ')
+        .replace(/÷/g, ' divided by ')
+        .replace(/−/g, ' minus ')
+        .replace(/²/g, ' squared')
+        .replace(/³/g, ' cubed')
+        .replace(/√/g, ' square root of ')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
 interface Props {
     /** Accepts both the math-specific Problem and the generic EngineItem */
     problem: Problem | EngineItem;
     frozen: boolean;
     highlightCorrect?: boolean;
     showHints?: boolean;
+    /** First-time-ever hint: animates a swipe gesture toward the correct
+     *  answer to teach the core interaction. Only render this on a true
+     *  first run; the App layer is responsible for gating it. */
+    coachSwipe?: boolean;
     onSwipe: (dir: 'left' | 'right' | 'up' | 'down') => void;
 }
 
@@ -101,7 +123,49 @@ const AnswerOption = memo(function AnswerOption({
     );
 });
 
-export const ProblemView = memo(function ProblemView({ problem, frozen, highlightCorrect, showHints = true, onSwipe }: Props) {
+/**
+ * First-run gesture coach. Drifts a 👆 cursor from the centre toward the
+ * correct answer's chevron, with a one-line caption. Loops gently until the
+ * user dismisses by swiping (the parent unmounts us by clearing `coachSwipe`).
+ */
+const SwipeCoach = memo(function SwipeCoach({ correctIndex }: { correctIndex: number }) {
+    // Map option index → x-translate of the demo gesture (left/down/right)
+    const targetX = correctIndex === 0 ? -90 : correctIndex === 2 ? 90 : 0;
+    const targetY = correctIndex === 1 ? 60 : 0;
+    const captionDir = correctIndex === 0 ? 'left' : correctIndex === 2 ? 'right' : 'down';
+
+    return (
+        <div className="absolute inset-x-0 -top-2 flex flex-col items-center pointer-events-none z-20">
+            <motion.div
+                className="text-3xl"
+                initial={{ x: 0, y: 0, opacity: 0 }}
+                animate={{
+                    x: [0, targetX, targetX, 0],
+                    y: [0, targetY, targetY, 0],
+                    opacity: [0, 1, 1, 0],
+                }}
+                transition={{
+                    duration: 2.2,
+                    times: [0, 0.4, 0.7, 1],
+                    repeat: Infinity,
+                    repeatDelay: 0.6,
+                    ease: 'easeInOut',
+                }}
+            >
+                👆
+            </motion.div>
+            <motion.div
+                className="text-[11px] ui mt-1 text-[var(--color-gold)]/80 tracking-wide"
+                animate={{ opacity: [0.4, 1, 0.4] }}
+                transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
+            >
+                swipe {captionDir} to answer
+            </motion.div>
+        </div>
+    );
+});
+
+export const ProblemView = memo(function ProblemView({ problem, frozen, highlightCorrect, showHints = true, coachSwipe = false, onSwipe }: Props) {
     // At runtime this component always receives a math Problem (which has expression, latex, visual, etc.).
     // The prop type accepts EngineItem so callers with EngineItem[] don't need a cast.
     const p = problem as Problem;
@@ -179,9 +243,12 @@ export const ProblemView = memo(function ProblemView({ problem, frozen, highligh
             )}
             {/* Problem expression */}
             <motion.div className="text-center mb-12" animate={pulseAnim}>
-                <div className={`landscape-question chalk leading-tight tracking-wider text-[var(--color-chalk)] max-w-full px-2 ${p.expression.length > 15 ? 'text-2xl' : p.expression.length > 10 ? 'text-4xl' : 'text-6xl'}`}>
+                <div
+                    className={`landscape-question chalk leading-tight tracking-wider text-[var(--color-chalk)] max-w-full px-2 ${p.expression.length > 15 ? 'text-2xl' : p.expression.length > 10 ? 'text-4xl' : 'text-6xl'}`}
+                    aria-label={p.latex ? friendlyAriaLabel(p.expression) : undefined}
+                >
                     {p.latex
-                        ? <MathExpr latex={p.latex} />
+                        ? <MathExpr latex={p.latex} ariaLabel={friendlyAriaLabel(p.expression)} />
                         : p.expression
                     }
                 </div>
@@ -205,6 +272,11 @@ export const ProblemView = memo(function ProblemView({ problem, frozen, highligh
                     />
                 ))}
             </div>
+
+            {/* First-run swipe coach: animates a finger drifting toward the correct answer */}
+            {coachSwipe && !frozen && (
+                <SwipeCoach correctIndex={p.correctIndex} />
+            )}
 
             {/* Skip hint */}
             {showHints && (

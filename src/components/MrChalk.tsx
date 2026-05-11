@@ -148,8 +148,26 @@ export const MrChalk = memo(function MrChalk({
     useEffect(() => {
         if (state !== 'idle') return;
         const ctx: ChalkContext = { state, streak, totalAnswered, categoryId: questionType, hardMode, timedMode };
-        const interval = setInterval(() => setMessage(pickChalkMessage({ ...ctx, state: 'idle' }, messageOverrides ?? MATH_MESSAGE_OVERRIDES)), 5000);
-        return () => clearInterval(interval);
+        // Pause the rotating idle quip while the tab is hidden — saves work
+        // and prevents the message from changing silently in the background.
+        let interval: ReturnType<typeof setInterval> | undefined;
+        const start = () => {
+            if (interval) return;
+            interval = setInterval(
+                () => setMessage(pickChalkMessage({ ...ctx, state: 'idle' }, messageOverrides ?? MATH_MESSAGE_OVERRIDES)),
+                5000,
+            );
+        };
+        const stop = () => {
+            if (interval) { clearInterval(interval); interval = undefined; }
+        };
+        const onVisibility = () => (document.hidden ? stop() : start());
+        if (!document.hidden) start();
+        document.addEventListener('visibilitychange', onVisibility);
+        return () => {
+            stop();
+            document.removeEventListener('visibilitychange', onVisibility);
+        };
     }, [state, questionType, streak, totalAnswered, hardMode, timedMode, messageOverrides]);
 
     const displayState = pingMessage ? 'comeback' : state;
@@ -168,7 +186,7 @@ export const MrChalk = memo(function MrChalk({
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -6, scale: 0.8 }}
                         transition={{ duration: 0.25 }}
-                        className="absolute bottom-full mb-2 right-0 w-max max-w-[200px] text-right bg-[var(--color-surface)] border border-[rgb(var(--color-fg))]/15 rounded-xl px-3 py-1.5 text-[12px] ui text-[rgb(var(--color-fg))]/80 leading-snug"
+                        className="absolute bottom-full mb-2 right-0 max-w-[220px] text-right bg-[var(--color-surface)] border border-[rgb(var(--color-fg))]/15 rounded-xl px-3 py-1.5 text-[12px] ui text-[rgb(var(--color-fg))]/80 leading-snug whitespace-normal break-words"
                     >
                         {currentMessage}
                         <div className="absolute -bottom-1.5 right-4 w-3 h-3 bg-[var(--color-overlay)] border-b border-r border-[rgb(var(--color-fg))]/15 rotate-45" />

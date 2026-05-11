@@ -94,6 +94,13 @@
     radial-gradient(ellipse at 50% 80%, rgba(229, 231, 235, 0.08) 0%, transparent 50%);
 }
 
+/* ── Bottom nav: keep accessible focus-ring for keyboard users only.
+   Without :focus-visible discrimination the ring sticks after a tap and
+   creates ambiguity between "currently active tab" and "last-tapped tab". */
+nav button:focus:not(:focus-visible) {
+  outline: none;
+}
+
 /* ── Vignette overlay ── */
 .vignette-overlay {
   background: radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(0, 0, 0, 0.55) 100%);
@@ -107,6 +114,20 @@
 [data-theme="light"] button svg {
   opacity: 1 !important;
   stroke-width: 2.5px;
+}
+
+/* Right-side action column icons (share, type-picker, stopwatch, skull)
+   were designed for a dark backdrop. Force readable contrast in light mode
+   so the buttons don't visually disappear against white. */
+[data-theme="light"] .action-icon {
+  color: rgba(17, 24, 39, 0.85) !important;
+}
+[data-theme="light"] .action-icon-skull {
+  /* Skull emoji has no `color`; we tune opacity instead so it stays readable. */
+  opacity: 0.85 !important;
+}
+[data-theme="light"] .action-icon-skull-active {
+  opacity: 1 !important;
 }
 
 [data-theme="light"] .chalk {

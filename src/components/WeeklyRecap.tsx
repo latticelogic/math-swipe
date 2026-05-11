@@ -4,6 +4,10 @@ import type { Stats } from '../hooks/useStats';
 
 interface Props {
     stats: Stats;
+    /** When true, the recap is hidden — used to keep it off non-Game tabs and
+     *  out of the way of in-progress lessons. The "already shown this week"
+     *  flag is still set on the next eligible render so it doesn't pop later. */
+    suppress?: boolean;
 }
 
 const RECAP_KEY = 'math-swipe-last-recap-week';
@@ -20,17 +24,27 @@ function getWeekId(): string {
 }
 
 /** Always-positive weekly recap card shown on first open of the week */
-export function WeeklyRecap({ stats }: Props) {
+export function WeeklyRecap({ stats, suppress = false }: Props) {
     const [visible, setVisible] = useState(false);
 
     useEffect(() => {
+        if (suppress) return;
         const currentWeek = getWeekId();
         const lastShown = localStorage.getItem(RECAP_KEY);
         // Only show if it's a new week AND user has played at least one session
         if (lastShown !== currentWeek && stats.sessionsPlayed > 0) {
             queueMicrotask(() => setVisible(true));
         }
-    }, [stats.sessionsPlayed]);
+    }, [stats.sessionsPlayed, suppress]);
+
+    // If we get suppressed while open (e.g. user navigated away), close it.
+    // The setState here is a one-shot derived edge — not a feedback loop.
+    useEffect(() => {
+        if (suppress && visible) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setVisible(false);
+        }
+    }, [suppress, visible]);
 
     const dismiss = () => {
         setVisible(false);

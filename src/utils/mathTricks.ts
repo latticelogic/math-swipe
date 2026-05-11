@@ -1027,11 +1027,11 @@ export const TRICK_CATEGORIES: TrickCategory[] = [
     {
         id: 'inf-series',
         label: 'Infinite & Telescoping',
-        emoji: '♾️',
+        emoji: '🔭',
         trickIds: ['telescoping-sum', 'zeno-paradox'],
     },
     {
-        id: 'Number Theory',
+        id: 'number-theory',
         label: 'Number Theory',
         emoji: '🔮',
         trickIds: ['power-last-digit', 'product-last-digit', 'digit-sum-mod', 'divisible-11'],

@@ -37,7 +37,9 @@ export const QuestionTypePicker = memo(function QuestionTypePicker({ current, on
             {/* Toggle button */}
             <motion.button
                 onClick={() => setOpen(o => !o)}
-                className={`w-11 h-11 flex items-center justify-center text-[rgb(var(--color-fg))]/50 chalk active:text-[var(--color-gold)] ${iconSizeClass(currentIcon)}`}
+                aria-label={`Question type: ${currentEntry?.label ?? 'select'}`}
+                aria-expanded={open}
+                className={`action-icon w-11 h-11 flex items-center justify-center text-[rgb(var(--color-fg))]/50 chalk active:text-[var(--color-gold)] ${iconSizeClass(currentIcon)}`}
                 whileTap={{ scale: 0.88 }}
             >
                 {currentIcon.includes('\n') ? (

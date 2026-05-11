@@ -100,7 +100,7 @@ export const DEFAULT_GAME_CONFIG: GameConfig = {
     autoAdvanceMs: 150,
     failPauseMs: 400,
     timedModeMs: 10_000,
-    milestones: { 5: '🔥', 10: '⚡', 20: '👑', 50: '🏆' },
+    milestones: { 3: '✨', 5: '🔥', 10: '⚡', 20: '👑', 50: '🏆' },
     speedrunTypeId: 'speedrun',
     finiteTypeIds: ['daily', 'challenge'],
 };
