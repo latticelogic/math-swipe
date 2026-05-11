@@ -24,9 +24,8 @@ dist-ssr
 *.sw?
 
 # Environment variables
-.env
-.env.local
-.env.production
+.env*
+!.env.example
 
 # Playwright MCP browser session cache + ad-hoc screenshots from QA runs.
 # Keep them out of git so the repo doesn't bloat with throwaway PNGs.
