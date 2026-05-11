@@ -504,7 +504,13 @@ function App() {
 
       <BlackboardLayout>
         <OfflineBanner />
-        <ReloadPrompt suppress={activeTab === 'game'} />
+        {/* Suppress only during *active* gameplay — not the whole game tab.
+            Showing the prompt when the user has just opened the app (still
+            on the home screen, hasn't answered a question yet) is fine and
+            necessary so they actually get the update. The old condition
+            `activeTab === 'game'` suppressed on the default tab, meaning
+            users who never left it never saw the prompt. */}
+        <ReloadPrompt suppress={activeTab === 'game' && totalAnswered > 0} />
         {/* ── Global Canvas Overlay (Swipe Trail) ── */}
         <SwipeTrail
           streak={streak}

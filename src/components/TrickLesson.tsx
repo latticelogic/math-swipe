@@ -57,25 +57,32 @@ export function TrickLesson({ trick, onClose }: Props) {
             </div>
 
             <motion.div
-                className="flex-1 flex flex-col items-center justify-center -mt-12 text-center max-w-sm mx-auto w-full touch-none"
+                className="flex-1 flex flex-col items-center justify-center -mt-12 text-center w-full max-w-md mx-auto px-4 touch-none"
                 onPanEnd={handlePanEnd}
             >
                 <div className="text-4xl mb-4">{trick.icon}</div>
                 <h2 className="chalk text-2xl text-[var(--color-gold)] mb-8">{trick.title}</h2>
 
-                {/* Example Equation */}
-                <div className="mb-12 flex items-center justify-center">
-                    {trick.lesson.latex ? (
-                        <MathExpr
-                            latex={`${trick.lesson.latex} = ${isLastStep ? String.raw`{\color{gold} ${trick.lesson.result}}` : '?'}`}
-                            displayMode
-                            className="text-4xl"
-                        />
-                    ) : (
-                        <div className="text-5xl chalk">
-                            {trick.lesson.equation} = {isLastStep ? <span className="text-[var(--color-gold)]">{trick.lesson.result}</span> : '?'}
-                        </div>
-                    )}
+                {/* Example Equation — auto-fits to viewport via font-size clamp.
+                    Long equations (e.g. "34 × 12 = 34 × 10 + 34 × 2") would
+                    otherwise clip off narrow phone viewports. The fit-equation
+                    class (defined in index.css) uses font-size: clamp() based
+                    on viewport width so KaTeX renders smaller on narrow
+                    phones — KaTeX width scales linearly with font-size, so
+                    halving font-size halves rendered width. */}
+                <div className="mb-12 w-full px-2 flex items-center justify-center overflow-hidden">
+                    <div className="fit-equation">
+                        {trick.lesson.latex ? (
+                            <MathExpr
+                                latex={`${trick.lesson.latex} = ${isLastStep ? String.raw`{\color{gold} ${trick.lesson.result}}` : '?'}`}
+                                displayMode
+                            />
+                        ) : (
+                            <div className="chalk whitespace-nowrap">
+                                {trick.lesson.equation} = {isLastStep ? <span className="text-[var(--color-gold)]">{trick.lesson.result}</span> : '?'}
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 {/* Steps Display */}
