@@ -206,21 +206,32 @@ export const LeaguePage = memo(function LeaguePage({ userXP, userStreak, uid, di
             <div className="flex gap-1 mb-4 p-1 bg-[rgb(var(--color-fg))]/5 rounded-xl w-full max-w-xs">
                 <button
                     onClick={() => setTab('score')}
-                    className={`flex-1 py-2 rounded-lg text-xs ui font-semibold transition-all duration-200 ${tab === 'score'
+                    className={`flex-1 py-2 rounded-lg text-xs ui font-semibold transition-all duration-200 flex items-center justify-center gap-1.5 ${tab === 'score'
                         ? 'bg-[var(--color-gold)]/20 text-[var(--color-gold)] shadow-sm'
                         : 'text-[rgb(var(--color-fg))]/40 hover:text-[rgb(var(--color-fg))]/60'
                         }`}
                 >
-                    ⚡ Score
+                    {/* Lightning bolt for "Score" — implies fast points */}
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                        <path d="M13 2 L 4 14 L 11 14 L 11 22 L 20 10 L 13 10 Z" />
+                    </svg>
+                    Score
                 </button>
                 <button
                     onClick={() => setTab('speedrun')}
-                    className={`flex-1 py-2 rounded-lg text-xs ui font-semibold transition-all duration-200 ${tab === 'speedrun'
+                    className={`flex-1 py-2 rounded-lg text-xs ui font-semibold transition-all duration-200 flex items-center justify-center gap-1.5 ${tab === 'speedrun'
                         ? 'bg-[#FF00FF]/15 text-[#FF00FF] shadow-sm'
                         : 'text-[rgb(var(--color-fg))]/40 hover:text-[rgb(var(--color-fg))]/60'
                         }`}
                 >
-                    ⏱️ Speedrun
+                    {/* Stopwatch for "Speedrun" */}
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                        <circle cx="12" cy="14" r="7" />
+                        <line x1="12" y1="14" x2="15" y2="11" />
+                        <line x1="10" y1="2" x2="14" y2="2" />
+                        <line x1="12" y1="2" x2="12" y2="5" />
+                    </svg>
+                    Speedrun
                 </button>
             </div>
 
@@ -288,13 +299,32 @@ export const LeaguePage = memo(function LeaguePage({ userXP, userStreak, uid, di
                                     : ''
                                     }`}
                             >
-                                {/* Rank */}
-                                <div className={`w-7 text-center ui font-bold text-lg ${entry.rank === 1 ? 'text-[var(--color-gold)]' :
+                                {/* Rank — top 3 get hand-drawn SVG icons (crown/medal/flame),
+                                    everyone else just shows the number. */}
+                                <div className={`w-7 flex justify-center items-center ui font-bold text-lg ${entry.rank === 1 ? 'text-[var(--color-gold)]' :
                                     entry.rank === 2 ? 'text-[rgb(var(--color-fg))]/60' :
                                         entry.rank === 3 ? 'text-[var(--color-streak-fire)]' :
                                             'text-[rgb(var(--color-fg))]/30'
                                     }`}>
-                                    {entry.rank === 1 ? '👑' : entry.rank === 2 ? '⚡' : entry.rank === 3 ? '🔥' : entry.rank}
+                                    {entry.rank === 1 ? (
+                                        // Crown
+                                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-label="1st place">
+                                            <path d="M3 18 L 5 8 L 9 12 L 12 6 L 15 12 L 19 8 L 21 18 Z" />
+                                            <line x1="3" y1="20.5" x2="21" y2="20.5" />
+                                        </svg>
+                                    ) : entry.rank === 2 ? (
+                                        // Medal — circle on ribbon
+                                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-label="2nd place">
+                                            <path d="M8 3 L 10 9" />
+                                            <path d="M16 3 L 14 9" />
+                                            <circle cx="12" cy="15" r="6" />
+                                        </svg>
+                                    ) : entry.rank === 3 ? (
+                                        // Flame
+                                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-label="3rd place">
+                                            <path d="M12 21 C 6 21 4 16 6 12 C 7 14 8 14 9 13 C 8 9 10 5 12 3 C 12 7 15 8 16 11 C 17 9 18 9 18 11 C 20 15 18 21 12 21 Z" />
+                                        </svg>
+                                    ) : entry.rank}
                                 </div>
 
                                 {/* Name & Cosmetic & Badge */}
@@ -328,8 +358,15 @@ export const LeaguePage = memo(function LeaguePage({ userXP, userStreak, uid, di
                                             <div className="text-[9px] ui text-[rgb(var(--color-fg))]/20">XP</div>
                                         </div>
                                         <div className="text-right w-10">
-                                            <div className="text-xs ui font-semibold text-[var(--color-streak-fire)]">
-                                                {entry.bestStreak > 0 ? `${entry.bestStreak}🔥` : '—'}
+                                            <div className="text-xs ui font-semibold text-[var(--color-streak-fire)] flex items-center justify-end gap-0.5">
+                                                {entry.bestStreak > 0 ? (
+                                                    <>
+                                                        {entry.bestStreak}
+                                                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                                                            <path d="M12 21 C 6 21 4 16 6 12 C 7 14 8 14 9 13 C 8 9 10 5 12 3 C 12 7 15 8 16 11 C 17 9 18 9 18 11 C 20 15 18 21 12 21 Z" />
+                                                        </svg>
+                                                    </>
+                                                ) : '—'}
                                             </div>
                                         </div>
                                     </>

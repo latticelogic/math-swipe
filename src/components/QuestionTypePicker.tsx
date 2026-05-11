@@ -3,18 +3,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { QuestionType, AgeBand } from '../utils/questionTypes';
 import { typesForBand, GROUP_LABELS, glossaryForTypes, type QuestionGroup } from '../utils/questionTypes';
-
-/** Size class for each icon — keeps the grid visually balanced */
-function iconSizeClass(icon: string): string {
-    // Single-char math operators render large
-    if ('+ − × ÷ √ % ≈ ±'.split(' ').includes(icon)) return 'text-3xl';
-    // Emoji
-    if (/^[\p{Emoji}\uFE0F]+$/u.test(icon) && !icon.includes('\n')) return 'text-2xl';
-    // Multi-char grid (Basic Mix) — keep compact
-    if (icon.includes('\n')) return '';
-    // Everything else (x², x=, .5, ⅓) — medium
-    return 'text-xl';
-}
+import { CategoryIcon } from './CategoryIcon';
 
 interface Props {
     current: QuestionType;
@@ -30,7 +19,6 @@ export const QuestionTypePicker = memo(function QuestionTypePicker({ current, on
     const groups = useMemo(() => ALL_GROUPS.filter(g => bandTypes.some(t => t.group === g)), [bandTypes]);
     const glossary = useMemo(() => glossaryForTypes(bandTypes.map(t => t.id)), [bandTypes]);
     const currentEntry = bandTypes.find(t => t.id === current);
-    const currentIcon = currentEntry?.icon || '×';
 
     return (
         <>
@@ -42,15 +30,9 @@ export const QuestionTypePicker = memo(function QuestionTypePicker({ current, on
                 onClick={() => setOpen(o => !o)}
                 aria-label={`Question type: ${currentEntry?.label ?? 'select'}`}
                 aria-expanded={open}
-                className={`action-icon w-11 h-11 flex items-center justify-center text-[rgb(var(--color-fg))]/50 chalk active:text-[var(--color-gold)] active:scale-90 ${iconSizeClass(currentIcon)}`}
+                className="action-icon w-11 h-11 flex items-center justify-center text-[rgb(var(--color-fg))]/50 active:text-[var(--color-gold)] active:scale-90"
             >
-                {currentIcon.includes('\n') ? (
-                    <span className="inline-grid grid-cols-2 gap-x-0.5 text-[14px] leading-tight font-bold">{
-                        currentIcon.replace('\n', '').split('').map((ch, i) => (
-                            <span key={i}>{ch}</span>
-                        ))
-                    }</span>
-                ) : currentIcon}
+                <CategoryIcon id={current} size={26} />
             </button>
 
             {/* Full-screen overlay picker — portaled to body to escape #root's position:fixed */}
@@ -98,16 +80,8 @@ export const QuestionTypePicker = memo(function QuestionTypePicker({ current, on
                                                             }`}
                                                         whileTap={{ scale: 0.92 }}
                                                     >
-                                                        <div className="h-8 flex items-center justify-center">
-                                                            <span className={`chalk ${t.id === current ? 'text-[var(--color-gold)]' : 'text-[rgb(var(--color-fg))]/70'} ${iconSizeClass(t.icon)} leading-none`}>
-                                                                {t.icon.includes('\n') ? (
-                                                                    <span className="inline-grid grid-cols-2 gap-x-1 text-base leading-tight font-bold">{
-                                                                        t.icon.replace('\n', '').split('').map((ch, i) => (
-                                                                            <span key={i}>{ch}</span>
-                                                                        ))
-                                                                    }</span>
-                                                                ) : t.icon}
-                                                            </span>
+                                                        <div className={`h-8 flex items-center justify-center ${t.id === current ? 'text-[var(--color-gold)]' : 'text-[rgb(var(--color-fg))]/70'}`}>
+                                                            <CategoryIcon id={t.id} size={28} />
                                                         </div>
                                                         <span className={`text-[10px] ui ${t.id === current ? 'text-[var(--color-gold)]/80' : 'text-[rgb(var(--color-fg))]/40'}`}>
                                                             {t.label}

@@ -740,18 +740,32 @@ function App() {
                 const completedToday = startedToday && stats.todayDailySolved >= dailyTotal;
                 if (completedToday) return null;
                 const inProgressLabel = startedToday
-                  ? `📅 Daily: ${stats.todayDailySolved}/${dailyTotal} — finish it`
-                  : '📅 Daily challenge available';
+                  ? `Daily: ${stats.todayDailySolved}/${dailyTotal} — finish it`
+                  : 'Daily challenge available';
                 return (
+                  // Pill-style daily-challenge entry. Previously this was
+                  // tiny low-opacity text; testers were missing it. Now it's
+                  // a small bordered pill with a hand-drawn calendar icon —
+                  // still subordinate to "Let's Go!!" / score but no longer
+                  // invisible. Hand icon nudges the user toward tapping.
                   <motion.button
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.5 }}
-                    className={`mt-1.5 text-[10px] ui transition-colors ${startedToday
-                      ? 'text-[var(--color-gold)]/70 hover:text-[var(--color-gold)]'
-                      : 'text-[rgb(var(--color-fg))]/25 hover:text-[rgb(var(--color-fg))]/40'}`}
+                    className={`mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[11px] ui font-semibold transition-colors ${startedToday
+                      ? 'border-[var(--color-gold)]/60 text-[var(--color-gold)] bg-[var(--color-gold)]/10 active:bg-[var(--color-gold)]/20'
+                      : 'border-[var(--color-gold)]/40 text-[var(--color-gold)]/90 bg-[var(--color-gold)]/5 active:bg-[var(--color-gold)]/15'
+                      }`}
                     onClick={() => setQuestionType('daily' as QuestionType)}
                   >
+                    {/* Hand-drawn calendar icon — matches CategoryIcon('daily') */}
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                      <rect x="3" y="5" width="18" height="16" rx="2" />
+                      <line x1="8" y1="3" x2="8" y2="7" />
+                      <line x1="16" y1="3" x2="16" y2="7" />
+                      <line x1="3" y1="10" x2="21" y2="10" />
+                      <circle cx="12" cy="15" r="1.2" fill="currentColor" stroke="none" />
+                    </svg>
                     {inProgressLabel}
                   </motion.button>
                 );
