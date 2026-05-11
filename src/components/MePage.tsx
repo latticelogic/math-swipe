@@ -648,10 +648,34 @@ export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked,
                 )}
             </AnimatePresence>
 
-            {/* Version */}
-            <div className="text-[10px] ui text-[rgb(var(--color-fg))]/15 mt-8 tracking-widest">
-                v{__APP_VERSION__}
-            </div>
+            {/* Version — tappable as a "force update" escape hatch.
+                Useful for users whose service worker is stuck on an old
+                cached build and never showed the update prompt. */}
+            <button
+                onClick={async () => {
+                    try {
+                        if ('serviceWorker' in navigator) {
+                            const regs = await navigator.serviceWorker.getRegistrations();
+                            for (const r of regs) {
+                                await r.update();
+                                if (r.waiting) r.waiting.postMessage({ type: 'SKIP_WAITING' });
+                            }
+                        }
+                    } catch (err) {
+                        console.warn('[force-update] SW update failed:', err);
+                    } finally {
+                        // Force reload regardless — even without a new SW,
+                        // this clears any HTTP-cached JS the user might be
+                        // running. The 'true' arg bypasses the HTTP cache
+                        // (deprecated but widely supported).
+                        window.location.reload();
+                    }
+                }}
+                className="text-[10px] ui text-[rgb(var(--color-fg))]/15 mt-8 tracking-widest active:text-[rgb(var(--color-fg))]/40 transition-colors"
+                aria-label="Tap to check for updates"
+            >
+                v{__APP_VERSION__} · tap to update
+            </button>
         </div>
     );
 });

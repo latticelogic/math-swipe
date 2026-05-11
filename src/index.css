@@ -78,6 +78,57 @@
   }
 }
 
+/* ── Themed scrollbars ──
+   Default browser scrollbars (especially on Windows / desktop Android Chrome)
+   look out of place against the chalkboard aesthetic. Slim themed scrollbars
+   on desktop; hidden on touch devices that scroll natively. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+}
+
+[data-theme="light"] * {
+  scrollbar-color: rgba(0, 0, 0, 0.20) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+}
+
+[data-theme="light"] *::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.20);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+[data-theme="light"] *::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.30);
+}
+
+/* Hide scrollbars entirely on touch devices — they scroll natively without
+   needing a visual indicator and the bar competes with content for space. */
+@media (pointer: coarse) {
+  *::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
+  * {
+    scrollbar-width: none;
+  }
+}
+
 /* ── Blackboard texture (static, rendered once) ── */
 .blackboard-bg {
   background-color: var(--color-board);
