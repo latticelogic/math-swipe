@@ -51,6 +51,13 @@ either with the other tool is more complex than running both.
 
 ## Conventions
 
+- **Prefer CLI over web dashboards** for all infra ops (GitHub, Cloudflare,
+  Firebase, Stripe, DNS, etc.). Reasons: reproducible, auditable in shell
+  history, scriptable, and AI assistants can execute it directly. Use
+  `gh`, `wrangler`, `firebase`, `stripe`, `flarectl`, etc. If a step truly
+  requires a browser (OAuth consent, granting a GitHub App access to an
+  org, accepting an invite as a different account), call that out
+  explicitly — don't silently route around it.
 - Don't push directly to `master`; PRs go through `dev` → `master` (see README)
 - Run `npm run verify` before pushing — covers lint + tsc + tests + build + worker
 - `.env*` is gitignored (with `!.env.example` allowed through). `.env.example`
