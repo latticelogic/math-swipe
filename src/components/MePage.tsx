@@ -9,6 +9,7 @@ import { SWIPE_TRAILS } from '../utils/trails';
 import { TEACHERS, DEFAULT_TEACHER_ID } from '../domains/math/teachers';
 import { RANKS, getRank } from '../domains/math/ranks';
 import { PushOptIn } from './PushOptIn';
+import { UsernameClaim } from './UsernameClaim';
 
 interface Props {
     stats: ReturnType<typeof useStats>['stats'];
@@ -117,6 +118,13 @@ export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked,
                     </>
                 )}
             </div>
+
+            {/* Unique @username claim — atomic via Firestore transaction */}
+            <UsernameClaim
+                uid={uid}
+                isAnonymous={isAnonymous}
+                suggestion={displayName}
+            />
 
             {/* Contextual save-progress nudge — value-framed, dismissible with cooldown */}
             {isAnonymous && (() => {

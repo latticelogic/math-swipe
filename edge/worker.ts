@@ -53,24 +53,83 @@ function decodeFirestoreValue(v: unknown): unknown {
     return undefined;
 }
 
-/** Parse a profile slug `<displayName>-<uid4>` — mirrors the client-side
- *  helper in src/utils/profileSlug.ts. */
-function parseSlug(slug: string): { name: string; uidPrefix: string } | null {
+/** Parse a profile slug — mirrors src/utils/profileSlug.ts. Two shapes:
+ *   { kind: 'handle', handle }  for /u/somehandle (claimed username)
+ *   { kind: 'legacy', name, uidPrefix }  for /u/Some_Name-abc1 */
+type ParsedSlug =
+    | { kind: 'handle'; handle: string }
+    | { kind: 'legacy'; name: string; uidPrefix: string };
+
+function parseSlug(slug: string): ParsedSlug | null {
     const i = slug.lastIndexOf('-');
-    if (i < 1 || i >= slug.length - 1) return null;
-    const name = decodeURIComponent(slug.slice(0, i));
-    const uidPrefix = slug.slice(i + 1).toLowerCase();
-    if (uidPrefix.length < 3 || uidPrefix.length > 8) return null;
-    return { name, uidPrefix };
+    if (i >= 1 && i < slug.length - 1) {
+        const tail = slug.slice(i + 1);
+        if (/^[a-z0-9]{3,8}$/.test(tail)) {
+            const name = decodeURIComponent(slug.slice(0, i));
+            return { kind: 'legacy', name, uidPrefix: tail.toLowerCase() };
+        }
+    }
+    const handle = slug.toLowerCase();
+    if (/^[a-z0-9_]{3,20}$/.test(handle)) {
+        return { kind: 'handle', handle };
+    }
+    return null;
 }
 
-/** Look up a profile via the Firestore REST `runQuery` endpoint. We use
- *  REST (no SDK) because Workers don't ship the firebase-admin runtime and
- *  we don't need write privileges here. */
+/** Resolve a claimed handle to a uid via Firestore REST. Returns null when
+ *  unclaimed — the caller can then fall back to the legacy lookup. */
+async function lookupUidByHandle(projectId: string, handle: string): Promise<string | null> {
+    const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/usernames/${encodeURIComponent(handle)}`;
+    try {
+        const res = await fetch(url, { signal: AbortSignal.timeout(1500) });
+        if (!res.ok) return null;
+        const json = await res.json() as { fields?: Record<string, unknown> };
+        return (decodeFirestoreValue(json.fields?.uid) as string | undefined) ?? null;
+    } catch {
+        return null;
+    }
+}
+
+async function fetchUserDoc(projectId: string, uid: string): Promise<Record<string, unknown> | null> {
+    const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/users/${encodeURIComponent(uid)}`;
+    try {
+        const res = await fetch(url, { signal: AbortSignal.timeout(1500) });
+        if (!res.ok) return null;
+        const json = await res.json() as { fields?: Record<string, unknown> };
+        return json.fields ?? null;
+    } catch {
+        return null;
+    }
+}
+
+function rowToProfile(fields: Record<string, unknown>, fallbackName: string): ProfileData {
+    return {
+        displayName: (decodeFirestoreValue(fields.displayName) as string | undefined) ?? fallbackName,
+        totalXP: (decodeFirestoreValue(fields.totalXP) as number | undefined) ?? 0,
+        bestStreak: (decodeFirestoreValue(fields.bestStreak) as number | undefined) ?? 0,
+        accuracy: (decodeFirestoreValue(fields.accuracy) as number | undefined) ?? 0,
+        bestSpeedrunTime: (decodeFirestoreValue(fields.bestSpeedrunTime) as number | undefined) ?? 0,
+    };
+}
+
+/** Look up a profile via the Firestore REST API. Uses the claim collection
+ *  for clean handle URLs (1 get) and falls back to the displayName scan for
+ *  legacy `<name>-<uid4>` URLs (1 runQuery). REST means no SDK weight and
+ *  the Worker stays fast. */
 async function fetchProfile(projectId: string, slug: string): Promise<ProfileData | null> {
     const parsed = parseSlug(slug);
     if (!parsed) return null;
 
+    // Path 1: pure handle — single get on usernames/{slug} then on users/{uid}
+    if (parsed.kind === 'handle') {
+        const uid = await lookupUidByHandle(projectId, parsed.handle);
+        if (!uid) return null;
+        const fields = await fetchUserDoc(projectId, uid);
+        if (!fields) return null;
+        return rowToProfile(fields, parsed.handle);
+    }
+
+    // Path 2: legacy displayName scan (existing behaviour)
     const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents:runQuery`;
     const body = {
         structuredQuery: {
@@ -89,7 +148,6 @@ async function fetchProfile(projectId: string, slug: string): Promise<ProfileDat
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify(body),
-        // 2-second cap so a slow Firestore can't stall edge response on every visit
         signal: AbortSignal.timeout(2000),
     });
     if (!res.ok) return null;
@@ -98,14 +156,7 @@ async function fetchProfile(projectId: string, slug: string): Promise<ProfileDat
         const docName = row.document?.name; // projects/.../users/<uid>
         const uid = docName?.split('/').pop() ?? '';
         if (!uid.toLowerCase().startsWith(parsed.uidPrefix)) continue;
-        const f = row.document?.fields ?? {};
-        return {
-            displayName: (decodeFirestoreValue(f.displayName) as string | undefined) ?? parsed.name,
-            totalXP: (decodeFirestoreValue(f.totalXP) as number | undefined) ?? 0,
-            bestStreak: (decodeFirestoreValue(f.bestStreak) as number | undefined) ?? 0,
-            accuracy: (decodeFirestoreValue(f.accuracy) as number | undefined) ?? 0,
-            bestSpeedrunTime: (decodeFirestoreValue(f.bestSpeedrunTime) as number | undefined) ?? 0,
-        };
+        return rowToProfile(row.document?.fields ?? {}, parsed.name);
     }
     return null;
 }

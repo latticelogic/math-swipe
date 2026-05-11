@@ -14,7 +14,7 @@
 
 import { memo, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { collection, query, where, limit, getDocs } from 'firebase/firestore';
+import { collection, query, where, limit, getDoc, getDocs, doc } from 'firebase/firestore';
 import { db } from '../utils/firebase';
 import { getRank } from '../domains/math/ranks';
 import { getTeacher } from '../domains/math/teachers';
@@ -23,6 +23,7 @@ import { AchievementBadge } from './AchievementBadge';
 import { EVERY_ACHIEVEMENT } from '../utils/achievements';
 import { createChallengeId } from '../utils/dailyChallenge';
 import { parseProfileSlug } from '../utils/profileSlug';
+import { lookupUidBySlug } from '../utils/username';
 
 interface ProfileData {
     uid: string;
@@ -38,6 +39,28 @@ interface ProfileData {
     activeBadgeId?: string;
     activeTeacher?: string;
     achievements?: string[];
+}
+
+/** Normalize a Firestore user-doc snapshot into ProfileData.
+ *  `fallbackName` is the slug-derived name used when the doc has no
+ *  displayName (shouldn't happen, but safer than rendering 'undefined'). */
+function toProfileData(uid: string, fallbackName: string, data: Record<string, unknown>): ProfileData {
+    const num = (k: string): number => typeof data[k] === 'number' ? data[k] as number : 0;
+    return {
+        uid,
+        displayName: typeof data.displayName === 'string' ? data.displayName as string : fallbackName,
+        totalXP: num('totalXP'),
+        bestStreak: num('bestStreak'),
+        totalSolved: num('totalSolved'),
+        accuracy: num('accuracy'),
+        bestSpeedrunTime: num('bestSpeedrunTime'),
+        speedrunHardMode: !!data.speedrunHardMode,
+        activeThemeId: typeof data.activeThemeId === 'string' ? data.activeThemeId as string : undefined,
+        activeCostume: typeof data.activeCostume === 'string' ? data.activeCostume as string : undefined,
+        activeBadgeId: typeof data.activeBadgeId === 'string' ? data.activeBadgeId as string : undefined,
+        activeTeacher: (data.preferences as { teacher?: string } | undefined)?.teacher,
+        achievements: Array.isArray(data.achievements) ? data.achievements as string[] : [],
+    };
 }
 
 function formatTime(ms: number): string {
@@ -72,6 +95,34 @@ export const ProfilePage = memo(function ProfilePage({ slug, onChallenge, onBack
         let cancelled = false;
         (async () => {
             try {
+                // Path 1: pure-handle lookup. Single get on usernames/{slug},
+                // then a single get on the resolved user doc — fast and
+                // unique. Falls through to legacy lookup if the handle is
+                // unclaimed (shouldn't happen for well-formed handle URLs,
+                // but it makes the migration period painless).
+                if (parsed.kind === 'handle') {
+                    const uid = await lookupUidBySlug(parsed.handle);
+                    if (cancelled) return;
+                    if (!uid) {
+                        setError(`No player found for "@${parsed.handle}".`);
+                        setLoading(false);
+                        return;
+                    }
+                    const userSnap = await getDoc(doc(db, 'users', uid));
+                    if (cancelled) return;
+                    if (!userSnap.exists()) {
+                        setError(`No player found for "@${parsed.handle}".`);
+                        setLoading(false);
+                        return;
+                    }
+                    setProfile(toProfileData(uid, parsed.handle, userSnap.data()));
+                    setLoading(false);
+                    return;
+                }
+
+                // Path 2: legacy `<displayName>-<uid4>` lookup. Filter by
+                // displayName, then find the doc whose uid starts with the
+                // 4-char suffix. O(N) on duplicates but capped at 8.
                 const q = query(
                     collection(db, 'users'),
                     where('displayName', '==', parsed.name),
@@ -84,29 +135,13 @@ export const ProfilePage = memo(function ProfilePage({ slug, onChallenge, onBack
                     setLoading(false);
                     return;
                 }
-                // Find the doc whose uid starts with the suffix
                 const match = snap.docs.find(d => d.id.toLowerCase().startsWith(parsed.uidPrefix));
                 if (!match) {
                     setError(`No player matches that link.`);
                     setLoading(false);
                     return;
                 }
-                const data = match.data();
-                setProfile({
-                    uid: match.id,
-                    displayName: data.displayName ?? parsed.name,
-                    totalXP: data.totalXP ?? 0,
-                    bestStreak: data.bestStreak ?? 0,
-                    totalSolved: data.totalSolved ?? 0,
-                    accuracy: data.accuracy ?? 0,
-                    bestSpeedrunTime: data.bestSpeedrunTime ?? 0,
-                    speedrunHardMode: data.speedrunHardMode ?? false,
-                    activeThemeId: data.activeThemeId,
-                    activeCostume: data.activeCostume,
-                    activeBadgeId: data.activeBadgeId,
-                    activeTeacher: data.preferences?.teacher,
-                    achievements: Array.isArray(data.achievements) ? data.achievements : [],
-                });
+                setProfile(toProfileData(match.id, parsed.name, match.data()));
                 setLoading(false);
             } catch (err) {
                 if (cancelled) return;

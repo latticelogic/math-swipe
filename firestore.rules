@@ -32,7 +32,7 @@ service cloud.firestore {
                            'hardModeSolved', 'hardModeCorrect', 'hardModeBestStreak', 'hardModeSessions', 'hardModePerfects',
                            'timedModeSolved', 'timedModeCorrect', 'timedModeBestStreak', 'timedModeSessions', 'timedModePerfects',
                            'ultimateSolved', 'ultimateCorrect', 'ultimateBestStreak', 'ultimateSessions', 'ultimatePerfects',
-                           'lastPingAt'
+                           'lastPingAt', 'username'
                          ])
                        : request.resource.data.diff(resource.data).affectedKeys().hasOnly([
                            'displayName', 'totalXP', 'bestStreak', 'totalSolved',
@@ -44,7 +44,7 @@ service cloud.firestore {
                            'hardModeSolved', 'hardModeCorrect', 'hardModeBestStreak', 'hardModeSessions', 'hardModePerfects',
                            'timedModeSolved', 'timedModeCorrect', 'timedModeBestStreak', 'timedModeSessions', 'timedModePerfects',
                            'ultimateSolved', 'ultimateCorrect', 'ultimateBestStreak', 'ultimateSessions', 'ultimatePerfects',
-                           'lastPingAt'
+                           'lastPingAt', 'username'
                          ])
                       )
                    // String field constraints
@@ -153,6 +153,22 @@ service cloud.firestore {
                     && (!('url' in request.resource.data) || (request.resource.data.url is string && request.resource.data.url.size() <= 500));
 
       allow update, delete: if false;
+    }
+
+    // ── Username claims ──
+    // Atomic uniqueness layer over user doc display names. The `slug` is a
+    // normalized lowercase form; one-to-one with a uid. Reads are public so
+    // claim availability checks work pre-claim. Writes are constrained:
+    //   create — new doc's uid must equal request.auth.uid (claim only self)
+    //   delete — only the current owner can release a slug
+    //   update — never (claims are atomic create-or-fail)
+    match /usernames/{slug} {
+      allow read: if true;
+      allow create: if request.auth != null
+                    && request.resource.data.uid == request.auth.uid
+                    && request.resource.data.keys().hasOnly(['uid', 'claimedAt']);
+      allow delete: if request.auth != null && resource.data.uid == request.auth.uid;
+      allow update: if false;
     }
 
     // ── Push events (delivery analytics) ──

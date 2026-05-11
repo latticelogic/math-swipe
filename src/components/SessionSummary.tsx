@@ -24,6 +24,9 @@ interface Props {
      *  because visitors see the brag *before* the math screen. */
     displayName?: string;
     uid?: string | null;
+    /** Player's claimed @handle — when present, the share URL uses the
+     *  clean `/u/<handle>` form instead of `/u/<displayName>-<uid4>`. */
+    claimedHandle?: string | null;
 }
 
 function formatTime(ms: number): string {
@@ -81,7 +84,7 @@ function buildSharePayload(
 export const SessionSummary = memo(function SessionSummary({
     solved, bestStreak: streak, accuracy, xpEarned, answerHistory, questionType, visible, onDismiss,
     hardMode, timedMode, speedrunFinalTime, isNewSpeedrunRecord,
-    displayName, uid,
+    displayName, uid, claimedHandle,
 }: Props) {
     const [isSharing, setIsSharing] = useState(false);
     const cardRef = useRef<HTMLDivElement>(null);
@@ -144,7 +147,7 @@ export const SessionSummary = memo(function SessionSummary({
         // visitor lands on the brag page first, which converts way better
         // than dropping them straight into a math problem.
         const profileUrl = (uid && displayName)
-            ? `${window.location.origin}/u/${buildProfileSlug(displayName, uid)}`
+            ? `${window.location.origin}/u/${buildProfileSlug(displayName, uid, claimedHandle ?? null)}`
             : null;
         const { text, url: challengeUrl } = buildSharePayload(
             xpEarned, streak, accuracy, answerHistory, questionType,

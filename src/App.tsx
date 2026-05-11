@@ -160,6 +160,23 @@ function App() {
 
   const { stats, accuracy, recordSession, resetStats, updateCosmetics, updateBestSpeedrunTime, updateBadge, consumeShield } = useStats(uid);
 
+  // ── Claimed @handle (one-shot fetch) ──
+  // Used to build clean /u/<handle> share URLs. Stays null for users who
+  // haven't claimed; the share builder falls back to /u/<name>-<uid4>.
+  const [claimedHandle, setClaimedHandle] = useState<string | null>(null);
+  useEffect(() => {
+    if (!uid) { setClaimedHandle(null); return; }
+    let cancelled = false;
+    import('firebase/firestore').then(({ doc, getDoc }) => {
+      getDoc(doc(db, 'users', uid)).then(snap => {
+        if (cancelled) return;
+        const handle = snap.exists() ? (snap.data().username as string | undefined) : undefined;
+        setClaimedHandle(handle ?? null);
+      }).catch(() => { /* silent */ });
+    });
+    return () => { cancelled = true; };
+  }, [uid]);
+
   const {
     problems,
     score,
@@ -199,7 +216,6 @@ function App() {
   const [shieldToast, setShieldToast] = useState(false);
   useEffect(() => {
     if (!shieldBroken) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setShieldToast(true);
     const t = setTimeout(() => setShieldToast(false), 3000);
     return () => clearTimeout(t);
@@ -224,7 +240,6 @@ function App() {
   useEffect(() => {
     if (hasGraduated && showCoach) {
       try { localStorage.setItem(COACH_KEY, '1'); } catch { /* private mode */ }
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setShowCoach(false);
     }
   }, [hasGraduated, showCoach]);
@@ -916,6 +931,7 @@ function App() {
           isNewSpeedrunRecord={isNewSpeedrunRecord}
           displayName={user?.displayName}
           uid={uid}
+          claimedHandle={claimedHandle}
         />
 
         {/* ── Weekly recap (first open of the week, only when idle on game tab) ── */}
