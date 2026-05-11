@@ -14,6 +14,7 @@ export {
     GROUP_LABELS,
     typesForBand,
     defaultTypeForBand,
+    migrateLegacyBand,
 } from './mathCategories';
 
 export { DAILY_COUNT, DAILY_TYPES } from './mathDailyConfig';

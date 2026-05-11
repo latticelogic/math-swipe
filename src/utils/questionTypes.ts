@@ -23,4 +23,5 @@ export {
     typesForBand,
     defaultTypeForBand,
     glossaryForTypes,
+    migrateLegacyBand,
 } from '../domains/math/mathCategories';

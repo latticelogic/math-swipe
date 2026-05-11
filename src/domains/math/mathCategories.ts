@@ -20,7 +20,10 @@ export type QuestionType =
 
 export type QuestionGroup = 'daily' | 'young' | 'whole' | 'core' | 'advanced' | 'parts' | 'mixed';
 
-export type AgeBand = 'k2' | '35' | '6+';
+/** Two-band system. "starter" is recognition + single-digit drills (the old k2
+ *  band content); "full" is the complete arithmetic-and-beyond catalog (old
+ *  35 + 6+ merged). Default is "full" — the majority audience. */
+export type AgeBand = 'starter' | 'full';
 
 // ── Renamed aliases for backward compatibility ────────────────────────────────
 /** @deprecated Use CategoryEntry from engine/categories */
@@ -101,38 +104,42 @@ export function glossaryForTypes(typeIds: readonly string[]): [string, string][]
 
 // ── Band definitions ──────────────────────────────────────────────────────────
 
-export const AGE_BANDS: AgeBand[] = ['k2', '35', '6+'];
+export const AGE_BANDS: AgeBand[] = ['starter', 'full'];
 
 export const MATH_BANDS: ReadonlyArray<BandEntry<AgeBand>> = [
     {
-        id: 'k2',
-        emoji: '🐣',
-        label: 'Ages 5–7',
+        id: 'starter',
+        // emoji is kept on BandEntry for legacy callers; the UI uses SVG icons.
+        emoji: '🌱',
+        label: 'Starter',
         groups: new Set(['daily', 'young']),
         defaultCategoryId: 'add1',
     },
     {
-        id: '35',
-        emoji: '📚',
-        label: 'Ages 8–10',
-        groups: new Set(['daily', 'whole', 'core', 'mixed']),
-        defaultCategoryId: 'multiply',
-    },
-    {
-        id: '6+',
+        id: 'full',
         emoji: '🚀',
-        label: 'Ages 11+',
+        // The default band — chosen for the majority audience (older kids + adults).
+        label: 'Full',
         groups: new Set(['daily', 'whole', 'core', 'advanced', 'parts', 'mixed']),
         defaultCategoryId: 'multiply',
     },
 ];
 
-/** Band display labels — kept for UI components that need only emoji+label */
+/** Band display labels — kept for UI components that need only label+emoji */
 export const BAND_LABELS: Record<AgeBand, { emoji: string; label: string }> = {
-    'k2': { emoji: '🐣', label: 'Ages 5–7' },
-    '35': { emoji: '📚', label: 'Ages 8–10' },
-    '6+': { emoji: '🚀', label: 'Ages 11+' },
+    'starter': { emoji: '🌱', label: 'Starter' },
+    'full': { emoji: '🚀', label: 'Full' },
 };
+
+/** Migrate a legacy band id from the old 3-band scheme to the new 2-band
+ *  scheme. Used when reading stored preferences (localStorage / Firestore)
+ *  that may still hold the old values. */
+export function migrateLegacyBand(stored: string | null | undefined): AgeBand {
+    if (stored === 'starter' || stored === 'full') return stored;
+    if (stored === 'k2') return 'starter';
+    // '35' and '6+' both fold into 'full'; anything unrecognized defaults to 'full'.
+    return 'full';
+}
 
 // ── Convenience wrappers (math-domain entry points) ───────────────────────────
 

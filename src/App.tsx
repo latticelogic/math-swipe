@@ -11,7 +11,7 @@ import { BottomNav } from './components/BottomNav';
 import { ActionButtons } from './components/ActionButtons';
 import { SwipeTrail } from './components/SwipeTrail';
 import type { AgeBand } from './utils/questionTypes';
-import { defaultTypeForBand, typesForBand, AGE_BANDS, BAND_LABELS } from './utils/questionTypes';
+import { defaultTypeForBand, typesForBand, AGE_BANDS, BAND_LABELS, migrateLegacyBand } from './utils/questionTypes';
 import { useAutoSummary, usePersonalBest } from './hooks/useSessionUI';
 import { OfflineBanner } from './components/OfflineBanner';
 import { ReloadPrompt } from './components/ReloadPrompt';
@@ -79,11 +79,12 @@ function generateMathFiniteSet(categoryId: string, challengeId: string | null): 
   return problems as EngineItem[];
 }
 
-/** Hand-drawn band icons replacing the 🐣/📚/🚀 emojis on the age toggle.
- *  Emojis felt out of place against the otherwise emoji-free top-right area. */
+/** Hand-drawn band icons. Two bands: starter (sapling — growth, recognition
+ *  drills) and full (rocket — full arithmetic-and-beyond catalog). Both
+ *  inherit currentColor so they pick up theme stroke colour. */
 function AgeBandIcon({ band }: { band: AgeBand }) {
     const common = { width: 16, height: 16, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
-    if (band === 'k2') {
+    if (band === 'starter') {
         // Sapling — two leaves above a curved stem
         return (
             <svg {...common}>
@@ -93,16 +94,7 @@ function AgeBandIcon({ band }: { band: AgeBand }) {
             </svg>
         );
     }
-    if (band === '35') {
-        // Open book
-        return (
-            <svg {...common}>
-                <path d="M3 6 L 12 8 L 21 6 L 21 19 L 12 21 L 3 19 Z" />
-                <path d="M12 8 L 12 21" />
-            </svg>
-        );
-    }
-    // 6+ : rocket — narrow tip, body, fins
+    // 'full' — rocket: narrow tip, body, fins
     return (
         <svg {...common}>
             <path d="M12 2 C 16 6 16 12 12 16 C 8 12 8 6 12 2 Z" />
@@ -427,7 +419,11 @@ function App() {
     setThemeMode(themeMode === 'dark' ? 'light' : 'dark');
   }, [themeMode, setThemeMode]);
   // ── Age Band ──
-  const [ageBand, setAgeBand] = useLocalState(STORAGE_KEYS.ageBand, '35' as AgeBand, uid) as [AgeBand, (v: AgeBand) => void];
+  // Default is 'full' (majority audience). useLocalState may return a legacy
+  // stored value ('k2' / '35' / '6+') from before the 3→2 band migration;
+  // migrateLegacyBand normalizes those to the new IDs.
+  const [rawAgeBand, setAgeBand] = useLocalState(STORAGE_KEYS.ageBand, 'full' as AgeBand, uid) as [AgeBand, (v: AgeBand) => void];
+  const ageBand = migrateLegacyBand(rawAgeBand);
 
   // ── Practice focus: find lowest-accuracy topic ──
   const levelUpSuggestion = useMemo(() => {
@@ -527,7 +523,7 @@ function App() {
                 handleBandChange(AGE_BANDS[(idx + 1) % AGE_BANDS.length]);
               }}
               className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-[rgb(var(--color-fg))]/50 active:text-[var(--color-gold)] transition-colors"
-              aria-label="Change age band"
+              aria-label="Change level"
             >
               <AgeBandIcon band={ageBand} />
               <span className="text-[10px] ui">{BAND_LABELS[ageBand].label}</span>

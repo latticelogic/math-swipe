@@ -17,7 +17,7 @@ export interface CategoryEntry<TId extends string = string> {
     hidden?: boolean;
 }
 
-/** Difficulty band (e.g. 'k2' | '35' | '6+') */
+/** Difficulty band (e.g. 'starter' | 'full') */
 export interface BandEntry<TBand extends string = string> {
     id: TBand;
     emoji: string;
