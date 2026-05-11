@@ -4,6 +4,7 @@ import { MAGIC_TRICKS, TRICK_CATEGORIES, getRecommendedTrick, type MagicTrick } 
 import { TrickLesson } from './TrickLesson';
 import { loadMastered } from './TrickPractice';
 import { MathExpr } from './MathExpr';
+import { TrickIcon } from './TrickIcon';
 
 interface Props {
     onLessonActive: (active: boolean) => void;
@@ -75,8 +76,8 @@ export function TricksPage({ onLessonActive }: Props) {
                     onClick={() => setSelectedTrick(recommended)}
                     className="max-w-sm mx-auto w-full mb-5 bg-[var(--color-gold)]/8 border border-[var(--color-gold)]/20 rounded-2xl p-4 flex items-center gap-4 text-left group hover:bg-[var(--color-gold)]/12 transition-colors"
                 >
-                    <div className="w-14 h-14 rounded-full bg-[var(--color-gold)]/15 flex items-center justify-center text-2xl shrink-0">
-                        {recommended.icon}
+                    <div className="w-14 h-14 rounded-full bg-[var(--color-gold)]/15 flex items-center justify-center text-[var(--color-gold)] shrink-0">
+                        <TrickIcon id={recommended.id} size={28} />
                     </div>
                     <div className="flex-1 min-w-0">
                         <div className="text-[10px] ui text-[var(--color-gold)]/60 mb-0.5">Recommended for you</div>
@@ -163,8 +164,8 @@ export function TricksPage({ onLessonActive }: Props) {
                                                                 ${isMastered ? 'border-[var(--color-gold)]/30' : 'border-[rgb(var(--color-fg))]/10'}`}
                                                         >
                                                             <div className={`absolute left-0 top-0 bottom-0 w-1 transition-opacity ${isMastered ? 'bg-[var(--color-gold)] opacity-70' : 'bg-[var(--color-gold)] opacity-30 group-hover:opacity-100'}`} />
-                                                            <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm ${isMastered ? 'bg-[var(--color-gold)]/15' : 'bg-[rgb(var(--color-fg))]/5'}`}>
-                                                                {trick.icon}
+                                                            <div className={`w-9 h-9 rounded-full flex items-center justify-center ${isMastered ? 'bg-[var(--color-gold)]/15 text-[var(--color-gold)]' : 'bg-[rgb(var(--color-fg))]/5 text-[rgb(var(--color-fg))]/70'}`}>
+                                                                <TrickIcon id={trick.id} size={20} />
                                                             </div>
                                                             <div className="flex-1 min-w-0">
                                                                 <h3 className="chalk text-sm text-[rgb(var(--color-fg))]/90 group-hover:text-[var(--color-gold)] transition-colors truncate">

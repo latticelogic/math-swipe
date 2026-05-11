@@ -5,6 +5,7 @@ import type { MagicTrick } from '../utils/mathTricks';
 import { TrickPractice } from './TrickPractice';
 import { MathExpr } from './MathExpr';
 import { AutoFitEquation } from './AutoFitEquation';
+import { TrickIcon } from './TrickIcon';
 
 interface Props {
     trick: MagicTrick;
@@ -61,7 +62,9 @@ export function TrickLesson({ trick, onClose }: Props) {
                 className="flex-1 flex flex-col items-center justify-center -mt-12 text-center w-full max-w-md mx-auto px-4 touch-none"
                 onPanEnd={handlePanEnd}
             >
-                <div className="text-4xl mb-4">{trick.icon}</div>
+                <div className="mb-4 text-[var(--color-chalk)]">
+                    <TrickIcon id={trick.id} size={42} />
+                </div>
                 <h2 className="chalk text-2xl text-[var(--color-gold)] mb-8">{trick.title}</h2>
 
                 {/* Example Equation — auto-fits via JS measurement.
