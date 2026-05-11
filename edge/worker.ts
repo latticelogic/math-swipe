@@ -223,12 +223,17 @@ export default {
         const origin = env.PUBLIC_ORIGIN ?? url.origin;
 
         // Always serve index.html (the SPA renders the actual UI client-side).
-        // Fetch from the request's own origin — env.ASSETS routes by path on
-        // the incoming Request URL, and using PUBLIC_ORIGIN here breaks preview
-        // deploys (where the hostname is <hash>.<project>.pages.dev, not the
-        // canonical origin). PUBLIC_ORIGIN is only used in the rendered OG
-        // tags below where we want stable URLs for social-card crawlers.
-        const indexReq = new Request(`${url.origin}/index.html`, request);
+        // Two non-obvious things:
+        //   1. Fetch from the request's own origin, not PUBLIC_ORIGIN —
+        //      env.ASSETS routes by path on the Request URL, and preview
+        //      deploys live on <hash>.<project>.pages.dev hostnames that
+        //      differ from the canonical PUBLIC_ORIGIN.
+        //   2. Fetch '/' (not '/index.html'). Cloudflare Pages issues a 308
+        //      from /index.html → / for SEO canonicalization, so fetching
+        //      /index.html via ASSETS returns an empty 308 redirect body.
+        // PUBLIC_ORIGIN is still used below in the rendered OG meta tags
+        // where we want stable canonical URLs for social-card crawlers.
+        const indexReq = new Request(`${url.origin}/`, request);
         const indexRes = await env.ASSETS.fetch(indexReq);
         const html = await indexRes.text();
 
