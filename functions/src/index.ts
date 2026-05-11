@@ -26,17 +26,23 @@
 import * as admin from 'firebase-admin';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { onDocumentUpdated } from 'firebase-functions/v2/firestore';
-import { defineString } from 'firebase-functions/params';
+import { defineSecret } from 'firebase-functions/params';
 import * as webpush from 'web-push';
 import * as logger from 'firebase-functions/logger';
 
 admin.initializeApp();
 const db = admin.firestore();
 
-// Configure VAPID once. Deploy-time params let you rotate without code changes.
-const VAPID_PUBLIC = defineString('VAPID_PUBLIC');
-const VAPID_PRIVATE = defineString('VAPID_PRIVATE');
-const VAPID_SUBJECT = defineString('VAPID_SUBJECT', { default: 'mailto:noreply@example.com' });
+// VAPID credentials live in Secret Manager. Even the public key is a secret
+// here (rather than a plain param) so rotation is one CLI command + a
+// function redeploy, with no code edits.
+//
+//   firebase functions:secrets:set VAPID_PUBLIC --data-file -
+//   firebase functions:secrets:set VAPID_PRIVATE --data-file -
+//   firebase functions:secrets:set VAPID_SUBJECT --data-file -
+const VAPID_PUBLIC = defineSecret('VAPID_PUBLIC');
+const VAPID_PRIVATE = defineSecret('VAPID_PRIVATE');
+const VAPID_SUBJECT = defineSecret('VAPID_SUBJECT');
 
 function configurePush() {
     webpush.setVapidDetails(
@@ -105,7 +111,11 @@ async function sendOne(uid: string, sub: PushSubscriptionDoc, payload: Notificat
 // ── 1. Daily reminder ─────────────────────────────────────────────────────────
 
 export const dailyReminder = onSchedule(
-    { schedule: '0 17 * * *', timeZone: 'America/Los_Angeles' }, // 5pm PT each day
+    {
+        schedule: '0 17 * * *',
+        timeZone: 'America/Los_Angeles',
+        secrets: [VAPID_PUBLIC, VAPID_PRIVATE, VAPID_SUBJECT],
+    },
     async () => {
         configurePush();
         const cutoff = Date.now() - 18 * 60 * 60 * 1000; // 18h ago
@@ -137,7 +147,12 @@ export const dailyReminder = onSchedule(
 
 // ── 2. You got beaten ─────────────────────────────────────────────────────────
 
-export const notifyBeaten = onDocumentUpdated('users/{uid}', async (event) => {
+export const notifyBeaten = onDocumentUpdated(
+    {
+        document: 'users/{uid}',
+        secrets: [VAPID_PUBLIC, VAPID_PRIVATE, VAPID_SUBJECT],
+    },
+    async (event) => {
     const before = event.data?.before.data();
     const after = event.data?.after.data();
     if (!before || !after) return;

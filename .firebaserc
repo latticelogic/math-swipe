@@ -1,5 +1,9 @@
 {
   "projects": {
-    "default": "scribble-math-prod"
-  }
+    "default": "math-swipe-prod",
+    "prod": "math-swipe-prod",
+    "legacy": "scribble-math-prod"
+  },
+  "targets": {},
+  "etags": {}
 }
