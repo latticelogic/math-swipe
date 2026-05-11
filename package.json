@@ -5,11 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && npm run build:worker",
+    "build:worker": "esbuild edge/worker.ts --bundle --format=esm --target=es2022 --outfile=dist/_worker.js --platform=neutral",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest",
-    "verify": "eslint . && tsc -b && vitest run && vite build",
+    "verify": "eslint . && tsc -b && vitest run && vite build && npm run build:worker",
     "prepare": "node -e \"const fs=require('fs'),p='.git/hooks/pre-push';if(!fs.existsSync(p)){fs.mkdirSync('.git/hooks',{recursive:true});fs.writeFileSync(p,'#!/bin/sh\\nnpm run verify\\n');try{fs.chmodSync(p,0o755)}catch{}}\""
   },
   "dependencies": {

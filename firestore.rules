@@ -4,8 +4,16 @@ service cloud.firestore {
 
     // ── Users Collection ──
     match /users/{uid} {
-      // Any authenticated user can read (needed for leaderboard)
-      allow read: if request.auth != null;
+      // Reads are public so the Cloudflare edge Worker can inject per-
+      // profile OG meta tags AND so the in-app leaderboard works without
+      // an authenticated round-trip. Every field stored here is already
+      // public (displayName, totals, achievements, cosmetics) — there is
+      // no PII on this doc. **If you ever add email/phone/payment-info to
+      // this collection, either narrow this rule to a field allow-list or
+      // move the sensitive fields to a separate `users-private/{uid}`
+      // collection with the strict rule.** WRITE stays owner-only via the
+      // rule below.
+      allow read: if true;
 
       // Users can only write their OWN document
       // Field validation: prevent injecting arbitrary large payloads
