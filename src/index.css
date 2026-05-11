@@ -1,5 +1,52 @@
 @import "tailwindcss";
 
+/* ── Self-hosted fonts ──
+   These were previously fetched from Google Fonts CDN at runtime, which
+   produced intermittent NetworkError on first load behind some CSP
+   configurations (font-src allowed gstatic.com but connect-src didn't —
+   modern Chromium requires both). Self-hosting removes the dependency
+   entirely, fixes the first-load flash, and avoids the GDPR risk of
+   sending visitor IPs to Google.
+   Files live in public/fonts/ and are precached by the service worker. */
+
+/* Architects Daughter — latin-ext */
+@font-face {
+  font-family: 'Architects Daughter';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/architects-daughter.latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* Architects Daughter — latin */
+@font-face {
+  font-family: 'Architects Daughter';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/architects-daughter.latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* Fredericka the Great — latin-ext */
+@font-face {
+  font-family: 'Fredericka the Great';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/fredericka-the-great.latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* Fredericka the Great — latin */
+@font-face {
+  font-family: 'Fredericka the Great';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/fredericka-the-great.latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
 /* ── Theme ── */
 @theme {
   --font-chalk: "Fredericka the Great", cursive;
@@ -76,23 +123,6 @@
     font-family: var(--font-ui);
     -webkit-font-smoothing: antialiased;
   }
-}
-
-/* ── Auto-fitting equations ──
-   For places where we render a long KaTeX equation that would clip off the
-   viewport on narrow phones. KaTeX width scales linearly with font-size,
-   so font-size: clamp() with vw upper bound keeps the equation inside the
-   viewport regardless of length. Tuned so equations like
-   "34 × 12 = 34 × 10 + 34 × 2" fit at ~360px viewport width. */
-.fit-equation {
-  font-size: clamp(0.875rem, 5vw, 2.25rem);
-  line-height: 1.2;
-  max-width: 100%;
-  text-align: center;
-}
-
-.fit-equation .katex-display {
-  margin: 0;
 }
 
 /* ── Themed scrollbars ──
