@@ -147,6 +147,21 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // ── Push subscriptions ──
+    // One doc per uid holding a Web Push token + per-user opt-in flags.
+    // The Cloud Function reads these to decide who to notify; the user
+    // owns their own row. Reads/deletes are scoped to the owner; writes
+    // additionally enforce a strict allow-list of fields.
+    match /pushSubscriptions/{uid} {
+      allow read, delete: if request.auth != null && request.auth.uid == uid;
+      allow write: if request.auth != null
+                   && request.auth.uid == uid
+                   && request.resource.data.keys().hasOnly([
+                        'endpoint', 'keys', 'userAgent',
+                        'dailyEnabled', 'pingsEnabled', 'updatedAt'
+                      ]);
+    }
+
     // ── Web Vitals (performance monitoring) ──
     match /vitals/{vitalId} {
       allow read: if false;

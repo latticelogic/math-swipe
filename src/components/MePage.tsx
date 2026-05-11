@@ -8,6 +8,7 @@ import { CHALK_THEMES, type ChalkTheme } from '../utils/chalkThemes';
 import { SWIPE_TRAILS } from '../utils/trails';
 import { TEACHERS, DEFAULT_TEACHER_ID } from '../domains/math/teachers';
 import { RANKS, getRank } from '../domains/math/ranks';
+import { PushOptIn } from './PushOptIn';
 
 interface Props {
     stats: ReturnType<typeof useStats>['stats'];
@@ -32,6 +33,7 @@ interface Props {
     onBadgeChange: (id: string) => void;
     activeTeacherId: string;
     onTeacherChange: (id: string) => void;
+    uid: string | null;
 }
 
 // Rank ladder + getRank helper extracted to ../domains/math/ranks so the
@@ -59,7 +61,7 @@ function getMasteryInfo(xp: number) {
     }
 }
 
-export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked, activeCostume, onCostumeChange, activeTheme, onThemeChange, activeTrailId, onTrailChange, displayName, onDisplayNameChange, isAnonymous, onLinkGoogle, onSendEmailLink, ageBand, activeBadge, onBadgeChange, activeTeacherId, onTeacherChange }: Props) {
+export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked, activeCostume, onCostumeChange, activeTheme, onThemeChange, activeTrailId, onTrailChange, displayName, onDisplayNameChange, isAnonymous, onLinkGoogle, onSendEmailLink, ageBand, activeBadge, onBadgeChange, activeTeacherId, onTeacherChange, uid }: Props) {
     const [showRanks, setShowRanks] = useState(false);
     const [resetConfirm, setResetConfirm] = useState<string | null>(null);
     const [editingName, setEditingName] = useState(false);
@@ -514,6 +516,10 @@ export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked,
                     })}
                 </div>
             </div>
+
+            {/* Push notification opt-in (renders gracefully when push is
+                unconfigured — see VITE_VAPID_PUBLIC_KEY in .env.example) */}
+            <PushOptIn uid={uid} />
 
             <button
                 onClick={() => {

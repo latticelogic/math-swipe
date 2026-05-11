@@ -845,6 +845,7 @@ function App() {
               onBadgeChange={updateBadge}
               activeTeacherId={savedTeacherId as string}
               onTeacherChange={setSavedTeacherId}
+              uid={uid}
             /></Suspense>
           </motion.div>
         )}

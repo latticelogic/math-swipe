@@ -34,3 +34,8 @@ dist-ssr
 *.png
 !public/*.png
 !src/assets/**/*.png
+
+# Cloud Functions build artifacts + nested deps
+functions/lib/
+functions/node_modules/
+functions/.runtimeconfig.json
