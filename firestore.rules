@@ -155,6 +155,25 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // ── Push events (delivery analytics) ──
+    // Append-only event stream. Clients write `clicked` events when they
+    // drain the SW's IDB buffer; the Cloud Function writes `sent` and
+    // `failed` events directly via the admin SDK (rules don't apply to it).
+    // Reads are admin-only — grant the `isAdmin` custom claim on the uid
+    // you want to access analytics from.
+    match /pushEvents/{eventId} {
+      allow read: if request.auth != null && request.auth.token.isAdmin == true;
+      allow create: if request.auth != null
+                    && request.resource.data.uid == request.auth.uid
+                    && request.resource.data.keys().hasOnly([
+                         'uid', 'kind', 'event', 'clientTs', 'timestamp'
+                       ])
+                    && request.resource.data.event == 'clicked'
+                    && request.resource.data.kind is string
+                    && request.resource.data.kind.size() <= 30;
+      allow update, delete: if false;
+    }
+
     // ── Push subscriptions ──
     // One doc per uid holding a Web Push token + per-user opt-in flags.
     // The Cloud Function reads these to decide who to notify; the user

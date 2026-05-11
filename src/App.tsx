@@ -5,6 +5,7 @@ import { BlackboardLayout } from './components/BlackboardLayout';
 import { ProblemView } from './components/ProblemView';
 import { Teacher } from './components/Teacher';
 import { TEACHERS, DEFAULT_TEACHER_ID, resolveActiveTeacher } from './domains/math/teachers';
+import { flushPendingPushEvents, attachPushEventFlushListener } from './utils/pushEvents';
 import { ScoreCounter } from './components/ScoreCounter';
 import { BottomNav } from './components/BottomNav';
 import { ActionButtons } from './components/ActionButtons';
@@ -31,6 +32,7 @@ const LeaguePage = lazy(() => lazyRetry(() => import('./components/LeaguePage'))
 const MePage = lazy(() => lazyRetry(() => import('./components/MePage')).then(m => ({ default: m.MePage })));
 const TricksPage = lazy(() => lazyRetry(() => import('./components/TricksPage')).then(m => ({ default: m.TricksPage })));
 const ProfilePage = lazy(() => lazyRetry(() => import('./components/ProfilePage')).then(m => ({ default: m.ProfilePage })));
+const AdminPushAnalytics = lazy(() => lazyRetry(() => import('./components/AdminPushAnalytics')).then(m => ({ default: m.AdminPushAnalytics })));
 
 import { useGameLoop } from './hooks/useGameLoop';
 import { useStats } from './hooks/useStats';
@@ -141,6 +143,9 @@ function App() {
     const m = window.location.pathname.match(/^\/u\/([^/]+)\/?$/);
     return m ? m[1] : null;
   });
+  const [isAdminRoute, setIsAdminRoute] = useState<boolean>(() =>
+    /^\/admin\/push\/?$/.test(window.location.pathname),
+  );
   const [challengeId, setChallengeId] = useState<string | null>(() => {
     const params = new URLSearchParams(window.location.search);
     const c = params.get('c');
@@ -248,6 +253,13 @@ function App() {
   const { showSummary, setShowSummary, isNewSpeedrunRecord } = useAutoSummary(
     dailyComplete, speedrunFinalTime, stats.bestSpeedrunTime, updateBestSpeedrunTime, hardMode
   );
+
+  // ── Push event flusher: drain SW-queued click events to Firestore ──
+  useEffect(() => {
+    if (!uid) return;
+    void flushPendingPushEvents(uid);
+    return attachPushEventFlushListener(uid);
+  }, [uid]);
 
   // ── Ping Listener (Async Taunts) ──
   const [pingMessage, setPingMessage] = useState<string | null>(null);
@@ -446,6 +458,24 @@ function App() {
             }}
             onBackToGame={() => {
               setProfileSlug(null);
+              window.history.replaceState({}, '', '/');
+            }}
+          />
+        </Suspense>
+      </BlackboardLayout>
+    );
+  }
+
+  // Admin push analytics route — owner-only by Firebase custom claim.
+  // Renders an authorization gate first so non-admins still get a clean
+  // "back to game" path if they stumble onto the URL.
+  if (isAdminRoute) {
+    return (
+      <BlackboardLayout>
+        <Suspense fallback={<LoadingFallback />}>
+          <AdminPushAnalytics
+            onBackToGame={() => {
+              setIsAdminRoute(false);
               window.history.replaceState({}, '', '/');
             }}
           />

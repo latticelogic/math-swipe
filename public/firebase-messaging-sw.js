@@ -61,10 +61,39 @@ self.addEventListener('push', (event) => {
     event.waitUntil(self.registration.showNotification(title, options));
 });
 
+/** Stash an analytics event in IndexedDB so the next live tab can flush it
+ *  to Firestore. We can't write to Firestore from the SW (no SDK), and we
+ *  can't guarantee a tab is currently open to handle a postMessage — so
+ *  IDB is the durable buffer. The main app drains it on boot. */
+async function recordPushEvent(kind, event) {
+    try {
+        const db = await new Promise((resolve, reject) => {
+            const req = indexedDB.open('math-swipe-push-events', 1);
+            req.onupgradeneeded = () => {
+                req.result.createObjectStore('events', { keyPath: 'id', autoIncrement: true });
+            };
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => reject(req.error);
+        });
+        const tx = db.transaction('events', 'readwrite');
+        tx.objectStore('events').add({ kind, event, ts: Date.now() });
+        await new Promise((resolve, reject) => {
+            tx.oncomplete = () => resolve();
+            tx.onerror = () => reject(tx.error);
+        });
+    } catch {
+        // IDB might be disabled (private mode); analytics loss is acceptable
+    }
+}
+
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
     const url = (event.notification.data && event.notification.data.url) || '/';
+    const kind = (event.notification.data && event.notification.data.kind) || 'generic';
     event.waitUntil((async () => {
+        // Stash the click event for the next tab to flush
+        await recordPushEvent(kind, 'clicked');
+
         const allClients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
         // If a tab is already open at our origin, focus it and navigate
         for (const client of allClients) {
@@ -73,10 +102,12 @@ self.addEventListener('notificationclick', (event) => {
                 if ('navigate' in client) {
                     try { await client.navigate(url); } catch { /* navigate not always allowed */ }
                 }
+                // Wake the tab so it flushes pending events from IDB
+                client.postMessage({ type: 'push-event-flush' });
                 return;
             }
         }
-        // No tab open — open a new one
+        // No tab open — open a new one; the app will flush IDB on boot
         await self.clients.openWindow(url);
     })());
 });

@@ -61,6 +61,22 @@ interface NotificationPayload {
     kind: 'daily' | 'beaten' | 'generic';
 }
 
+/** Append a row to `pushEvents/` so the analytics view can compute
+ *  delivery / failure / click rates. Best-effort — never blocks send. */
+async function logPushEvent(uid: string, kind: string, event: 'sent' | 'failed', errorCode?: number) {
+    try {
+        await db.collection('pushEvents').add({
+            uid,
+            kind,
+            event,
+            ...(typeof errorCode === 'number' ? { errorCode } : {}),
+            timestamp: admin.firestore.FieldValue.serverTimestamp(),
+        });
+    } catch (err) {
+        logger.warn('Failed to log pushEvent', { uid, kind, event, err });
+    }
+}
+
 async function sendOne(uid: string, sub: PushSubscriptionDoc, payload: NotificationPayload): Promise<boolean> {
     try {
         await webpush.sendNotification(
@@ -70,9 +86,11 @@ async function sendOne(uid: string, sub: PushSubscriptionDoc, payload: Notificat
                 data: { url: payload.url ?? '/', kind: payload.kind },
             }),
         );
+        await logPushEvent(uid, payload.kind, 'sent');
         return true;
     } catch (err) {
         const status = (err as { statusCode?: number }).statusCode;
+        await logPushEvent(uid, payload.kind, 'failed', status);
         // 404 / 410 = subscription expired or unsubscribed; clean up.
         if (status === 404 || status === 410) {
             logger.info('Subscription expired, removing', { uid });
