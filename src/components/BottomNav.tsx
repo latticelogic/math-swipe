@@ -59,8 +59,12 @@ export const BottomNav = memo(function BottomNav({ active, onChange, tabs: tabsP
                     <motion.button
                         key={tab.id}
                         onClick={() => onChange(tab.id)}
-                        className={`relative flex flex-col items-center gap-0.5 py-1 px-4 rounded-lg transition-colors ${isActive
-                            ? 'text-[var(--color-gold)]'
+                        aria-current={isActive ? 'page' : undefined}
+                        // Active state is conveyed by a soft gold pill behind the
+                        // icon column rather than a tiny dot — the dot was easy
+                        // to miss and competed visually with focus rings.
+                        className={`relative flex flex-col items-center gap-0.5 py-1 px-4 rounded-xl transition-colors ${isActive
+                            ? 'text-[var(--color-gold)] bg-[var(--color-gold)]/10'
                             : 'text-[rgb(var(--color-fg))]/60 active:text-[rgb(var(--color-fg))]/80'
                             }`}
                         whileTap={{ scale: 0.92 }}
@@ -69,10 +73,6 @@ export const BottomNav = memo(function BottomNav({ active, onChange, tabs: tabsP
                         <span className="text-[10px] ui tracking-wide">
                             {tab.label}
                         </span>
-                        <div
-                            className="absolute -bottom-0.5 w-1 h-1 rounded-full bg-[var(--color-gold)] transition-transform duration-200"
-                            style={{ transform: isActive ? 'scale(1)' : 'scale(0)' }}
-                        />
                     </motion.button>
                 );
             })}

@@ -150,7 +150,11 @@ export const Teacher = memo(function Teacher({
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -6, scale: 0.8 }}
                         transition={{ duration: 0.25 }}
-                        className="absolute bottom-full mb-2 right-0 max-w-[220px] text-right bg-[var(--color-surface)] border border-[rgb(var(--color-fg))]/15 rounded-xl px-3 py-1.5 text-[12px] ui text-[rgb(var(--color-fg))]/80 leading-snug whitespace-normal break-words"
+                        // width auto-sizes to content (no premature wrap on
+                        // short quips), capped at 260px so very long messages
+                        // still fit narrow viewports. text-balance distributes
+                        // wrap points evenly when wrapping does happen.
+                        className="absolute bottom-full mb-2 right-0 w-max max-w-[260px] text-right bg-[var(--color-surface)] border border-[rgb(var(--color-fg))]/15 rounded-xl px-3 py-1.5 text-[12px] ui text-[rgb(var(--color-fg))]/80 leading-snug whitespace-normal break-words text-balance"
                     >
                         {currentMessage}
                         <div className="absolute -bottom-1.5 right-4 w-3 h-3 bg-[var(--color-overlay)] border-b border-r border-[rgb(var(--color-fg))]/15 rotate-45" />
