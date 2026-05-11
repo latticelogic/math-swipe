@@ -18,7 +18,7 @@ production should be owned by the company account, not Tim's personal.**
 | Firebase project (production) | `math-swipe-prod` | Owned by `tim@latticelogic.app`. Org id `138884922843`. Created 2026-05-11. |
 | Firebase project (legacy / shared) | `scribble-math-prod` | DO NOT deploy to this. Hosts another company's classroom app with 80+ functions. A naive deploy would delete them all. |
 | GitHub | `latticelogic` org | Repo at `github.com/latticelogic/math-swipe`. Owner admin: `njytim-cyber` (renamed legacy account). Transferred 2026-05-11. |
-| Cloudflare Pages | `tim@latticelogic.app` (account signed up, project not yet created) | TODO: `wrangler pages project create math-swipe`, connect to `latticelogic/math-swipe`, set env vars `FIREBASE_PROJECT_ID=math-swipe-prod` and `PUBLIC_ORIGIN`. |
+| Cloudflare Pages | `tim@latticelogic.app`, account id `00e07444cae65d675a140f8560429fad` | Project `math-swipe`, production URL `https://math-swipe-c7k.pages.dev`. Production branch `master`. Env vars `FIREBASE_PROJECT_ID`, `PUBLIC_ORIGIN`, `NODE_VERSION` set on both production + preview configs. Custom domain not yet attached (pending product name decision). |
 | Stripe | not yet created | Sign up under company entity when payments are implemented |
 | Apple Developer | not yet enrolled | Must enroll as Lattice Logic with company DUNS, $99/yr. 1-3 week verification window |
 | Google Play Console | not yet enrolled | Must enroll as Lattice Logic, $25 one-time |
@@ -34,6 +34,31 @@ firebase deploy --only firestore:rules --account tim@latticelogic.app
 
 **Always pass `--account tim@latticelogic.app` for math-swipe deploys** to
 avoid accidentally targeting `scribble-math-prod`.
+
+### Cloudflare Pages deploys
+
+**Deploys are CI-driven**, not local. The workflow at
+`.github/workflows/deploy.yml` runs the full verify chain and then
+`wrangler pages deploy dist` on every push:
+
+- push to `master` → production deploy at `math-swipe-c7k.pages.dev`
+- push to `dev` or any other branch → preview deploy (branch-aliased URL)
+- pull_request to `master` → preview deploy, URL posted as PR comment
+
+**To ship a change**: merge to master. The Action handles the rest.
+
+**Repo secrets required for CI** (already configured):
+`CLOUDFLARE_API_TOKEN` (long-lived, Edit Cloudflare Workers scope),
+`CLOUDFLARE_ACCOUNT_ID`, and the six `VITE_FIREBASE_*` keys plus optional
+`VITE_VAPID_PUBLIC_KEY` (Vite inlines these into the client bundle at
+build time, so they must be present during `npm run verify`).
+
+**Local `wrangler` does not work on Windows ARM64** — `workerd` (the
+runtime wrangler bundles for `wrangler dev`) lacks a win-arm64 binary
+and crashes wrangler at module load. For one-off ops use the Cloudflare
+REST API directly (`curl https://api.cloudflare.com/client/v4/...`),
+or run wrangler from CI / a non-ARM machine / WSL (if functional). The
+project's normal deploy path doesn't need local wrangler at all.
 
 ## Deploy chain
 
