@@ -94,10 +94,14 @@
     radial-gradient(ellipse at 50% 80%, rgba(229, 231, 235, 0.08) 0%, transparent 50%);
 }
 
-/* ── Bottom nav: keep accessible focus-ring for keyboard users only.
-   Without :focus-visible discrimination the ring sticks after a tap and
-   creates ambiguity between "currently active tab" and "last-tapped tab". */
-nav button:focus:not(:focus-visible) {
+/* ── Suppress sticky pointer-induced focus rings while preserving keyboard
+   accessibility. Applies to nav AND all icon-only buttons in the action
+   column — most visibly the hard-mode skull, which in light mode renders the
+   browser default outline as a stark black box around the emoji. */
+nav button:focus:not(:focus-visible),
+.action-icon:focus:not(:focus-visible),
+button.action-icon-skull:focus:not(:focus-visible),
+button.action-icon-skull-active:focus:not(:focus-visible) {
   outline: none;
 }
 

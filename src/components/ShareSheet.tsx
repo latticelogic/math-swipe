@@ -16,6 +16,7 @@
  */
 
 import { memo, useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface ShareSheetProps {
@@ -42,6 +43,10 @@ interface ChannelDef {
 }
 
 function buildChannels(): ChannelDef[] {
+    // Discord intentionally omitted: it has no public `share?text=` deep link,
+    // so the only realistic flow is "copy text and paste in a channel" — which
+    // is exactly what `Copy text` already does. A fake Discord button that
+    // secretly copies text would mislead users about where it sent.
     return [
         { id: 'native', label: 'Share…', icon: '📤', available: () => typeof navigator !== 'undefined' && typeof navigator.share === 'function' },
         { id: 'copy-link', label: 'Copy link', icon: '🔗', available: () => true },
@@ -145,7 +150,10 @@ export const ShareSheet = memo(function ShareSheet({ open, onClose, text, url, i
         }
     }
 
-    return (
+    // Portal to body so the sheet escapes its parent's stacking context.
+    // Without this, mounting inside the SessionSummary's z-50 modal can trap
+    // the fixed-position sheet below the summary's backdrop on some browsers.
+    return createPortal(
         <AnimatePresence>
             {open && (
                 <>
@@ -227,6 +235,7 @@ export const ShareSheet = memo(function ShareSheet({ open, onClose, text, url, i
                     </motion.div>
                 </>
             )}
-        </AnimatePresence>
+        </AnimatePresence>,
+        document.body,
     );
 });

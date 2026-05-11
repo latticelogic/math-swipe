@@ -34,13 +34,15 @@ export const QuestionTypePicker = memo(function QuestionTypePicker({ current, on
 
     return (
         <>
-            {/* Toggle button */}
-            <motion.button
+            {/* Toggle button — plain <button> (not motion.button) so the tap
+                feels instant. whileTap fires on pointerup which adds perceived
+                latency for a button that opens a modal; CSS :active fires on
+                pointerdown. */}
+            <button
                 onClick={() => setOpen(o => !o)}
                 aria-label={`Question type: ${currentEntry?.label ?? 'select'}`}
                 aria-expanded={open}
-                className={`action-icon w-11 h-11 flex items-center justify-center text-[rgb(var(--color-fg))]/50 chalk active:text-[var(--color-gold)] ${iconSizeClass(currentIcon)}`}
-                whileTap={{ scale: 0.88 }}
+                className={`action-icon w-11 h-11 flex items-center justify-center text-[rgb(var(--color-fg))]/50 chalk active:text-[var(--color-gold)] active:scale-90 ${iconSizeClass(currentIcon)}`}
             >
                 {currentIcon.includes('\n') ? (
                     <span className="inline-grid grid-cols-2 gap-x-0.5 text-[14px] leading-tight font-bold">{
@@ -49,7 +51,7 @@ export const QuestionTypePicker = memo(function QuestionTypePicker({ current, on
                         ))
                     }</span>
                 ) : currentIcon}
-            </motion.button>
+            </button>
 
             {/* Full-screen overlay picker — portaled to body to escape #root's position:fixed */}
             {createPortal(
@@ -62,17 +64,19 @@ export const QuestionTypePicker = memo(function QuestionTypePicker({ current, on
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
-                                transition={{ duration: 0.15 }}
+                                transition={{ duration: 0.1 }}
                                 onClick={() => setOpen(false)}
                             />
 
-                            {/* Centered grouped picker */}
+                            {/* Centered grouped picker — faster entrance and a
+                                less-droopy initial scale so the modal lands
+                                under the user's tap with less perceived lag. */}
                             <motion.div
                                 className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-[var(--color-overlay)] border border-[rgb(var(--color-fg))]/15 rounded-2xl px-5 py-5 max-h-[70vh] overflow-y-auto w-[300px]"
-                                initial={{ opacity: 0, scale: 0.85 }}
+                                initial={{ opacity: 0, scale: 0.96 }}
                                 animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.85 }}
-                                transition={{ duration: 0.15 }}
+                                exit={{ opacity: 0, scale: 0.96 }}
+                                transition={{ duration: 0.12 }}
                             >
                                 {groups.map(group => {
                                     const items = bandTypes.filter(t => t.group === group);
