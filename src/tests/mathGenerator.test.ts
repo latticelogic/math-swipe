@@ -282,9 +282,14 @@ describe('mathGenerator.ts', () => {
         function meanSignal(type: QuestionType, d: number, hard: boolean): number {
             const sig = signalFor[type];
             if (!sig) throw new Error(`no signal defined for topic ${type}`);
+            // Use a seeded RNG so the test is deterministic. Without this,
+            // borderline-passing topics like `skip` (which has comparable
+            // magnitudes at d=1 vs d=5 by design) can flake under CI's
+            // Math.random sequence even when the curve is fine in aggregate.
+            const rng = createSeededRng(0xD1FF1C);
             let total = 0;
             for (let i = 0; i < SAMPLES; i++) {
-                total += sig(generateProblem(d, type, hard));
+                total += sig(generateProblem(d, type, hard, rng));
             }
             return total / SAMPLES;
         }
