@@ -7,6 +7,7 @@ import { AchievementBadge } from './AchievementBadge';
 import { CHALK_THEMES, type ChalkTheme } from '../utils/chalkThemes';
 import { SWIPE_TRAILS } from '../utils/trails';
 import { TEACHERS, DEFAULT_TEACHER_ID } from '../domains/math/teachers';
+import { RANKS, getRank } from '../domains/math/ranks';
 
 interface Props {
     stats: ReturnType<typeof useStats>['stats'];
@@ -33,36 +34,8 @@ interface Props {
     onTeacherChange: (id: string) => void;
 }
 
-/** Ranks with progressive XP thresholds (gets harder to level up) */
-const RANKS = [
-    { name: 'Beginner', emoji: '🌱', xp: 0 },
-    { name: 'Learner', emoji: '📚', xp: 100 },
-    { name: 'Thinker', emoji: '🧠', xp: 300 },
-    { name: 'Problem Solver', emoji: '🔧', xp: 600 },
-    { name: 'Calculator', emoji: '🖩', xp: 1000 },
-    { name: 'Mathematician', emoji: '📐', xp: 1800 },
-    { name: 'Wizard', emoji: '🧙', xp: 3000 },
-    { name: 'Grandmaster', emoji: '♟️', xp: 5000 },
-    { name: 'Legend', emoji: '👑', xp: 8000 },
-    { name: 'Mythic', emoji: '🌌', xp: 12000 },
-    { name: 'Transcendent', emoji: '✨', xp: 20000 },
-];
-
-function getRank(xp: number) {
-    let rank = RANKS[0];
-    let nextRank: typeof RANKS[number] | null = RANKS[1];
-    for (let i = RANKS.length - 1; i >= 0; i--) {
-        if (xp >= RANKS[i].xp) {
-            rank = RANKS[i];
-            nextRank = RANKS[i + 1] || null;
-            break;
-        }
-    }
-    const progress = nextRank
-        ? (xp - rank.xp) / (nextRank.xp - rank.xp)
-        : 1;
-    return { rank, nextRank, progress };
-}
+// Rank ladder + getRank helper extracted to ../domains/math/ranks so the
+// public profile page can reuse them.
 
 /** Mastery levels — post-max-rank infinite progression:
  *  ML1→ML2 costs 25k XP, each subsequent level 10k more. */

@@ -30,6 +30,7 @@ function lazyRetry<T extends Record<string, any>>(factory: () => Promise<T>): Pr
 const LeaguePage = lazy(() => lazyRetry(() => import('./components/LeaguePage')).then(m => ({ default: m.LeaguePage })));
 const MePage = lazy(() => lazyRetry(() => import('./components/MePage')).then(m => ({ default: m.MePage })));
 const TricksPage = lazy(() => lazyRetry(() => import('./components/TricksPage')).then(m => ({ default: m.TricksPage })));
+const ProfilePage = lazy(() => lazyRetry(() => import('./components/ProfilePage')).then(m => ({ default: m.ProfilePage })));
 
 import { useGameLoop } from './hooks/useGameLoop';
 import { useStats } from './hooks/useStats';
@@ -76,6 +77,40 @@ function generateMathFiniteSet(categoryId: string, challengeId: string | null): 
   return problems as EngineItem[];
 }
 
+/** Hand-drawn band icons replacing the 🐣/📚/🚀 emojis on the age toggle.
+ *  Emojis felt out of place against the otherwise emoji-free top-right area. */
+function AgeBandIcon({ band }: { band: AgeBand }) {
+    const common = { width: 16, height: 16, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
+    if (band === 'k2') {
+        // Sapling — two leaves above a curved stem
+        return (
+            <svg {...common}>
+                <path d="M12 21V12" />
+                <path d="M12 12 C 8 10 6 7 7 4 C 10 5 12 8 12 12" />
+                <path d="M12 12 C 16 10 18 7 17 4 C 14 5 12 8 12 12" />
+            </svg>
+        );
+    }
+    if (band === '35') {
+        // Open book
+        return (
+            <svg {...common}>
+                <path d="M3 6 L 12 8 L 21 6 L 21 19 L 12 21 L 3 19 Z" />
+                <path d="M12 8 L 12 21" />
+            </svg>
+        );
+    }
+    // 6+ : rocket — narrow tip, body, fins
+    return (
+        <svg {...common}>
+            <path d="M12 2 C 16 6 16 12 12 16 C 8 12 8 6 12 2 Z" />
+            <path d="M12 16 L 12 21" />
+            <path d="M9 13 L 6 18 L 9 17" />
+            <path d="M15 13 L 18 18 L 15 17" />
+        </svg>
+    );
+}
+
 function LoadingFallback() {
   return (
     <div className="flex-1 flex items-center justify-center">
@@ -99,12 +134,17 @@ function App() {
   const [hardMode, setHardMode] = useState(false);
   const [timedMode, setTimedMode] = useState(false);
 
-  // ── Check URL for challenge link ──
-  const [challengeId] = useState<string | null>(() => {
+  // ── Check URL for /u/<slug> profile link OR ?c=<challenge> link ──
+  // Profile is its own surface (router-style), challenge auto-loads inside
+  // the game tab. We capture both at boot and clean the URL once consumed.
+  const [profileSlug, setProfileSlug] = useState<string | null>(() => {
+    const m = window.location.pathname.match(/^\/u\/([^/]+)\/?$/);
+    return m ? m[1] : null;
+  });
+  const [challengeId, setChallengeId] = useState<string | null>(() => {
     const params = new URLSearchParams(window.location.search);
     const c = params.get('c');
     if (c) {
-      // Clean URL so refresh doesn't re-trigger
       window.history.replaceState({}, '', window.location.pathname);
     }
     return c;
@@ -388,6 +428,32 @@ function App() {
     return <BlackboardLayout><LoadingFallback /></BlackboardLayout>;
   }
 
+  // Public profile route — its own surface, replaces the rest of the app.
+  // Anonymous Firebase auth fires automatically for visitors landing here
+  // from a shared link, so the Firestore read below works without login.
+  if (profileSlug) {
+    return (
+      <BlackboardLayout>
+        <Suspense fallback={<LoadingFallback />}>
+          <ProfilePage
+            slug={profileSlug}
+            onChallenge={(id) => {
+              // Switch into challenge mode and clear the profile route
+              setChallengeId(id);
+              setQuestionType('challenge' as QuestionType);
+              setProfileSlug(null);
+              window.history.replaceState({}, '', '/');
+            }}
+            onBackToGame={() => {
+              setProfileSlug(null);
+              window.history.replaceState({}, '', '/');
+            }}
+          />
+        </Suspense>
+      </BlackboardLayout>
+    );
+  }
+
   return (
     <>
 
@@ -409,10 +475,10 @@ function App() {
                 const idx = AGE_BANDS.indexOf(ageBand);
                 handleBandChange(AGE_BANDS[(idx + 1) % AGE_BANDS.length]);
               }}
-              className="flex items-center gap-1 px-2 py-1 rounded-lg text-[rgb(var(--color-fg))]/50 active:text-[var(--color-gold)] transition-colors"
+              className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-[rgb(var(--color-fg))]/50 active:text-[var(--color-gold)] transition-colors"
               aria-label="Change age band"
             >
-              <span className="text-base">{BAND_LABELS[ageBand].emoji}</span>
+              <AgeBandIcon band={ageBand} />
               <span className="text-[10px] ui">{BAND_LABELS[ageBand].label}</span>
             </button>
             <button
@@ -817,6 +883,8 @@ function App() {
           timedMode={timedMode}
           speedrunFinalTime={speedrunFinalTime}
           isNewSpeedrunRecord={isNewSpeedrunRecord}
+          displayName={user?.displayName}
+          uid={uid}
         />
 
         {/* ── Weekly recap (first open of the week, only when idle on game tab) ── */}

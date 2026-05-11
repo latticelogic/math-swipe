@@ -2,6 +2,7 @@ import { memo, useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence, useSpring, useMotionValueEvent } from 'framer-motion';
 import { createChallengeId } from '../utils/dailyChallenge';
 import { ShareSheet } from './ShareSheet';
+import { buildProfileSlug } from '../utils/profileSlug';
 
 interface Props {
     solved: number;
@@ -17,6 +18,12 @@ interface Props {
     timedMode?: boolean;
     speedrunFinalTime?: number | null;
     isNewSpeedrunRecord?: boolean;
+    /** Used to build the public profile URL in the share payload — when both
+     *  are present, the share link points at /u/<name>-<uid4> instead of a
+     *  one-shot challenge URL. The profile page has higher hook conversion
+     *  because visitors see the brag *before* the math screen. */
+    displayName?: string;
+    uid?: string | null;
 }
 
 function formatTime(ms: number): string {
@@ -27,14 +34,20 @@ function formatTime(ms: number): string {
     return `${m}m ${s}s`;
 }
 
-/** Compose the share payload + challenge URL together so callers don't fork
- *  on URL generation. Returning both lets the modal show the URL separately
- *  (one-tap copy) while the text remains the full social-friendly caption. */
+/** Compose the share payload + URL together so callers don't fork on URL
+ *  generation. Returning both lets the modal show the URL separately (one-tap
+ *  copy) while the text remains the full social-friendly caption.
+ *
+ *  When `profileUrl` is provided we use the profile page; otherwise we fall
+ *  back to a one-shot challenge URL. The profile route is the better hook —
+ *  visitors see the brag *before* the math screen, so click-through to play
+ *  is higher. */
 function buildSharePayload(
     xp: number, streak: number, accuracy: number,
     history: boolean[], questionType: string,
     hardMode?: boolean, timedMode?: boolean,
     speedrunTime?: number | null,
+    profileUrl?: string | null,
 ): { text: string; url: string } {
     const emojis = history.map(ok => ok ? '🟩' : '🟥');
     const emojiRows: string[] = [];
@@ -52,7 +65,7 @@ function buildSharePayload(
             ? `💯 ${xp} pts, ${streak}🔥 — perfect run on Math Swipe${modeTag}`
             : `${xp} pts · ${streak}🔥 streak · ${accuracy}% — Math Swipe ${typeLabel}${modeTag}`;
 
-    const url = `${window.location.origin}?c=${createChallengeId()}`;
+    const url = profileUrl ?? `${window.location.origin}?c=${createChallengeId()}`;
 
     const text = [
         headline,
@@ -68,6 +81,7 @@ function buildSharePayload(
 export const SessionSummary = memo(function SessionSummary({
     solved, bestStreak: streak, accuracy, xpEarned, answerHistory, questionType, visible, onDismiss,
     hardMode, timedMode, speedrunFinalTime, isNewSpeedrunRecord,
+    displayName, uid,
 }: Props) {
     const [isSharing, setIsSharing] = useState(false);
     const cardRef = useRef<HTMLDivElement>(null);
@@ -126,9 +140,15 @@ export const SessionSummary = memo(function SessionSummary({
     const handleShare = async () => {
         if (isSharing) return;
         setIsSharing(true);
+        // Prefer the public profile URL when we have a uid + name — the
+        // visitor lands on the brag page first, which converts way better
+        // than dropping them straight into a math problem.
+        const profileUrl = (uid && displayName)
+            ? `${window.location.origin}/u/${buildProfileSlug(displayName, uid)}`
+            : null;
         const { text, url: challengeUrl } = buildSharePayload(
             xpEarned, streak, accuracy, answerHistory, questionType,
-            hardMode, timedMode, speedrunFinalTime,
+            hardMode, timedMode, speedrunFinalTime, profileUrl,
         );
         // Capture for the sheet in case we fall through
         setShareText(text);
