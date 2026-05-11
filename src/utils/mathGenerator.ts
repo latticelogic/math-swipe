@@ -50,6 +50,10 @@ function _generateProblem(difficulty: number, type: QuestionType, hardMode: bool
     if (type === 'mix-basic' || type === 'daily' || type === 'challenge') return _generateProblem(difficulty, pickRandom(BASIC_TYPES), hardMode);
     if (type === 'mix-all') return _generateProblem(difficulty, pickRandom(ALL_INDIVIDUAL), hardMode);
 
+    // Every generator now takes (difficulty, hardMode) per the difficulty-curve
+    // spec (docs/difficulty-curves.md). Topics that previously had zero-arg
+    // signatures were the source of the "flat curve" bug — they ignored both
+    // dials. Now uniform.
     switch (type) {
         case 'add': return genAdd(difficulty, hardMode);
         case 'subtract': return genSubtract(difficulty, hardMode);
@@ -61,22 +65,22 @@ function _generateProblem(difficulty: number, type: QuestionType, hardMode: bool
         case 'decimal': return genDecimal(difficulty, hardMode);
         case 'percent': return genPercent(difficulty, hardMode);
         case 'linear': return genLinear(difficulty, hardMode);
-        case 'add1': return genAdd1();
-        case 'sub1': return genSub1();
-        case 'bonds': return genBonds();
-        case 'doubles': return genDoubles();
-        case 'compare': return genCompare();
-        case 'skip': return genSkip();
-        case 'shapes': return genShapes();
-        case 'evenodd': return genEvenOdd();
-        case 'tens': return genTens();
-        case 'round': return genRound();
-        case 'orderops': return genOrderOps();
+        case 'add1': return genAdd1(difficulty, hardMode);
+        case 'sub1': return genSub1(difficulty, hardMode);
+        case 'bonds': return genBonds(difficulty, hardMode);
+        case 'doubles': return genDoubles(difficulty, hardMode);
+        case 'compare': return genCompare(difficulty, hardMode);
+        case 'skip': return genSkip(difficulty, hardMode);
+        case 'shapes': return genShapes(difficulty, hardMode);
+        case 'evenodd': return genEvenOdd(difficulty, hardMode);
+        case 'tens': return genTens(difficulty, hardMode);
+        case 'round': return genRound(difficulty, hardMode);
+        case 'orderops': return genOrderOps(difficulty, hardMode);
 
         case 'exponent': return genExponent(difficulty, hardMode);
         case 'negatives': return genNegatives(difficulty, hardMode);
-        case 'gcflcm': return genGcfLcm();
-        case 'ratio': return genRatio();
+        case 'gcflcm': return genGcfLcm(difficulty, hardMode);
+        case 'ratio': return genRatio(difficulty, hardMode);
         default: return genAdd(difficulty, hardMode); // Exhaustive fallback
     }
 }
@@ -84,20 +88,41 @@ function _generateProblem(difficulty: number, type: QuestionType, hardMode: bool
 // ── Original Generators ─────────────────────────────────
 
 function genAdd(d: number, hard: boolean): Problem {
-    const [lo, hi] = hard ? [100, 999] : addRange(d);
+    if (hard) {
+        // hardMode: 3-term addition or 4-digit 2-term (per spec)
+        if (_rng() > 0.5) {
+            const a = randInt(100, 9999), b = randInt(100, 9999);
+            return pack(`${a} + ${b}`, a + b, nearDistractors, `${a} + ${b}`);
+        }
+        const a = randInt(10, 99), b = randInt(10, 99), c = randInt(10, 99);
+        return pack(`${a} + ${b} + ${c}`, a + b + c, nearDistractors, `${a} + ${b} + ${c}`);
+    }
+    const [lo, hi] = addRange(d);
     const a = randInt(lo, hi), b = randInt(lo, hi);
     return pack(`${a} + ${b}`, a + b, nearDistractors, `${a} + ${b}`);
 }
 
 function genSubtract(d: number, hard: boolean): Problem {
-    const [lo, hi] = hard ? [100, 999] : addRange(d);
+    if (hard) {
+        // hardMode: 3-term subtraction or 4-digit 2-term (per spec)
+        if (_rng() > 0.5) {
+            const a = randInt(1000, 9999), b = randInt(100, 999);
+            return pack(`${a} − ${b}`, a - b, nearDistractors, `${a} - ${b}`);
+        }
+        const a = randInt(50, 99), b = randInt(10, 30), c = randInt(5, 20);
+        // a - b - c always > 0 since a >= 50 and b + c <= 50
+        return pack(`${a} − ${b} − ${c}`, a - b - c, nearDistractors, `${a} - ${b} - ${c}`);
+    }
+    const [lo, hi] = addRange(d);
     let a = randInt(lo, hi), b = randInt(lo, hi);
     if (a < b) [a, b] = [b, a];
     return pack(`${a} − ${b}`, a - b, nearDistractors, `${a} - ${b}`);
 }
 
 function genMultiply(d: number, hard: boolean): Problem {
-    const [minA, maxA, minB, maxB] = hard ? [2, 32, 2, 32] : mulRange(d);
+    // hardMode per spec: 13-99 × 13-99 — genuine mental multiplication
+    // outside the standard times table (escapes 12×12).
+    const [minA, maxA, minB, maxB] = hard ? [13, 99, 13, 99] : mulRange(d);
     const a = randInt(minA, maxA), b = randInt(minB, maxB);
     const flip = _rng() > 0.5;
     const expr = flip ? `${b} × ${a}` : `${a} × ${b}`;
@@ -106,39 +131,115 @@ function genMultiply(d: number, hard: boolean): Problem {
 }
 
 function genDivide(d: number, hard: boolean): Problem {
-    const [minA, maxA, minB, maxB] = hard ? [2, 32, 2, 32] : mulRange(d);
+    // hardMode: result is whole (no remainder) but dividend has 3-4 digits.
+    // We construct as `a * b` then divide by `b`, so the answer `a` is always
+    // whole. Choose `a` large to push dividend into 3-4 digit territory.
+    const [minA, maxA, minB, maxB] = hard ? [13, 99, 13, 99] : mulRange(d);
     const a = randInt(minA, maxA), b = randInt(minB, maxB);
     const product = a * b;
     return pack(`${product} ÷ ${b}`, a, nearDistractors, `${product} \\div ${b}`);
 }
 
 function genSquare(d: number, hard: boolean): Problem {
-    const max = hard ? 32 : (d <= 2 ? 9 : d <= 4 ? 12 : 15);
+    if (hard) {
+        // hardMode per spec: connect to the Tricks system — squaring numbers
+        // ending in 5 has a known mental shortcut (n5² = n(n+1) | 25).
+        // Mix this with bigger squares and the boundary case 99².
+        const r = _rng();
+        let n: number;
+        if (r < 0.5) {
+            // numbers ending in 5: 15, 25, 35, ..., 95
+            n = pickRandom([15, 25, 35, 45, 55, 65, 75, 85, 95]);
+        } else if (r < 0.7) {
+            // boundary case 99 (the "almost 100" trick)
+            n = 99;
+        } else {
+            // general bigger squares
+            n = randInt(20, 50);
+        }
+        return pack(`${n}²`, n * n, nearDistractors, `${n}^2`);
+    }
+    const max = d <= 1 ? 3 : d <= 2 ? 5 : d <= 3 ? 9 : d <= 4 ? 12 : 15;
     const n = randInt(2, max);
     return pack(`${n}²`, n * n, nearDistractors, `${n}^2`);
 }
 
 function genSqrt(d: number, hard: boolean): Problem {
-    const max = hard ? 32 : (d <= 2 ? 9 : d <= 4 ? 12 : 15);
+    if (hard) {
+        // hardMode per spec: same pool as squaring + non-perfect-square
+        // "nearest integer" questions to force estimation. Distractors for
+        // estimation problems are off-by-one neighbours.
+        const r = _rng();
+        if (r < 0.3) {
+            // Non-perfect: ask for nearest integer
+            const n = randInt(10, 200);
+            const answer = Math.round(Math.sqrt(n));
+            return pack(`√${n} ≈ ?`, answer, (ans) => [ans - 1, ans + 1], `\\sqrt{${n}} \\approx ?`);
+        }
+        const n = r < 0.7
+            ? pickRandom([15, 25, 35, 45, 55, 65, 75, 85, 95])
+            : randInt(20, 50);
+        return pack(`√${n * n}`, n, nearDistractors, `\\sqrt{${n * n}}`);
+    }
+    const max = d <= 1 ? 3 : d <= 2 ? 5 : d <= 3 ? 9 : d <= 4 ? 12 : 15;
     const n = randInt(2, max);
     return pack(`√${n * n}`, n, nearDistractors, `\\sqrt{${n * n}}`);
 }
 
 // ── Young K-2 Generators ────────────────────────────────
 
-function genAdd1(): Problem {
-    const a = randInt(1, 9), b = randInt(1, 9);
+function genAdd1(d: number, hard: boolean): Problem {
+    // Per spec:
+    //   Easy (d=1): 1-5 + 1-5 (counting-on-fingers range)
+    //   Med  (d=2-3): 1-9 + 1-9 (the current behaviour)
+    //   Hard (d=4-5): 1-12 + 1-12 (teen sums, e.g., 7+8)
+    //   hardMode: 1-20 + 1-20 with "make-a-ten" bias — sum must cross 10
+    if (hard) {
+        // Reject-sample: keep regenerating until sum > 10. With operands
+        // in 1-20 this almost always succeeds in 1-3 tries.
+        for (let attempt = 0; attempt < 10; attempt++) {
+            const a = randInt(1, 20), b = randInt(1, 20);
+            if (a + b > 10) return pack(`${a} + ${b}`, a + b, smallDistractors, `${a} + ${b}`);
+        }
+        // Fallback (vanishingly rare): just emit any pair
+        const a = randInt(6, 20), b = randInt(6, 20);
+        return pack(`${a} + ${b}`, a + b, smallDistractors, `${a} + ${b}`);
+    }
+    const max = d <= 1 ? 5 : d <= 3 ? 9 : 12;
+    const a = randInt(1, max), b = randInt(1, max);
     return pack(`${a} + ${b}`, a + b, smallDistractors, `${a} + ${b}`);
 }
 
-function genSub1(): Problem {
-    let a = randInt(2, 9), b = randInt(1, 9);
+function genSub1(d: number, hard: boolean): Problem {
+    // Mirrors genAdd1. hardMode forces regrouping (borrow across the tens
+    // digit, e.g., 14 − 7) by keeping the answer below the minuend's tens
+    // floor.
+    if (hard) {
+        for (let attempt = 0; attempt < 10; attempt++) {
+            const a = randInt(11, 20), b = randInt(1, 9);
+            // Regrouping required when a's units digit < b
+            if (a % 10 < b) return pack(`${a} − ${b}`, a - b, smallDistractors, `${a} - ${b}`);
+        }
+        const a = randInt(11, 18), b = randInt(5, 9);
+        let aa = a, bb = b; if (aa < bb) [aa, bb] = [bb, aa];
+        return pack(`${aa} − ${bb}`, aa - bb, smallDistractors, `${aa} - ${bb}`);
+    }
+    const max = d <= 1 ? 5 : d <= 3 ? 9 : 12;
+    let a = randInt(2, max), b = randInt(1, max);
     if (a < b) [a, b] = [b, a];
     return pack(`${a} − ${b}`, a - b, smallDistractors, `${a} - ${b}`);
 }
 
-function genBonds(): Problem {
-    const targets = [5, 10, 20];
+function genBonds(d: number, hard: boolean): Problem {
+    // Per spec:
+    //   Easy (d=1):   total = 5 only
+    //   Med  (d=2-3): total ∈ {5, 10}
+    //   Hard (d=4-5): total ∈ {10, 20}
+    //   hardMode:     total ∈ {20, 50, 100}
+    const targets = hard ? [20, 50, 100]
+        : d <= 1 ? [5]
+            : d <= 3 ? [5, 10]
+                : [10, 20];
     const total = pickRandom(targets);
     const part = randInt(1, total - 1);
     const answer = total - part;
@@ -146,15 +247,56 @@ function genBonds(): Problem {
     return { ...p, visual: 'bond' as const, bondTotal: total, bondPart: part };
 }
 
-function genDoubles(): Problem {
-    const n = randInt(1, 10);
+function genDoubles(d: number, hard: boolean): Problem {
+    // Per spec:
+    //   Easy (d=1):   1-5 doubled (memorized: 2,4,6,8,10)
+    //   Med  (d=2-3): 1-10 doubled (current)
+    //   Hard (d=4-5): 1-20 doubled (strategy: 14+14, 17+17)
+    //   hardMode:     1-50 doubled (real mental work: 37+37)
+    const max = hard ? 50 : d <= 1 ? 5 : d <= 3 ? 10 : 20;
+    const n = randInt(1, max);
     return pack(`${n} + ${n}`, n * 2, smallDistractors, `${n} + ${n}`);
 }
 
-function genCompare(): Problem {
-    const a = randInt(1, 20);
-    let b = randInt(1, 20);
-    if (a === b) b = a + randInt(1, 5); // avoid equal
+function genCompare(d: number, hard: boolean): Problem {
+    // hardMode per spec: compare *expressions* not numbers. This is the
+    // topic that benefits most from the qualitative shift — comparing 3×4
+    // vs 5+8 tests fluency, not magnitude perception.
+    if (hard) {
+        // Generate two small expressions and ask which evaluates larger.
+        // Pool: a+b, a-b, a×b, with operands in 1-12. Small enough to be
+        // mental-math; large enough that the *closeness* of values forces
+        // real computation (no instant visual answer).
+        const makeExpr = (): { str: string; val: number } => {
+            const op = pickRandom(['+', '-', '×']);
+            const a = randInt(1, 12), b = randInt(1, 12);
+            if (op === '+') return { str: `${a}+${b}`, val: a + b };
+            if (op === '×') return { str: `${a}×${b}`, val: a * b };
+            // ensure subtraction stays non-negative
+            const [hi, lo] = a >= b ? [a, b] : [b, a];
+            return { str: `${hi}-${lo}`, val: hi - lo };
+        };
+        let left: { str: string; val: number }, right: { str: string; val: number };
+        // Retry until non-equal (rare to be equal but possible)
+        let safety = 0;
+        do {
+            left = makeExpr();
+            right = makeExpr();
+        } while (left.val === right.val && ++safety < 10);
+        if (left.val === right.val) right.val = left.val + 1; // forced safety
+        const answer = Math.max(left.val, right.val);
+        const smaller = Math.min(left.val, right.val);
+        return pack(`Bigger: ${left.str} or ${right.str}?`, answer, () => {
+            const d1 = smaller;
+            let d2 = answer + randInt(1, 3);
+            if (d2 === d1) d2 = answer + 4;
+            return [d1, d2];
+        });
+    }
+    const max = d <= 1 ? 10 : d <= 3 ? 50 : 200;
+    const a = randInt(1, max);
+    let b = randInt(1, max);
+    if (a === b) b = a + randInt(1, 5);
     const answer = Math.max(a, b);
     const smaller = Math.min(a, b);
     return pack(`Bigger: ${a} or ${b}?`, answer, () => {
@@ -165,8 +307,35 @@ function genCompare(): Problem {
     });
 }
 
-function genSkip(): Problem {
-    const steps = pickRandom([2, 5, 10]);
+function genSkip(d: number, hard: boolean): Problem {
+    // Per spec:
+    //   Easy (d=1):   {2, 10}
+    //   Med  (d=2-3): {2, 5, 10}
+    //   Hard (d=4-5): {3, 4, 5, 7}
+    //   hardMode:     {6, 8, 9, 11, 12, 25} + backward (50% of the time)
+    let stepsPool: number[];
+    let allowBackward = false;
+    if (hard) {
+        stepsPool = [6, 8, 9, 11, 12, 25];
+        allowBackward = true;
+    } else if (d <= 1) {
+        stepsPool = [2, 10];
+    } else if (d <= 3) {
+        stepsPool = [2, 5, 10];
+    } else {
+        stepsPool = [3, 4, 5, 7];
+    }
+    const steps = pickRandom(stepsPool);
+    const backward = allowBackward && _rng() > 0.5;
+    if (backward) {
+        // Start high enough that we never cross zero
+        const start = randInt(4, 8) * steps;
+        const seq = [start, start - steps, start - 2 * steps];
+        const answer = start - 3 * steps;
+        return pack(`${seq.join(', ')}, ?`, answer, (ans) => {
+            return [ans + steps, ans - steps];
+        });
+    }
     const start = randInt(0, 5) * steps;
     const seq = [start, start + steps, start + 2 * steps];
     const answer = start + 3 * steps;
@@ -176,42 +345,83 @@ function genSkip(): Problem {
 }
 
 /** Shapes: count the sides of a common 2D shape. Visual answer set is the
- *  side counts so we keep the existing 3-option swipe machinery intact. */
-function genShapes(): Problem {
-    const SHAPES = [
+ *  side counts so we keep the existing 3-option swipe machinery intact.
+ *
+ *  hardMode (qualitative "shape properties" questions like "how many right
+ *  angles in a regular hexagon?") is deferred to a follow-up PR — it
+ *  requires a new question shape because the answer space isn't side-count.
+ *  In hardMode for now: widest side range (3-12) including dodecagon. */
+function genShapes(d: number, hard: boolean): Problem {
+    type ShapeDef = { emoji: string; name: string; sides: number };
+    // Difficulty bands per spec:
+    //   Easy  (d=1):   3-4 sides (triangle/quadrilateral)
+    //   Med   (d=2-3): 3-6 sides (current behaviour)
+    //   Hard  (d=4-5): 3-10 sides (heptagon, octagon, nonagon, decagon)
+    //   hardMode:      3-12 sides (adds hendecagon, dodecagon — extreme)
+    const ALL: ShapeDef[] = [
         { emoji: '🔺', name: 'triangle', sides: 3 },
         { emoji: '🟦', name: 'square', sides: 4 },
-        { emoji: '⬢', name: 'hexagon', sides: 6 },
-        { emoji: '⭐', name: 'star', sides: 5 },
         { emoji: '◆', name: 'diamond', sides: 4 },
+        { emoji: '⭐', name: 'star', sides: 5 },
+        { emoji: '⬢', name: 'hexagon', sides: 6 },
+        { emoji: '⬣', name: 'heptagon', sides: 7 },
+        { emoji: '🛑', name: 'octagon', sides: 8 },
+        { emoji: '✋', name: 'nonagon', sides: 9 },
+        { emoji: '🔟', name: 'decagon', sides: 10 },
+        { emoji: '🌟', name: 'hendecagon', sides: 11 },
+        { emoji: '⏰', name: 'dodecagon', sides: 12 },
     ];
-    const shape = pickRandom(SHAPES);
+    const maxSides = hard ? 12 : d <= 1 ? 4 : d <= 3 ? 6 : 10;
+    const pool = ALL.filter(s => s.sides <= maxSides);
+    const shape = pickRandom(pool);
     const answer = shape.sides;
     return pack(`Sides of ${shape.emoji} ?`, answer, (ans) => {
-        // Distractors are other plausible side counts kids confuse
-        const pool = [3, 4, 5, 6, 8].filter(n => n !== ans);
+        // Distractors: other plausible side counts within the active pool
+        const distractorPool = pool.map(s => s.sides).filter(n => n !== ans);
         // Shuffle deterministically against rng
-        for (let i = pool.length - 1; i > 0; i--) {
+        for (let i = distractorPool.length - 1; i > 0; i--) {
             const j = Math.floor(_rng() * (i + 1));
-            [pool[i], pool[j]] = [pool[j], pool[i]];
+            [distractorPool[i], distractorPool[j]] = [distractorPool[j], distractorPool[i]];
         }
-        return [pool[0], pool[1]];
+        // Fall back to neighbouring numbers if the pool is too small (e.g. d=1)
+        const d1 = distractorPool[0] ?? ans + 1;
+        const d2 = distractorPool[1] ?? ans + 2;
+        return [d1, d2];
     });
 }
 
 /** Even / odd recognition. The "options" use 0 for even and 1 for odd so the
- *  existing equality-based engine works; labels show the words. */
-function genEvenOdd(): Problem {
-    const n = randInt(2, 99);
-    const correct = n % 2 === 0 ? 0 : 1;
-    // Three options: even, odd, "I don't know" — but we only have 3 slots
-    // and 2 real choices. Pad with a third grey-rock option ("can't tell")
-    // mapped to value 2 so kids learn to commit.
+ *  existing equality-based engine works; labels show the words.
+ *
+ *  hardMode per spec: 4-digit numbers AND sum/product expressions
+ *  ("is 47+92 even or odd?") — tests parity reasoning, not just last-digit
+ *  recognition. */
+function genEvenOdd(d: number, hard: boolean): Problem {
+    let expression: string, value: number;
+    if (hard) {
+        // 50% expression, 50% 4-digit
+        if (_rng() > 0.5) {
+            const a = randInt(10, 99), b = randInt(10, 99);
+            const op = pickRandom(['+', '×']);
+            value = op === '+' ? a + b : a * b;
+            expression = `Is ${a} ${op} ${b} even or odd?`;
+        } else {
+            value = randInt(1000, 9999);
+            expression = `Is ${value} even or odd?`;
+        }
+    } else {
+        // Easy (d=1): 1-20; Med (d=2-3): 2-99; Hard (d=4-5): 100-999
+        const max = d <= 1 ? 20 : d <= 3 ? 99 : 999;
+        const min = d <= 1 ? 1 : d <= 3 ? 2 : 100;
+        value = randInt(min, max);
+        expression = `Is ${value} even or odd?`;
+    }
+    const correct = value % 2 === 0 ? 0 : 1;
     const options = [0, 1, 2];
     const optionLabels = ['Even', 'Odd', 'Either'];
     return {
         id: uid(),
-        expression: `Is ${n} even or odd?`,
+        expression,
         answer: correct,
         options,
         optionLabels,
@@ -220,20 +430,69 @@ function genEvenOdd(): Problem {
 }
 
 /** "What's 10 more than N?" — builds base-10 intuition. Includes occasional
- *  10-less variants so kids generalise. */
-function genTens(): Problem {
-    const n = randInt(10, 89);
-    const isMore = _rng() > 0.4;
-    const answer = isMore ? n + 10 : n - 10;
-    const verb = isMore ? '10 more than' : '10 less than';
-    return pack(`${verb} ${n}`, answer, smallDistractors);
+ *  10-less variants so kids generalise.
+ *
+ *  Per spec:
+ *    Easy (d=1):    1-39 + 10 only (same-decade, no borrow across 100)
+ *    Med  (d=2-3):  10-89 ± 10 (current behaviour)
+ *    Hard (d=4-5):  10-89 ± 30 (multi-step: 80 - 30 = 50)
+ *    hardMode:      ±20/30/40/50 from 3-digit numbers (e.g. 470 - 30)
+ */
+function genTens(d: number, hard: boolean): Problem {
+    if (hard) {
+        const step = pickRandom([20, 30, 40, 50]);
+        const n = randInt(120, 870);
+        const isMore = _rng() > 0.5;
+        const answer = isMore ? n + step : n - step;
+        const verb = isMore ? `${step} more than` : `${step} less than`;
+        return pack(`${verb} ${n}`, answer, smallDistractors);
+    }
+    if (d <= 1) {
+        const n = randInt(1, 39);
+        return pack(`10 more than ${n}`, n + 10, smallDistractors);
+    }
+    if (d <= 3) {
+        const n = randInt(10, 89);
+        const isMore = _rng() > 0.4;
+        const answer = isMore ? n + 10 : n - 10;
+        return pack(`${isMore ? '10 more than' : '10 less than'} ${n}`, answer, smallDistractors);
+    }
+    // Hard: ±30
+    const n = randInt(40, 89);
+    const isMore = _rng() > 0.5;
+    const step = 30;
+    const answer = isMore ? n + step : n - step;
+    return pack(`${isMore ? '30 more than' : '30 less than'} ${n}`, answer, smallDistractors);
 }
 
 // ── Core 3-5 Generators ─────────────────────────────────
 
-function genRound(): Problem {
-    const places = pickRandom([10, 100]);
-    const n = places === 10 ? randInt(11, 99) : randInt(101, 999);
+function genRound(d: number, hard: boolean): Problem {
+    // Per spec:
+    //   Easy (d=1):    round to 10 only, range 1-100
+    //   Med  (d=2-3):  round to 10 or 100, range 1-1000
+    //   Hard (d=4-5):  round to 10/100/1000, range 1-10000
+    //   hardMode:      qualitative — decimals rounded to nearest tenth/whole
+    //                  ("Round 4.56 to the nearest tenth?")
+    if (hard && _rng() > 0.5) {
+        // Decimal rounding: choose to nearest whole, or to nearest tenth
+        const places = pickRandom([1, 0.1]);
+        const wholeMax = 50;
+        const n = Math.round((randInt(0, wholeMax) + _rng()) * 100) / 100; // e.g. 4.56
+        const answer = Math.round(n / places) * places;
+        // JS float quirks: re-round answer to clean it up
+        const cleanAns = Math.round(answer * 100) / 100;
+        const placeLabel = places === 1 ? 'whole number' : 'tenth';
+        return pack(`Round ${n} to nearest ${placeLabel}`, cleanAns, decimalDistractors);
+    }
+    const placeOptions = hard ? [10, 100, 1000]
+        : d <= 1 ? [10]
+            : d <= 3 ? [10, 100]
+                : [10, 100, 1000];
+    const places = pickRandom(placeOptions);
+    const rangeMax = hard ? 9999 : d <= 1 ? 99 : d <= 3 ? 999 : 9999;
+    const rangeMin = places === 10 ? 11 : places === 100 ? 101 : 1001;
+    const n = randInt(rangeMin, rangeMax);
     const answer = Math.round(n / places) * places;
     return pack(`Round ${n} to nearest ${places}`, answer, (ans) => {
         // Common mistake distractors: round wrong direction
@@ -245,31 +504,53 @@ function genRound(): Problem {
     });
 }
 
-function genOrderOps(): Problem {
-    // Generate problems like: a + b × c  or  a × b - c
-    const variant = randInt(0, 2);
+function genOrderOps(d: number, hard: boolean): Problem {
+    // Per spec — difficulty here is about *how many rules* must be applied:
+    //   Easy (d=1):    a + b × c (current 3-term simple)
+    //   Med  (d=2-3):  3-term BIDMAS, mul before add — a × b + c × d
+    //   Hard (d=4-5):  introduce parentheses — (a + b) × c
+    //   hardMode:      4-term mixed OR include exponents (2² + 3 × 4)
     let expression: string, answer: number, latex: string;
-    if (variant === 0) {
+
+    if (hard) {
+        // hardMode: 50/50 split between 4-term mixed and exponent inclusion
+        if (_rng() > 0.5) {
+            // 4-term: a + b × c − d
+            const a = randInt(1, 9), b = randInt(2, 6), c = randInt(2, 6);
+            const dTerm = randInt(1, b * c - 1);
+            answer = a + b * c - dTerm;
+            expression = `${a} + ${b} × ${c} − ${dTerm}`;
+            latex = `${a} + ${b} \\times ${c} - ${dTerm}`;
+        } else {
+            // Exponent: e² + a × b
+            const e = randInt(2, 5);
+            const a = randInt(2, 6), b = randInt(2, 6);
+            answer = e * e + a * b;
+            expression = `${e}² + ${a} × ${b}`;
+            latex = `${e}^2 + ${a} \\times ${b}`;
+        }
+        return pack(expression, answer, nearDistractors, latex);
+    }
+
+    if (d <= 1) {
         // a + b × c
         const a = randInt(1, 9), b = randInt(2, 6), c = randInt(2, 6);
         answer = a + b * c;
         expression = `${a} + ${b} × ${c}`;
         latex = `${a} + ${b} \\times ${c}`;
-    } else if (variant === 1) {
-        // a × b + c
-        const a = randInt(2, 6), b = randInt(2, 6), c = randInt(1, 9);
-        answer = a * b + c;
-        expression = `${a} × ${b} + ${c}`;
-        latex = `${a} \\times ${b} + ${c}`;
+    } else if (d <= 3) {
+        // a × b + c × d
+        const a = randInt(2, 6), b = randInt(2, 6), c = randInt(2, 6), e = randInt(2, 6);
+        answer = a * b + c * e;
+        expression = `${a} × ${b} + ${c} × ${e}`;
+        latex = `${a} \\times ${b} + ${c} \\times ${e}`;
     } else {
-        // a × b − c
-        const a = randInt(2, 6), b = randInt(2, 6);
-        const c = randInt(1, a * b - 1);
-        answer = a * b - c;
-        expression = `${a} × ${b} − ${c}`;
-        latex = `${a} \\times ${b} - ${c}`;
+        // (a + b) × c — parentheses
+        const a = randInt(1, 9), b = randInt(1, 9), c = randInt(2, 6);
+        answer = (a + b) * c;
+        expression = `(${a} + ${b}) × ${c}`;
+        latex = `(${a} + ${b}) \\times ${c}`;
     }
-    // Common wrong answer: left-to-right evaluation (the classic trap)
     return pack(expression, answer, nearDistractors, latex);
 }
 
@@ -278,32 +559,71 @@ function genOrderOps(): Problem {
 
 // ── Advanced 6+ Generators ──────────────────────────────
 
-function genExponent(_d: number, hard: boolean): Problem {
-    const base = hard ? randInt(2, 10) : randInt(2, 5);
-    const exp = hard ? randInt(2, 5) : randInt(2, 4);
+function genExponent(d: number, hard: boolean): Problem {
+    // Per spec:
+    //   Easy (d=1):    base 2-3, exp 2-3 (memorized small powers)
+    //   Med  (d=2-3):  base 2-5, exp 2-4 (current d-agnostic behavior)
+    //   Hard (d=4-5):  base 2-10, exp 2-5
+    //   hardMode:      reserved for inverse / fractional-base questions
+    //                  (deferred to a follow-up PR — needs a new question
+    //                  shape; for now hardMode uses the widest numeric range)
+    const [baseMin, baseMax, expMin, expMax] = hard ? [2, 12, 2, 6]
+        : d <= 1 ? [2, 3, 2, 3]
+            : d <= 3 ? [2, 5, 2, 4]
+                : [2, 10, 2, 5];
+    const base = randInt(baseMin, baseMax);
+    const exp = randInt(expMin, expMax);
     const answer = Math.pow(base, exp);
-    const superscripts: Record<number, string> = { 2: '²', 3: '³', 4: '⁴', 5: '⁵' };
+    const superscripts: Record<number, string> = { 2: '²', 3: '³', 4: '⁴', 5: '⁵', 6: '⁶' };
     return pack(`${base}${superscripts[exp] || '^' + exp}`, answer, nearDistractors, `${base}^{${exp}}`);
 }
 
-function genNegatives(_d: number, hard: boolean): Problem {
-    const range = hard ? 20 : 10;
+function genNegatives(d: number, hard: boolean): Problem {
+    // Per spec:
+    //   Easy (d=1):    ±1-10 (current d-agnostic behavior)
+    //   Med  (d=2-3):  ±1-20
+    //   Hard (d=4-5):  ±1-50 with multiplication (e.g., -7 × 4)
+    //   hardMode:      3-term: -a + b - c, OR -a × -b × c (sign tracking)
+    if (hard) {
+        // 3-term sign-tracking: 50/50 split between additive and multiplicative
+        if (_rng() > 0.5) {
+            // -a + b - c
+            const a = randInt(1, 20), b = randInt(1, 20), c = randInt(1, 20);
+            const answer = -a + b - c;
+            return pack(`(-${a}) + ${b} − ${c}`, answer, nearDistractors, `(-${a}) + ${b} - ${c}`);
+        }
+        // -a × -b × c
+        const a = randInt(2, 9), b = randInt(2, 9), c = randInt(2, 9);
+        const answer = -a * -b * c; // positive
+        return pack(`(-${a}) × (-${b}) × ${c}`, answer, nearDistractors, `(-${a}) \\times (-${b}) \\times ${c}`);
+    }
+    // Hard d=4-5: include multiplication with negatives
+    if (d >= 4) {
+        // -a × b OR a × -b
+        const a = randInt(1, 50), b = randInt(2, 9);
+        const negFirst = _rng() > 0.5;
+        if (negFirst) {
+            const answer = -a * b;
+            return pack(`(-${a}) × ${b}`, answer, nearDistractors, `(-${a}) \\times ${b}`);
+        }
+        const answer = a * -b;
+        return pack(`${a} × (-${b})`, answer, nearDistractors, `${a} \\times (-${b})`);
+    }
+    // Easy / Med: ±range, additive only
+    const range = d <= 1 ? 10 : 20;
     const variant = randInt(0, 2);
     let a: number, b: number, answer: number, expression: string, latex: string;
     if (variant === 0) {
-        // negative + positive
         a = -randInt(1, range); b = randInt(1, range);
         answer = a + b;
         expression = `(${a}) + ${b}`;
         latex = `(${a}) + ${b}`;
     } else if (variant === 1) {
-        // positive - negative (double negative)
         a = randInt(1, range); b = randInt(1, range);
-        answer = a + b; // a - (-b) = a + b
+        answer = a + b;
         expression = `${a} − (−${b})`;
         latex = `${a} - (-${b})`;
     } else {
-        // negative + negative
         a = -randInt(1, range); b = -randInt(1, range);
         answer = a + b;
         expression = `(${a}) + (${b})`;
@@ -318,40 +638,113 @@ function gcd(a: number, b: number): number {
     return a;
 }
 
-function genGcfLcm(): Problem {
-    const useGcf = _rng() > 0.5;
-    const factor = randInt(2, 6);
-    const m1 = randInt(2, 6);
-    let m2 = randInt(2, 6);
-    if (m1 === m2) m2 = m1 === 6 ? 2 : m1 + 1; // ensure distinct multipliers
+function genGcfLcm(d: number, hard: boolean): Problem {
+    // Per spec:
+    //   Easy (d=1):    GCF only, numbers up to ~30
+    //   Med  (d=2-3):  GCF or LCM, numbers up to 60
+    //   Hard (d=4-5):  LCM emphasis, numbers up to 144
+    //   hardMode:      3-number GCF or LCM (e.g., GCF(12, 18, 30))
+    if (hard) {
+        // Three numbers built from a common factor + extra primes so the
+        // answer isn't trivial.
+        const factor = randInt(2, 6);
+        const ms = [randInt(2, 6), randInt(2, 6), randInt(2, 6)];
+        // De-dupe multipliers so the numbers aren't equal
+        if (ms[0] === ms[1]) ms[1] = ms[1] === 6 ? 2 : ms[1] + 1;
+        if (ms[1] === ms[2]) ms[2] = ms[2] === 6 ? 2 : ms[2] + 1;
+        if (ms[0] === ms[2]) ms[2] = ms[2] === 5 ? 3 : ms[2] + 1;
+        const a = factor * ms[0], b = factor * ms[1], c = factor * ms[2];
+        const useGcf = _rng() > 0.5;
+        if (useGcf) {
+            const answer = gcd(gcd(a, b), c);
+            return pack(`GCF(${a}, ${b}, ${c})`, answer, nearDistractors, `\\gcd(${a}, ${b}, ${c})`);
+        }
+        const lcm2 = (a * b) / gcd(a, b);
+        const answer = (lcm2 * c) / gcd(lcm2, c);
+        return pack(`LCM(${a}, ${b}, ${c})`, answer, nearDistractors, `\\text{lcm}(${a}, ${b}, ${c})`);
+    }
+
+    // d=1: GCF only, small. d=2-3: either, medium. d=4-5: LCM emphasis, large.
+    const useGcf = d <= 1 ? true : d <= 3 ? _rng() > 0.5 : _rng() > 0.7;
+    const [factorMin, factorMax, multMax] = d <= 1 ? [2, 4, 4]
+        : d <= 3 ? [2, 6, 6]
+            : [3, 8, 9];
+    const factor = randInt(factorMin, factorMax);
+    const m1 = randInt(2, multMax);
+    let m2 = randInt(2, multMax);
+    if (m1 === m2) m2 = m1 === multMax ? 2 : m1 + 1;
     const a = factor * m1, b = factor * m2;
     if (useGcf) {
         const answer = gcd(a, b);
-        return pack(`GCF*(${a}, ${b})`, answer, nearDistractors, `\\gcd(${a}, ${b})`);
-    } else {
-        const answer = (a * b) / gcd(a, b);
-        return pack(`LCM(${a}, ${b})`, answer, nearDistractors, `\\text{lcm}(${a}, ${b})`);
+        return pack(`GCF(${a}, ${b})`, answer, nearDistractors, `\\gcd(${a}, ${b})`);
     }
+    const answer = (a * b) / gcd(a, b);
+    return pack(`LCM(${a}, ${b})`, answer, nearDistractors, `\\text{lcm}(${a}, ${b})`);
 }
 
-function genRatio(): Problem {
-    const g = randInt(2, 6);
-    const a = randInt(1, 5) * g;
-    const b = randInt(1, 5) * g;
-    const d = gcd(a, b);
-    const sa = a / d, sb = b / d;
-    // Randomly ask for first or second term of simplified ratio
-    if (_rng() > 0.5) {
-        // a : b = ? : sb
-        return pack(`${a} : ${b} = ? : ${sb}`, sa, (ans) => {
-            return [ans + 1, ans === 1 ? ans + 2 : ans - 1];
-        });
-    } else {
-        // a : b = sa : ?
-        return pack(`${a} : ${b} = ${sa} : ?`, sb, (ans) => {
-            return [ans + 1, ans === 1 ? ans + 2 : ans - 1];
-        });
+function genRatio(d: number, hard: boolean): Problem {
+    // This is the topic that prompted the entire difficulty-curves spec.
+    // Previously took zero args; now uses both dials per the spec.
+    //
+    //   Easy (d=1):    simple equivalent ratios, multipliers ≤ 5
+    //                  (e.g., 2:3 = 4:?)
+    //   Med  (d=2-3):  multipliers up to 12 (current behaviour)
+    //   Hard (d=4-5):  ratios that simplify in reverse — given large
+    //                  numbers, find the simplified form (e.g., 12:18 = 2:?)
+    //   hardMode:      3-term ratios (a:b:c)
+    if (hard) {
+        // 3-term ratio: a:b:c = sa·k : sb·k : sc·k
+        // Generate small "true" ratio and scale up.
+        const sa = randInt(1, 5), sb = randInt(1, 5), sc = randInt(1, 5);
+        const k = randInt(2, 6);
+        const a = sa * k, b = sb * k, c = sc * k;
+        // Ask which term is missing in the simplified form
+        const missing = randInt(0, 2);
+        const parts = [sa, sb, sc];
+        const answer = parts[missing];
+        const shown = parts.map((p, i) => i === missing ? '?' : `${p}`);
+        const expression = `${a} : ${b} : ${c} = ${shown.join(' : ')}`;
+        return pack(expression, answer, (ans) => [ans + 1, ans === 1 ? ans + 2 : ans - 1]);
     }
+
+    if (d <= 1) {
+        // Simple equivalent: small ratio scaled by 2-5
+        const sa = randInt(1, 5), sb = randInt(1, 5);
+        if (sa === sb) return genRatio(d, hard); // skip degenerate 1:1
+        const k = randInt(2, 5);
+        const a = sa * k, b = sb * k;
+        // Ask for the unknown half: sa:sb = a:?  or  sa:sb = ?:b
+        if (_rng() > 0.5) {
+            return pack(`${sa} : ${sb} = ${a} : ?`, b, (ans) => [ans + 1, ans === 1 ? ans + 2 : ans - 1]);
+        }
+        return pack(`${sa} : ${sb} = ? : ${b}`, a, (ans) => [ans + 1, ans === 1 ? ans + 2 : ans - 1]);
+    }
+
+    if (d <= 3) {
+        // Current-ish: medium multipliers
+        const g = randInt(2, 6);
+        const a = randInt(1, 5) * g;
+        const b = randInt(1, 5) * g;
+        if (a === b) return genRatio(d, hard);
+        const gg = gcd(a, b);
+        const sa = a / gg, sb = b / gg;
+        if (_rng() > 0.5) {
+            return pack(`${a} : ${b} = ? : ${sb}`, sa, (ans) => [ans + 1, ans === 1 ? ans + 2 : ans - 1]);
+        }
+        return pack(`${a} : ${b} = ${sa} : ?`, sb, (ans) => [ans + 1, ans === 1 ? ans + 2 : ans - 1]);
+    }
+
+    // Hard d=4-5: larger numbers; the question is *simplification* not scaling
+    // Pick a simplified ratio sa:sb (small) and scale by a larger factor so
+    // the user has to find the GCF in reverse.
+    const sa = randInt(1, 7), sb = randInt(1, 7);
+    if (sa === sb) return genRatio(d, hard);
+    const k = randInt(6, 12);
+    const a = sa * k, b = sb * k;
+    if (_rng() > 0.5) {
+        return pack(`${a} : ${b} = ? : ${sb}`, sa, (ans) => [ans + 1, ans === 1 ? ans + 2 : ans - 1]);
+    }
+    return pack(`${a} : ${b} = ${sa} : ?`, sb, (ans) => [ans + 1, ans === 1 ? ans + 2 : ans - 1]);
 }
 
 // ── New Generators ──────────────────────────────────────
@@ -438,63 +831,171 @@ function genFraction(d: number, hard: boolean): Problem {
     };
 }
 
-function genDecimal(_d: number, hard: boolean): Problem {
-    // Decimal multiplication/addition with 1 decimal place
-    const isAdd = _rng() > 0.5;
-    if (isAdd) {
-        const a = randDecimal(hard ? [1, 50] : [1, 20]);
-        const b = randDecimal(hard ? [1, 50] : [1, 20]);
-        const answer = Math.round((a + b) * 10) / 10;
-        return pack(`${a} + ${b}`, answer, decimalDistractors, `${a} + ${b}`);
-    } else {
-        const a = randDecimal(hard ? [1, 20] : [1, 10]);
-        const b = randInt(2, hard ? 9 : 5);
-        const answer = Math.round(a * b * 10) / 10;
+function genDecimal(d: number, hard: boolean): Problem {
+    // Per spec:
+    //   Easy (d=1):    add/sub, one decimal place (0.1-0.9)
+    //   Med  (d=2-3):  two decimal places, add/sub
+    //   Hard (d=4-5):  multiplication of decimals (0.4 × 0.3 — conceptually tricky)
+    //   hardMode:      division by decimals (12 ÷ 0.4) plus the d=5 mul case
+    if (hard) {
+        // 50/50 split between decimal-mul and decimal-div
+        if (_rng() > 0.5) {
+            // Division: integer / decimal, choose pairs that yield clean results.
+            // E.g., 12 ÷ 0.4 = 30. Pick divisor d ∈ {0.2, 0.4, 0.5, 0.8} and
+            // construct dividend = d * (whole integer answer).
+            const divisor = pickRandom([0.2, 0.4, 0.5, 0.8]);
+            const answer = randInt(5, 50);
+            const dividend = Math.round(divisor * answer * 10) / 10;
+            return pack(`${dividend} ÷ ${divisor}`, answer, decimalDistractors, `${dividend} \\div ${divisor}`);
+        }
+        // Decimal × decimal: small operands so answers stay short.
+        const a = randDecimal([1, 9]); // 0.1-0.9
+        const b = randDecimal([1, 9]);
+        const answer = Math.round(a * b * 100) / 100;
         return pack(`${a} × ${b}`, answer, decimalDistractors, `${a} \\times ${b}`);
     }
+
+    if (d <= 1) {
+        // One decimal place, add/sub, small operands
+        const a = randDecimal([1, 9]); // 0.1-0.9
+        const b = randDecimal([1, 9]);
+        const isAdd = _rng() > 0.4;
+        let answer: number, op: string;
+        if (isAdd) {
+            answer = Math.round((a + b) * 10) / 10;
+            op = '+';
+        } else {
+            const [hi, lo] = a >= b ? [a, b] : [b, a];
+            answer = Math.round((hi - lo) * 10) / 10;
+            return pack(`${hi} − ${lo}`, answer, decimalDistractors, `${hi} - ${lo}`);
+        }
+        return pack(`${a} ${op} ${b}`, answer, decimalDistractors, `${a} ${op} ${b}`);
+    }
+
+    if (d <= 3) {
+        // Two decimal places, add/sub, slightly larger operands
+        const a = Math.round((randInt(10, 99) + _rng()) * 100) / 100; // e.g. 4.56
+        const b = Math.round((randInt(10, 99) + _rng()) * 100) / 100;
+        const isAdd = _rng() > 0.4;
+        if (isAdd) {
+            const answer = Math.round((a + b) * 100) / 100;
+            return pack(`${a} + ${b}`, answer, decimalDistractors, `${a} + ${b}`);
+        }
+        const [hi, lo] = a >= b ? [a, b] : [b, a];
+        const answer = Math.round((hi - lo) * 100) / 100;
+        return pack(`${hi} − ${lo}`, answer, decimalDistractors, `${hi} - ${lo}`);
+    }
+
+    // Hard d=4-5: decimal × decimal (conceptually tricky)
+    const a = randDecimal([1, 9]);
+    const b = randDecimal([1, 9]);
+    const answer = Math.round(a * b * 100) / 100;
+    return pack(`${a} × ${b}`, answer, decimalDistractors, `${a} \\times ${b}`);
 }
 
-function genPercent(_d: number, hard: boolean): Problem {
-    const percents = hard ? [5, 10, 15, 20, 25, 30, 40, 50, 60, 75] : [10, 20, 25, 50, 75];
+function genPercent(d: number, hard: boolean): Problem {
+    // Per spec:
+    //   Easy (d=1):    10/25/50/100% of multiples of 10
+    //   Med  (d=2-3):  10/25/50/75% of any 2-digit number
+    //   Hard (d=4-5):  less-memorized %s (5/15/20/30/40/60/70/80/90)
+    //   hardMode:      reserved for percent-CHANGE questions (deferred —
+    //                  requires a new question shape; for now hardMode
+    //                  combines the widest pools and adds 3-digit bases)
+    if (hard) {
+        const percents = [3, 5, 7, 12, 15, 17, 22, 35, 45, 55, 65, 85, 95];
+        const pct = pickRandom(percents);
+        const base = pickRandom([40, 60, 80, 100, 120, 200, 240, 400, 500, 600, 800]);
+        const answer = Math.round((pct / 100) * base * 100) / 100;
+        return pack(`${pct}% of ${base}`, answer, nearDistractors, `${pct}\\% \\text{ of } ${base}`);
+    }
+    let percents: number[], bases: number[];
+    if (d <= 1) {
+        percents = [10, 25, 50, 100];
+        bases = [10, 20, 40, 50, 60, 80, 100, 200];
+    } else if (d <= 3) {
+        percents = [10, 20, 25, 50, 75];
+        bases = [12, 24, 40, 48, 60, 75, 80, 96, 100];
+    } else {
+        percents = [5, 15, 20, 30, 40, 60, 70, 80, 90];
+        bases = [40, 60, 80, 100, 120, 150, 200, 250];
+    }
     const pct = pickRandom(percents);
-    const bases = hard ? [40, 60, 80, 100, 120, 200, 250, 500] : [20, 40, 50, 60, 80, 100, 200];
     const base = pickRandom(bases);
-    const answer = (pct / 100) * base;
-
-    const latex = `${pct}\\% \\text{ of } ${base}`;
-    const expression = `${pct}% of ${base}`;
-    return pack(expression, answer, nearDistractors, latex);
+    const answer = Math.round((pct / 100) * base * 100) / 100;
+    return pack(`${pct}% of ${base}`, answer, nearDistractors, `${pct}\\% \\text{ of } ${base}`);
 }
 
-function genLinear(_d: number, hard: boolean): Problem {
-    // ax + b = c  →  x = (c - b) / a
-    const a = randInt(hard ? 2 : 2, hard ? 12 : 6);
-    const x = randInt(hard ? -10 : 1, hard ? 20 : 10);
-    const b = randInt(hard ? -20 : 1, hard ? 20 : 15);
+function genLinear(d: number, hard: boolean): Problem {
+    // Per spec:
+    //   Easy (d=1):    ax = b, a ∈ 2-5 (one-step)
+    //   Med  (d=2-3):  ax + b = c (two-step, current behavior approximately)
+    //   Hard (d=4-5):  ax + b = cx + d (variable on both sides)
+    //   hardMode:      include negative solutions (current behavior already
+    //                  allows negatives; we widen the range)
+    if (hard) {
+        // Variable on both sides AND negative solutions allowed.
+        // ax + b = cx + d  →  x = (d - b) / (a - c), make sure a != c.
+        const a = randInt(2, 12);
+        let c = randInt(2, 12);
+        if (a === c) c = a === 12 ? 2 : a + 1;
+        const x = randInt(-10, 20);
+        const b = randInt(-20, 20);
+        // Compute d so the equation has the chosen x as solution:
+        // ax + b = cx + dConst → dConst = a*x + b - c*x = (a-c)*x + b
+        const dConst = (a - c) * x + b;
+        const bSign = b >= 0 ? `+ ${b}` : `− ${Math.abs(b)}`;
+        const dSign = dConst >= 0 ? `+ ${dConst}` : `− ${Math.abs(dConst)}`;
+        return pack(
+            `${a}x ${bSign} = ${c}x ${dSign}`,
+            x,
+            nearDistractors,
+            `${a}x ${b >= 0 ? '+' : '-'} ${Math.abs(b)} = ${c}x ${dConst >= 0 ? '+' : '-'} ${Math.abs(dConst)}`
+        );
+    }
+
+    if (d <= 1) {
+        // One-step: ax = b
+        const a = randInt(2, 5);
+        const x = randInt(1, 10);
+        const c = a * x;
+        return pack(`${a}x = ${c}`, x, nearDistractors, `${a}x = ${c}`);
+    }
+
+    // d=2-5 (excluding hardMode): two-step ax + b = c
+    const a = d <= 3 ? randInt(2, 6) : randInt(2, 12);
+    const x = d <= 3 ? randInt(1, 10) : randInt(-5, 15);
+    const b = d <= 3 ? randInt(1, 15) : randInt(-10, 15);
     const c = a * x + b;
-
-    const bSign = b >= 0 ? `+ ${b}` : `- ${Math.abs(b)}`;
-    const latex = `${a}x ${bSign} = ${c}`;
-    const expression = `${a}x ${bSign} = ${c}`;
-
-    return pack(expression, x, nearDistractors, latex);
+    const bSign = b >= 0 ? `+ ${b}` : `− ${Math.abs(b)}`;
+    return pack(`${a}x ${bSign} = ${c}`, x, nearDistractors, `${a}x ${b >= 0 ? '+' : '-'} ${Math.abs(b)} = ${c}`);
 }
 
 // ── Ranges ──────────────────────────────────────────────
 
 function addRange(d: number): [number, number] {
-    if (d <= 1) return [10, 49];
+    // Per docs/difficulty-curves.md: Easy starts at 1-30 (single-digit-friendly,
+    // approachable for 8-year-olds), expands through mid-range, peaks at
+    // 50-499 at d=5 (genuine multi-digit mental work). hardMode handled
+    // separately in genAdd/genSubtract — not via this range.
+    if (d <= 1) return [1, 30];
     if (d <= 2) return [10, 69];
-    if (d <= 3) return [10, 89];
-    return [10, 99];
+    if (d <= 3) return [10, 99];
+    if (d <= 4) return [20, 199];
+    return [50, 499];
 }
 
 function mulRange(d: number): [number, number, number, number] {
+    // Per docs/difficulty-curves.md:
+    //   d=1 — memorized small table (2-5 × 2-5)
+    //   d=2 — full small table (2-9 × 2-9)
+    //   d=3 — full standard times table (2-12 × 2-12)
+    //   d=4 — one factor escapes the table (10-25 × 2-9)
+    //   d=5 — both factors escape (10-25 × 6-15)
     if (d <= 1) return [2, 5, 2, 5];
     if (d <= 2) return [2, 9, 2, 9];
-    if (d <= 3) return [3, 9, 6, 12];
-    if (d <= 4) return [6, 12, 8, 15];
-    return [10, 15, 10, 15];
+    if (d <= 3) return [2, 12, 2, 12];
+    if (d <= 4) return [10, 25, 2, 9];
+    return [10, 25, 6, 15];
 }
 
 // ── Distractor strategies ───────────────────────────────

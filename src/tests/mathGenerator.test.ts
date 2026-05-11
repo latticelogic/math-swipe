@@ -167,4 +167,152 @@ describe('mathGenerator.ts', () => {
             expect(allMatch).toBe(false);
         });
     });
+
+    /** Difficulty discrimination: this is the regression check for the
+     *  "flat curve" bug that prompted docs/difficulty-curves.md. For each
+     *  topic, we sample N problems at d=1 and N at d=5, then again at
+     *  hardMode=false vs hardMode=true. A "signal" function extracts a
+     *  numeric difficulty proxy from each problem (typically the answer
+     *  magnitude, or a topic-specific surrogate). We assert that the
+     *  *mean* of the signal differs measurably between the two pools.
+     *
+     *  Tolerance: we require mean(hard) > mean(easy) * 1.3 — a 30% lift.
+     *  This is loose on purpose; we're not asserting a specific curve,
+     *  just that the curve isn't flat. Topics that fail this test almost
+     *  certainly have a bug where difficulty doesn't propagate. */
+    describe('Difficulty discrimination — every topic responds to both dials', () => {
+        const SAMPLES = 150;
+
+        // Signal extractor per topic. The signal is a single number that
+        // should *increase* monotonically with difficulty. For most topics
+        // |answer| is a fine proxy. For topics where difficulty is
+        // qualitative (more terms, harder operation type) we use a
+        // composite signal: magnitude * (1 + complexity_features).
+        //
+        // The composite form means a 4-term expression at d=5 with small
+        // operands still outscores a 2-term expression at d=1 with larger
+        // operands — which matches how a human would judge difficulty.
+        const opCount = (expr: string): number =>
+            (expr.match(/[+\-×÷−]/g) ?? []).length;
+        const expressionNums = (expr: string): number[] =>
+            (expr.match(/\d+/g) ?? []).map(Number);
+        const maxNum = (expr: string): number => {
+            const nums = expressionNums(expr);
+            return nums.length ? Math.max(...nums) : 0;
+        };
+
+        const signalFor: Record<string, (p: ReturnType<typeof generateProblem>) => number> = {
+            // Topics where |answer| is a sufficient proxy (bigger = harder)
+            add: (p) => Math.abs(p.answer) * (1 + opCount(p.expression) * 0.5),
+            subtract: (p) => Math.abs(p.answer) * (1 + opCount(p.expression) * 0.5),
+            multiply: (p) => Math.abs(p.answer),
+            divide: (p) => Math.abs(p.answer),
+            square: (p) => Math.abs(p.answer),
+            sqrt: (p) => Math.abs(p.answer),
+            add1: (p) => Math.abs(p.answer),
+            sub1: (p) => Math.abs(p.answer),
+            doubles: (p) => Math.abs(p.answer),
+            tens: (p) => Math.abs(p.answer),
+            round: (p) => Math.abs(p.answer),
+            exponent: (p) => Math.abs(p.answer),
+            negatives: (p) => Math.abs(p.answer) * (1 + opCount(p.expression) * 0.5),
+            gcflcm: (p) => Math.abs(p.answer),
+            percent: (p) => Math.abs(p.answer),
+            // Constrained-answer topics
+            bonds: (p) => p.bondTotal ?? 0,
+            shapes: (p) => p.answer, // side count
+            evenodd: (p) => maxNum(p.expression) * (1 + opCount(p.expression) * 2),
+            // Qualitative-difficulty topics — composite signal:
+            // orderops: difficulty here is *features* of the expression,
+            // not magnitude. Reward parentheses, exponents (²), and
+            // operator count individually.
+            orderops: (p) => {
+                const ops = opCount(p.expression);
+                const hasParens = /[()]/.test(p.expression) ? 1 : 0;
+                const hasExp = /²/.test(p.expression) ? 1 : 0;
+                const features = ops + hasParens * 2 + hasExp * 3;
+                return maxNum(p.expression) * (1 + features * 0.5);
+            },
+            // compare: hardMode shifts from comparing 2 numbers to comparing
+            // 2 expressions. The op count in the expression captures this.
+            compare: (p) => maxNum(p.expression) * (1 + opCount(p.expression) * 4),
+            // skip: harder steps (smaller intervals → more mental work) and
+            // direction (backward) aren't captured by magnitude. Use the
+            // *step size diversity* via the spread between adjacent terms.
+            skip: (p) => {
+                const nums = expressionNums(p.expression);
+                if (nums.length < 2) return 0;
+                const step = Math.abs(nums[1] - nums[0]);
+                // Award smaller "weird" steps (3, 4, 7, 11, 9) with a
+                // multiplier — they're harder than 2/5/10.
+                const isWeirdStep = ![2, 5, 10].includes(step);
+                return maxNum(p.expression) * (isWeirdStep ? 2 : 1);
+            },
+            // ratio: 3-term ratios have more numbers in the expression than
+            // 2-term. Use op count of colons.
+            ratio: (p) => {
+                const colonCount = (p.expression.match(/:/g) ?? []).length;
+                return maxNum(p.expression) * (1 + colonCount * 1.5);
+            },
+            // fraction: difficulty isn't answer-magnitude (answers are small
+            // mixed fractions). Use denominator size from the expression.
+            fraction: (p) => {
+                const nums = expressionNums(p.expression);
+                // expression is like "1/4 + 2/3" — denominators are at
+                // indices 1, 3. Take max denominator.
+                if (nums.length < 4) return nums.length ? Math.max(...nums) : 1;
+                return Math.max(nums[1], nums[3]);
+            },
+            // decimal: hardMode does multiplication/division (qualitatively
+            // harder, smaller answers). Reward presence of × or ÷ in the
+            // expression heavily.
+            decimal: (p) => {
+                const hasMulDiv = /[×÷]/.test(p.expression);
+                return Math.abs(p.answer) * (hasMulDiv ? 8 : 1);
+            },
+            // linear: at d=1 the equation is "ax = b" (one term on left).
+            // At d=5 / hardMode it's "ax + b = cx + d" (more terms). Count
+            // the operators on either side of '='.
+            linear: (p) => {
+                const ops = opCount(p.expression);
+                return Math.abs(p.answer) * (1 + ops * 1.5);
+            },
+        };
+
+        function meanSignal(type: QuestionType, d: number, hard: boolean): number {
+            const sig = signalFor[type];
+            if (!sig) throw new Error(`no signal defined for topic ${type}`);
+            let total = 0;
+            for (let i = 0; i < SAMPLES; i++) {
+                total += sig(generateProblem(d, type, hard));
+            }
+            return total / SAMPLES;
+        }
+
+        const TOPICS_TO_AUDIT: QuestionType[] = [
+            'add', 'subtract', 'multiply', 'divide', 'square', 'sqrt',
+            'fraction', 'decimal', 'percent', 'linear',
+            'add1', 'sub1', 'bonds', 'doubles', 'compare', 'skip',
+            'shapes', 'evenodd', 'tens',
+            'round', 'orderops',
+            'exponent', 'negatives', 'gcflcm', 'ratio',
+        ];
+
+        for (const type of TOPICS_TO_AUDIT) {
+            it(`${type}: difficulty 5 > difficulty 1 (mean signal)`, () => {
+                const easy = meanSignal(type, 1, false);
+                const hardSlider = meanSignal(type, 5, false);
+                // 1.3× lift — loose enough that legitimate small-step topics
+                // (e.g., bonds where totals only go 5→20) still pass with
+                // 4× lift, while flat topics (no lift at all) fail.
+                expect(hardSlider).toBeGreaterThan(easy * 1.3);
+            });
+
+            it(`${type}: hardMode true > hardMode false (mean signal)`, () => {
+                const off = meanSignal(type, 3, false);
+                const on = meanSignal(type, 3, true);
+                expect(on).toBeGreaterThan(off * 1.3);
+            });
+        }
+    });
 });
