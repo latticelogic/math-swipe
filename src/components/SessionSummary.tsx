@@ -1,6 +1,7 @@
-import { memo, useState, useEffect, useRef } from 'react';
+import { memo, useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence, useSpring, useMotionValueEvent } from 'framer-motion';
 import { createChallengeId } from '../utils/dailyChallenge';
+import { ShareSheet } from './ShareSheet';
 
 interface Props {
     solved: number;
@@ -26,12 +27,15 @@ function formatTime(ms: number): string {
     return `${m}m ${s}s`;
 }
 
-function buildShareText(
+/** Compose the share payload + challenge URL together so callers don't fork
+ *  on URL generation. Returning both lets the modal show the URL separately
+ *  (one-tap copy) while the text remains the full social-friendly caption. */
+function buildSharePayload(
     xp: number, streak: number, accuracy: number,
     history: boolean[], questionType: string,
     hardMode?: boolean, timedMode?: boolean,
     speedrunTime?: number | null,
-): string {
+): { text: string; url: string } {
     const emojis = history.map(ok => ok ? '🟩' : '🟥');
     const emojiRows: string[] = [];
     for (let i = 0; i < emojis.length; i += 10) {
@@ -40,36 +44,38 @@ function buildShareText(
 
     const typeLabel = questionType.startsWith('mix-') ? 'Mix' : questionType.charAt(0).toUpperCase() + questionType.slice(1);
     const modeTag = hardMode && timedMode ? ' 💀⏱️ ULTIMATE' : hardMode ? ' 💀 HARD' : timedMode ? ' ⏱️ TIMED' : '';
+    // Punchier headlines — first line is what platforms show as preview, so make
+    // it count. Leads with the score/streak/time, brand fades to second line.
     const headline = questionType === 'speedrun' && speedrunTime
-        ? `🧮 Math Swipe — SPEEDRUN`
+        ? `⏱️ Cleared 10 in ${formatTime(speedrunTime)} on Math Swipe`
         : accuracy === 100
-            ? `🧮 Math Swipe — PERFECT! 💯${modeTag}`
-            : `🧮 Math Swipe — ${typeLabel}${modeTag}`;
+            ? `💯 ${xp} pts, ${streak}🔥 — perfect run on Math Swipe${modeTag}`
+            : `${xp} pts · ${streak}🔥 streak · ${accuracy}% — Math Swipe ${typeLabel}${modeTag}`;
 
-    // Generate a challenge link so the recipient can play the same set
-    const challengeUrl = `${window.location.origin}?c=${createChallengeId()}`;
+    const url = `${window.location.origin}?c=${createChallengeId()}`;
 
-    const subline = questionType === 'speedrun' && speedrunTime
-        ? `⏱️ Cleared in ${formatTime(speedrunTime)}!`
-        : `⚡ ${xp} pts · 🔥 ${streak} streak · 🎯 ${accuracy}%`;
-
-    return [
+    const text = [
         headline,
-        subline,
         '',
         ...emojiRows,
         '',
-        `Can you beat me? 👉 ${challengeUrl}`,
+        `Can you beat me? 👉 ${url}`,
     ].join('\n');
+
+    return { text, url };
 }
 
 export const SessionSummary = memo(function SessionSummary({
     solved, bestStreak: streak, accuracy, xpEarned, answerHistory, questionType, visible, onDismiss,
     hardMode, timedMode, speedrunFinalTime, isNewSpeedrunRecord,
 }: Props) {
-    const [copied, setCopied] = useState(false);
     const [isSharing, setIsSharing] = useState(false);
     const cardRef = useRef<HTMLDivElement>(null);
+    // Desktop share modal state
+    const [shareSheetOpen, setShareSheetOpen] = useState(false);
+    const [shareImage, setShareImage] = useState<Blob | null>(null);
+    const [shareText, setShareText] = useState('');
+    const [shareUrl, setShareUrl] = useState('');
 
     // Rolling count-up for XP
     const xpSpring = useSpring(0, { stiffness: 60, damping: 20 });
@@ -88,63 +94,74 @@ export const SessionSummary = memo(function SessionSummary({
         }
     }, [visible, xpEarned, xpSpring]);
 
+    /** Render the off-screen share card to a PNG blob. Heavy (lazy-loads
+     *  html-to-image) but only runs on demand. */
+    const generateImage = useCallback(async (): Promise<Blob | null> => {
+        if (!cardRef.current) return null;
+        try {
+            const { toBlob } = await import('html-to-image');
+            return await toBlob(cardRef.current, {
+                cacheBust: true,
+                type: 'image/png',
+                pixelRatio: 2,
+                filter: (node: Node) => {
+                    // Skip cross-origin <link> stylesheets to avoid CORS errors
+                    if (node instanceof HTMLLinkElement && node.rel === 'stylesheet' && node.href) {
+                        try { return new URL(node.href).origin === window.location.origin; }
+                        catch { return true; }
+                    }
+                    return true;
+                },
+            });
+        } catch {
+            return null;
+        }
+    }, []);
+
+    const regenerateForSheet = useCallback(async () => {
+        const blob = await generateImage();
+        setShareImage(blob);
+    }, [generateImage]);
+
     const handleShare = async () => {
         if (isSharing) return;
         setIsSharing(true);
-        const text = buildShareText(xpEarned, streak, accuracy, answerHistory, questionType, hardMode, timedMode, speedrunFinalTime);
+        const { text, url: challengeUrl } = buildSharePayload(
+            xpEarned, streak, accuracy, answerHistory, questionType,
+            hardMode, timedMode, speedrunFinalTime,
+        );
+        // Capture for the sheet in case we fall through
+        setShareText(text);
+        setShareUrl(challengeUrl);
 
         try {
-            // Attempt Rich Media Image Generation
-            if (cardRef.current) {
-                const { toBlob } = await import('html-to-image');
-                const blob = await toBlob(cardRef.current, {
-                    cacheBust: true,
-                    type: 'image/png',
-                    pixelRatio: 2,
-                    filter: (node: Node) => {
-                        // Skip cross-origin <link> stylesheets (e.g. Google Fonts)
-                        // to avoid SecurityError when reading cssRules
-                        if (node instanceof HTMLLinkElement && node.rel === 'stylesheet' && node.href) {
-                            try { return new URL(node.href).origin === window.location.origin; }
-                            catch { return true; }
-                        }
-                        return true;
-                    },
-                });
-
+            // Mobile: try native OS share first — one-tap is the gold standard
+            // when it's available.
+            if (typeof navigator.share === 'function') {
+                const blob = await generateImage();
                 if (blob) {
-                    const file = new File([blob], 'share-card.png', { type: 'image/png' });
-
-                    // Check if OS supports files in navigator.share
+                    const file = new File([blob], 'math-swipe-share.png', { type: 'image/png' });
                     if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                        await navigator.share({
-                            files: [file],
-                            text: text,
-                        });
-                        setIsSharing(false);
-                        return; // Success
-                    } else if (navigator.share) {
-                        // Fallback to text-only native share if files unsupported
-                        await navigator.share({ text });
+                        await navigator.share({ files: [file], text });
                         setIsSharing(false);
                         return;
                     }
                 }
+                // Files unsupported but native share works — text-only path
+                await navigator.share({ text, url: challengeUrl });
+                setIsSharing(false);
+                return;
             }
 
-            // Fallback for desktop / unsupported browsers
-            await navigator.clipboard.writeText(text);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
+            // Desktop (or any browser without navigator.share): open the
+            // proper share modal so the user actually picks a destination.
+            const blob = await generateImage();
+            setShareImage(blob);
+            setShareSheetOpen(true);
         } catch {
-            // User cancelled share or other error, fallback to clipboard just in case
-            try {
-                await navigator.clipboard.writeText(text);
-                setCopied(true);
-                setTimeout(() => setCopied(false), 2000);
-            } catch {
-                // Silent fail
-            }
+            // User cancelled OR native share threw — fall back to opening
+            // the modal so they always have a path to actually post the card.
+            setShareSheetOpen(true);
         } finally {
             setIsSharing(false);
         }
@@ -359,7 +376,7 @@ export const SessionSummary = memo(function SessionSummary({
                                 }`}
                             whileTap={!isSharing ? { scale: 0.95 } : undefined}
                         >
-                            {isSharing ? 'Synthesizing...' : copied ? '✅ Copied!' : '📤 Share Result'}
+                            {isSharing ? 'Generating image…' : '📤 Share Result'}
                         </motion.button>
 
                         <button
@@ -389,6 +406,17 @@ export const SessionSummary = memo(function SessionSummary({
                     </motion.div>
                 </motion.div>
             )}
+            {/* Desktop / fallback share modal — sibling of the summary so it
+                can render above other UI even when the summary itself is
+                dismissed. */}
+            <ShareSheet
+                open={shareSheetOpen}
+                onClose={() => setShareSheetOpen(false)}
+                text={shareText}
+                url={shareUrl}
+                imageBlob={shareImage}
+                onRegenerate={regenerateForSheet}
+            />
         </AnimatePresence>
     );
 });
