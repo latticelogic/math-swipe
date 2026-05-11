@@ -103,6 +103,17 @@ export const ActionButtons = memo(function ActionButtons({
     timedMode, onTimedModeToggle, timerProgress,
     ageBand,
 }: Props) {
+    // Transient feedback toast for the share button. Without this, share
+    // appears to do nothing on platforms where navigator.share is missing
+    // or rejects (tester report).
+    const [shareToast, setShareToast] = useState<string | null>(null);
+    const shareToastTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+    const flashToast = (msg: string) => {
+        if (shareToastTimer.current) clearTimeout(shareToastTimer.current);
+        setShareToast(msg);
+        shareToastTimer.current = setTimeout(() => setShareToast(null), 1800);
+    };
+
     const handleShare = async () => {
         const shareData = {
             title: 'Math Swipe',
@@ -112,11 +123,23 @@ export const ActionButtons = memo(function ActionButtons({
         try {
             if (navigator.share) {
                 await navigator.share(shareData);
-            } else {
+                // navigator.share succeeded — no toast needed, the OS UI handled it
+            } else if (navigator.clipboard?.writeText) {
                 await navigator.clipboard.writeText(window.location.href);
+                flashToast('Link copied!');
+            } else {
+                flashToast('Sharing not supported');
             }
-        } catch {
-            // User cancelled share
+        } catch (err) {
+            // AbortError = user cancelled the native share sheet (normal, no toast)
+            if (err instanceof Error && err.name === 'AbortError') return;
+            // Real failure — try clipboard fallback and toast
+            try {
+                await navigator.clipboard.writeText(window.location.href);
+                flashToast('Link copied!');
+            } catch {
+                flashToast("Couldn't share — try again");
+            }
         }
     };
 
@@ -128,20 +151,38 @@ export const ActionButtons = memo(function ActionButtons({
         <div className="absolute right-3 top-[25%] -translate-y-1/2 flex flex-col gap-4 z-40">
             {/* Share */}
             <ActionTooltip label="Share">
-                <motion.button
-                    onClick={handleShare}
-                    aria-label="Share"
-                    className="action-icon w-11 h-11 flex items-center justify-center text-[rgb(var(--color-fg))]/70 active:text-[var(--color-gold)]"
-                    whileTap={{ scale: 0.88 }}
-                >
-                    <svg viewBox="0 0 24 24" className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="18" cy="5" r="2.5" />
-                        <circle cx="6" cy="12" r="2.5" />
-                        <circle cx="18" cy="19" r="2.5" />
-                        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
-                        <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
-                    </svg>
-                </motion.button>
+                <div className="relative">
+                    <motion.button
+                        onClick={handleShare}
+                        aria-label="Share"
+                        className="action-icon w-11 h-11 flex items-center justify-center text-[rgb(var(--color-fg))]/70 active:text-[var(--color-gold)]"
+                        whileTap={{ scale: 0.88 }}
+                    >
+                        <svg viewBox="0 0 24 24" className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="18" cy="5" r="2.5" />
+                            <circle cx="6" cy="12" r="2.5" />
+                            <circle cx="18" cy="19" r="2.5" />
+                            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+                            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+                        </svg>
+                    </motion.button>
+                    {/* Feedback toast — fires when share triggers a clipboard
+                        fallback or a real failure (not on successful native-share). */}
+                    <AnimatePresence>
+                        {shareToast && (
+                            <motion.div
+                                initial={{ opacity: 0, x: 6 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: 6 }}
+                                transition={{ duration: 0.15 }}
+                                className="absolute right-full mr-2 top-1/2 -translate-y-1/2 whitespace-nowrap pointer-events-none px-2 py-1 rounded-md bg-[var(--color-gold)]/90 text-[10px] ui font-semibold text-black"
+                                role="status"
+                            >
+                                {shareToast}
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
             </ActionTooltip>
 
             {/* Question type */}

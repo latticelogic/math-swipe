@@ -30,13 +30,14 @@
   <meta name="twitter:description"
     content="Swipe your way to mental math mastery. Fast, fun, addictive. Can you beat my streak? 🔥" />
 
-  <!-- Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="preload" as="style"
-    href="https://fonts.googleapis.com/css2?family=Architects+Daughter&family=Fredericka+the+Great&display=swap">
-  <link href="https://fonts.googleapis.com/css2?family=Architects+Daughter&family=Fredericka+the+Great&display=swap"
-    rel="stylesheet">
+  <!-- Fonts (self-hosted from /public/fonts; see @font-face in src/index.css).
+       Pre-loading the latin subset (the one we actually use for English UI)
+       removes the first-paint serif fallback flash. Latin-ext loads lazily
+       via @font-face for any extended-Latin characters that may appear. -->
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="/fonts/architects-daughter.latin.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="/fonts/fredericka-the-great.latin.woff2">
 </head>
 
 <body>

@@ -522,7 +522,10 @@ function App() {
                 const idx = AGE_BANDS.indexOf(ageBand);
                 handleBandChange(AGE_BANDS[(idx + 1) % AGE_BANDS.length]);
               }}
-              className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-[rgb(var(--color-fg))]/50 active:text-[var(--color-gold)] transition-colors"
+              // min-h-11 (44px) keeps the touch target at iOS HIG / Material Design
+              // minimum even though the visible content is smaller. Top-right corner
+              // tap targets are the hardest to hit accurately on a phone.
+              className="flex items-center gap-1.5 px-3 py-2.5 min-h-11 rounded-lg text-[rgb(var(--color-fg))]/50 active:text-[var(--color-gold)] transition-colors"
               aria-label="Change level"
             >
               <AgeBandIcon band={ageBand} />
@@ -530,7 +533,8 @@ function App() {
             </button>
             <button
               onClick={toggleThemeMode}
-              className="w-9 h-9 flex items-center justify-center text-[rgb(var(--color-fg))]/60 active:text-[var(--color-gold)] transition-colors"
+              // 44×44 tap target (was 36×36) — see comment on Change level button.
+              className="w-11 h-11 flex items-center justify-center text-[rgb(var(--color-fg))]/60 active:text-[var(--color-gold)] transition-colors"
               aria-label="Toggle theme"
             >
               {themeMode === 'light' ? (

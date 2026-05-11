@@ -18,21 +18,12 @@ export default defineConfig({
     VitePWA({
       registerType: 'prompt',
       workbox: {
+        // woff2 in glob → fonts in public/fonts/ are precached at install time.
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         // Avoid stale precache HTML serving the old theme-bootstrap path
         navigateFallbackDenylist: [/^\/theme-bootstrap\.js$/],
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: { cacheName: 'google-fonts-stylesheets', expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 } },
-          },
-          {
-            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: { cacheName: 'google-fonts-webfonts', expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 365 } },
-          },
-        ],
+        // No runtimeCaching needed — fonts are now self-hosted and covered
+        // by globPatterns above. Previously we cached Google Fonts CDN here.
       },
       manifest: {
         name: 'Math Swipe',
