@@ -222,8 +222,13 @@ export default {
         const projectId = env.FIREBASE_PROJECT_ID;
         const origin = env.PUBLIC_ORIGIN ?? url.origin;
 
-        // Always serve index.html (the SPA renders the actual UI client-side)
-        const indexReq = new Request(`${origin}/index.html`, request);
+        // Always serve index.html (the SPA renders the actual UI client-side).
+        // Fetch from the request's own origin — env.ASSETS routes by path on
+        // the incoming Request URL, and using PUBLIC_ORIGIN here breaks preview
+        // deploys (where the hostname is <hash>.<project>.pages.dev, not the
+        // canonical origin). PUBLIC_ORIGIN is only used in the rendered OG
+        // tags below where we want stable URLs for social-card crawlers.
+        const indexReq = new Request(`${url.origin}/index.html`, request);
         const indexRes = await env.ASSETS.fetch(indexReq);
         const html = await indexRes.text();
 
