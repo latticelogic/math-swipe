@@ -6,6 +6,7 @@ import { ACHIEVEMENTS, HARD_MODE_ACHIEVEMENTS, TIMED_MODE_ACHIEVEMENTS, ULTIMATE
 import { AchievementBadge } from './AchievementBadge';
 import { CHALK_THEMES, type ChalkTheme } from '../utils/chalkThemes';
 import { SWIPE_TRAILS } from '../utils/trails';
+import { TEACHERS, DEFAULT_TEACHER_ID } from '../domains/math/teachers';
 
 interface Props {
     stats: ReturnType<typeof useStats>['stats'];
@@ -28,6 +29,8 @@ interface Props {
     ageBand: AgeBand;
     activeBadge: string;
     onBadgeChange: (id: string) => void;
+    activeTeacherId: string;
+    onTeacherChange: (id: string) => void;
 }
 
 /** Ranks with progressive XP thresholds (gets harder to level up) */
@@ -83,7 +86,7 @@ function getMasteryInfo(xp: number) {
     }
 }
 
-export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked, activeCostume, onCostumeChange, activeTheme, onThemeChange, activeTrailId, onTrailChange, displayName, onDisplayNameChange, isAnonymous, onLinkGoogle, onSendEmailLink, ageBand, activeBadge, onBadgeChange }: Props) {
+export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked, activeCostume, onCostumeChange, activeTheme, onThemeChange, activeTrailId, onTrailChange, displayName, onDisplayNameChange, isAnonymous, onLinkGoogle, onSendEmailLink, ageBand, activeBadge, onBadgeChange, activeTeacherId, onTeacherChange }: Props) {
     const [showRanks, setShowRanks] = useState(false);
     const [resetConfirm, setResetConfirm] = useState<string | null>(null);
     const [editingName, setEditingName] = useState(false);
@@ -419,6 +422,46 @@ export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked,
                             <div key={a.id} onClick={() => isUnlocked && onBadgeChange(isBadge ? '' : a.id)} className={isUnlocked ? 'cursor-pointer' : ''}>
                                 <AchievementBadge achievementId={a.id} unlocked={isUnlocked} equipped={isBadge} name={a.name} desc={isBadge ? '🏷️ badge' : a.desc} />
                             </div>
+                        );
+                    })}
+                </div>
+            </div>
+
+            {/* Teacher (companion) picker — drives the in-game character + voice */}
+            <div className="w-full max-w-sm mt-8">
+                <div className="text-sm ui text-[rgb(var(--color-fg))]/50 uppercase tracking-widest text-center mb-1">
+                    TEACHER
+                </div>
+                <div className="text-[10px] ui text-[rgb(var(--color-fg))]/30 text-center mb-3">
+                    Each one has their own voice. Some auto-swap when you change modes.
+                </div>
+                <div className="grid grid-cols-4 gap-3 justify-items-center">
+                    {TEACHERS.map(t => {
+                        const isUnlocked = t.isDefault || (t.unlock?.check(stats) ?? false);
+                        const isActive = (activeTeacherId || DEFAULT_TEACHER_ID) === t.id;
+                        return (
+                            <button
+                                key={t.id}
+                                onClick={() => isUnlocked && onTeacherChange(t.id)}
+                                disabled={!isUnlocked}
+                                title={isUnlocked ? `${t.name} — ${t.tagline}` : `🔒 ${t.unlock?.reason ?? 'Locked'}`}
+                                aria-label={isUnlocked ? `Pick ${t.name}` : `Locked: ${t.name}`}
+                                className={`relative w-16 h-20 rounded-xl border flex flex-col items-center justify-end px-1 pb-1 transition-all ${isActive
+                                    ? 'border-[var(--color-gold)] bg-[var(--color-gold)]/8'
+                                    : isUnlocked
+                                        ? 'border-[rgb(var(--color-fg))]/15 hover:border-[rgb(var(--color-fg))]/35 active:scale-95'
+                                        : 'border-[rgb(var(--color-fg))]/8 opacity-40 cursor-not-allowed'}`}
+                            >
+                                <svg viewBox="0 0 100 130" className="w-12 h-14" style={{ color: 'var(--color-chalk)' }}>
+                                    <t.Portrait state="idle" streak={0} />
+                                </svg>
+                                <span className={`text-[9px] ui leading-tight text-center mt-0.5 ${isActive ? 'text-[var(--color-gold)]' : 'text-[rgb(var(--color-fg))]/55'}`}>
+                                    {t.name.replace(/^(Mr\.?|Ms\.?|Dr\.?|Coach) /, '')}
+                                </span>
+                                {!isUnlocked && (
+                                    <span className="absolute top-1 right-1 text-[9px]">🔒</span>
+                                )}
+                            </button>
                         );
                     })}
                 </div>

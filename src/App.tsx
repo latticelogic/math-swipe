@@ -3,7 +3,8 @@ import type { PanInfo } from 'framer-motion';
 import { AnimatePresence, motion } from 'framer-motion';
 import { BlackboardLayout } from './components/BlackboardLayout';
 import { ProblemView } from './components/ProblemView';
-import { MrChalk } from './components/MrChalk';
+import { Teacher } from './components/Teacher';
+import { TEACHERS, DEFAULT_TEACHER_ID, resolveActiveTeacher } from './domains/math/teachers';
 import { ScoreCounter } from './components/ScoreCounter';
 import { BottomNav } from './components/BottomNav';
 import { ActionButtons } from './components/ActionButtons';
@@ -133,6 +134,7 @@ function App() {
     speedrunFinalTime,
     speedrunElapsed,
     shieldBroken,
+    wrongStreak,
   } = useGameLoop(
     generateMathItem,
     questionType,
@@ -311,6 +313,25 @@ function App() {
 
   const [activeCostume, handleCostumeChange] = useLocalState(STORAGE_KEYS.costume, '', uid);
   const [activeTrailId, handleTrailChange] = useLocalState(STORAGE_KEYS.trail, '', uid);
+
+  // ── Teacher (companion character) ──
+  const [savedTeacherId, setSavedTeacherId] = useLocalState('math-swipe-teacher', DEFAULT_TEACHER_ID, uid);
+  const unlockedTeacherIds = useMemo(() => {
+    const set = new Set<string>([DEFAULT_TEACHER_ID]);
+    for (const t of TEACHERS) {
+      if (t.isDefault || (t.unlock && t.unlock.check(stats))) set.add(t.id);
+    }
+    return set;
+  }, [stats]);
+  const isMagicLessonForTeacher = activeTab === 'magic' && isMagicLessonActive;
+  const activeTeacher = useMemo(() => resolveActiveTeacher(savedTeacherId, {
+    isHardMode: hardMode,
+    isTimedMode: timedMode,
+    isSpeedrun: questionType === 'speedrun',
+    isMagicLesson: isMagicLessonForTeacher,
+    isStruggling: wrongStreak >= 3,
+    unlocked: unlockedTeacherIds,
+  }), [savedTeacherId, hardMode, timedMode, questionType, isMagicLessonForTeacher, wrongStreak, unlockedTeacherIds]);
 
   // ── Chalk themes ──
   const [activeThemeId, setActiveThemeId] = useLocalState(STORAGE_KEYS.chalkTheme, 'classic', uid);
@@ -675,7 +696,17 @@ function App() {
 
             {/* ── Mr. Chalk PiP ── */}
             <div className="landscape-hide">
-              <MrChalk state={chalkState} costume={activeCostume} streak={streak} totalAnswered={totalAnswered} questionType={questionType} hardMode={hardMode} timedMode={timedMode} pingMessage={pingMessage} />
+              <Teacher
+                state={chalkState}
+                teacherId={activeTeacher.id}
+                costume={activeCostume}
+                streak={streak}
+                totalAnswered={totalAnswered}
+                questionType={questionType}
+                hardMode={hardMode}
+                timedMode={timedMode}
+                pingMessage={pingMessage}
+              />
             </div>
 
             {/* ── Feedback flash overlay ── */}
@@ -746,6 +777,8 @@ function App() {
               ageBand={ageBand}
               activeBadge={stats.activeBadgeId || ''}
               onBadgeChange={updateBadge}
+              activeTeacherId={savedTeacherId as string}
+              onTeacherChange={setSavedTeacherId}
             /></Suspense>
           </motion.div>
         )}
