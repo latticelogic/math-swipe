@@ -221,7 +221,7 @@ export const SessionSummary = memo(function SessionSummary({
                                 className="w-[1080px] h-[1920px] flex flex-col items-center justify-center relative overflow-hidden chalkboard-bg p-16"
                                 style={{ background: '#1a1a24' /* fallback solid for html-to-image */ }}
                             >
-                                <div className="absolute inset-0 opacity-10 blur-[80px] bg-gradient-to-br from-[#FF00FF] via-transparent to-[#00FFFF]" />
+                                <div className="absolute inset-0 opacity-10 blur-[80px] bg-gradient-to-br from-[var(--color-speedrun)] via-transparent to-[#00FFFF]" />
 
                                 <div className="z-10 text-center flex flex-col items-center w-full">
                                     <h1 className="text-8xl chalk text-[var(--color-gold)] mb-8">Math Swipe</h1>
@@ -319,7 +319,7 @@ export const SessionSummary = memo(function SessionSummary({
                                     Speedrun Cleared!
                                 </motion.h3>
                                 {isNewSpeedrunRecord && (
-                                    <div className="text-xs ui font-bold text-[#FF00FF] uppercase tracking-widest mb-4">
+                                    <div className="text-xs ui font-bold text-[var(--color-speedrun)] uppercase tracking-widest mb-4">
                                         New Record!
                                     </div>
                                 )}

@@ -220,7 +220,7 @@ export const LeaguePage = memo(function LeaguePage({ userXP, userStreak, uid, di
                 <button
                     onClick={() => setTab('speedrun')}
                     className={`flex-1 py-2 rounded-lg text-xs ui font-semibold transition-all duration-200 flex items-center justify-center gap-1.5 ${tab === 'speedrun'
-                        ? 'bg-[#FF00FF]/15 text-[#FF00FF] shadow-sm'
+                        ? 'bg-[var(--color-speedrun)]/15 text-[var(--color-speedrun)] shadow-sm'
                         : 'text-[rgb(var(--color-fg))]/40 hover:text-[rgb(var(--color-fg))]/60'
                         }`}
                 >
@@ -239,7 +239,7 @@ export const LeaguePage = memo(function LeaguePage({ userXP, userStreak, uid, di
             {tab === 'speedrun' && onStartSpeedrun && (
                 <motion.button
                     onClick={onStartSpeedrun}
-                    className="w-full max-w-xs mb-4 py-3 rounded-xl ui font-bold text-sm bg-gradient-to-r from-[#FF00FF]/20 to-[#00FFFF]/20 border border-[#FF00FF]/30 text-[#FF00FF] active:scale-95 transition-transform"
+                    className="w-full max-w-xs mb-4 py-3 rounded-xl ui font-bold text-sm bg-gradient-to-r from-[var(--color-speedrun)]/20 to-[#00FFFF]/20 border border-[var(--color-speedrun)]/30 text-[var(--color-speedrun)] active:scale-95 transition-transform"
                     whileTap={{ scale: 0.95 }}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -251,7 +251,7 @@ export const LeaguePage = memo(function LeaguePage({ userXP, userStreak, uid, di
             {/* Your best time badge */}
             {tab === 'speedrun' && bestSpeedrunTime != null && bestSpeedrunTime > 0 && (
                 <div className="text-xs ui text-[rgb(var(--color-fg))]/40 mb-3">
-                    Your best: <span className="text-[#FF00FF] font-semibold">{formatTime(bestSpeedrunTime)}</span>{speedrunHardMode && <span title="Hard Mode"> 💀</span>}
+                    Your best: <span className="text-[var(--color-speedrun)] font-semibold">{formatTime(bestSpeedrunTime)}</span>{speedrunHardMode && <span title="Hard Mode"> 💀</span>}
                 </div>
             )}
 
@@ -372,7 +372,7 @@ export const LeaguePage = memo(function LeaguePage({ userXP, userStreak, uid, di
                                     </>
                                 ) : (
                                     <div className="text-right">
-                                        <div className={`text-sm ui font-semibold tabular-nums ${entry.isYou ? 'text-[#FF00FF]' : 'text-[#FF00FF]/70'}`}>
+                                        <div className={`text-sm ui font-semibold tabular-nums ${entry.isYou ? 'text-[var(--color-speedrun)]' : 'text-[var(--color-speedrun)]/70'}`}>
                                             {entry.bestSpeedrunTime ? formatTime(entry.bestSpeedrunTime) : '—'}
                                         </div>
                                         <div className="text-[9px] ui text-[rgb(var(--color-fg))]/20">time</div>

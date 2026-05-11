@@ -577,23 +577,51 @@ function App() {
           }} className="flex-1 flex flex-col w-full">
             {/* ── Score (centered, pushed down from edge) ── */}
             <div className="landscape-score flex flex-col items-center pt-[calc(env(safe-area-inset-top,16px)+40px)] pb-6 z-30">
-              {/* Challenge header */}
+              {/* Mode headers — Challenge / Speedrun / Daily get a small
+                  status banner above the score so users know they're in a
+                  finite-length session. Without it, the only mode indicator
+                  was the calendar/sword/stopwatch icon in the action
+                  sidebar — easy to miss. */}
               {questionType === 'challenge' && (
                 <div className="text-xs ui text-[var(--color-gold)] mb-2 flex items-center gap-2">
-                  <span>⚔️ Challenge</span>
+                  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <line x1="5" y1="5" x2="19" y2="19" />
+                    <line x1="19" y1="5" x2="5" y2="19" />
+                  </svg>
+                  <span>Challenge</span>
                   <span className="text-[rgb(var(--color-fg))]/30">·</span>
                   <span className="text-[rgb(var(--color-fg))]/40">{totalAnswered}/10</span>
                 </div>
               )}
               {questionType === 'speedrun' && (
-                <div className="text-xs ui text-[#FF00FF] mb-2 flex items-center gap-2">
-                  <span>⏱️ Speedrun</span>
+                <div className="text-xs ui text-[var(--color-speedrun)] mb-2 flex items-center gap-2">
+                  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <circle cx="12" cy="14" r="7" />
+                    <line x1="12" y1="14" x2="15" y2="11" />
+                    <line x1="10" y1="2" x2="14" y2="2" />
+                    <line x1="12" y1="2" x2="12" y2="5" />
+                  </svg>
+                  <span>Speedrun</span>
                   <span className="text-[rgb(var(--color-fg))]/30">·</span>
                   <span className="text-[rgb(var(--color-fg))]/40">{totalCorrect}/10</span>
                 </div>
               )}
+              {questionType === 'daily' && (
+                <div className="text-xs ui text-[var(--color-gold)] mb-2 flex items-center gap-2">
+                  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <rect x="3" y="5" width="18" height="16" rx="2" />
+                    <line x1="8" y1="3" x2="8" y2="7" />
+                    <line x1="16" y1="3" x2="16" y2="7" />
+                    <line x1="3" y1="10" x2="21" y2="10" />
+                    <circle cx="12" cy="15" r="1.2" fill="currentColor" stroke="none" />
+                  </svg>
+                  <span>Daily Challenge</span>
+                  <span className="text-[rgb(var(--color-fg))]/30">·</span>
+                  <span className="text-[rgb(var(--color-fg))]/40">{totalAnswered}/10</span>
+                </div>
+              )}
               {questionType === 'speedrun' ? (
-                <div className="chalk text-[#FF00FF] text-7xl leading-none tabular-nums">
+                <div className="chalk text-[var(--color-speedrun)] text-7xl leading-none tabular-nums">
                   {((speedrunFinalTime ?? speedrunElapsed) / 1000).toFixed(1)}<span className="text-3xl">s</span>
                 </div>
               ) : (
@@ -701,7 +729,7 @@ function App() {
                   initial={{ opacity: 0, y: -4 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0 }}
-                  className="mt-1 text-[10px] ui text-[#FF00FF]/80 hover:text-[#FF00FF] transition-colors flex items-center gap-1"
+                  className="mt-1 text-[10px] ui text-[var(--color-speedrun)]/80 hover:text-[var(--color-speedrun)] transition-colors flex items-center gap-1"
                   onClick={() => setQuestionType('speedrun' as QuestionType)}
                   aria-label="Try speedrun mode"
                 >
