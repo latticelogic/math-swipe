@@ -971,6 +971,49 @@ export const MAGIC_TRICKS: MagicTrick[] = [
                 correctIndex: 0 // Will be shuffled later
             };
         }
+    },
+
+    {
+        id: 'large-power-cycles',
+        title: 'Large-Exponent Cycles',
+        description: 'Find the last digit of huge powers like 7^100',
+        difficulty: 5,
+        icon: '🌀',
+        lesson: {
+            equation: 'Last digit of 7^100',
+            latex: '7^{100} \\bmod 10',
+            steps: [
+                'Powers of 7 cycle every 4: 7, 9, 3, 1, 7, 9, 3, 1...',
+                'So 7^N mod 10 only depends on N mod 4.',
+                '100 mod 4 = 0, which corresponds to the 4th value in the cycle.',
+                'The 4th value is 1!'
+            ],
+            result: '1'
+        },
+        generatePractice: () => {
+            const base = Math.floor(Math.random() * 8) + 2;
+            const exp = Math.floor(Math.random() * 151) + 50;
+            const cycle: number[] = [];
+            let v = base % 10;
+            for (let i = 0; i < 4; i++) {
+                cycle.push(v);
+                v = (v * base) % 10;
+            }
+            const idx = ((exp - 1) % 4 + 4) % 4;
+            const ans = cycle[idx];
+            const others = cycle.filter(d => d !== ans);
+            const d1 = others[0] ?? (ans + 1) % 10;
+            let d2 = others[1] ?? (ans + 3) % 10;
+            if (d2 === d1) d2 = (d2 + 1) % 10;
+            const opts = [ans, d1, d2].sort(() => Math.random() - 0.5);
+            return {
+                expression: `Last digit: ${base}^${exp}`,
+                latex: `\\text{Last digit of } ${base}^{${exp}}`,
+                answer: ans,
+                options: opts,
+                correctIndex: opts.indexOf(ans)
+            };
+        }
     }
 ];
 
@@ -1034,7 +1077,7 @@ export const TRICK_CATEGORIES: TrickCategory[] = [
         id: 'number-theory',
         label: 'Number Theory',
         emoji: '🔮',
-        trickIds: ['power-last-digit', 'product-last-digit', 'digit-sum-mod', 'divisible-11'],
+        trickIds: ['power-last-digit', 'product-last-digit', 'digit-sum-mod', 'divisible-11', 'large-power-cycles'],
     },
     {
         id: 'continued-fractions',

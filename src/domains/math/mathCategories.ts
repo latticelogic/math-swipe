@@ -12,6 +12,7 @@ export type QuestionType =
     | 'add' | 'subtract' | 'multiply' | 'divide' | 'square' | 'sqrt'
     | 'fraction' | 'decimal' | 'percent' | 'linear'
     | 'add1' | 'sub1' | 'bonds' | 'doubles' | 'compare' | 'skip'
+    | 'shapes' | 'evenodd' | 'tens'
     | 'round' | 'orderops'
     | 'exponent' | 'negatives' | 'gcflcm' | 'ratio'
     | 'mix-basic' | 'mix-all'
@@ -50,6 +51,9 @@ export const QUESTION_TYPES: ReadonlyArray<CategoryEntry<QuestionType>> = [
     { id: 'doubles', icon: '👯', label: 'Doubles', group: 'young' },
     { id: 'compare', icon: '⚖️', label: 'Compare', group: 'young' },
     { id: 'skip', icon: '🦘', label: 'Skip Count', group: 'young' },
+    { id: 'shapes', icon: '🔺', label: 'Shapes', group: 'young' },
+    { id: 'evenodd', icon: '½', label: 'Even/Odd', group: 'young' },
+    { id: 'tens', icon: '10', label: '10 More', group: 'young' },
     // Whole
     { id: 'add', icon: '+', label: 'Add', group: 'whole' },
     { id: 'subtract', icon: '−', label: 'Subtract', group: 'whole' },

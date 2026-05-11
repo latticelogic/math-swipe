@@ -18,7 +18,7 @@ export interface Problem {
 }
 
 const BASIC_TYPES: QuestionType[] = ['add', 'subtract', 'multiply', 'divide'];
-export const YOUNG_TYPES: QuestionType[] = ['add1', 'sub1', 'bonds', 'doubles', 'compare', 'skip'];
+export const YOUNG_TYPES: QuestionType[] = ['add1', 'sub1', 'bonds', 'doubles', 'compare', 'skip', 'shapes', 'evenodd', 'tens'];
 const CORE_TYPES: QuestionType[] = ['round', 'orderops'];
 const ALL_INDIVIDUAL: QuestionType[] = [
     ...BASIC_TYPES, 'square', 'sqrt', 'exponent', 'negatives', 'linear', 'gcflcm', 'ratio',
@@ -67,6 +67,9 @@ function _generateProblem(difficulty: number, type: QuestionType, hardMode: bool
         case 'doubles': return genDoubles();
         case 'compare': return genCompare();
         case 'skip': return genSkip();
+        case 'shapes': return genShapes();
+        case 'evenodd': return genEvenOdd();
+        case 'tens': return genTens();
         case 'round': return genRound();
         case 'orderops': return genOrderOps();
 
@@ -170,6 +173,60 @@ function genSkip(): Problem {
     return pack(`${seq.join(', ')}, ?`, answer, (ans) => {
         return [ans + steps, ans - steps > 0 ? ans - steps : ans + 2 * steps];
     });
+}
+
+/** Shapes: count the sides of a common 2D shape. Visual answer set is the
+ *  side counts so we keep the existing 3-option swipe machinery intact. */
+function genShapes(): Problem {
+    const SHAPES = [
+        { emoji: '🔺', name: 'triangle', sides: 3 },
+        { emoji: '🟦', name: 'square', sides: 4 },
+        { emoji: '⬢', name: 'hexagon', sides: 6 },
+        { emoji: '⭐', name: 'star', sides: 5 },
+        { emoji: '◆', name: 'diamond', sides: 4 },
+    ];
+    const shape = pickRandom(SHAPES);
+    const answer = shape.sides;
+    return pack(`Sides of ${shape.emoji} ?`, answer, (ans) => {
+        // Distractors are other plausible side counts kids confuse
+        const pool = [3, 4, 5, 6, 8].filter(n => n !== ans);
+        // Shuffle deterministically against rng
+        for (let i = pool.length - 1; i > 0; i--) {
+            const j = Math.floor(_rng() * (i + 1));
+            [pool[i], pool[j]] = [pool[j], pool[i]];
+        }
+        return [pool[0], pool[1]];
+    });
+}
+
+/** Even / odd recognition. The "options" use 0 for even and 1 for odd so the
+ *  existing equality-based engine works; labels show the words. */
+function genEvenOdd(): Problem {
+    const n = randInt(2, 99);
+    const correct = n % 2 === 0 ? 0 : 1;
+    // Three options: even, odd, "I don't know" — but we only have 3 slots
+    // and 2 real choices. Pad with a third grey-rock option ("can't tell")
+    // mapped to value 2 so kids learn to commit.
+    const options = [0, 1, 2];
+    const optionLabels = ['Even', 'Odd', 'Either'];
+    return {
+        id: uid(),
+        expression: `Is ${n} even or odd?`,
+        answer: correct,
+        options,
+        optionLabels,
+        correctIndex: correct,
+    };
+}
+
+/** "What's 10 more than N?" — builds base-10 intuition. Includes occasional
+ *  10-less variants so kids generalise. */
+function genTens(): Problem {
+    const n = randInt(10, 89);
+    const isMore = _rng() > 0.4;
+    const answer = isMore ? n + 10 : n - 10;
+    const verb = isMore ? '10 more than' : '10 less than';
+    return pack(`${verb} ${n}`, answer, smallDistractors);
 }
 
 // ── Core 3-5 Generators ─────────────────────────────────

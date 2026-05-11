@@ -80,6 +80,7 @@ describe('mathGenerator.ts', () => {
         'add', 'subtract', 'multiply', 'divide', 'square', 'sqrt',
         'fraction', 'decimal', 'percent', 'linear',
         'add1', 'sub1', 'bonds', 'doubles', 'compare', 'skip',
+        'shapes', 'evenodd', 'tens',
         'round', 'orderops',
         'exponent', 'negatives', 'gcflcm', 'ratio',
         'mix-basic', 'mix-all', 'daily', 'challenge',
@@ -123,6 +124,7 @@ describe('mathGenerator.ts', () => {
                 'add', 'subtract', 'multiply', 'divide', 'square', 'sqrt',
                 'fraction', 'decimal', 'percent', 'linear',
                 'add1', 'sub1', 'bonds', 'doubles', 'compare', 'skip',
+                'shapes', 'evenodd', 'tens',
                 'round', 'orderops', 'exponent', 'negatives', 'gcflcm', 'ratio',
             ];
             for (const type of LEAF_TYPES) {
