@@ -85,14 +85,40 @@ const SESSION_MILESTONES: Record<number, string[]> = {
     200: ['200!! Marathon champion! 🏃‍♂️🏆'],
 };
 
+// Tier-aligned with src/engine/domain.ts milestones config (3/5/10/25/50)
+// and src/components/MilestoneBurst.tsx tier names. Multiple lines per tier
+// so the teacher doesn't repeat themselves on back-to-back milestones.
 const STREAK_MILESTONES: Record<number, string[]> = {
-    3: ['Three in a row! 🎯'],
-    5: ['High five! ✋🔥'],
-    10: ['TEN!! Double digits! 🔟🎉'],
-    15: ['Fifteen! Halfway to greatness! 🌟'],
-    20: ['TWENTY! You\'re a legend! 👑'],
-    30: ['THIRTY?! This is unreal! 🤯'],
-    50: ['FIFTY STREAK?! I\'m speechless! 🏆✨'],
+    3: [
+        'Three in a row!',
+        'Nice rhythm!',
+        'In the zone.',
+        'Building heat.',
+    ],
+    5: [
+        'High five! Five in a row!',
+        'Five strong!',
+        'You\'re cooking.',
+        'Streak of five — keep going!',
+    ],
+    10: [
+        'TEN in a row!',
+        'Double digits! Unstoppable.',
+        'Ten! Locked in.',
+        'You\'re on fire.',
+    ],
+    25: [
+        'TWENTY-FIVE?! Are you human?',
+        '25 streak — legendary territory.',
+        'Quarter century! Wild.',
+        'Twenty-five. I\'m impressed.',
+    ],
+    50: [
+        'FIFTY. I\'m speechless.',
+        'Fifty in a row?! Hall of fame.',
+        'Fifty. This is a record.',
+        'FIFTY STREAK! Bow down.',
+    ],
 };
 
 function getTimeMessages(): string[] {

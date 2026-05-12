@@ -11,6 +11,7 @@ import { SWIPE_TO_INDEX, DEFAULT_GAME_CONFIG } from '../engine/domain';
 import { scoreCorrect, scorePenalty, FAST_ANSWER_MS } from '../engine/scoring';
 import { useDifficulty } from './useDifficulty';
 import { hapticTap, hapticCorrect, hapticWrong, hapticMilestone } from '../utils/haptics';
+import { milestoneDurationMs } from '../components/milestoneTiers';
 
 // Re-export engine types so callers that import from useGameLoop still work
 export type { ChalkState, FeedbackFlash };
@@ -254,7 +255,9 @@ export function useGameLoop(
             });
             frozenRef.current = true;
             scheduleChalkReset(newStreak >= 10 ? 2000 : 800);
-            if (milestoneEmoji) safeTimeout(() => setGs(p => ({ ...p, milestone: '' })), 1300);
+            // Per-tier duration — trophy stays on screen longer than sparkle.
+            // Falls back to 1300ms for unknown tiers.
+            if (milestoneEmoji) safeTimeout(() => setGs(p => ({ ...p, milestone: '' })), milestoneDurationMs(milestoneEmoji));
             if (isFast) safeTimeout(() => setGs(p => ({ ...p, speedBonus: false })), 900);
 
             // Speedrun win condition

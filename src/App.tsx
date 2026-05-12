@@ -15,6 +15,7 @@ import { defaultTypeForBand, typesForBand, AGE_BANDS, BAND_LABELS, migrateLegacy
 import { useAutoSummary, usePersonalBest } from './hooks/useSessionUI';
 import { OfflineBanner } from './components/OfflineBanner';
 import { ReloadPrompt } from './components/ReloadPrompt';
+import { MilestoneBurst } from './components/MilestoneBurst';
 /** Retry a dynamic import once on chunk-load failure (Cloudflare Pages cache busting) */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function lazyRetry<T extends Record<string, any>>(factory: () => Promise<T>): Promise<T> {
@@ -633,7 +634,7 @@ function App() {
               <div className="sr-only" role="status" aria-live="assertive">
                 {flash === 'correct' && `Correct! Streak: ${streak}`}
                 {flash === 'wrong' && (shieldBroken ? 'Wrong! Shield used, streak saved.' : 'Wrong! Streak reset.')}
-                {milestone && `Milestone: ${milestone}`}
+                {milestone && `Milestone reached at ${streak} in a row!`}
               </div>
               {stats.streakShields > 0 && streak > 0 && (
                 <div className="text-[10px] ui text-[rgb(var(--color-fg))]/30 mt-1 flex items-center gap-0.5">
@@ -876,12 +877,14 @@ function App() {
               />
             )}
 
-            {/* ── Streak milestone popup ── */}
-            {milestone && (
-              <div key={milestone + streak} className="milestone-pop absolute inset-0 flex items-center justify-center z-40 text-8xl">
-                {milestone}
-              </div>
-            )}
+            {/* ── Streak milestone burst ── Theatrical overlay per tier.
+                Lower tiers (sparkle/flame) stay subtle; trophy at 50 is the
+                full event. See MilestoneBurst.tsx for tier definitions. */}
+            <AnimatePresence>
+              {milestone && (
+                <MilestoneBurst key={milestone + streak} tier={milestone} streak={streak} />
+              )}
+            </AnimatePresence>
 
             {/* ── Speed bonus ── */}
             {speedBonus && (
