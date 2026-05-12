@@ -28,6 +28,11 @@ export const STORAGE_KEYS = {
     chalkTheme: `${STORAGE_PREFIX}-chalk-theme`,
     theme: `${STORAGE_PREFIX}-theme`,
     ageBand: `${STORAGE_PREFIX}-age-band`,
+    // YYYY-MM-DD of the most recent day we showed the "first correct of the
+    // day" flourish. Stays purely device-local — no Firestore sync needed
+    // since the flourish is meant to feel like an in-session moment, not
+    // a tracked metric. Triggers once per device per day.
+    firstCorrectFlourish: `${STORAGE_PREFIX}-first-correct-flourish`,
 } as const;
 
 // ── Firestore collection names ────────────────────────────────────────────────
