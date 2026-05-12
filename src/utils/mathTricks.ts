@@ -63,16 +63,17 @@ export const MAGIC_TRICKS: MagicTrick[] = [
     {
         id: 'diff-squares',
         title: 'Difference of Squares',
-        description: 'Multiply numbers equally spaced from a round number',
+        description: 'Two numbers the same distance from a friendly number (e.g. 98 × 102 from 100).',
         difficulty: 2,
         icon: '🎯',
         lesson: {
             equation: '98 × 102',
             latex: '98 \\times 102',
             steps: [
-                'Notice they are both 2 away from 100.',
-                'This is (100 - 2) × (100 + 2) = 100² - 2²',
-                '10{,}000 - 4'
+                'Big idea: (a − b)(a + b) = a² − b². Two numbers equidistant from a centre value collapse into one square minus another.',
+                'Here, both numbers are 2 away from 100: that\'s (100 − 2)(100 + 2).',
+                'Apply the formula: 100² − 2² = 10000 − 4.',
+                '= 9996.'
             ],
             result: '9996'
         },
@@ -89,16 +90,17 @@ export const MAGIC_TRICKS: MagicTrick[] = [
     {
         id: 'multiply-11',
         title: 'Rule of 11',
-        description: 'Multiply any 2-digit number by 11 in seconds',
+        description: 'Split the digits and tuck their sum in the middle.',
         difficulty: 1,
         icon: '🚀',
         lesson: {
             equation: '43 × 11',
             latex: '43 \\times 11',
             steps: [
-                'Separate the two digits: 4 and 3',
-                'Add them together: 4 + 3 = 7',
-                'Put the 7 in the middle!'
+                'Split the digits: 4 _ 3.',
+                'Add them and tuck the sum into the middle: 4 + 3 = 7 → 4 7 3.',
+                'Why it works: 43 × 11 = 43 × 10 + 43 = 430 + 43. Aligning those gives the digit-sum in the tens column.',
+                'Watch out: if the sum is 10 or more, carry the 1. (87 × 11: 8+7 = 15 → carry the 1 over to the 8 → 9, 5, 7 → 957.)'
             ],
             result: '473'
         },
@@ -113,17 +115,18 @@ export const MAGIC_TRICKS: MagicTrick[] = [
     {
         id: 'near-100',
         title: 'Near 100 Squares',
-        description: 'Square numbers in the 90s effortlessly',
+        description: 'Square numbers near 100 (like 96 or 97) by anchoring on 100.',
         difficulty: 3,
         icon: '🔥',
         lesson: {
             equation: '96²',
             latex: '96^2',
             steps: [
-                '96 is 4 away from 100.',
-                'Subtract that 4 from 96: 96 - 4 = 92 (first part)',
-                'Square the 4: 4² = 16 (second part)',
-                'Stick them together: 92...16'
+                'Big idea: (100 − d)² = 100² − 200d + d² = (100 − 2d)(100) + d². The first part lands as the leading digits; the d² lands as the last two.',
+                'Step 1 — find the distance from 100: 100 − 96 = 4.',
+                'Step 2 — subtract the distance from the number: 96 − 4 = 92. (First half.)',
+                'Step 3 — square the distance: 4² = 16. (Second half, padded to 2 digits.)',
+                'Glue them: 92 then 16 → 9216.'
             ],
             result: '9216'
         },
@@ -139,16 +142,17 @@ export const MAGIC_TRICKS: MagicTrick[] = [
     {
         id: 'sum-odds',
         title: 'Sum of Consecutive Odds',
-        description: 'Add up long strings of odd numbers instantly',
+        description: 'The first N odd numbers always sum to N².',
         difficulty: 2,
         icon: '✨',
         lesson: {
             equation: '1 + 3 + 5 + 7 + 9',
             latex: '\\sum_{k=1}^{N}(2k-1) = N^2',
             steps: [
-                'How many numbers are there? Count them: 5 numbers.',
-                'The sum of the first N odd numbers is always N²!',
-                '5 numbers... so 5² = 25'
+                'Count the numbers: 5 odd numbers in a row.',
+                'The big idea: the first N odd numbers ALWAYS add up to N².',
+                'Why? Picture an N×N grid. Each new odd number adds an L-shape around the corner — one square, then 3, then 5… filling out the square.',
+                '5 numbers, so 5² = 25.'
             ],
             result: '25'
         },
@@ -164,7 +168,7 @@ export const MAGIC_TRICKS: MagicTrick[] = [
     {
         id: 'multiply-5',
         title: 'Multiply by 5',
-        description: 'Half the number, then multiply by 10.',
+        description: 'Multiply by 5 by halving, then adding a zero.',
         difficulty: 1,
         icon: '🖐️',
         lesson: {
@@ -187,7 +191,7 @@ export const MAGIC_TRICKS: MagicTrick[] = [
     {
         id: 'multiply-9',
         title: 'Multiply by 9',
-        description: 'Multiply by 10, then subtract the number.',
+        description: 'Multiply by 10, then subtract the original.',
         difficulty: 2,
         icon: '➿',
         lesson: {
@@ -211,7 +215,7 @@ export const MAGIC_TRICKS: MagicTrick[] = [
     {
         id: 'multiply-12',
         title: 'Multiply by 12',
-        description: 'Multiply by 10, then add double the number.',
+        description: 'Multiply by 10, then add double the original.',
         difficulty: 2,
         icon: '🕛',
         lesson: {
@@ -260,7 +264,7 @@ export const MAGIC_TRICKS: MagicTrick[] = [
     {
         id: 'multiply-25',
         title: 'Multiply by 25',
-        description: 'Divide by 4, then multiply by 100.',
+        description: 'Multiply by 25 by quartering, then adding two zeros.',
         difficulty: 2,
         icon: '🪙',
         lesson: {
@@ -283,17 +287,17 @@ export const MAGIC_TRICKS: MagicTrick[] = [
     {
         id: 'double-halve',
         title: 'Double and Halve',
-        description: 'Cut one number in half, double the other.',
+        description: 'Halve one side, double the other — the product stays the same.',
         difficulty: 3,
         icon: '⚖️',
         lesson: {
             equation: '14 × 45',
             latex: '14 \\times 45 = 7 \\times 90',
             steps: [
-                'When multiplying an even number by a multiple of 5...',
-                'Cut the even number in half: 14 ÷ 2 = 7.',
-                'Double the other number: 45 × 2 = 90.',
-                'Now multiply those two: 7 × 90 = 630.'
+                'Big idea: ½ and ×2 cancel out. So you can halve one factor while doubling the other, and the product stays the same.',
+                'Goal: turn an awkward product into one with a "friendly" factor (×10, ×100…).',
+                'For 14 × 45: halve the even one (14 → 7), double the other (45 → 90).',
+                'Now 7 × 90 is easy: 7 × 9 = 63, add a zero → 630.'
             ],
             result: '630'
         },
@@ -311,17 +315,17 @@ export const MAGIC_TRICKS: MagicTrick[] = [
     {
         id: 'rule-of-101',
         title: 'Rule of 101',
-        description: 'Multiply any 2-digit number by 101 instantly.',
+        description: 'Just repeat the number — no mental math.',
         difficulty: 1,
         icon: '🪞',
         lesson: {
             equation: '43 × 101',
             latex: '43 \\times 101',
             steps: [
-                '101 works like a mirror for 2-digit numbers.',
-                'Just take the number and write it twice!',
-                '43... 43...',
-                '4343'
+                'Why this works: 101 = 100 + 1. So n × 101 = n × 100 + n. The "× 100" pushes the digits two places left; the "+ n" fills those two right-most slots back in.',
+                'For 43: 43 × 100 = 4300, then + 43 = 4343.',
+                'Shortcut: just write the number twice. "43 43" → 4343.',
+                'Works on any 2-digit number.'
             ],
             result: '4343'
         },
@@ -335,7 +339,7 @@ export const MAGIC_TRICKS: MagicTrick[] = [
     {
         id: 'rule-of-99',
         title: 'Rule of 99',
-        description: 'Multiply any number by 99.',
+        description: 'Multiply by 100, then subtract the original.',
         difficulty: 3,
         icon: '⏬',
         lesson: {
@@ -359,16 +363,17 @@ export const MAGIC_TRICKS: MagicTrick[] = [
     {
         id: 'just-over-100',
         title: 'Just Over 100',
-        description: 'Multiply two numbers slightly above 100.',
+        description: 'Multiply two numbers just above 100 in one quick step.',
         difficulty: 3,
         icon: '📈',
         lesson: {
             equation: '104 × 106',
             latex: '(100+4)(100+6)',
             steps: [
-                'Add 4 to 106 (or 6 to 104): 110. This is the first part.',
-                'Multiply the last digits: 4 × 6 = 24.',
-                'Stick them together: 11024'
+                'Big idea: (100 + a)(100 + b) = 100·(100 + a + b) + a·b. The left part lands as the leading digits; a·b lands as the last two.',
+                'Step 1 — add either number to the other\'s "extra": 104 + 6 = 110 (same as 106 + 4). That\'s the first part.',
+                'Step 2 — multiply the extras: 4 × 6 = 24. That\'s the last two digits (pad to 2 digits if needed).',
+                'Glue them: 110 then 24 → 11024.'
             ],
             result: '11024'
         },
@@ -385,17 +390,18 @@ export const MAGIC_TRICKS: MagicTrick[] = [
     {
         id: 'cross-multiply',
         title: 'Cross-Multiplication',
-        description: 'Left-to-right universal Vedic multiplication.',
+        description: 'Multiply 2-digit numbers in one pass — left to right.',
         difficulty: 5,
         icon: '⚔️',
         lesson: {
             equation: '23 × 12',
             latex: '23 \\times 12',
             steps: [
-                'Left digits × left digits: 2×1 = 2 → hundreds',
-                'Right digits × right digits: 3×2 = 6 → units',
-                'Cross: (2×2) + (3×1) = 7 → tens',
-                '200 + 70 + 6 = 276'
+                'Big idea: any 2-digit × 2-digit splits into three pieces — hundreds, tens, units. Compute each separately, then add.',
+                'Hundreds = left × left: 2 × 1 = 2 → write down 2.',
+                'Tens = the cross — (left × right) + (right × left): (2×2) + (3×1) = 4 + 3 = 7 → write down 7.',
+                'Units = right × right: 3 × 2 = 6 → write down 6.',
+                'Read off: 2, 7, 6 → 276. No carrying needed when each part is one digit.'
             ],
             result: '276'
         },
@@ -411,16 +417,17 @@ export const MAGIC_TRICKS: MagicTrick[] = [
     {
         id: 'square-50s',
         title: 'Squares in the 50s',
-        description: 'Instantly square numbers from 51 to 59.',
+        description: 'Square 51–59 by mixing 25 with the last digit.',
         difficulty: 2,
         icon: '🧮',
         lesson: {
             equation: '54²',
             latex: '54^2',
             steps: [
-                'Add the last digit to 25: 25 + 4 = 29. (first half)',
-                'Square the last digit: 4² = 16. (second half)',
-                'Put them together: 2916'
+                'Why 25? Because 50² = 2500, and the "25" is the hundreds part. Anything in the 50s starts with that 25.',
+                'Step 1 — add the units digit to 25: 25 + 4 = 29. That\'s the first half.',
+                'Step 2 — square the units digit: 4² = 16. That\'s the second half (always 2 digits — pad with 0 if needed).',
+                'Glue them: 29 then 16 → 2916.'
             ],
             result: '2916'
         },
@@ -435,17 +442,17 @@ export const MAGIC_TRICKS: MagicTrick[] = [
     {
         id: 'square-40s',
         title: 'Squares in the 40s',
-        description: 'Instantly square numbers from 41 to 49.',
+        description: 'Square 41–49 by anchoring on 50.',
         difficulty: 3,
         icon: '📉',
         lesson: {
             equation: '48²',
             latex: '48^2',
             steps: [
-                'How far is 48 from 50? It is 2 away.',
-                'Subtract 2 from 25: 25 - 2 = 23. (First half)',
-                'Square that distance: 2² = 04. (Second half)',
-                'Put them together: 2304'
+                'Big idea: anchor on 50. The number is "50 minus something" — for 48, that something is 2.',
+                'Step 1 — subtract that distance from 25: 25 − 2 = 23. (First half.)',
+                'Step 2 — square the distance: 2² = 4 → pad to "04". (Second half is always 2 digits.)',
+                'Glue them: 23 then 04 → 2304.'
             ],
             result: '2304'
         },
@@ -460,17 +467,18 @@ export const MAGIC_TRICKS: MagicTrick[] = [
     {
         id: 'near-1000',
         title: 'Squares Near 1000',
-        description: 'Square numbers in the 990s in your head.',
+        description: 'Square numbers near 1000 by anchoring on 1000.',
         difficulty: 4,
         icon: '🏔️',
         lesson: {
             equation: '996²',
             latex: '996^2',
             steps: [
-                '996 is 4 away from 1000.',
-                'Subtract 4 from 996: 996 - 4 = 992. (First part)',
-                'Square the 4 as a 3-digit block: 4² = 016. (Second part)',
-                'Put them together: 992016'
+                'Same idea as Near-100 Squares, but with 1000 as the anchor. (1000 − d)² = (1000 − 2d)(1000) + d².',
+                'Step 1 — find the distance from 1000: 1000 − 996 = 4.',
+                'Step 2 — subtract that distance from the number: 996 − 4 = 992. (First part.)',
+                'Step 3 — square the distance, padded to 3 digits: 4² = 016. (Second part.)',
+                'Glue them: 992 then 016 → 992016.'
             ],
             result: '992016'
         },
@@ -484,16 +492,17 @@ export const MAGIC_TRICKS: MagicTrick[] = [
     {
         id: 'divide-5',
         title: 'Divide by 5',
-        description: 'Divide any number by 5 instantly.',
+        description: 'Divide by 5 by doubling, then dropping a zero.',
         difficulty: 1,
         icon: '🍰',
         lesson: {
             equation: '130 ÷ 5',
             latex: '\\frac{130}{5} = \\frac{130 \\times 2}{10}',
             steps: [
-                'Instead of dividing by 5, double it then drop a zero!',
-                'Double the number first: 130 × 2 = 260.',
-                'Then drop a zero (divide by 10): 26.'
+                'Why this works: ÷5 is the same as ÷10 then ×2. Or in reverse, ×2 then ÷10.',
+                'Step 1 — double: 130 × 2 = 260.',
+                'Step 2 — drop a zero: 26.',
+                'Dropping a zero is just dividing by 10. Easier than dividing by 5 in your head.'
             ],
             result: '26'
         },
@@ -508,17 +517,17 @@ export const MAGIC_TRICKS: MagicTrick[] = [
     {
         id: 'divide-25',
         title: 'Divide by 25',
-        description: 'Divide large numbers by 25 easily.',
+        description: 'Divide by 25 by multiplying by 4, then dropping two zeros.',
         difficulty: 2,
         icon: '🍫',
         lesson: {
             equation: '800 ÷ 25',
             latex: '\\frac{800}{25} = \\frac{800 \\times 4}{100}',
             steps: [
-                'There are four 25s in every 100.',
-                'So take the number of hundreds (8)...',
-                'And multiply by 4! 8 × 4 = 32.',
-                'For non-hundreds, multiply the whole thing by 4 then divide by 100.'
+                'Why this works: 25 × 4 = 100. So ÷25 is the same as ×4 ÷100.',
+                'Step 1 — multiply by 4: 800 × 4 = 3200.',
+                'Step 2 — drop two zeros (÷100): 32.',
+                'Multiplying by 4 is just doubling twice — easier than dividing by 25.'
             ],
             result: '32'
         },
@@ -533,16 +542,17 @@ export const MAGIC_TRICKS: MagicTrick[] = [
     {
         id: 'sub-1000',
         title: 'Subtract from 1000',
-        description: 'Vedic rule: "All from 9 and the last from 10".',
+        description: 'No borrowing: take each digit from 9 — last one from 10.',
         difficulty: 1,
         icon: '💵',
         lesson: {
             equation: '1000 - 473',
             latex: '1000 - 473',
             steps: [
-                'Subtract each digit from 9, last from 10.',
-                '9 - 4 = 5, \u2002 9 - 7 = 2, \u2002 10 - 3 = 7.',
-                'Put them together: 527. No borrowing!'
+                'Why: 1000 = 999 + 1. So 1000 \u2212 abc = (999 \u2212 abc) + 1. Each of the first two digits comes from 9 (no borrow), and the last from 10 (the +1).',
+                'Step 1 \u2014 subtract each digit from 9: 9 \u2212 4 = 5, 9 \u2212 7 = 2.',
+                'Step 2 \u2014 subtract the last digit from 10: 10 \u2212 3 = 7.',
+                'Glue them: 5, 2, 7 \u2192 527. No borrowing anywhere.'
             ],
             result: '527'
         },
@@ -610,17 +620,18 @@ export const MAGIC_TRICKS: MagicTrick[] = [
     {
         id: 'multiply-ends-5-10-apart',
         title: 'Ends in 5, 10 Apart',
-        description: 'Multiply numbers like 35 × 45.',
+        description: 'Multiply two ...5 numbers that are 10 apart (35×45, 65×75).',
         difficulty: 4,
         icon: '🤝',
         lesson: {
             equation: '35 × 45',
             latex: '35 \\times 45',
             steps: [
-                'Multiply the tens digits: 3 × 4 = 12.',
-                'Add the smaller tens digit: 12 + 3 = 15.',
-                'This is the first part.',
-                'Always attach 75 to the end. Result: 1575.'
+                'Works whenever both numbers end in 5 AND are exactly 10 apart.',
+                'Step 1 — multiply the tens digits: 3 × 4 = 12.',
+                'Step 2 — add the smaller tens digit: 12 + 3 = 15. (That\'s the first part of the answer.)',
+                'Step 3 — always tack on 75: 1575.',
+                'Why "75"? Because 5 × 5 = 25, plus the half-step from the missing middle term lands you at ...75 every time.'
             ],
             result: '1575'
         },
@@ -636,17 +647,18 @@ export const MAGIC_TRICKS: MagicTrick[] = [
     {
         id: 'divide-3',
         title: 'Divide by 3',
-        description: 'Use the digit-sum rule to divide large numbers.',
+        description: 'First check it divides evenly (digit-sum rule), then chunk through.',
         difficulty: 2,
         icon: '🕵️',
         lesson: {
             equation: '5712 ÷ 3',
             latex: '\\frac{5712}{3}',
             steps: [
-                'Digit sum: 5+7+1+2 = 15. Divisible by 3 ✓',
-                '3 into 5 = 1 remainder 2. Bring down 7 → 27.',
-                '3 into 27 = 9. Bring down 1 → 01.',
-                '3 into 01 = 0 r1. Bring 12 → 3 into 12 = 4. Result: 1904'
+                'Digit-sum check: 5+7+1+2 = 15. Since 15 is divisible by 3, the original is too. (Saves you from a fruitless calculation.)',
+                'Now walk left-to-right: 3 into 5 = 1, remainder 2. Bring down 7 → 27.',
+                '3 into 27 = 9 exactly. Bring down 1 → 1.',
+                '3 into 1 = 0, remainder 1. Bring down 2 → 12. 3 into 12 = 4.',
+                'Read off: 1, 9, 0, 4 → 1904.'
             ],
             result: '1904'
         },
@@ -663,18 +675,18 @@ export const MAGIC_TRICKS: MagicTrick[] = [
     {
         id: 'complement-100',
         title: 'Near-100 Multiplication (Below)',
-        description: 'Multiply numbers just below 100',
+        description: 'Multiply two numbers just below 100, using their "distance from 100".',
         difficulty: 3,
         icon: '🪞',
         lesson: {
             equation: '97 × 94',
             latex: '97 \\times 94',
             steps: [
-                'Both are close to 100. Find the deficits:',
-                '100 − 97 = 3, and 100 − 94 = 6',
-                'Subtract cross-deficit: 97 − 6 = 91',
-                'Multiply deficits: 3 × 6 = 18',
-                'Combine: 91|18 → 9118'
+                'Why: (100 − a)(100 − b) = 100·(100 − a − b) + a·b. The first part is the leading digits; a·b lands in the last two.',
+                'Step 1 — find each "deficit" (distance from 100): 100 − 97 = 3, and 100 − 94 = 6.',
+                'Step 2 — subtract one deficit from the OTHER number: 97 − 6 = 91. (Same result if you do 94 − 3.) That\'s the first part.',
+                'Step 3 — multiply the deficits: 3 × 6 = 18. (Pad to 2 digits if needed.) That\'s the last part.',
+                'Glue them: 91 then 18 → 9118.'
             ],
             result: '9118'
         },
@@ -689,17 +701,17 @@ export const MAGIC_TRICKS: MagicTrick[] = [
     {
         id: 'divisible-11',
         title: 'Divisibility by 11',
-        description: 'Alternating digit sum must be 0 or 11',
+        description: 'Alternate the digits + and −. If the total is 0 or ±11, it divides by 11.',
         difficulty: 3,
         icon: '⚖️',
         lesson: {
             equation: 'Is 2728 div by 11?',
             latex: '2 - 7 + 2 - 8 = -11',
             steps: [
-                'Take alternating signs of the digits: + − + −',
-                '2 − 7 + 2 − 8 = −11',
-                '−11 is divisible by 11, so yes it is!',
-                '(Equivalently: odds sum − evens sum = 0 or ±11)'
+                'Why this works: 10 = 11 − 1, so 100 = 11×9 + 1, 1000 = 11×91 − 1, etc. Each place alternates between leaving remainder +1 and −1 when divided by 11.',
+                'Tag each digit with alternating + and − signs (rightmost digit gets +, then alternate moving left).',
+                'For 2728: −2 + 7 − 2 + 8 = +11. (Or 2 − 7 + 2 − 8 = −11 reading the other direction. Same magnitude.)',
+                'A result of 0 or any multiple of 11 means the original divides evenly. ±11 → yes.'
             ],
             result: 'Yes!'
         },
@@ -720,16 +732,17 @@ export const MAGIC_TRICKS: MagicTrick[] = [
     {
         id: 'flip-percent',
         title: 'Flip the Percent',
-        description: 'Swap: A% of B = B% of A',
+        description: 'A% of B equals B% of A — pick whichever side is easier.',
         difficulty: 1,
         icon: '🔄',
         lesson: {
             equation: '8% of 50',
             latex: 'A\\% \\text{ of } B = B\\% \\text{ of } A',
             steps: [
-                'This looks tricky. But flip it!',
-                '8% of 50 = 50% of 8',
-                '50% of 8 = 4. Done!'
+                'Why this works: A% of B is A × B / 100. Multiplication doesn\'t care about order, so it equals B × A / 100, which is B% of A.',
+                '8% of 50 is annoying. But 50% of 8 is just half of 8.',
+                '50% of 8 = 4. Same answer, way easier.',
+                'When you see an ugly percent of a friendly number, flip it.'
             ],
             result: '4'
         },
@@ -750,7 +763,7 @@ export const MAGIC_TRICKS: MagicTrick[] = [
     {
         id: 'telescoping-sum',
         title: 'Telescoping Sums',
-        description: 'Partial fractions make interior terms vanish',
+        description: 'Rewrite each term so almost everything cancels — only the ends survive.',
         difficulty: 4,
         icon: '🔭',
         lesson: {
@@ -779,7 +792,7 @@ export const MAGIC_TRICKS: MagicTrick[] = [
     {
         id: 'zeno-paradox',
         title: 'Zeno\'s Paradox (Geom Series)',
-        description: 'Infinite halves add up to a whole',
+        description: 'Infinitely many halves still add up to exactly 1.',
         difficulty: 4,
         icon: '🐢',
         lesson: {
@@ -812,16 +825,17 @@ export const MAGIC_TRICKS: MagicTrick[] = [
     {
         id: 'digit-sum-mod',
         title: 'Digital Root (Mod 9)',
-        description: 'Find remainder by summing digits',
+        description: 'A number\'s remainder mod 9 is the same as its digit sum\'s remainder.',
         difficulty: 2,
         icon: '🔢',
         lesson: {
             equation: '4573 mod 9',
             latex: '4573 \\bmod 9',
             steps: [
-                'Sum the digits: 4 + 5 + 7 + 3 = 19',
-                'Sum again: 1 + 9 = 10 → 1 + 0 = 1',
-                'The remainder when dividing by 9 is 1!'
+                'Why this works: every power of 10 leaves a remainder of 1 when divided by 9 (10 = 9+1, 100 = 99+1, etc.). So each digit contributes itself to the remainder.',
+                'Sum the digits: 4 + 5 + 7 + 3 = 19.',
+                'Still ≥ 10? Sum again: 1 + 9 = 10 → 1 + 0 = 1.',
+                'That final single digit IS the remainder. 4573 ÷ 9 leaves remainder 1.'
             ],
             result: '1'
         },
@@ -846,7 +860,7 @@ export const MAGIC_TRICKS: MagicTrick[] = [
     {
         id: 'power-last-digit',
         title: 'Last Digit of Powers',
-        description: 'Predict the last digit using cycles',
+        description: 'Last digits cycle every few powers — pin the exponent to the cycle.',
         difficulty: 3,
         icon: '🔮',
         lesson: {
@@ -888,17 +902,17 @@ export const MAGIC_TRICKS: MagicTrick[] = [
     {
         id: 'product-last-digit',
         title: 'Last Digit of Products',
-        description: 'Multiply only the last digits',
+        description: 'Only the units digits matter — ignore the rest.',
         difficulty: 1,
         icon: '🔎',
         lesson: {
-            equation: 'Last digit of 347 x 893',
+            equation: 'Last digit of 347 × 893',
             latex: '347 \\times 893 \\pmod{10}',
             steps: [
-                'Ignore all digits except the last ones!',
-                'Just multiply: 7 × 3 = 21',
-                'The last digit of 21 is 1.',
-                'So 347 × 893 ends in 1'
+                'Why: when you multiply two numbers, only the units digits contribute to the units digit of the answer. The hundreds and tens places of either number only affect higher columns.',
+                'Strip down to the last digits: 7 × 3.',
+                '7 × 3 = 21. Take the last digit: 1.',
+                'So 347 × 893 ends in 1. (No need to compute the full product!)'
             ],
             result: '1'
         },
@@ -923,17 +937,17 @@ export const MAGIC_TRICKS: MagicTrick[] = [
     {
         id: 'gauss-sum',
         title: 'Sum 1 to N (Gauss)',
-        description: 'Sum any range instantly with N×(N+1)÷2',
+        description: 'Sum 1 through N in one step: N × (N+1) ÷ 2.',
         difficulty: 2,
         icon: '📐',
         lesson: {
             equation: '1 + 2 + 3 + ... + 100',
             latex: '\\sum_{k=1}^{N} k = \\dfrac{N(N+1)}{2}',
             steps: [
-                'Pair the first and last: 1 + 100 = 101',
-                'How many pairs? 100 ÷ 2 = 50',
-                'Multiply: 101 × 50 = 5050',
-                'Formula: N(N+1) ÷ 2'
+                'The story: 9-year-old Gauss was asked to sum 1 to 100. He noticed the pairs (1+100), (2+99), (3+98)… all equal 101.',
+                'How many pairs? 100 numbers make 50 pairs.',
+                'So the total is 50 × 101 = 5050.',
+                'General rule: 1 + 2 + … + N = N × (N+1) ÷ 2.'
             ],
             result: '5050'
         },
