@@ -14,6 +14,7 @@ import { TrialCountdownChip } from './TrialModals';
 import { LegalFooterRow } from './LegalPages';
 import { InstallPill } from './InstallPrompt';
 import { CategoryIcon } from './CategoryIcon';
+import { todayKey } from '../utils/dateKey';
 
 interface Props {
     stats: ReturnType<typeof useStats>['stats'];
@@ -86,13 +87,7 @@ export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked,
     const { rank, nextRank, progress } = getRank(stats.totalXP);
     const mastery = !nextRank ? getMasteryInfo(stats.totalXP) : null;
 
-    // Today's date string to check daily freshness — must match the padded
-    // format used by useStats.recordSession so comparison is calendar-correct.
-    const today = (() => {
-        const d = new Date();
-        const pad = (n: number) => String(n).padStart(2, '0');
-        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-    })();
+    const today = todayKey();
     const dailyDoneToday = stats.lastDailyDate === today && stats.todayDailySolved > 0;
     const dailyAcc = dailyDoneToday ? Math.round((stats.todayDailyCorrect / stats.todayDailySolved) * 100) : null;
 

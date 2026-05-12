@@ -1,16 +1,6 @@
-/** Dark / Light mode toggle — persisted to localStorage */
+/** Dark / Light mode toggle — applied to the document root. */
 
-export type ThemeMode = 'dark' | 'light';
-
-const STORAGE_KEY = 'math-swipe-theme';
-
-export function loadMode(): ThemeMode {
-    return (localStorage.getItem(STORAGE_KEY) as ThemeMode) || 'dark';
-}
-
-export function saveMode(mode: ThemeMode) {
-    localStorage.setItem(STORAGE_KEY, mode);
-}
+type ThemeMode = 'dark' | 'light';
 
 export function applyMode(mode: ThemeMode) {
     const root = document.documentElement;

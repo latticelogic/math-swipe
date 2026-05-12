@@ -6,7 +6,7 @@
  *
  *   1. WelcomeModal           — shown once on Day 1 (first session per uid)
  *                                "Free for 14 days, then $3.14 lifetime"
- *   2. TrialReminderModal     — shown once on Day 10 and once on Day 13
+ *   2. TrialReminderModal     — shown once each on Day 7, Day 10, and Day 13
  *                                "N days left. $3.14 keeps it forever."
  *   3. TrialCountdownChip     — persistent subtle "N days left" pill,
  *                                lives in the Me tab (rendered there directly)
@@ -253,7 +253,7 @@ export function TrialReminderModal({ uid, status, daysLeft, entitlementLoading, 
                             The CTA button does the price-naming. */}
                         <p className="text-sm ui text-[rgb(var(--color-fg))]/60 mb-5 leading-relaxed">
                             {isMidpoint
-                                ? `Halfway through your trial. If you like it, ${PRICE_USD.toFixed(0)}.${PRICE_USD.toFixed(2).split('.')[1]} keeps it.`
+                                ? `Halfway through your trial. If you like it, ${PRICE_USD.toFixed(2)} keeps it.`
                                 : isUrgent
                                     ? 'After today the rest locks. The Daily Challenge stays free.'
                                     : 'A few days to decide. The Daily Challenge stays free either way.'}

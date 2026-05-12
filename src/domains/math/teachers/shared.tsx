@@ -108,11 +108,6 @@ export function Mouth({ state, cx, cy }: { state: ChalkState } & FacePos) {
 
 // ── ACCENTS ──────────────────────────────────────────────────────────────────
 
-/** Single sweat drop at the right temple — used by struggling state. */
-export function SweatDrop({ x, y }: { x: number; y: number }) {
-    return <ellipse cx={x} cy={y} rx="2" ry="3.5" fill="currentColor" opacity="0.4" />;
-}
-
 /** Cheek blush patches — soft pink-coded warmth on success. */
 export function Blush({ cx, cy, gap = 22 }: { cx: number; cy: number; gap?: number }) {
     return (

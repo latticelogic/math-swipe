@@ -1,13 +1,7 @@
 import { useEffect, useRef, useReducer } from 'react';
 import { safeGetItem, safeSetItem } from '../utils/safeStorage';
+import { todayKey } from '../utils/dateKey';
 import { STORAGE_KEYS } from '../config';
-
-/** Today's date in YYYY-MM-DD (zero-padded for lex-order safety). */
-function todayStr(): string {
-    const d = new Date();
-    const pad = (n: number) => String(n).padStart(2, '0');
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-}
 
 /**
  * Watches for a transition into the "correct" feedback flash and fires
@@ -38,7 +32,7 @@ export function useFirstCorrectFlourish(flash: string): {
     useEffect(() => {
         if (flash !== 'correct') return;
         if (!armed.current) return;
-        const today = todayStr();
+        const today = todayKey();
         const last = safeGetItem(STORAGE_KEYS.firstCorrectFlourish);
         if (last === today) return; // already shown today
         armed.current = false;

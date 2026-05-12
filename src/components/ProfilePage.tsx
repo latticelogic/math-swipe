@@ -24,6 +24,7 @@ import { EVERY_ACHIEVEMENT } from '../utils/achievements';
 import { createChallengeId } from '../utils/dailyChallenge';
 import { parseProfileSlug } from '../utils/profileSlug';
 import { lookupUidBySlug } from '../utils/username';
+import { formatTime } from '../utils/formatTime';
 
 interface ProfileData {
     uid: string;
@@ -61,14 +62,6 @@ function toProfileData(uid: string, fallbackName: string, data: Record<string, u
         activeTeacher: (data.preferences as { teacher?: string } | undefined)?.teacher,
         achievements: Array.isArray(data.achievements) ? data.achievements as string[] : [],
     };
-}
-
-function formatTime(ms: number): string {
-    const totalSeconds = ms / 1000;
-    if (totalSeconds < 60) return `${totalSeconds.toFixed(2)}s`;
-    const m = Math.floor(totalSeconds / 60);
-    const s = Math.floor(totalSeconds % 60);
-    return `${m}m ${s.toString().padStart(2, '0')}s`;
 }
 
 interface Props {

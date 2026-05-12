@@ -65,7 +65,11 @@ export function AdminPushAnalytics({ onBackToGame }: Props) {
     }, []);
 
     useEffect(() => {
-        if (!authorized) { if (authorized === false) setLoading(false); return; }
+        if (authorized === null) return;
+        if (authorized === false) {
+            setLoading(false);
+            return;
+        }
         let cancelled = false;
         (async () => {
             try {
