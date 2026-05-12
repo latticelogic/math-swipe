@@ -85,33 +85,42 @@ export const BOSS_ROBO: Teacher = {
         reason: 'Earn 500 XP',
         check: (s) => s.totalXP >= 500,
     },
+    // Boss Robo's voice: stats-loving lab partner, not stern supervisor.
+    // ALL CAPS is reserved for short status outputs (think console readouts);
+    // longer lines use Title Case + dry humour. Tone is "this metric pleases
+    // me", not "you must perform". Notices *your* stats with real interest.
     voice: {
         idle: [
-            'AWAITING INPUT.',
-            'PROCESSORS WARM. LET\'S COMPUTE.',
-            'SCANNING… READY.',
-            'INITIATE.',
+            'Ready when you are.',
+            'Standing by.',
+            'Sensors warm.',
+            'Awaiting your input.',
+            'Take your time. I do not sleep.',
         ],
         success: [
-            'OPTIMAL. +XP.',
-            'COMPUTATION VERIFIED. ✅',
-            'EFFICIENCY: 100%.',
-            'CHECKSUM PASSED.',
-            'SYSTEM PLEASED. 🤖',
+            'Verified.',
+            'Logged. Nice metric.',
+            'That one was clean.',
+            'Filing this for posterity.',
+            'Output: correct. Confidence: high.',
+            'Your accuracy curve approves.',
         ],
         fail: [
-            'INVALID. RETRY.',
-            'ERROR LOGGED. RECOMPUTE.',
-            'DOES NOT COMPUTE. 🚫',
+            'Reading: incorrect.',
+            'Re-running.',
+            'No problem. Recompute.',
+            'Filing under "learning data".',
         ],
         streak: [
-            'STREAK MULTIPLIER ENGAGED. 🔥',
-            'OVERCLOCKED. CONTINUE.',
-            'COMBO: MAXIMUM. 💥',
+            'Streak detected. Logging…',
+            'Performance trending up.',
+            'You are outpacing my model.',
+            'Multiplier engaged.',
         ],
         easterEggs: [
-            'BINARY FACT: 1010 = 10. WE LIKE 10.',
-            'MY PRIMARY DIRECTIVE: HELP YOU LEVEL UP.',
+            '1010 in binary is 10. We like 10.',
+            'My primary directive: help you level up.',
+            'Did you know 73 is the best prime? Sheldon was onto something.',
         ],
     },
     Portrait({ state, streak }) {

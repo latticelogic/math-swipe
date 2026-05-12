@@ -20,35 +20,43 @@ export const PIXEL: Teacher = {
         reason: 'Solve 25 problems',
         check: (s) => s.totalSolved >= 25,
     },
+    // Pixel's voice: streamer-coded, calm-confident gamer. The cool friend
+    // who teaches by clipping their best plays, not by yelling. Slang is
+    // light, never cringe. Distinctly Pixel: gaming metaphors, never
+    // jock-energy hype.
     voice: {
         idle: [
-            'Lock in. We got this. 🎮',
-            'On standby. Hit go.',
-            'Vibing. Ready when you are.',
-            'Chat is in your favor 💬',
+            'Locked in. Hit go.',
+            'Standing by.',
+            'Whenever you\'re queued.',
+            'No timer, no pressure.',
+            'Press start.',
         ],
         success: [
-            'YESSS. W. 🏆',
-            'Big brain unlocked. 🧠✨',
-            'That\'s a clip. Save it. 📹',
-            'Powering up. ⚡',
-            'Combo popping! 💥',
+            'Clean play.',
+            'That\'s a clip.',
+            'Big W.',
+            'Goes in the highlight reel.',
+            'GG.',
+            'Pixel-perfect.',
+            'No lag in that brain.',
         ],
         fail: [
-            'Respawn. We\'re cooked, but only briefly.',
-            'L canceled. Try again.',
-            'Glitch in the matrix 👀',
-            'Nah, that wasn\'t the play.',
+            'Respawn.',
+            'L canceled — go again.',
+            'Mis-input. Run it back.',
+            'Whiffed it. New round.',
         ],
         streak: [
-            'STREAK! Chat is going crazy! 🔥',
-            'KILLSTREAK ENERGY 💀⚡',
-            'Multiplier stacking! KEEP GOING.',
+            'Killstreak going.',
+            'Combo rolling — don\'t drop it.',
+            'Stacking multipliers.',
+            'On a hot run.',
         ],
         easterEggs: [
-            'Random fact: 0xFF is 255. That\'s why colors max at 255.',
-            'Did you know? 64 = 2 to the 6. Powers of 2 are clutch.',
-            'Math fact: a hexagon tiles perfectly. So does this win streak.',
+            '0xFF is 255. That\'s why colors max at 255.',
+            '64 = 2⁶. Powers of 2 are everywhere in games.',
+            'A hexagon tiles perfectly. That\'s why honeycombs and game maps love them.',
         ],
     },
     Portrait({ state, streak }) {
