@@ -100,7 +100,12 @@ export const DEFAULT_GAME_CONFIG: GameConfig = {
     autoAdvanceMs: 150,
     failPauseMs: 400,
     timedModeMs: 10_000,
-    milestones: { 3: '✨', 5: '🔥', 10: '⚡', 20: '👑', 50: '🏆' },
+    // Milestone tiers — strings act as keys into the MilestoneBurst SVG
+    // renderer (see src/components/MilestoneBurst.tsx). Each tier gets a
+    // distinct visual: sparkle (gentle), flame (warm), bolt (electric),
+    // crown (regal), trophy (legendary). Higher tier = larger animation,
+    // longer duration, more particle elaboration.
+    milestones: { 3: 'sparkle', 5: 'flame', 10: 'bolt', 25: 'crown', 50: 'trophy' },
     speedrunTypeId: 'speedrun',
     finiteTypeIds: ['daily', 'challenge'],
 };
