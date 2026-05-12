@@ -12,23 +12,26 @@ npm run verify     # Lint + typecheck + test + build
 
 ## Git Workflow
 
-> **⚠️ NEVER push directly to `master`.** All changes go through PRs.
+> **Never push directly to `master`.** All changes go through PRs.
 
 ```
-master (production — auto-deploys to Cloudflare Pages)
-  └── dev (integration branch for PRs)
-        └── feature/* | fix/* | chore/*
+master (production — auto-deploys to Cloudflare Pages on every push)
+  └── short-lived feature/fix/chore branches
 ```
 
 ### Steps
 
-1. **Branch** from `dev`: `git checkout -b fix/description`
+1. **Branch** from `master`: `git checkout -b descriptive-name`
 2. **Develop** — commit early and often
-3. **Verify**: `npm run verify` (eslint + tsc + vitest + vite build)
-4. **Push** the branch: `git push -u origin fix/description`
-5. **Open PR** → `dev` on GitHub
-6. **Merge PR** on GitHub (squash recommended)
-7. **Release**: PR `dev` → `master` to deploy to production
+3. **Verify**: `npm run verify` (eslint + tsc + vitest + vite build + edge worker)
+4. **Push** the branch: `git push -u origin descriptive-name`
+5. **Open PR** → `master` on GitHub via `gh pr create --base master`
+6. **Merge PR** — squash recommended, keeps the master log one-commit-per-feature
+
+There is no long-lived `dev` integration branch — every PR targets
+`master` directly. The Cloudflare Pages workflow at
+`.github/workflows/deploy.yml` builds preview deploys for every PR
+branch and production for `master`.
 
 ### Pre-push Hook
 
@@ -66,4 +69,6 @@ src/
 
 ## Version
 
-Current: **v1.0.2** (semver)
+Current: **v1.0.4** (semver). The version string is sourced from
+`package.json` and surfaced in-app at the bottom of the Me tab —
+that's the authoritative reference if this README drifts.

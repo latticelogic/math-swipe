@@ -1,5 +1,11 @@
 # Content audit — 2026-05-12
 
+> **Historical record.** This audit drove the content-polish PRs that
+> followed (#37 lessons-add-why, #38 teacher distinctness, #39
+> base-message tightening, #40 achievement descriptions). Findings
+> here reflect the state BEFORE that work landed. Current content
+> tone-bar lives in `CLAUDE.md` → "Conventions".
+
 ## Headline finding
 
 The **app voice is inconsistent across surfaces**: the "warm, restrained, no-pressure" tone from the polish pass is intact in teacher base messages and achievements, but **teacher distinctness is thin — most share bland success praise** — and **Magic Tricks lessons skip instructional insight in key places**, leaving kids understanding the *formula* but not the *why*. The highest-leverage focus is Surface 2 (Magic Tricks curriculum): clear wins in teaching quality will carry learners through the unlock journey and build confidence in the app's claim to teach *mental-math thinking*.

@@ -19,13 +19,13 @@ to put a hard ceiling on what that can cost.
 
 | # | Item | Done? | When | Notes |
 |---|------|:-:|---|---|
-| 1 | Firebase Blaze plan upgrade | ☐ | | **web only** |
+| 1 | Firebase Blaze plan upgrade | ✅ | 2026-05-12 | `math-swipe-prod` is on Blaze (confirmed via console badge) |
 | 2 | Budget alert at $50/mo on `math-swipe-prod` | ☐ | | gcloud |
 | 3 | Hard quota caps on Functions + Firestore | ☐ | | gcloud |
 | 4 | Second payment method on Cloud Billing | ☐ | | **web only** |
 | 5 | Stripe account verified (identity + bank) | ☐ | | **web only** |
 | 6 | Stripe Test mode flow exercised end-to-end | ☐ | | stripe CLI + firebase CLI |
-| 7 | Refund policy visible in app | ☐ | | code change |
+| 7 | Refund policy visible in app | ✅ | 2026-05-12 | `LegalFooterRow` renders Refund / Privacy / Terms in Paywall + Me tab footer (PR #44, #46) |
 | 8 | `help@latticelogic.app` support inbox tested | ☐ | | mail provider |
 | 9 | Beta with 5-10 friends on the trial UX | ☐ | | human |
 | 10 | App Check enabled on Firestore | ☐ | | firebase CLI |
@@ -50,15 +50,18 @@ stripe login                      # opens browser once for OAuth
 
 ---
 
-## 1. Upgrade Firebase to Blaze plan — *web only, no CLI exists*
+## 1. Upgrade Firebase to Blaze plan — ✅ DONE 2026-05-12
 
-Required because Cloud Functions making outbound HTTPS (the Stripe
-webhook) is blocked on the free Spark plan. Plan changes go through
-the Firebase console — Google doesn't expose this via CLI by design
-(billing changes are gated on human consent).
+`math-swipe-prod` is on the Blaze plan (confirmed via the "Blaze plan"
+badge in the Firebase console project header).
 
-Open https://console.firebase.google.com/project/math-swipe-prod/usage/details
-→ "Modify plan" → Blaze pay-as-you-go. Card on file required.
+Background, kept for future fork reference: Blaze is required because
+Cloud Functions making outbound HTTPS calls (eg the Stripe webhook to
+api.stripe.com) are blocked on the free Spark plan. Plan changes have
+to go through the Firebase console — Google gates billing changes on
+human consent. There is no CLI command for this step. URL for
+reference if the plan ever needs re-confirming:
+https://console.firebase.google.com/project/math-swipe-prod/usage/details
 
 No free-tier change — Blaze just adds the *option* to pay for
 overages. You won't be charged anything until you exceed free quotas,
@@ -256,30 +259,23 @@ firebase deploy --only functions:createCheckoutSession,functions:stripeWebhook \
 Re-test in live mode with a real card on yourself; refund yourself
 via `stripe refunds create --charge=ch_...` afterward.
 
-## 7. Refund policy visible in app — code change
+## 7. Refund policy visible in app — ✅ DONE 2026-05-12
 
-Either add a small footer link on the paywall component OR a
-plain-text page at `/refunds`. The body:
+`LegalFooterRow` renders **Refund · Privacy · Terms** in two places:
+the Paywall footer (the moment of payment) and the Me-tab footer
+(always-discoverable). Component at `src/components/LegalPages.tsx`.
 
-> 14-day no-questions refunds. Email help@latticelogic.app with your
-> Stripe receipt and we'll process within 24 hours.
+The Refund page (`/refund`) currently displays a 14-day no-questions
+refund commitment routed to `help@latticelogic.app`. Body is a DRAFT
+under the yellow banner — replace with lawyer-reviewed copy before
+launch (see "Lawyer-reviewed legal copy" in CLAUDE.md's pre-launch
+state section).
 
-Why visible: it shows up in chargeback disputes and Apple/Play store
-review. "We have a stated refund policy and they didn't ask for one"
-reads better to a bank than silence.
-
-To add the link to the Paywall in a quick PR:
-
-```bash
-# from repo root
-# edit src/components/Paywall.tsx — add `<a href="/refunds">Refund policy</a>`
-# below the "Maybe later" button
-git checkout -b refund-link
-# … edit …
-npm run verify
-git commit -am "feat(paywall): refund-policy link"
-gh pr create
-```
+Why this matters in payment-processing terms: a stated refund policy
+visible to the customer reduces chargeback rates and helps in Stripe
+dispute resolution. \"We have a stated policy and they didn't ask for
+a refund\" reads materially better than silence when a bank reviews
+the case.
 
 ## 8. Support email `help@latticelogic.app` — mail provider CLI
 

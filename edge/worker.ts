@@ -19,7 +19,7 @@
  *
  * Environment expectations (set in Cloudflare Pages → Settings → Env vars):
  *   FIREBASE_PROJECT_ID  — the project id (matches VITE_FIREBASE_PROJECT_ID)
- *   PUBLIC_ORIGIN        — canonical site origin, e.g. https://mathswipe.com
+ *   PUBLIC_ORIGIN        — canonical site origin, e.g. https://math-swipe-c7k.pages.dev
  *
  * If FIREBASE_PROJECT_ID is missing, the Worker falls through to the
  * default index.html with generic OG tags — the SPA still works, just

@@ -10,19 +10,19 @@ description: How to deploy changes to production via PR workflow
 
 // turbo-all
 
-1. Make sure you're on the `dev` branch or a feature branch:
+1. Start from up-to-date `master`:
    ```bash
-   git checkout dev
+   git checkout master && git pull --ff-only
    ```
 
 2. Create a feature/fix branch:
    ```bash
-   git checkout -b fix/description-of-change
+   git checkout -b descriptive-name
    ```
 
 3. Make your changes and commit:
    ```bash
-   git add -A && git commit -m "fix: description"
+   git add -A && git commit -m "feat: description"
    ```
 
 4. Run full verification:
@@ -32,25 +32,25 @@ description: How to deploy changes to production via PR workflow
 
 5. Push the branch:
    ```bash
-   git push -u origin fix/description-of-change
+   git push -u origin descriptive-name
    ```
 
 6. Open and merge a PR using the GitHub CLI:
    ```bash
-   gh pr create --base master --title "fix: description" --body "Summary of changes"
+   gh pr create --base master --title "feat: description" --body "Summary"
    gh pr merge --squash --delete-branch
    ```
 
-7. Cloudflare Pages will auto-deploy once the merge hits `master`.
+7. Cloudflare Pages auto-deploys once the merge hits `master`.
 
 8. Pull master locally to stay in sync:
    ```bash
-   git checkout master && git pull origin master
+   git checkout master && git pull --ff-only
    ```
 
 ## Important Rules
 
 - **`master`** is the production branch. Only merge via PR.
-- **`dev`** is the integration branch. Feature branches merge here first.
+- There is **no long-lived `dev` branch** — feature branches target `master` directly.
 - Always run `npm run verify` before pushing.
 - The pre-push hook will block pushes that fail verification.

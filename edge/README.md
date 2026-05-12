@@ -16,11 +16,11 @@ doesn't claim.
 
 ## Required environment variables (Cloudflare dashboard)
 
-Pages → Settings → Environment variables → Production:
+Pages → Settings → Environment variables → Production AND Preview:
 
 ```
-FIREBASE_PROJECT_ID = scribble-math-prod   # matches VITE_FIREBASE_PROJECT_ID
-PUBLIC_ORIGIN       = https://mathswipe.com  # canonical site origin
+FIREBASE_PROJECT_ID = math-swipe-prod                       # matches VITE_FIREBASE_PROJECT_ID
+PUBLIC_ORIGIN       = https://math-swipe-c7k.pages.dev      # canonical site origin
 ```
 
 If `FIREBASE_PROJECT_ID` is missing the Worker still serves the SPA but
@@ -40,16 +40,16 @@ firebase deploy --only firestore:rules
 
 ## How a profile share looks now
 
-When someone posts `https://mathswipe.com/u/EpicNinja75-abc1` to X / WA /
-Discord, the platform's crawler hits the URL → the Worker fetches the
-profile → returns index.html with:
+When someone posts `https://math-swipe-c7k.pages.dev/u/EpicNinja75-abc1`
+to X / WA / Discord, the platform's crawler hits the URL → the Worker
+fetches the profile → returns index.html with:
 
 ```
 <title>EpicNinja75 on Math Swipe</title>
-<meta name="description" content="1,240 XP · 🔥 18 streak · 🎯 92% accuracy — challenge them!" />
+<meta name="description" content="1,240 XP · 18 streak · 92% accuracy — challenge them!" />
 <meta property="og:title" content="EpicNinja75 on Math Swipe" />
 <meta property="og:description" content="..." />
-<meta property="og:image" content="https://mathswipe.com/icon-512.png" />
+<meta property="og:image" content="https://math-swipe-c7k.pages.dev/icon-512.png" />
 ... (full twitter:* set too)
 ```
 

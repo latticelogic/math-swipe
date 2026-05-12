@@ -237,7 +237,7 @@ is in place" instruction.
   requires a browser (OAuth consent, granting a GitHub App access to an
   org, accepting an invite as a different account), call that out
   explicitly — don't silently route around it.
-- Don't push directly to `master`; PRs go through `dev` → `master` (see README)
+- Don't push directly to `master`; open a PR from a short-lived feature/fix/chore branch targeting `master` (no long-lived `dev` integration branch — see README)
 - Run `npm run verify` before pushing — covers lint + tsc + tests + build + worker
 - `.env*` is gitignored (with `!.env.example` allowed through). `.env.example`
   documents the schema. Required keys: `VITE_FIREBASE_*` (6 keys), optional
@@ -304,30 +304,32 @@ is in place" instruction.
 
 What's **done in code** (no further blockers to launch from the codebase side):
 - Cloudflare Pages + GitHub Actions CI/CD pipeline (auto-deploy on master)
-- Firebase project on `math-swipe-prod` (production)
+- Firebase project on `math-swipe-prod` (production) — **on Blaze plan as of 2026-05-12**
 - Self-hosted fonts (Fredericka the Great + Architects Daughter in `public/fonts/`)
-- 28 question generators with real difficulty curves + 50 discrimination tests
+- 28 question generators with real difficulty curves + 191 total tests across 10 suites (87 in mathGenerator alone)
 - 5-tier streak milestone celebrations + near-miss feedback + daily flourish
 - Theatrical achievement unlock toast with badge SVG + sparkles
 - 8 teacher voices, each with documented persona; full content audit + polish
 - Hand-drawn SVG icons throughout (no emoji in user-facing copy except share-card decorative emoji-rain)
 - **Monetization model**: 14-day demo + $3.14 lifetime paywall, value-anchored trigger, Stripe Checkout callable + webhook, mock helpers for dev testing
-- **Trial UX**: WelcomeModal + Day 7 / 10 / 13 reminders + countdown chip, all session-start-gated
-- **Daily-Challenge-free-forever** carve-out
+- **Trial UX**: WelcomeModal + Day 7 / 10 / 13 reminders + countdown chip, all session-start-gated, all rendering nothing for paid users
+- **Daily-Challenge-free-forever** carve-out (`shouldFirePaywall` exempts `questionType === 'daily'`)
 - **6 early-trial achievements** to fill the dopamine gap (streak-3, daily-1, topic-explorer, three-day, accuracy-early, quick-fifty)
 - **Legal pages** at /refund, /privacy, /terms (DRAFT banners, awaiting lawyer review)
-- **PWA install prompt** with iOS instructions modal (PR #45 — pending merge)
-- **Truth-table tests** for the paywall fire rule, plus a manual e2e runbook for visual regressions
+- **PWA install prompt** in Me tab + iOS end-of-first-session prompt inside SessionSummary (`InstallPrompt.tsx`)
+- **Admin billing dashboard** at /admin/billing (`AdminBilling.tsx`) — gated by `isAdmin` custom claim, surfaces trial/paid/expired counts + conversion % + refund rate
+- **Truth-table tests** for the paywall fire rule (`shouldFirePaywall`), plus a manual e2e runbook for visual regressions (`docs/paywall-e2e.md`)
+- **First-purchase QA playbook** (`docs/first-purchase-qa.md`) — 10-section runbook executable when live Stripe keys land
 
 What's **blocking commercial launch** (operational, not code):
-- **Firebase Blaze plan upgrade** — required for Cloud Functions outbound HTTPS to Stripe (web console only, see `docs/billing-safety.md`)
-- **Stripe account verification + bank** — 1-3 day KYC turnaround for Lattice Logic
-- **Lawyer-reviewed legal copy** — replace draft Refund/Privacy/Terms with reviewed text, strip the yellow DRAFT banner
-- **COPPA stance decision** — under-13 user data flow choice (currently flagged in `LegalPages.tsx` PrivacyBody)
-- **Governing law clause** — state of incorporation + dispute-resolution language for Terms
-- **Pre-launch billing safety steps** (10-item checklist in `docs/billing-safety.md`) — budget alerts, quota caps, App Check, refund policy email, beta testing
-- **Custom domain** (gated on product-name decision — not strictly blocking, math-swipe-c7k.pages.dev works)
-- App Store / Play Store enrollment — defer per the hybrid-distribution rule until web has 60+ days of clean data
+- **Stripe account verification + bank** — 1-3 day KYC turnaround for Lattice Logic. Stripe SDK is wired in `functions/src/stripe.ts`; what's pending is the dashboard.stripe.com KYC submission. Check status with `stripe accounts retrieve` looking for `charges_enabled: true` and `payouts_enabled: true`.
+- **Live Stripe secrets** — once verification is done: `firebase functions:secrets:set STRIPE_SECRET_KEY/STRIPE_WEBHOOK_SECRET/STRIPE_PRICE_ID/PUBLIC_ORIGIN` then redeploy `createCheckoutSession` and `stripeWebhook`.
+- **Lawyer-reviewed legal copy** — replace draft Refund/Privacy/Terms with reviewed text, strip the yellow DRAFT banner.
+- **COPPA stance decision** — under-13 user data flow choice (flagged in `LegalPages.tsx` PrivacyBody DRAFT-NOTE).
+- **Governing law clause** — state of incorporation + dispute-resolution language for Terms.
+- **Pre-launch billing safety steps** — see status table at top of `docs/billing-safety.md`. Firebase Blaze is done; remaining items are budget alerts, quota caps, App Check, refund policy email, beta testing.
+- **Custom domain** (gated on product-name decision — not strictly blocking, `math-swipe-c7k.pages.dev` works).
+- App Store / Play Store enrollment — defer per the hybrid-distribution rule until web has 60+ days of clean data.
 
 What's **deferred** (not blocking):
 - Sound effects (intentional v1 decision — see Conventions)

@@ -1,17 +1,18 @@
 # Difficulty curves — per-topic spec
 
-Status: **DRAFT for review by Tim**. Last updated 2026-05-11.
+Status: **IMPLEMENTED via PR #25** (`feat(generator): real difficulty
+curves for all 28 topics`). Last spec update 2026-05-11.
 
-This document defines what Easy / Medium / Hard means for every topic in
-Math Swipe. The motivating problem is that the current generator has 13
-of 28 topics that completely ignore the `difficulty` parameter, and 5 more
-that only respond to the `hardMode` toggle. Beta testers notice — the
-specific complaint that prompted this spec was "ratios feels the same
+This document defined what Easy / Medium / Hard means for every topic
+in Math Swipe. It originated as a product/curriculum spec because the
+generator had 13 of 28 topics that completely ignored the `difficulty`
+parameter, and 5 more that only responded to the `hardMode` toggle.
+The specific complaint that prompted it: "ratios feels the same
 between Easy and Hard."
 
-The spec is a product/curriculum decision, not just a code fix. The next
-PR after this one ships the implementation; this one is for alignment
-first so we don't ship half-baked difficulty curves.
+The curves below were merged in PR #25 and now hold across all 28
+topics. If you're modifying difficulty behavior, edit
+`src/utils/mathGenerator.ts` and keep this doc in sync.
 
 ---
 

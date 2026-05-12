@@ -38,3 +38,6 @@ dist-ssr
 functions/lib/
 functions/node_modules/
 functions/.runtimeconfig.json
+
+# Claude Code sub-agent worktrees + scratch state
+.claude/
