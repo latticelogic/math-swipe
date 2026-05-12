@@ -4,6 +4,13 @@ import { createChallengeId } from '../utils/dailyChallenge';
 import { ShareSheet } from './ShareSheet';
 import { buildProfileSlug } from '../utils/profileSlug';
 
+/** Short, human-readable date stamp for the daily-challenge share card.
+ *  "May 12" — used as a Wordle-style conversation hook so the artifact
+ *  signals *which* daily was solved. */
+function shortDateStamp(): string {
+    return new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
 interface Props {
     solved: number;
     correct: number;
@@ -62,11 +69,15 @@ function buildSharePayload(
     const modeTag = hardMode && timedMode ? ' 💀⏱️ ULTIMATE' : hardMode ? ' 💀 HARD' : timedMode ? ' ⏱️ TIMED' : '';
     // Punchier headlines — first line is what platforms show as preview, so make
     // it count. Leads with the score/streak/time, brand fades to second line.
-    const headline = questionType === 'speedrun' && speedrunTime
-        ? `⏱️ Cleared 10 in ${formatTime(speedrunTime)} on Math Swipe`
-        : accuracy === 100
-            ? `💯 ${xp} pts, ${streak}🔥 — perfect run on Math Swipe${modeTag}`
-            : `${xp} pts · ${streak}🔥 streak · ${accuracy}% — Math Swipe ${typeLabel}${modeTag}`;
+    // The daily case gets a date stamp so the artifact carries social context
+    // ("got the May 12") — same trick Wordle uses to make shares conversational.
+    const headline = questionType === 'daily'
+        ? `Math Swipe Daily · ${shortDateStamp()} — ${xp} pts, ${accuracy}% ${streak > 1 ? `, ${streak}🔥` : ''}`
+        : questionType === 'speedrun' && speedrunTime
+            ? `⏱️ Cleared 10 in ${formatTime(speedrunTime)} on Math Swipe`
+            : accuracy === 100
+                ? `💯 ${xp} pts, ${streak}🔥 — perfect run on Math Swipe${modeTag}`
+                : `${xp} pts · ${streak}🔥 streak · ${accuracy}% — Math Swipe ${typeLabel}${modeTag}`;
 
     const url = profileUrl ?? `${window.location.origin}?c=${createChallengeId()}`;
 
@@ -224,24 +235,54 @@ export const SessionSummary = memo(function SessionSummary({
                                 <div className="absolute inset-0 opacity-10 blur-[80px] bg-gradient-to-br from-[var(--color-speedrun)] via-transparent to-[#00FFFF]" />
 
                                 <div className="z-10 text-center flex flex-col items-center w-full">
-                                    <h1 className="text-8xl chalk text-[var(--color-gold)] mb-8">Math Swipe</h1>
-                                    <div className="text-4xl ui text-white/50 mb-16 tracking-widest uppercase">
-                                        {hardMode && timedMode ? '💀⏱️ ULTIMATE' : hardMode ? '💀 HARD MODE' : timedMode ? '⏱️ TIMED MODE' : questionType.toUpperCase()}
+                                    <h1 className="text-8xl chalk text-[var(--color-gold)] mb-6">Math Swipe</h1>
+                                    {/* Daily gets a date stamp instead of the plain mode tag — same Wordle
+                                        trick that turns shares into "got the May 12 yet?" conversations. */}
+                                    <div className="text-4xl ui text-white/50 mb-12 tracking-widest uppercase">
+                                        {questionType === 'daily'
+                                            ? `DAILY · ${shortDateStamp().toUpperCase()}`
+                                            : hardMode && timedMode ? 'ULTIMATE'
+                                            : hardMode ? 'HARD MODE'
+                                            : timedMode ? 'TIMED MODE'
+                                            : questionType.toUpperCase()}
                                     </div>
 
-                                    <div className="text-[200px] mb-8">
-                                        {questionType === 'speedrun' ? '⏱️' : accuracy === 100 ? '🏆' : '📝'}
+                                    {/* Big icon — hand-drawn SVG, matches the rest of the app's no-emoji look */}
+                                    <div className="mb-6 text-white/90">
+                                        {questionType === 'speedrun' ? (
+                                            <svg viewBox="0 0 24 24" width="180" height="180" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--color-speedrun)]" aria-hidden>
+                                                <circle cx="12" cy="14" r="7" />
+                                                <line x1="12" y1="14" x2="15" y2="11" />
+                                                <line x1="10" y1="2" x2="14" y2="2" />
+                                                <line x1="12" y1="2" x2="12" y2="5" />
+                                            </svg>
+                                        ) : accuracy === 100 ? (
+                                            <svg viewBox="0 0 24 24" width="180" height="180" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--color-gold)]" aria-hidden>
+                                                <path d="M7 3 L 7 11 C 7 14 9 16 12 16 C 15 16 17 14 17 11 L 17 3 Z" />
+                                                <path d="M7 5 C 4 5 3 7 3 9 C 3 11 5 12 7 12" />
+                                                <path d="M17 5 C 20 5 21 7 21 9 C 21 11 19 12 17 12" />
+                                                <line x1="12" y1="16" x2="12" y2="19" />
+                                                <line x1="9" y1="19" x2="15" y2="19" />
+                                            </svg>
+                                        ) : (
+                                            <svg viewBox="0 0 24 24" width="180" height="180" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--color-chalk)]" aria-hidden>
+                                                <rect x="5" y="3" width="14" height="18" rx="1" />
+                                                <line x1="9" y1="8" x2="15" y2="8" />
+                                                <line x1="9" y1="12" x2="15" y2="12" />
+                                                <line x1="9" y1="16" x2="13" y2="16" />
+                                            </svg>
+                                        )}
                                     </div>
-                                    <div className="text-8xl chalk text-white mb-16">
+                                    <div className="text-8xl chalk text-white mb-14">
                                         {questionType === 'speedrun' ? 'SPEEDRUN CLEAR' : accuracy === 100 ? 'PERFECT SCORE' : 'SESSION COMPLETED'}
                                     </div>
 
-                                    <div className="flex justify-between w-[80%] mb-16 px-8 py-12 border-2 border-white/20 rounded-[3rem] bg-black/20">
-                                        <div className="text-center">
+                                    <div className="flex justify-between items-center w-[80%] mb-14 px-8 py-12 border-2 border-white/20 rounded-[3rem] bg-black/20">
+                                        <div className="text-center flex-1">
                                             <div className="text-9xl chalk text-white/80">{solved}</div>
                                             <div className="text-3xl ui text-white/40 mt-4">SOLVED</div>
                                         </div>
-                                        <div className="text-center">
+                                        <div className="text-center flex-1">
                                             {questionType === 'speedrun' && speedrunFinalTime ? (
                                                 <>
                                                     <div className="text-7xl chalk text-[var(--color-correct)] mt-4">{formatTime(speedrunFinalTime)}</div>
@@ -254,30 +295,41 @@ export const SessionSummary = memo(function SessionSummary({
                                                 </>
                                             )}
                                         </div>
-                                        <div className="text-center">
-                                            <div className="text-9xl chalk text-[var(--color-streak-fire)]">{streak}🔥</div>
+                                        <div className="text-center flex-1">
+                                            {/* Number + flame on one line — explicit flexbox prevents the emoji
+                                                from wrapping when streak is two digits at text-9xl. */}
+                                            <div className="flex items-center justify-center gap-3">
+                                                <span className="text-9xl chalk text-[var(--color-streak-fire)] tabular-nums">{streak}</span>
+                                                <svg viewBox="0 0 24 24" width="60" height="72" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--color-streak-fire)] -mb-2" aria-hidden>
+                                                    <path d="M12 3 C 12 8 7 9 7 14 C 7 18 9 21 12 21 C 15 21 17 18 17 14 C 17 11 14 10 14 7 C 13 8.5 12.5 9 12 3 Z" />
+                                                </svg>
+                                            </div>
                                             <div className="text-3xl ui text-white/40 mt-4">STREAK</div>
                                         </div>
                                     </div>
 
-                                    {/* Answer history grid */}
+                                    {/* Answer history grid — the Wordle hook. Big squares are the
+                                        visual pattern non-players recognise; small ones don't read
+                                        on a feed thumbnail. Cap at 920px so 10 squares (10×72 +
+                                        9×16 = 864) sit on one line for the canonical "result row"
+                                        silhouette; longer histories wrap cleanly. */}
                                     {answerHistory.length > 0 && (
-                                        <div className="flex flex-wrap justify-center gap-[12px] mb-16 max-w-[800px] mx-auto">
+                                        <div className="flex flex-wrap justify-center gap-[16px] mb-12 max-w-[920px] mx-auto">
                                             {answerHistory.map((ok, i) => (
                                                 <div
                                                     key={i}
-                                                    className={`w-[24px] h-[24px] rounded-md ${ok ? 'bg-[var(--color-correct)]' : 'bg-[var(--color-wrong)]'}`}
+                                                    className={`w-[72px] h-[72px] rounded-2xl ${ok ? 'bg-[var(--color-correct)]' : 'bg-[var(--color-wrong)]'}`}
                                                 />
                                             ))}
                                         </div>
                                     )}
 
-                                    <div className="text-7xl chalk text-[var(--color-gold)] tabular-nums mb-32">
+                                    <div className="text-7xl chalk text-[var(--color-gold)] tabular-nums mb-20">
                                         + {xpEarned} XP
                                     </div>
 
                                     <div className="text-4xl ui text-white/60 tracking-wider">
-                                        mathswipe.com
+                                        {window.location.host}
                                     </div>
                                 </div>
                             </div>
