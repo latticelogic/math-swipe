@@ -27,7 +27,8 @@ need to pass; they cover different surface area.
       `STRIPE_PRICE_ID` (the live $3.14 price), `PUBLIC_ORIGIN`
 - [ ] Webhook endpoint registered in Stripe (live mode) pointing to
       `https://us-central1-math-swipe-prod.cloudfunctions.net/stripeWebhook`
-      listening for `checkout.session.completed`
+      listening for **both** `checkout.session.completed` AND
+      `charge.refunded`
 - [ ] Stripe account verification COMPLETE (charges_enabled = true,
       payouts_enabled = true — check with `stripe accounts retrieve`)
 - [ ] You have a real payment method ready (your own card; refund
@@ -167,38 +168,43 @@ stripe charges list --limit 1 --customer cus_xxxxx  # or by session id
 stripe refunds create --payment-intent pi_xxxxx
 ```
 
+The `charge.refunded` event triggers `stripeWebhook` in
+`functions/src/stripe.ts`, which clears `paidAt` automatically. After
+the refund:
+
 - [ ] Stripe dashboard shows the refund went through
-- [ ] **EXPECTED CURRENT BEHAVIOR**: the webhook does NOT yet handle
-      `charge.refunded` — that's a future TODO. The entitlement in
-      Firestore remains `paidAt: <timestamp>` even after the refund.
-      This means a refunded user STILL has lifetime access until we
-      add the refund-handling code.
-- [ ] **MANUAL UNWIND (for now)**: clear paidAt in Firestore via CLI:
+- [ ] Firebase Functions log shows
+      `[stripeWebhook] revoked access for <uid> (charge ... refunded $3.14)`
+- [ ] Entitlement doc in Firestore: `paidAt` is now `null`,
+      `originalTransactionId` and `source: 'stripe'` are preserved
+      (audit trail — these are what the admin dashboard reads to detect
+      the row as a refunded purchase rather than a never-paid trial)
+- [ ] Refresh the app — paywall fires again on the next non-daily
+      problem since `entitlement.status` is now back to `'expired'`
+- [ ] `/admin/billing` refund-rate gauge increments (the row matches
+      `paidAt === null && originalTransactionId !== null`)
+
+Verify idempotency by re-delivering the same refund event:
 
 ```bash
-gcloud firestore documents update \
-  "projects/math-swipe-prod/databases/(default)/documents/entitlements/${TEST_UID}" \
-  --update-mask=paidAt \
-  --json-data='{"paidAt": {"nullValue": null}}'
+# Find the event id
+stripe events list --limit 5 --types charge.refunded
+
+# Re-deliver
+stripe events resend evt_xxxxx
 ```
 
-- [ ] After the manual clear: refresh the app. Paywall fires again on
-      next non-daily problem (since `entitlement.status` is now back to
-      'expired').
-- [ ] `/admin/billing` shows the refund — refund-rate gauge increments
-      because `paidAt === null && originalTransactionId !== null`
-
-**Action item from this section:** If you intend to handle refunds
-without manual intervention, add a `charge.refunded` handler to
-`functions/src/stripe.ts` that clears paidAt automatically. Worth
-deferring until you have your first real refund — at that point it's
-1 hour of work and you have a real test case.
+- [ ] Functions log shows `refund for <uid> but already cleared`
+- [ ] No duplicate Firestore writes — `updatedAt` doesn't change on the
+      redelivery (the short-circuit fires)
 
 ## Section 9 — Cleanup
 
 - [ ] Refund your own real $3.14 charge (you did this in Section 8 — verify
       Stripe shows "refunded" not "succeeded")
-- [ ] Clear `paidAt` for your test account manually (Section 8 command)
+- [ ] `paidAt` is automatically cleared by the `charge.refunded` webhook —
+      no manual action needed (was a manual step in earlier doc versions
+      before the handler shipped)
 - [ ] Restore your trial state to active if you want to keep playing:
 
 ```bash
@@ -242,7 +248,7 @@ When all sections pass:
 [ ] First-purchase QA — PASSED on YYYY-MM-DD by <name>
     Live Stripe price id: price_xxxx
     Webhook endpoint: ...
-    Refund flow: manual (charge.refunded handler deferred)
+    Refund flow: automatic via charge.refunded webhook handler
 ```
 
 Add this checkbox to the project's launch tracker.

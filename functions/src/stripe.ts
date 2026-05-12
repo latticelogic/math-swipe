@@ -163,48 +163,123 @@ export const stripeWebhook = onRequest(
             return;
         }
 
-        // Only the completed-checkout event grants entitlement. Other events
-        // (e.g. payment_intent.succeeded, charge.succeeded) are duplicate
-        // signals for the same transaction and would just re-write the same
-        // paidAt — handle one to keep audit logs clean.
-        if (event.type !== 'checkout.session.completed') {
-            logger.info(`[stripeWebhook] ignoring event ${event.type}`);
-            res.status(200).send('ignored');
+        // Route based on event type. We handle two events; everything else
+        // is acknowledged with 200 so Stripe stops re-delivering.
+        //   checkout.session.completed → grant entitlement (purchase)
+        //   charge.refunded            → revoke entitlement (refund)
+        // Other events (payment_intent.succeeded, charge.succeeded) are
+        // duplicate signals for the purchase and would just re-write the
+        // same paidAt — ignored to keep audit logs clean.
+        if (event.type === 'checkout.session.completed') {
+            await handleSessionCompleted(event.data.object as Stripe.Checkout.Session, res);
             return;
         }
-
-        const session = event.data.object as Stripe.Checkout.Session;
-        const uid = session.metadata?.uid;
-        if (!uid || typeof uid !== 'string') {
-            logger.error('[stripeWebhook] session.completed without uid metadata', session.id);
-            // 200 because retrying won't help — bad data, not transient.
-            res.status(200).send('no uid');
+        if (event.type === 'charge.refunded') {
+            await handleChargeRefunded(event.data.object as Stripe.Charge, res);
             return;
         }
-
-        // Idempotent write — re-deliveries of the same event land here too.
-        // Using set(merge:true) so we don't clobber trialStartedAt etc.
-        try {
-            const ref = admin.firestore().doc(`entitlements/${uid}`);
-            const snap = await ref.get();
-            if (snap.exists && snap.data()?.paidAt) {
-                logger.info(`[stripeWebhook] ${uid} already paid, skipping`);
-                res.status(200).send('already paid');
-                return;
-            }
-            await ref.set({
-                paidAt: Date.now(),
-                source: 'stripe',
-                originalTransactionId: session.id,
-                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-            }, { merge: true });
-            logger.info(`[stripeWebhook] granted lifetime access to ${uid} (session ${session.id})`);
-            res.status(200).send('ok');
-        } catch (err) {
-            logger.error('[stripeWebhook] Firestore write failed', err);
-            // 500 → Stripe retries with backoff. The webhook is idempotent
-            // so retries are safe.
-            res.status(500).send('write failed');
-        }
+        logger.info(`[stripeWebhook] ignoring event ${event.type}`);
+        res.status(200).send('ignored');
     }
 );
+
+// ── Handler: checkout.session.completed (purchase) ──────────────────────────
+
+/** Write paidAt + source + originalTransactionId for a successful purchase.
+ *  Idempotent: re-deliveries hit the already-paid short-circuit. */
+async function handleSessionCompleted(session: Stripe.Checkout.Session, res: WebhookResponse) {
+    const uid = session.metadata?.uid;
+    if (!uid || typeof uid !== 'string') {
+        logger.error('[stripeWebhook] session.completed without uid metadata', session.id);
+        // 200 because retrying won't help — bad data, not transient.
+        res.status(200).send('no uid');
+        return;
+    }
+    try {
+        const ref = admin.firestore().doc(`entitlements/${uid}`);
+        const snap = await ref.get();
+        if (snap.exists && snap.data()?.paidAt) {
+            logger.info(`[stripeWebhook] ${uid} already paid, skipping`);
+            res.status(200).send('already paid');
+            return;
+        }
+        // merge:true so we don't clobber trialStartedAt etc.
+        await ref.set({
+            paidAt: Date.now(),
+            source: 'stripe',
+            originalTransactionId: session.id,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        }, { merge: true });
+        logger.info(`[stripeWebhook] granted lifetime access to ${uid} (session ${session.id})`);
+        res.status(200).send('ok');
+    } catch (err) {
+        logger.error('[stripeWebhook] purchase Firestore write failed', err);
+        // 500 → Stripe retries with backoff. The write is idempotent so
+        // retries are safe.
+        res.status(500).send('write failed');
+    }
+}
+
+// ── Handler: charge.refunded (refund) ───────────────────────────────────────
+
+/** Clear paidAt when a charge is refunded so the user's entitlement reverts
+ *  to the trial/expired state appropriate for their current trialStartedAt.
+ *
+ *  We keep `originalTransactionId` and `source` on the doc so the
+ *  /admin/billing dashboard can still detect the row as a refunded purchase
+ *  (paidAt === null + originalTransactionId !== null is the refund signature
+ *  the dashboard reads). Setting only paidAt to null leaves an audit trail
+ *  that Stripe and the admin tooling can both see.
+ *
+ *  Partial refunds: any non-zero refund triggers this handler. For our
+ *  $3.14 flat-price model there's no meaningful partial-refund case — if
+ *  any money came back, the user effectively didn't pay. If we ever
+ *  introduce multi-tier pricing, this rule needs revisiting.
+ *
+ *  Idempotency: re-deliveries of the same `charge.refunded` event hit the
+ *  already-cleared short-circuit and are no-ops. */
+async function handleChargeRefunded(charge: Stripe.Charge, res: WebhookResponse) {
+    const uid = charge.metadata?.uid;
+    if (!uid || typeof uid !== 'string') {
+        logger.error('[stripeWebhook] charge.refunded without uid metadata', charge.id);
+        // The uid is set on the PaymentIntent at checkout-session-create time
+        // (see createCheckoutSession's payment_intent_data.metadata). If a
+        // charge is missing it, the purchase was created outside our flow —
+        // 200 because retrying can't fix bad metadata.
+        res.status(200).send('no uid');
+        return;
+    }
+    try {
+        const ref = admin.firestore().doc(`entitlements/${uid}`);
+        const snap = await ref.get();
+        if (!snap.exists) {
+            logger.warn(`[stripeWebhook] refund for ${uid} but no entitlement doc`);
+            res.status(200).send('no doc');
+            return;
+        }
+        const data = snap.data();
+        if (data?.paidAt == null) {
+            logger.info(`[stripeWebhook] refund for ${uid} but already cleared`);
+            res.status(200).send('already cleared');
+            return;
+        }
+        // Clear paidAt; leave source + originalTransactionId for the admin
+        // dashboard's refund-rate detection (paidAt==null + txn id set).
+        await ref.set({
+            paidAt: null,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        }, { merge: true });
+        logger.info(`[stripeWebhook] revoked access for ${uid} (charge ${charge.id} refunded $${(charge.amount_refunded / 100).toFixed(2)})`);
+        res.status(200).send('ok');
+    } catch (err) {
+        logger.error('[stripeWebhook] refund Firestore write failed', err);
+        res.status(500).send('write failed');
+    }
+}
+
+/** Minimal Response surface used by the handler helpers. Avoids pulling in
+ *  the full express/firebase-functions Response type just for status/send. */
+interface WebhookResponse {
+    status(code: number): WebhookResponse;
+    send(body: string): void;
+}
