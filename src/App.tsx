@@ -18,6 +18,7 @@ import { ReloadPrompt } from './components/ReloadPrompt';
 import { MilestoneBurst } from './components/MilestoneBurst';
 import { DailyFlourish } from './components/DailyFlourish';
 import { AchievementBadge } from './components/AchievementBadge';
+import { hapticMilestone } from './utils/haptics';
 import { useFirstCorrectFlourish } from './hooks/useFirstCorrectFlourish';
 /** Retry a dynamic import once on chunk-load failure (Cloudflare Pages cache busting) */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -345,8 +346,12 @@ function App() {
       // Show toast for first new unlock — extended to 3.2s so the more
       // theatrical visual has time to land. The badge SVG renders inline
       // with a soft halo so the player actually sees what they earned.
+      // Haptic match: achievement unlocks now buzz like streak milestones
+      // — previously they were silent which was a miss for what's often
+      // the rarest, most-celebratable moment in the app.
       const badge = EVERY_ACHIEVEMENT.find(a => a.id === fresh[0]);
       if (badge) {
+        hapticMilestone();
         setUnlockToast({ id: badge.id, name: badge.name });
         const t = setTimeout(() => setUnlockToast(null), 3200);
         return () => clearTimeout(t);

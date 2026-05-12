@@ -91,3 +91,22 @@ either with the other tool is more complex than running both.
 - All Firestore writes from the client must respect `firestore.rules`. Adding
   a new collection requires adding a rule block; the CI doesn't catch missing
   rules but the runtime will reject writes silently
+- **No audio in v1 — intentional.** The app uses haptic feedback for physical
+  satisfaction (see `src/utils/haptics.ts`) but does not play any sounds.
+  Mobile games with audio get muted in >80% of sessions; adding sound also
+  brings: opt-in toggle persistence, asset loading cost, autoplay policy
+  compliance, accessibility considerations. Decision is to keep haptic-only
+  until there's clear product reason to add sound. Don't add `new Audio()`
+  or `<audio>` elements without first revisiting this decision in CLAUDE.md.
+- **Particles are reserved for milestones only.** `MilestoneBurst` (streak
+  3/5/10/25/50) and the achievement-unlock toast fire small particle bursts.
+  No other surfaces should add particles — confetti-on-every-correct-answer
+  is the classic "crowding" mistake that hurts perceived quality. If you
+  want to celebrate a new event, make it a milestone first.
+- **Push notifications are opt-in only and rate-limited.** Daily reminder
+  is once per day per opted-in user, only if they haven't played in 18h.
+  The "you got beaten" speedrun ping is throttled to one per 30 minutes
+  per user (see `lastBeatenPingAt` in `functions/src/index.ts`). Copy is
+  intentionally soft-toned ("A few problems waiting" not "Keep your
+  streak alive!"). If you add new notification types, follow the same
+  pattern: opt-in flag in `pushSubscriptions`, soft copy, throttle.
