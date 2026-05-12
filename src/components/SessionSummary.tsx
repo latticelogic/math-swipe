@@ -3,6 +3,7 @@ import { motion, AnimatePresence, useSpring, useMotionValueEvent } from 'framer-
 import { createChallengeId } from '../utils/dailyChallenge';
 import { ShareSheet } from './ShareSheet';
 import { buildProfileSlug } from '../utils/profileSlug';
+import { IosSessionEndPrompt } from './InstallPrompt';
 
 /** Short, human-readable date stamp for the daily-challenge share card.
  *  "May 12" — used as a Wordle-style conversation hook so the artifact
@@ -537,6 +538,14 @@ export const SessionSummary = memo(function SessionSummary({
                                 <span>Challenge a Friend</span>
                             </button>
                         )}
+
+                        {/* iOS-only end-of-session install nudge. Only renders on
+                            iOS Safari when the app isn't already installed and
+                            the user hasn't dismissed this specific prompt. The
+                            highest-attention moment in the app for the strongest
+                            install pitch ("save your streak"). See
+                            InstallPrompt.tsx for the rules. */}
+                        <IosSessionEndPrompt visible={visible} />
 
                         <button
                             onClick={onDismiss}

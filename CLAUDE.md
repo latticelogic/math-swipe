@@ -26,7 +26,12 @@ generic ("Sharp." > "AMAZING! 🎉").
 | Age bands | 2 | `starter` (K-2 content) + `full` (default, ages 8+) — in `mathCategories.ts` |
 | Difficulty levels | 5 | Auto-adjusted by `useDifficulty.ts` based on response time |
 | Magic tricks | 36 | `src/utils/mathTricks.ts` (lessons + practice generators) |
-| Achievements | 32 | `src/utils/achievements.ts` (base) + `src/domains/math/mathAchievements.ts` (math-specific) |
+| Achievements | 28 math + share + early-trial ladder | `src/utils/achievements.ts` (base engine) + `src/domains/math/mathAchievements.ts` (math-specific list, includes the 6-rung early-trial ladder + `spread-the-word` share achievement) |
+| Paywall + trial UX | 14-day demo → \$3.14 lifetime | `src/components/Paywall.tsx`, `src/components/TrialModals.tsx`, `src/hooks/useEntitlement.ts`, `src/utils/entitlement.ts` (incl. `shouldFirePaywall` rule) |
+| Stripe Checkout integration | callable + webhook | `functions/src/stripe.ts` (Cloud Functions) + `src/utils/checkout.ts` (client wrapper) |
+| Legal pages | 3 drafts | `src/components/LegalPages.tsx` — Refund / Privacy / Terms with "DRAFT" banner; routed at `/refund`, `/privacy`, `/terms` |
+| Billing safety runbook | CLI-first | `docs/billing-safety.md` (gcloud / firebase / stripe commands for budget alerts, quota caps, App Check) |
+| Paywall e2e regression | manual checklist | `docs/paywall-e2e.md` (MCP-driven visual e2e) + `src/tests/paywallTrigger.test.ts` (truth-table unit test) |
 | Teachers (companion characters) | 8 | `src/domains/math/teachers/*.tsx` — each has a documented voice persona |
 | Streak milestone tiers | 5 | `MilestoneBurst.tsx` at 3/5/10/25/50 — sparkle → flame → bolt → crown → trophy |
 | Teacher message pools | base + per-teacher | `src/utils/chalkMessages.ts` (base) + `src/domains/math/teachers/*.tsx` (overrides) |
@@ -67,7 +72,7 @@ production should be owned by the company account, not Tim's personal.**
 | Firebase project (legacy / shared) | `scribble-math-prod` | DO NOT deploy to this. Hosts another company's classroom app with 80+ functions. A naive deploy would delete them all. |
 | GitHub | `latticelogic` org | Repo at `github.com/latticelogic/math-swipe`. Owner admin: `njytim-cyber` (renamed legacy account). Transferred 2026-05-11. |
 | Cloudflare Pages | `tim@latticelogic.app`, account id `00e07444cae65d675a140f8560429fad` | Project `math-swipe`, production URL `https://math-swipe-c7k.pages.dev`. Production branch `master`. Env vars `FIREBASE_PROJECT_ID`, `PUBLIC_ORIGIN`, `NODE_VERSION` set on both production + preview configs. Custom domain not yet attached (pending product name decision). |
-| Stripe | not yet created | Sign up under company entity when payments are implemented |
+| Stripe | code wired, account verification pending | Cloud Functions in `functions/src/stripe.ts` ready to deploy. Secrets needed: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID`, `PUBLIC_ORIGIN` — set via `firebase functions:secrets:set`. Webhook endpoint to register: `https://us-central1-math-swipe-prod.cloudfunctions.net/stripeWebhook` listening for `checkout.session.completed`. |
 | Apple Developer | not yet enrolled | Must enroll as Lattice Logic with company DUNS, $99/yr. 1-3 week verification window |
 | Google Play Console | not yet enrolled | Must enroll as Lattice Logic, $25 one-time |
 
@@ -121,6 +126,107 @@ project's normal deploy path doesn't need local wrangler at all.
 `README.md` (TBD) — short version: Cloudflare wins on CDN + edge, Firebase
 wins on stateful backend (auth + db + scheduled jobs + push). Trying to do
 either with the other tool is more complex than running both.
+
+## Monetization model
+
+**$3.14 USD lifetime. One-time purchase. NEVER subscription.** This is a
+firm decision (2026-05-12): the app is a game, not an education product,
+and subscriptions train users to evaluate "is this worth $X per month"
+instead of enjoying play. The price is a positioning statement, not a
+revenue-optimisation knob — don't relitigate it without explicit
+permission.
+
+### The 14-day demo
+
+Every new install gets full access to everything for 14 days from first
+session. The trial clock is keyed on Firebase Auth uid (anonymous works),
+stored in `entitlements/{uid}` Firestore doc (separate collection from
+world-readable `users/{uid}` — payment state is private). On day 15+
+without purchase, the paywall blocks every paid surface; the Daily
+Challenge stays free forever.
+
+| Touchpoint | Trigger | File |
+|---|---|---|
+| Welcome modal | First session per uid | `WelcomeModal` in `TrialModals.tsx` |
+| Day 7 midpoint reminder | Trial midpoint, session-start only | `TrialReminderModal` (day=7 branch) |
+| Day 10 reminder | 4 days left, session-start only | same component (day=10 branch) |
+| Day 13 reminder | 1 day left, session-start only | same component (day=13 branch) |
+| Trial countdown chip | Always-visible in Me tab during trial | `TrialCountdownChip` |
+| Paywall (value-anchored) | First non-daily problem completed AFTER trial expiry | `Paywall.tsx`, trigger in `App.tsx` |
+
+### Daily Challenge is free forever
+
+**This is the most consequential carve-out.** Expired non-paid users can
+still play one Daily Challenge per day. The rule is encoded in
+`shouldFirePaywall` (utils/entitlement.ts): paywall only fires when
+`questionType !== 'daily'`. Why: the daily is both the engagement loop
+AND the viral share surface — letting it stay open means non-payers
+keep their streak alive, keep generating share artifacts, and every 30
+days get another chance to convert. Per-user cost is ~$0 (1 read + 1
+write per day).
+
+### Paywall fire rule (read this before changing the trigger)
+
+The paywall fires AFTER the user completes their first non-daily problem
+post-expiry, never on app-open. This is *value-anchored* — the user gets
+the dopamine of earning XP first, then sees the ask. The opposite
+("open app → instant paywall") tested poorly in early thinking and is
+explicitly avoided.
+
+Single source of truth: `shouldFirePaywall()` in `utils/entitlement.ts`.
+Truth-table coverage in `src/tests/paywallTrigger.test.ts`. If you
+modify the rule, modify the test in the same change.
+
+### Copy rules
+
+- **Forbidden phrasing pattern**: pairing the $3.14 price with a
+  possession-threat in the same sentence. "$3.14 keeps your progress
+  forever" was the original draft of the paywall — the user pushed back
+  hard, citing it as too direct. Correct framing leads with the user's
+  own progress numbers (loss aversion via specifics, not slogans) and
+  the price sits below as a quiet invitation.
+- The paywall surface always mentions **"The Daily Challenge is always
+  free"** so users know they're not fully locked out.
+- Modals never interrupt mid-session — both `WelcomeModal` and
+  `TrialReminderModal` accept an `inSession` prop and defer until the
+  user is between sessions (game tab with totalAnswered === 0, OR any
+  other tab). The next session-start naturally re-triggers evaluation.
+
+### Hybrid distribution (web-first, native deferred)
+
+Web PWA + Stripe Checkout is canonical — keeps ~$2.75 of every $3.14
+(Stripe takes 2.9% + $0.30). Native apps (when shipped *after* web has
+60+ days of clean revenue data) will use external-link entitlement to
+route purchases back to Stripe, bypassing Apple/Google's 15-30% rake.
+The entitlement schema is source-agnostic via `source: 'stripe' |
+'apple' | 'google' | 'promo'` so the client gate logic doesn't change.
+
+### Pre-launch checklist
+
+The CLI-first runbook at `docs/billing-safety.md` covers the 10 steps
+needed before any paid user touches the app: Firebase Blaze upgrade,
+budget alert at \$50/mo, quota caps via `gcloud alpha services quota
+update`, Stripe verification + webhook registration, refund policy +
+support email, App Check, beta with 5-10 friends. Three steps are
+web-only (Blaze upgrade, card entry, KYC) — everything else is CLI.
+
+When live Stripe keys land, the QA playbook at
+`docs/first-purchase-qa.md` walks through the first real $3.14 purchase
+end-to-end as a 30-minute regression suite.
+
+### Legal pages (drafts, replace before launch)
+
+`src/components/LegalPages.tsx` ships Refund / Privacy / Terms at
+`/refund`, `/privacy`, `/terms`. Each has a yellow **"DRAFT — not legal
+advice"** banner at the top. The drafts are written against the
+codebase's actual data practices (anonymous auth, optional sign-in,
+Firestore stats, optional push, Stripe purchase, no third-party
+ad-tech). Two sections have inline DRAFT-NOTE callouts flagging
+unresolved decisions: **COPPA stance for under-13 users** in Privacy
+and **state of incorporation + dispute-resolution clause** in Terms.
+
+**Don't remove the yellow draft banner** without explicit "final copy
+is in place" instruction.
 
 ## Conventions
 
@@ -185,29 +291,48 @@ either with the other tool is more complex than running both.
   volume." is a teacher noticing the player. When adding achievements,
   write the desc as if congratulating the player at the moment of
   unlock, not labeling the unlock criteria.
+- **Monetization is settled, don't relitigate.** $3.14 lifetime, 14-day
+  demo, NO subscription, NO free tier other than the always-free Daily
+  Challenge. These are firm decisions backed by recorded rationale (see
+  the Monetization section above + `memory/monetization_model.md`).
+  When extending, *follow* the model; don't propose alternative pricing,
+  subscription tiers, freemium variants, or "Pro" features. The lever
+  for raising revenue is conversion-rate UX (trial polish, paywall copy,
+  habit formation) — not price changes or tier additions.
 
 ## Pre-launch state
 
-What's **done**:
+What's **done in code** (no further blockers to launch from the codebase side):
 - Cloudflare Pages + GitHub Actions CI/CD pipeline (auto-deploy on master)
 - Firebase project on `math-swipe-prod` (production)
 - Self-hosted fonts (Fredericka the Great + Architects Daughter in `public/fonts/`)
 - 28 question generators with real difficulty curves + 50 discrimination tests
-- 5-tier streak milestone celebrations (`MilestoneBurst.tsx`)
-- Near-miss feedback (warm orange for off-by-15% wrong answers)
-- Daily flourish (first-correct-of-day)
+- 5-tier streak milestone celebrations + near-miss feedback + daily flourish
 - Theatrical achievement unlock toast with badge SVG + sparkles
-- 8 teacher voices, each with documented persona
-- Content audit + content polish across all surfaces
-- Self-hosted fonts, hand-drawn SVG icons throughout
-- Stripe / Apple Dev / Play Console enrollments — not started
+- 8 teacher voices, each with documented persona; full content audit + polish
+- Hand-drawn SVG icons throughout (no emoji in user-facing copy except share-card decorative emoji-rain)
+- **Monetization model**: 14-day demo + $3.14 lifetime paywall, value-anchored trigger, Stripe Checkout callable + webhook, mock helpers for dev testing
+- **Trial UX**: WelcomeModal + Day 7 / 10 / 13 reminders + countdown chip, all session-start-gated
+- **Daily-Challenge-free-forever** carve-out
+- **6 early-trial achievements** to fill the dopamine gap (streak-3, daily-1, topic-explorer, three-day, accuracy-early, quick-fifty)
+- **Legal pages** at /refund, /privacy, /terms (DRAFT banners, awaiting lawyer review)
+- **PWA install prompt** with iOS instructions modal (PR #45 — pending merge)
+- **Truth-table tests** for the paywall fire rule, plus a manual e2e runbook for visual regressions
 
-What's **blocking commercial launch**:
-- Custom domain (gated on product-name decision)
-- App Store / Play Store enrollment (Apple is 1-3 week verification, start early)
+What's **blocking commercial launch** (operational, not code):
+- **Firebase Blaze plan upgrade** — required for Cloud Functions outbound HTTPS to Stripe (web console only, see `docs/billing-safety.md`)
+- **Stripe account verification + bank** — 1-3 day KYC turnaround for Lattice Logic
+- **Lawyer-reviewed legal copy** — replace draft Refund/Privacy/Terms with reviewed text, strip the yellow DRAFT banner
+- **COPPA stance decision** — under-13 user data flow choice (currently flagged in `LegalPages.tsx` PrivacyBody)
+- **Governing law clause** — state of incorporation + dispute-resolution language for Terms
+- **Pre-launch billing safety steps** (10-item checklist in `docs/billing-safety.md`) — budget alerts, quota caps, App Check, refund policy email, beta testing
+- **Custom domain** (gated on product-name decision — not strictly blocking, math-swipe-c7k.pages.dev works)
+- App Store / Play Store enrollment — defer per the hybrid-distribution rule until web has 60+ days of clean data
 
 What's **deferred** (not blocking):
 - Sound effects (intentional v1 decision — see Conventions)
 - Tablet-optimized layout (mobile-only v1 is fine)
-- Stripe (only when freemium upgrade ships)
 - Real player base for league (3 fake entries + you currently — content problem, not code)
+- A/B testing scaffolding (premature without conversion data)
+- Family / classroom seat tiers (no demand signal yet)
+- Native app shells (per hybrid-distribution rule)

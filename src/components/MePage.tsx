@@ -12,6 +12,7 @@ import { PushOptIn } from './PushOptIn';
 import { UsernameClaim } from './UsernameClaim';
 import { TrialCountdownChip } from './TrialModals';
 import { LegalFooterRow } from './LegalPages';
+import { InstallPill } from './InstallPrompt';
 import { CategoryIcon } from './CategoryIcon';
 
 interface Props {
@@ -709,6 +710,12 @@ export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked,
             >
                 v{__APP_VERSION__} · tap to update
             </button>
+
+            {/* "Install app" pill — only renders when the browser supports
+                install AND the app isn't already running standalone AND
+                the user hasn't permanently dismissed. iOS Safari gets a
+                tap-to-show-instructions modal since iOS has no install API. */}
+            <InstallPill />
 
             {/* Legal links — always discoverable in the profile area,
                 regardless of trial / paid / expired state. Same row also
