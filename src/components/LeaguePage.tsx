@@ -4,6 +4,7 @@ import { collection, query, orderBy, limit, onSnapshot, where, addDoc, serverTim
 import { db } from '../utils/firebase';
 import { getThemeColor } from '../utils/chalkThemes';
 import { COSTUMES } from '../utils/costumes';
+import { formatTime } from '../utils/formatTime';
 import { AchievementBadge } from './AchievementBadge';
 
 interface LeaderboardEntry {
@@ -31,14 +32,6 @@ interface Props {
     bestSpeedrunTime?: number;
     speedrunHardMode?: boolean;
     onStartSpeedrun?: () => void;
-}
-
-function formatTime(ms: number): string {
-    const totalSeconds = ms / 1000;
-    if (totalSeconds < 60) return `${totalSeconds.toFixed(2)}s`;
-    const m = Math.floor(totalSeconds / 60);
-    const s = Math.floor(totalSeconds % 60);
-    return `${m}m ${s.toString().padStart(2, '0')}s`;
 }
 
 export const LeaguePage = memo(function LeaguePage({ userXP, userStreak, uid, displayName, activeThemeId, activeCostume, bestSpeedrunTime, speedrunHardMode, onStartSpeedrun }: Props) {

@@ -184,30 +184,24 @@ export function useEntitlement(uid: string | null): UseEntitlementResult {
     };
 }
 
+/** Coerce a Firestore numeric-or-Timestamp field into a millisecond number,
+ *  returning the fallback when the value is missing or an unrecognised shape. */
+function toMillis<T extends number | null>(value: unknown, fallback: T): number | T {
+    if (typeof value === 'number') return value;
+    if (value && typeof value === 'object' && 'toMillis' in value) {
+        return (value as { toMillis: () => number }).toMillis();
+    }
+    return fallback;
+}
+
 /** Coerce a raw Firestore data blob into a typed Entitlement. Tolerant of
  *  missing fields so an older partial doc doesn't break the hook. */
 function toEntitlement(data: Record<string, unknown>): Entitlement {
-    const trialStartedAt = typeof data.trialStartedAt === 'number'
-        ? data.trialStartedAt
-        // serverTimestamp() resolves to a Firestore Timestamp object — convert
-        : (data.trialStartedAt && typeof data.trialStartedAt === 'object' && 'toMillis' in data.trialStartedAt)
-            ? (data.trialStartedAt as { toMillis: () => number }).toMillis()
-            : 0;
-    const paidAt = typeof data.paidAt === 'number'
-        ? data.paidAt
-        : (data.paidAt && typeof data.paidAt === 'object' && 'toMillis' in data.paidAt)
-            ? (data.paidAt as { toMillis: () => number }).toMillis()
-            : null;
-    const updatedAt = typeof data.updatedAt === 'number'
-        ? data.updatedAt
-        : (data.updatedAt && typeof data.updatedAt === 'object' && 'toMillis' in data.updatedAt)
-            ? (data.updatedAt as { toMillis: () => number }).toMillis()
-            : 0;
     return {
-        trialStartedAt,
-        paidAt,
+        trialStartedAt: toMillis(data.trialStartedAt, 0),
+        paidAt: toMillis(data.paidAt, null),
         source: (data.source as Entitlement['source']) ?? null,
         originalTransactionId: (data.originalTransactionId as string | null) ?? null,
-        updatedAt,
+        updatedAt: toMillis(data.updatedAt, 0),
     };
 }

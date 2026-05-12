@@ -12,6 +12,22 @@ import { DAILY_COUNT, DAILY_TYPES } from '../domains/math/mathDailyConfig';
 /** Forward-compat alias so callers can use EngineItem in the future */
 export type { Problem };
 
+/** Generate the DAILY_COUNT-sized problem set for a given seed, tagged with
+ *  the given id prefix. Shared by both the daily and shareable-challenge
+ *  paths so they stay byte-identical for the same seed. */
+function buildSeededSet(seed: number, idPrefix: string): Problem[] {
+    const rng = createSeededRng(seed);
+    const problems: Problem[] = [];
+    for (let i = 0; i < DAILY_COUNT; i++) {
+        const type = DAILY_TYPES[Math.floor(rng() * DAILY_TYPES.length)];
+        const difficulty = 2 + Math.floor(i / 3);
+        const problem = generateProblem(difficulty, type, false, rng);
+        problem.id = `${idPrefix}-${seed}-${i}`;
+        problems.push(problem);
+    }
+    return problems;
+}
+
 /**
  * Generate today's daily challenge — same N problems for everyone.
  * Uses a date-seeded RNG so every player gets the same set.
@@ -19,17 +35,8 @@ export type { Problem };
 export function generateDailyChallenge(): { problems: Problem[]; dateLabel: string } {
     const today = new Date();
     const seed = dateSeed(today);
-    const rng = createSeededRng(seed);
-
-    const problems: Problem[] = [];
-    for (let i = 0; i < DAILY_COUNT; i++) {
-        const type = DAILY_TYPES[Math.floor(rng() * DAILY_TYPES.length)];
-        const difficulty = 2 + Math.floor(i / 3);
-        problems.push(generateProblem(difficulty, type, false, rng));
-    }
-    problems.forEach((p, i) => { p.id = `daily-${seed}-${i}`; });
     return {
-        problems,
+        problems: buildSeededSet(seed, 'daily'),
         dateLabel: today.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
     };
 }
@@ -39,17 +46,7 @@ export function generateDailyChallenge(): { problems: Problem[]; dateLabel: stri
  * Same seed → same problems for both players.
  */
 export function generateChallenge(challengeId: string): Problem[] {
-    const seed = stringSeed(challengeId);
-    const rng = createSeededRng(seed);
-
-    const problems: Problem[] = [];
-    for (let i = 0; i < DAILY_COUNT; i++) {
-        const type = DAILY_TYPES[Math.floor(rng() * DAILY_TYPES.length)];
-        const difficulty = 2 + Math.floor(i / 3);
-        problems.push(generateProblem(difficulty, type, false, rng));
-    }
-    problems.forEach((p, i) => { p.id = `challenge-${seed}-${i}`; });
-    return problems;
+    return buildSeededSet(stringSeed(challengeId), 'challenge');
 }
 
 /** Create a short challenge ID from current timestamp */

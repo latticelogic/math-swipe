@@ -111,7 +111,6 @@ export function useGameLoop(
     const prevHard = useRef(hardMode);
     const frozenRef = useRef(false);
     const correctCountRef = useRef(0);
-    const dailyRef = useRef<{ dateLabel: string } | null>(null);
     const pendingTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
     /** Schedule a timeout that gets auto-cleared on unmount */
@@ -163,8 +162,6 @@ export function useGameLoop(
             speedrunStartRef.current = Date.now();
             setSpeedrunFinalTime(null);
             correctCountRef.current = 0;
-        } else if (isFiniteSet(categoryId)) {
-            dailyRef.current = { dateLabel: '' }; // populated by generateFiniteSet if needed
         }
         setItems(initial);
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -245,14 +242,8 @@ export function useGameLoop(
 
         const selectedValue = current.options[SWIPE_TO_INDEX[direction]];
         const correct = selectedValue === current.answer;
-        // Near-miss = wrong but within ~15% of correct OR off-by-one for
-        // small integers. We treat it as wrong (no points, streak resets)
-        // but the UI flashes a warmer color than a wild guess — keeps kids
-        // from feeling like every wrong tap is a stinging "FAILURE".
-        // Doesn't affect game mechanics, only the flash type passed to UI.
-        // Both selected and answer must be numeric for near-miss to apply.
-        // String-option topics (fractions with displayed labels) skip the
-        // near-miss path and fall through to standard wrong.
+        // String-option topics (fractions with labelled options) skip the
+        // near-miss branch — only numeric answers compare meaningfully.
         const isNearMiss = !correct
             && typeof selectedValue === 'number'
             && typeof current.answer === 'number'
@@ -458,7 +449,6 @@ export function useGameLoop(
         handleSwipe,
         timerProgress,
         dailyComplete,
-        dailyDateLabel: dailyRef.current?.dateLabel ?? '',
         speedrunFinalTime,
         speedrunElapsed,
     };

@@ -4,6 +4,7 @@ import { db } from '../utils/firebase';
 import { STORAGE_KEYS, FIRESTORE } from '../config';
 import { QUESTION_TYPES } from '../domains/math/mathCategories';
 import { safeGetItem, safeSetItem } from '../utils/safeStorage';
+import { todayKey } from '../utils/dateKey';
 
 interface TypeStat {
     solved: number;
@@ -320,16 +321,14 @@ export function useStats(uid: string | null) {
         setStats(prev => {
             const prevType = prev.byType[questionType] || { ...EMPTY_TYPE };
             const today = new Date();
-            // Use zero-padded YYYY-MM-DD so lexicographic compare matches calendar order
-            const pad = (n: number) => String(n).padStart(2, '0');
-            const todayStr = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
+            const todayStr = todayKey(today);
             let dayStreak = prev.dayStreak;
             let streakShields = prev.streakShields || 0;
 
             if (prev.lastPlayedDate !== todayStr) {
                 const yest = new Date(today);
                 yest.setDate(yest.getDate() - 1);
-                const yesterdayStr = `${yest.getFullYear()}-${pad(yest.getMonth() + 1)}-${pad(yest.getDate())}`;
+                const yesterdayStr = todayKey(yest);
 
                 if (prev.lastPlayedDate === yesterdayStr) {
                     dayStreak = prev.dayStreak + 1;

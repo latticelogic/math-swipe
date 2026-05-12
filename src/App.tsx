@@ -61,6 +61,7 @@ import { collection, query, where, onSnapshot, doc, updateDoc, orderBy, limit } 
 import { db } from './utils/firebase';
 import { generateProblem } from './utils/mathGenerator';
 import { generateDailyChallenge, generateChallenge } from './utils/dailyChallenge';
+import { todayKey } from './utils/dateKey';
 import type { EngineItem } from './engine/domain';
 import { STORAGE_KEYS, FIRESTORE } from './config';
 
@@ -961,11 +962,7 @@ function App() {
               {(() => {
                 if (!isFirstQuestion || hardMode || timedMode) return null;
                 if (questionType === 'daily' || questionType === 'speedrun' || questionType === 'challenge') return null;
-                const today = (() => {
-                  const d = new Date();
-                  const pad = (n: number) => String(n).padStart(2, '0');
-                  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-                })();
+                const today = todayKey();
                 const startedToday = stats.lastDailyDate === today && stats.todayDailySolved > 0;
                 const dailyTotal = 10; // Matches DAILY_COUNT in mathDailyConfig
                 const completedToday = startedToday && stats.todayDailySolved >= dailyTotal;
