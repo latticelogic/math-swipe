@@ -3,6 +3,54 @@
 This file documents conventions and account ownership for anyone (or any
 AI assistant) working in this repo. Update as ownership/setup changes.
 
+## What this app is
+
+A web-first mental math game (PWA, Vite + React + TypeScript). Players
+swipe to answer multiple-choice problems; the game adapts difficulty,
+tracks streaks, awards achievements, and teaches mental-math shortcuts
+("Magic Tricks") with lesson + practice flows.
+
+**Target audience**: kids ages 8-14 primarily, adults secondary.
+Tone target across all content: **warm, restrained, never pressure-y,
+never childish**. No motivational-poster hype. Specific praise over
+generic ("Sharp." > "AMAZING! 🎉").
+
+**Production URL**: https://math-swipe-c7k.pages.dev (Cloudflare Pages)
+
+### Surface map — what lives where
+
+| Surface | Count | File |
+|---|---|---|
+| Tabs (bottom nav) | 4 | Let's Go / League / Magic / Me — wired in `src/App.tsx` |
+| Question topics | 28 | `src/domains/math/mathCategories.ts` (catalog) + `src/utils/mathGenerator.ts` (per-topic generators) |
+| Age bands | 2 | `starter` (K-2 content) + `full` (default, ages 8+) — in `mathCategories.ts` |
+| Difficulty levels | 5 | Auto-adjusted by `useDifficulty.ts` based on response time |
+| Magic tricks | 36 | `src/utils/mathTricks.ts` (lessons + practice generators) |
+| Achievements | 32 | `src/utils/achievements.ts` (base) + `src/domains/math/mathAchievements.ts` (math-specific) |
+| Teachers (companion characters) | 8 | `src/domains/math/teachers/*.tsx` — each has a documented voice persona |
+| Streak milestone tiers | 5 | `MilestoneBurst.tsx` at 3/5/10/25/50 — sparkle → flame → bolt → crown → trophy |
+| Teacher message pools | base + per-teacher | `src/utils/chalkMessages.ts` (base) + `src/domains/math/teachers/*.tsx` (overrides) |
+| Math-topic flavour | per-topic | `src/domains/math/mathMessages.ts` (success/fail quips per topic) |
+| Category icons | 28 | `src/components/CategoryIcon.tsx` — hand-drawn SVGs |
+| Trick icons | 36 | `src/components/TrickIcon.tsx` — hand-drawn SVGs |
+| Difficulty curves spec | — | `docs/difficulty-curves.md` (what Easy/Medium/Hard means per topic) |
+| Mobile UX audit | 2026-05-11 | `docs/audit-2026-05-11.md` (visual + interaction findings) |
+| Content audit | 2026-05-12 | `docs/content-audit-2026-05-12.md` (teacher voice, tricks, achievements, copy) |
+| Firestore data audit util | — | `scripts/audit-firestore.cjs` (needs `gcloud auth application-default login` once) |
+
+### Local dev
+
+```bash
+npm install
+npm run dev          # needs .env with VITE_FIREBASE_* keys, see .env.example
+npm run verify       # eslint + tsc + vitest + vite build + worker bundle
+npm test             # vitest watch
+```
+
+Without `.env` (or with empty `VITE_FIREBASE_*` values), the Firebase
+init throws at boot. Copy `.env.example` to `.env` and fill in from
+the Firebase console of `math-swipe-prod`.
+
 ## Account ownership
 
 The company is **Lattice Logic** (incorporated, has DUNS). We're migrating
@@ -110,3 +158,56 @@ either with the other tool is more complex than running both.
   intentionally soft-toned ("A few problems waiting" not "Keep your
   streak alive!"). If you add new notification types, follow the same
   pattern: opt-in flag in `pushSubscriptions`, soft copy, throttle.
+- **Content tone bar — applies to all user-facing copy.** Warm,
+  restrained, specific. Never pressure-y. Never childish. Never
+  generic motivational-poster hype. Specific praise over generic
+  ("Sharp." > "AMAZING! 🎉"). When adding lines to any teacher voice
+  array (`src/domains/math/teachers/*.tsx`), base pool
+  (`chalkMessages.ts`), trick lesson (`mathTricks.ts`), or achievement
+  description (`mathAchievements.ts`), match this bar.
+- **No emoji in user-facing copy.** Every emoji that previously lived in
+  a string has been replaced by a hand-drawn SVG (`CategoryIcon.tsx`,
+  `TrickIcon.tsx`, `MilestoneBurst.tsx`, etc.) or by clean text. The
+  chalkboard aesthetic is hand-drawn end to end; emoji break the visual
+  consistency. The only exception is the transient emoji-rain on the
+  perfect-session screen (it's decorative, not chrome). Per-trick `icon`
+  fields in `mathTricks.ts` still hold legacy emoji strings — that data
+  is *unused at runtime* (TrickIcon renders SVGs keyed by `trick.id`)
+  but kept for backward-compat. Don't add a new emoji-icon field; key
+  off the id.
+- **Magic Tricks lessons must explain "why", not just "how".** Every
+  lesson's first step should name the underlying principle (algebraic
+  identity, visual intuition, or historical anecdote). Bare recipes
+  ("Double it then drop a zero") are the failure mode — kids forget
+  them. Working examples in `src/utils/mathTricks.ts`.
+- **Achievement descriptions celebrate the meaning, not the threshold.**
+  "Solve 500 problems" is a tax form. "500 problems. That's real
+  volume." is a teacher noticing the player. When adding achievements,
+  write the desc as if congratulating the player at the moment of
+  unlock, not labeling the unlock criteria.
+
+## Pre-launch state
+
+What's **done**:
+- Cloudflare Pages + GitHub Actions CI/CD pipeline (auto-deploy on master)
+- Firebase project on `math-swipe-prod` (production)
+- Self-hosted fonts (Fredericka the Great + Architects Daughter in `public/fonts/`)
+- 28 question generators with real difficulty curves + 50 discrimination tests
+- 5-tier streak milestone celebrations (`MilestoneBurst.tsx`)
+- Near-miss feedback (warm orange for off-by-15% wrong answers)
+- Daily flourish (first-correct-of-day)
+- Theatrical achievement unlock toast with badge SVG + sparkles
+- 8 teacher voices, each with documented persona
+- Content audit + content polish across all surfaces
+- Self-hosted fonts, hand-drawn SVG icons throughout
+- Stripe / Apple Dev / Play Console enrollments — not started
+
+What's **blocking commercial launch**:
+- Custom domain (gated on product-name decision)
+- App Store / Play Store enrollment (Apple is 1-3 week verification, start early)
+
+What's **deferred** (not blocking):
+- Sound effects (intentional v1 decision — see Conventions)
+- Tablet-optimized layout (mobile-only v1 is fine)
+- Stripe (only when freemium upgrade ships)
+- Real player base for league (3 fake entries + you currently — content problem, not code)
