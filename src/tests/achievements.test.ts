@@ -32,6 +32,7 @@ describe('achievements.ts', () => {
         ultimateBestStreak: 0,
         ultimateSessions: 0,
         ultimatePerfects: 0,
+        sharesSent: 0,
     };
 
     it('awards streak-20 when best streak hits 20', () => {
@@ -58,5 +59,11 @@ describe('achievements.ts', () => {
         const stats: MathAchievementStats = { ...baseStats, dayStreak: 7 };
         const unlocked = checkMathAchievements(stats, new Set());
         expect(unlocked).toContain('dedicated');
+    });
+
+    it('awards spread-the-word on first share', () => {
+        const stats: MathAchievementStats = { ...baseStats, sharesSent: 1 };
+        const unlocked = checkMathAchievements(stats, new Set());
+        expect(unlocked).toContain('spread-the-word');
     });
 });

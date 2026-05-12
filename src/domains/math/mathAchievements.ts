@@ -36,6 +36,8 @@ export interface MathAchievementStats {
     ultimateBestStreak: number;
     ultimateSessions: number;
     ultimatePerfects: number;
+    // Social
+    sharesSent: number;
 }
 
 // ── Achievement lists ─────────────────────────────────────────────────────────
@@ -98,6 +100,12 @@ const CORE_ACHIEVEMENTS: Achievement<MathAchievementStats>[] = [
             if (validEntries.length < 10) return false;
             return validEntries.every(([, t]) => t.solved >= 10);
         },
+    },
+    {
+        id: 'spread-the-word',
+        name: 'Spread the Word',
+        desc: 'Shared your first score. Nice — pass it on.',
+        check: s => s.sharesSent >= 1,
     },
 ];
 

@@ -51,6 +51,11 @@ export interface Stats {
     // Speedrun tracking
     bestSpeedrunTime: number; // Stored in ms. 0 means unplayed.
     speedrunHardMode: boolean; // true if best speedrun was on hard mode
+
+    // Share-action tracking — increments each time the player completes
+    // a navigator.share or clipboard-copy from the session summary. Drives
+    // the "Spread the Word" achievement.
+    sharesSent: number;
 }
 
 const STORAGE_KEY = STORAGE_KEYS.stats;
@@ -100,6 +105,7 @@ const EMPTY_STATS: Stats = {
     ultimatePerfects: 0,
     bestSpeedrunTime: 0,
     speedrunHardMode: false,
+    sharesSent: 0,
 };
 
 /** Normalize a YYYY-M-D or YYYY-MM-DD string to zero-padded YYYY-MM-DD.
@@ -241,6 +247,7 @@ function mergeStats(local: Stats, cloud: Stats): Stats {
         activeCostume: local.activeCostume || cloud.activeCostume,
         activeTrailId: local.activeTrailId || cloud.activeTrailId,
         activeBadgeId: local.activeBadgeId || cloud.activeBadgeId,
+        sharesSent: Math.max(local.sharesSent ?? 0, cloud.sharesSent ?? 0),
     };
 }
 
@@ -426,9 +433,13 @@ export function useStats(uid: string | null) {
         }));
     }, []);
 
+    const recordShare = useCallback(() => {
+        setStats(prev => ({ ...prev, sharesSent: (prev.sharesSent ?? 0) + 1 }));
+    }, []);
+
     const accuracy = stats.totalSolved > 0
         ? Math.round((stats.totalCorrect / stats.totalSolved) * 100)
         : 0;
 
-    return { stats, accuracy, recordSession, resetStats, updateCosmetics, updateBestSpeedrunTime, updateBadge, consumeShield };
+    return { stats, accuracy, recordSession, resetStats, updateCosmetics, updateBestSpeedrunTime, updateBadge, consumeShield, recordShare };
 }
