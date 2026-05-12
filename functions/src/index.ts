@@ -58,6 +58,10 @@ interface PushSubscriptionDoc {
     userAgent?: string;
     dailyEnabled?: boolean;
     pingsEnabled?: boolean;
+    /** Server timestamp (ms) of the last 'beaten' notification we sent.
+     *  Used to throttle so a hot streak of leaderboard bumps doesn't
+     *  hammer the user with notifications in quick succession. */
+    lastBeatenPingAt?: number;
 }
 
 interface NotificationPayload {
@@ -133,9 +137,12 @@ export const dailyReminder = onSchedule(
                 const lastTime = Date.parse(lastPlayedDate + 'T12:00:00Z');
                 if (!Number.isNaN(lastTime) && lastTime > cutoff) continue;
             }
+            // Softer-toned copy. The previous "Keep your streak alive!"
+            // was effective but pressure-y; goal here is to feel like a
+            // friendly nudge from a teacher, not a streak-anxiety alert.
             const ok = await sendOne(uid, sub, {
-                title: '🔥 Keep your streak alive!',
-                body: 'Just a few problems to keep the day going.',
+                title: 'A few problems waiting',
+                body: "Whenever you're ready — your spot is held.",
                 url: '/',
                 kind: 'daily',
             });
@@ -181,12 +188,32 @@ export const notifyBeaten = onDocumentUpdated(
     const sub = subSnap.data() as PushSubscriptionDoc;
     if (!sub.pingsEnabled) return;
 
+    // Throttle: don't send more than one beaten-ping per 30 minutes per user.
+    // A hot streak of leaderboard bumps would otherwise spam them, which is
+    // the fastest way to lose a user. The first bump still goes through;
+    // follow-ups within 30 minutes are silently swallowed.
+    const now = Date.now();
+    const THROTTLE_MS = 30 * 60 * 1000;
+    if (sub.lastBeatenPingAt && now - sub.lastBeatenPingAt < THROTTLE_MS) {
+        logger.info('beaten ping throttled', { beatenUid, sinceMs: now - sub.lastBeatenPingAt });
+        return;
+    }
+
     const beaterName = after.displayName ?? 'Someone';
     const beatenName = prevSlot.docs[0].data().displayName ?? 'You';
-    await sendOne(beatenUid, sub, {
-        title: '⚔️ You got beaten!',
-        body: `${beaterName} just passed you on the speedrun board.`,
+    // Softer-toned: "You got beaten" reads hostile; "passed your time"
+    // is the same fact phrased without aggression. Lifts the focus from
+    // loss to fact-of-event, which matches the kid-friendly tone better.
+    const ok = await sendOne(beatenUid, sub, {
+        title: 'Someone passed your time',
+        body: `${beaterName} edged ahead on the speedrun board.`,
         url: `/u/${encodeURIComponent(beatenName)}-${beatenUid.slice(0, 4)}`,
         kind: 'beaten',
     });
+    if (ok) {
+        // Record so subsequent bumps within the throttle window are skipped.
+        await db.collection('pushSubscriptions').doc(beatenUid).update({
+            lastBeatenPingAt: now,
+        }).catch(() => { /* non-fatal */ });
+    }
 });
