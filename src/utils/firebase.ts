@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
+import { getFunctions } from 'firebase/functions';
 
 /**
  * Firebase web SDK keys are intentionally public (embedded in every client),
@@ -48,3 +49,8 @@ export const auth = getAuth(app);
 export const db = initializeFirestore(app, {
     localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
 });
+
+// Cloud Functions client — used by the Stripe Checkout flow
+// (createCheckoutSession). Region default is us-central1; if we ever move
+// to multi-region we'd pass the region explicitly here.
+export const functions = getFunctions(app);

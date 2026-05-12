@@ -103,6 +103,49 @@ service cloud.firestore {
                        || request.resource.data.byType is map);
     }
 
+    // ── Entitlements Collection (paywall state) ──
+    // Per-uid record of trial start + lifetime-unlock purchase state.
+    // Lives in its OWN collection, not on users/{uid}, because the users
+    // doc is world-readable for leaderboards/profile pages, and payment
+    // state shouldn't be public. Strict owner-only access here.
+    //
+    // Writes:
+    //   • Client may set trialStartedAt + updatedAt + (null) paidAt/source
+    //     when bootstrapping their own first-session record.
+    //   • Client must NEVER be allowed to set paidAt itself — that field
+    //     only writes from the Stripe webhook Cloud Function (admin SDK
+    //     bypasses rules). A client setting paidAt = anything is rejected.
+    //   • Mock helpers in dev (mockGrantAccess) call into Firestore from
+    //     the client in DEV builds; rules below intentionally allow this
+    //     for the source='promo' case so dev testing works without admin
+    //     credentials. Production-side, the only legit promo grants happen
+    //     server-side via the same webhook code path.
+    match /entitlements/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      // Create: only the owner; only the bootstrap shape allowed.
+      allow create: if request.auth != null
+                    && request.auth.uid == uid
+                    && request.resource.data.keys().hasOnly([
+                         'trialStartedAt', 'paidAt', 'source',
+                         'originalTransactionId', 'updatedAt'
+                       ])
+                    && request.resource.data.trialStartedAt is number
+                    && request.resource.data.trialStartedAt > 0
+                    && (request.resource.data.paidAt == null
+                        || request.resource.data.paidAt is number);
+      // Update: owner-only. Field allow-list enforced; rate-limited to 1
+      // write per second to deter accidental tight-loop writes.
+      allow update: if request.auth != null
+                    && request.auth.uid == uid
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+                         'trialStartedAt', 'paidAt', 'source',
+                         'originalTransactionId', 'updatedAt'
+                       ])
+                    && (!('updatedAt' in resource.data)
+                        || request.time > resource.data.updatedAt + duration.value(1, 's'));
+      allow delete: if false;
+    }
+
     // ── Pings Collection (social nudges) ──
     match /pings/{pingId} {
       // Users can only read pings targeted at them

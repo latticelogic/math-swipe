@@ -10,6 +10,7 @@ import { TEACHERS, DEFAULT_TEACHER_ID } from '../domains/math/teachers';
 import { RANKS, getRank } from '../domains/math/ranks';
 import { PushOptIn } from './PushOptIn';
 import { UsernameClaim } from './UsernameClaim';
+import { TrialCountdownChip } from './TrialModals';
 import { CategoryIcon } from './CategoryIcon';
 
 interface Props {
@@ -36,6 +37,15 @@ interface Props {
     activeTeacherId: string;
     onTeacherChange: (id: string) => void;
     uid: string | null;
+    /** 14-day-trial state. When 'trial', a small countdown chip renders
+     *  below the profile area so users always know where they stand.
+     *  'paid' and 'expired' both render no chip (paid: no chrome cost,
+     *  expired: the paywall is already taking over the surface). */
+    entitlementStatus?: import('../utils/entitlement').EntitlementStatus;
+    entitlementDaysLeft?: number;
+    /** Called when the user taps the countdown chip → triggers unlock
+     *  flow (mock in dev, Stripe Checkout in Phase 4). */
+    onUnlock?: () => void;
 }
 
 // Rank ladder + getRank helper extracted to ../domains/math/ranks so the
@@ -63,7 +73,7 @@ function getMasteryInfo(xp: number) {
     }
 }
 
-export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked, activeCostume, onCostumeChange, activeTheme, onThemeChange, activeTrailId, onTrailChange, displayName, onDisplayNameChange, isAnonymous, onLinkGoogle, onSendEmailLink, ageBand, activeBadge, onBadgeChange, activeTeacherId, onTeacherChange, uid }: Props) {
+export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked, activeCostume, onCostumeChange, activeTheme, onThemeChange, activeTrailId, onTrailChange, displayName, onDisplayNameChange, isAnonymous, onLinkGoogle, onSendEmailLink, ageBand, activeBadge, onBadgeChange, activeTeacherId, onTeacherChange, uid, entitlementStatus, entitlementDaysLeft, onUnlock }: Props) {
     const [showRanks, setShowRanks] = useState(false);
     const [resetConfirm, setResetConfirm] = useState<string | null>(null);
     const [editingName, setEditingName] = useState(false);
@@ -131,6 +141,18 @@ export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked,
                 isAnonymous={isAnonymous}
                 suggestion={displayName}
             />
+
+            {/* Trial countdown chip — only renders during the 14-day window.
+                Tappable to open the unlock flow directly. */}
+            {entitlementStatus && entitlementDaysLeft !== undefined && (
+                <div className="flex justify-center">
+                    <TrialCountdownChip
+                        status={entitlementStatus}
+                        daysLeft={entitlementDaysLeft}
+                        onClick={onUnlock}
+                    />
+                </div>
+            )}
 
             {/* Contextual save-progress nudge — value-framed, dismissible with cooldown */}
             {isAnonymous && (() => {

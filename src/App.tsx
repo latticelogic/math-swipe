@@ -50,6 +50,10 @@ import { CHALK_THEMES, applyTheme, type ChalkTheme } from './utils/chalkThemes';
 import { applyMode } from './hooks/useThemeMode';
 import { useLocalState } from './hooks/useLocalState';
 import { useFirebaseAuth } from './hooks/useFirebaseAuth';
+import { useEntitlement } from './hooks/useEntitlement';
+import { startCheckout } from './utils/checkout';
+import { Paywall } from './components/Paywall';
+import { WelcomeModal, TrialReminderModal } from './components/TrialModals';
 import { collection, query, where, onSnapshot, doc, updateDoc, orderBy, limit } from 'firebase/firestore';
 import { db } from './utils/firebase';
 import { generateProblem } from './utils/mathGenerator';
@@ -127,6 +131,32 @@ function LoadingFallback() {
 function App() {
   const { user, loading: authLoading, setDisplayName, linkGoogle, sendEmailLink } = useFirebaseAuth();
   const uid = user?.uid ?? null;
+
+  // 14-day trial → $3.14 lifetime gate. See utils/entitlement.ts +
+  // memory/monetization_model.md. Renders the full-screen Paywall as an
+  // early return when status === 'expired'.
+  const entitlement = useEntitlement(uid);
+  const [paywallBusy, setPaywallBusy] = useState(false);
+
+  // Stripe Checkout success redirect handler. Stripe sends the user back
+  // to /?paywall=ok&session_id=... after a successful payment; the webhook
+  // has already written paidAt by then, but we still need to nudge the
+  // hook to re-read so the paywall closes immediately. Also strips the
+  // query params so a refresh doesn't loop the same effect.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const paywallStatus = params.get('paywall');
+    if (paywallStatus !== 'ok' && paywallStatus !== 'cancelled') return;
+    // Always clear the URL so subsequent reloads don't re-trigger this.
+    window.history.replaceState({}, '', window.location.pathname);
+    if (paywallStatus === 'ok') {
+      // Best-effort refresh — if it fails the next render still picks up
+      // the new paidAt on its own. Don't block the UI on this.
+      entitlement.refresh().catch(() => { /* silent */ });
+    }
+  // Intentional: run once on mount (the URL is the source of truth)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const [activeTab, setActiveTab] = useState<Tab>('game');
   const [isMagicLessonActive, setIsMagicLessonActive] = useState(false);
@@ -510,6 +540,42 @@ function App() {
             }}
           />
         </Suspense>
+      </BlackboardLayout>
+    );
+  }
+
+  // Trial expired & not paid → full-screen paywall. Blocks every other
+  // surface — leaderboard, profile, magic, everything. Authoritative gate.
+  //
+  // We only render this once entitlement.loading is false; otherwise a
+  // fresh page load briefly flashes the paywall while the Firestore read
+  // is in flight. The authLoading early return above means user is always
+  // present here, but uid can still be null in error states — in that
+  // case we let the app render normally and trust the next session to
+  // resolve the gate.
+  if (uid && !entitlement.loading && entitlement.status === 'expired') {
+    return (
+      <BlackboardLayout>
+        <Paywall
+          busy={paywallBusy}
+          onUnlock={async () => {
+            setPaywallBusy(true);
+            try {
+              await startCheckout(entitlement.mockGrantAccess);
+            } catch (err) {
+              console.error('[paywall] checkout failed', err);
+              // Surface to the user — if checkout failed they need to
+              // know. The paywall is already the focal screen so a
+              // simple alert is fine here.
+              alert('Could not start checkout. Try again in a moment.');
+            } finally {
+              setPaywallBusy(false);
+            }
+          }}
+          onDevReset={import.meta.env.DEV
+            ? () => entitlement.mockBackdateTrial(0)
+            : undefined}
+        />
       </BlackboardLayout>
     );
   }
@@ -1039,6 +1105,19 @@ function App() {
               activeTeacherId={savedTeacherId as string}
               onTeacherChange={setSavedTeacherId}
               uid={uid}
+              entitlementStatus={entitlement.status}
+              entitlementDaysLeft={entitlement.daysLeft}
+              onUnlock={async () => {
+                setPaywallBusy(true);
+                try {
+                  await startCheckout(entitlement.mockGrantAccess);
+                } catch (err) {
+                  console.error('[paywall] checkout failed', err);
+                  alert('Could not start checkout. Try again in a moment.');
+                } finally {
+                  setPaywallBusy(false);
+                }
+              }}
             /></Suspense>
           </motion.div>
         )}
@@ -1086,6 +1165,37 @@ function App() {
 
         {/* ── Weekly recap (first open of the week, only when idle on game tab) ── */}
         <WeeklyRecap stats={stats} suppress={activeTab !== 'game' || isMagicLessonActive} />
+
+        {/* ── 14-day-trial touchpoints ──
+            Three pieces (see TrialModals.tsx):
+              - WelcomeModal: once on Day 1
+              - TrialReminderModal: once at Day 10 + once at Day 13
+              - TrialCountdownChip: rendered inline inside MePage (passed
+                via props below) so it lives where the user already looks
+                for account-level info, not as floating chrome.
+            All render NOTHING for paid users — no chrome cost. */}
+        <WelcomeModal
+          uid={uid}
+          status={entitlement.status}
+          entitlementLoading={entitlement.loading}
+        />
+        <TrialReminderModal
+          uid={uid}
+          status={entitlement.status}
+          daysLeft={entitlement.daysLeft}
+          entitlementLoading={entitlement.loading}
+          onUnlock={async () => {
+            setPaywallBusy(true);
+            try {
+              await startCheckout(entitlement.mockGrantAccess);
+            } catch (err) {
+              console.error('[paywall] checkout failed', err);
+              alert('Could not start checkout. Try again in a moment.');
+            } finally {
+              setPaywallBusy(false);
+            }
+          }}
+        />
 
         {/* ── Achievement unlock toast ──
             Theatrical version: shows the actual badge SVG with a sparkle

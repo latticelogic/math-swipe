@@ -33,6 +33,10 @@ import * as logger from 'firebase-functions/logger';
 admin.initializeApp();
 const db = admin.firestore();
 
+// Re-export Stripe Checkout + webhook functions. Lives in its own module to
+// keep the push code self-contained — both are independently deployable.
+export { createCheckoutSession, stripeWebhook } from './stripe';
+
 // VAPID credentials live in Secret Manager. Even the public key is a secret
 // here (rather than a plain param) so rotation is one CLI command + a
 // function redeploy, with no code edits.
