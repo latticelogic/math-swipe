@@ -40,6 +40,11 @@ export const STORAGE_KEYS = {
 export const FIRESTORE = {
     USERS: 'users',
     PINGS: 'pings',
+    // Per-uid entitlement state (trialStartedAt, paidAt, source). Lives in
+    // its own collection rather than the public-read `users` doc so payment
+    // status isn't world-readable — see firestore.rules for the strict
+    // owner-only access policy.
+    ENTITLEMENTS: 'entitlements',
 } as const;
 
 // ── Bottom navigation tabs ────────────────────────────────────────────────────
