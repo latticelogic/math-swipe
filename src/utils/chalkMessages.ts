@@ -31,58 +31,84 @@ export interface ChalkMessageOverrides {
 }
 
 // ── Generic message pools ─────────────────────────────────────────────────────
+//
+// Tone guide for every line below:
+//   - warm, never pressure-y
+//   - clean text, no emoji (those live as SVG icons in the UI, not in copy)
+//   - specific over generic ("Cleanly done" > "Awesome!")
+//   - varied length so the speech bubble feels conversational
+//
+// Per-teacher voice overrides in src/domains/math/teachers/*.tsx take
+// priority over these pools. These are the friendly fallback for any
+// state a teacher hasn't customised.
 
 const BASE_IDLE = [
-    'You got this! 💪', 'Take your time 🌟', 'I believe in you!',
-    'Focus mode: ON 🎯', 'Ready when you are!',
-    'Let\'s gooo! 🚀', 'Deep breaths… here we go 🧘',
-    'Your brain is warming up 🔥', 'Every problem is a win 🏅',
-    'You\'re getting sharper! ✏️',
+    'Take your time.',
+    'Ready when you are.',
+    'No rush.',
+    'Read it carefully.',
+    'Focus.',
+    'Whenever you\'re set.',
+    'Deep breath first.',
+    'One step at a time.',
 ];
 
 const BASE_SUCCESS = [
-    'AMAZING! 🎉', 'You\'re a genius! 🧠', 'Nailed it! ✅',
-    'Brilliant work! ⭐', 'Unstoppable! 🔥', 'That was fast! ⚡',
-    'Big brain energy! 🧠✨', 'Proud of you! 🥹',
-    'Beautiful solve! 🎨', 'Smooth! 🧈', 'Chef\'s kiss! 👨‍🍳',
-    'Poetry in motion! 📝', 'Textbook perfect! 📖',
+    'Nicely done.',
+    'Clean work.',
+    'Sharp.',
+    'You got it.',
+    'Confident answer.',
+    'Right on the first look.',
+    'Solid.',
+    'Good thinking.',
+    'That\'s the one.',
+    'Smooth.',
 ];
 
 const BASE_FAIL = [
-    'Almost! Try again 💙', 'You\'ll get it! 🌈', 'Mistakes = learning! 📚',
-    'Don\'t give up! 💪', 'So close! 🤏', 'Next one is yours! 🎯',
-    'That\'s OK! Keep going 🌻', 'Learning moment! 💡',
-    'Every mistake makes you stronger 🏋️', 'Shake it off! 🐕',
+    'Close. Try again.',
+    'Have another look.',
+    'Almost.',
+    'No worries — next one.',
+    'Pattern\'s nearly right.',
+    'Reset and go.',
+    'Reread it. The answer is in there.',
 ];
 
 const BASE_STREAK = [
-    'ON FIRE! 🔥🔥🔥', 'LEGENDARY! 👑', 'Can\'t be stopped! 🚀',
-    'Streeeeak! 🎸', 'Hall of fame material! 🏆',
-    'You\'re INCREDIBLE! 💥', 'This is YOUR moment! 🌟',
-    'The crowd goes wild! 📣', 'On a roll! 🎳',
+    'On a roll.',
+    'Locked in.',
+    'Unstoppable.',
+    'Streak going.',
+    'You\'re in the zone.',
+    'Hot run.',
 ];
 
-const STREAK_EARLY = ['Great start! 🌱', 'Here we go! 🎯', 'Warming up! 🌤️', 'Off to a great start! 🏃'];
-const STREAK_MID = ['Five strong! ✋', 'You\'re building something! 🧱', 'Momentum! 🎢', 'Look at you go! 👀'];
-const STREAK_HIGH = ['DOUBLE DIGITS! 🔟🔥', 'You\'re on fire! 🔥', 'Nothing can stop you! 🛡️', 'This is incredible! 🤩'];
-const STREAK_LEGENDARY = ['Are you even human?! 🤖✨', 'Absolute legend! 👑', 'They\'ll write songs about this! 🎵', 'This is a masterclass! 🎓'];
+const STREAK_EARLY = ['Great start.', 'Here we go.', 'Warming up.', 'Off to a clean start.'];
+const STREAK_MID = ['Five strong.', 'Building something.', 'Momentum.', 'Look at you go.'];
+const STREAK_HIGH = ['Double digits — wow.', 'You\'re on fire.', 'Nothing can stop you.', 'This is incredible.'];
+const STREAK_LEGENDARY = ['Are you even human?', 'Absolute legend.', 'They\'ll write songs about this.', 'A masterclass.'];
 
 const COMEBACK = [
-    'COMEBACK! Never gave up! 💪🔥', 'That\'s what resilience looks like! 🦁',
-    'Back in the game! 🎮✨', 'You just powered through! 💥',
-    'REDEMPTION ARC! 🌈', 'Fall down 7 times, stand up 8! 🥊',
-    'The comeback is always greater! 👑', 'From the ashes! 🔥🔥🔥',
+    'There it is.',
+    'That\'s the comeback.',
+    'Back in the game.',
+    'You powered through.',
+    'Redemption.',
+    'Up off the mat.',
+    'The comeback is always greater.',
 ];
 
-const HARD_MODE = ['Brave soul! 💀💪', 'Hard mode hero! 🦸', 'No fear! 🛡️', 'Courage level: MAX! 🏔️'];
-const TIMED_MODE = ['Beat the clock! ⏱️', 'Speed demon! 🏎️', 'Time is ticking! ⚡', 'Racing the stopwatch! 🏃‍♂️💨'];
+const HARD_MODE = ['Brave choice.', 'Hard mode hero.', 'No fear.', 'Courage at maximum.'];
+const TIMED_MODE = ['Beat the clock.', 'Speed run.', 'Tick tock.', 'Racing the stopwatch.'];
 
 const SESSION_MILESTONES: Record<number, string[]> = {
-    10: ['10 problems down! Just getting started! 🎬'],
-    25: ['25 already! You\'re in the zone! 🎯'],
-    50: ['FIFTY! Half a century of challenges! 🎉'],
-    100: ['💯 ONE HUNDRED! You\'re a legend! 👑'],
-    200: ['200!! Marathon champion! 🏃‍♂️🏆'],
+    10: ['10 problems down. Just getting started.'],
+    25: ['25 already. You\'re in the zone.'],
+    50: ['Fifty. Half a century down.'],
+    100: ['One hundred. You\'re a legend.'],
+    200: ['200. Marathon champion.'],
 };
 
 // Tier-aligned with src/engine/domain.ts milestones config (3/5/10/25/50)
@@ -123,10 +149,10 @@ const STREAK_MILESTONES: Record<number, string[]> = {
 
 function getTimeMessages(): string[] {
     const h = new Date().getHours();
-    if (h >= 5 && h < 12) return ['Morning session! ☀️', 'Rise and shine! 🌅', 'Brain fuel! 🧇'];
-    if (h >= 12 && h < 17) return ['Afternoon vibes! 🌤️', 'Post-lunch power! 🍱✨'];
-    if (h >= 17 && h < 22) return ['Evening practice! 🌆', 'Golden hour! 🌅'];
-    return ['Night owl vibes! 🦉', 'Burning the midnight oil! 🕯️'];
+    if (h >= 5 && h < 12) return ['Morning session.', 'Rise and shine.', 'Early-day brain.'];
+    if (h >= 12 && h < 17) return ['Afternoon focus.', 'Post-lunch session.', 'Midday math.'];
+    if (h >= 17 && h < 22) return ['Evening practice.', 'Wind-down session.', 'Sundown math.'];
+    return ['Night-owl session.', 'Burning the midnight oil.', 'Late-night brain.'];
 }
 
 // ── Internal picker helper ────────────────────────────────────────────────────
