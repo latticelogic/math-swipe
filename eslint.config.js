@@ -6,7 +6,10 @@ import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  // `.claude/worktrees/*` contains transient sub-agent worktree checkouts —
+  // each has its own tsconfig.json which confuses typescript-eslint's
+  // root-finding logic. Always ignore. `dist` is the build output.
+  globalIgnores(['dist', '.claude']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [
