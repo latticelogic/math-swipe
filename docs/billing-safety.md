@@ -209,7 +209,9 @@ firebase deploy --only functions:createCheckoutSession,functions:stripeWebhook \
 # (d) Register the webhook URL with Stripe via CLI. Production webhook:
 stripe webhook_endpoints create \
   --url=https://us-central1-math-swipe-prod.cloudfunctions.net/stripeWebhook \
-  --enabled-events=checkout.session.completed
+  --enabled-events=checkout.session.completed,charge.refunded
+# Two events: checkout.session.completed grants entitlement on purchase,
+# charge.refunded clears entitlement on refund (auto-unwinds the access).
 # Copy the returned signing secret (whsec_test_...) into:
 echo "whsec_test_..." | firebase functions:secrets:set STRIPE_WEBHOOK_SECRET --data-file -
 
