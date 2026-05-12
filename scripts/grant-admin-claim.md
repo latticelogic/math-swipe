@@ -1,8 +1,14 @@
 # Granting the `isAdmin` custom claim
 
-Firestore rules in this repo gate analytics reads (`pushEvents/`) on the
-`isAdmin` Firebase Auth custom claim. Custom claims can only be set
-server-side via the admin SDK.
+Firestore rules in this repo gate two admin surfaces on the `isAdmin`
+Firebase Auth custom claim:
+
+- `pushEvents/` — read-only access for the `/admin/push` push-delivery
+  analytics dashboard
+- `entitlements/{uid}` — cross-user read access for the `/admin/billing`
+  conversion + refund-rate dashboard (owner-write only)
+
+Custom claims can only be set server-side via the admin SDK.
 
 ## One-off: from the Firebase shell
 
@@ -32,6 +38,7 @@ You should see `isAdmin: true` in the `claims` object.
 
 ## Security note
 
-Anyone with the `isAdmin` claim can read every row in `pushEvents/`,
-which contains no PII but reveals usage patterns. Grant it only to
-project owners.
+Anyone with the `isAdmin` claim can read every row in both
+`pushEvents/` (usage patterns, no PII) AND `entitlements/`
+(payment timestamps + Stripe transaction ids, but not card details
+which Stripe holds). Grant it only to project owners.

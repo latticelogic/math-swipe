@@ -1,13 +1,28 @@
 # Math Swipe — Cloud Functions
 
-Two scheduled / triggered functions that push notifications to subscribed
-users:
+Four functions across two concerns: push notifications and Stripe
+checkout. All live in `src/`; deployed together via `firebase deploy
+--only functions`.
+
+**Push notifications** (`src/index.ts`):
 
 - **`dailyReminder`** — runs once a day, sends a streak-reminder push to
   every user who opted in and hasn't played in 18+ hours.
 - **`notifyBeaten`** — Firestore-triggered on `users/{uid}` updates; when
   someone improves their speedrun and bumps another user down, the bumped
   player gets a "you got beaten" push.
+
+**Stripe checkout** (`src/stripe.ts`):
+
+- **`createCheckoutSession`** — callable (HTTPS) the client invokes to
+  get a Stripe Checkout URL for the $3.14 lifetime SKU. Authenticated
+  via the Firebase ID token; uid is embedded in session metadata so
+  the webhook knows which entitlement doc to write.
+- **`stripeWebhook`** — raw HTTPS endpoint Stripe POSTs payment events
+  to. Verifies signature, ignores everything except
+  `checkout.session.completed`, then writes
+  `paidAt`/`source='stripe'`/`originalTransactionId` to
+  `entitlements/{uid}` idempotently.
 
 ## One-time setup
 
@@ -58,6 +73,29 @@ npm install
 npm run build
 firebase deploy --only functions
 ```
+
+### 5. Stripe secrets (for createCheckoutSession + stripeWebhook)
+
+The two Stripe functions need four secrets, set via `firebase functions:secrets:set` (one prompt per command):
+
+```bash
+firebase functions:secrets:set STRIPE_SECRET_KEY      # sk_live_… or sk_test_…
+firebase functions:secrets:set STRIPE_WEBHOOK_SECRET  # whsec_… from the dashboard
+firebase functions:secrets:set STRIPE_PRICE_ID        # price_… for the $3.14 SKU
+firebase functions:secrets:set PUBLIC_ORIGIN          # https://math-swipe-c7k.pages.dev
+firebase deploy --only functions:createCheckoutSession,functions:stripeWebhook
+```
+
+Register the webhook endpoint in the Stripe dashboard (or via CLI):
+
+```bash
+stripe webhook_endpoints create \
+  --url=https://us-central1-math-swipe-prod.cloudfunctions.net/stripeWebhook \
+  --enabled-events=checkout.session.completed
+```
+
+Copy the resulting `whsec_…` into `STRIPE_WEBHOOK_SECRET` above. The
+full first-purchase QA flow is documented in `../docs/first-purchase-qa.md`.
 
 ## What gets created
 
