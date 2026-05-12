@@ -48,6 +48,12 @@ export interface MathAchievementStats {
 // an invitation, not a checklist.
 
 const CORE_ACHIEVEMENTS: Achievement<MathAchievementStats>[] = [
+    // ── First-week ladder ──
+    // Each rung is reachable by a casual player in their 14-day trial.
+    // Designed so a player who plays ~5 problems/day for ~10 days of the
+    // trial earns 5-7 of these, building visible momentum before the
+    // paywall lands. See monetization_model.md for the habit-formation
+    // rationale.
     {
         id: 'first-steps',
         name: 'First Steps',
@@ -55,11 +61,53 @@ const CORE_ACHIEVEMENTS: Achievement<MathAchievementStats>[] = [
         check: s => s.totalSolved >= 1,
     },
     {
+        id: 'streak-3',
+        name: 'Warming Up',
+        desc: 'Three correct in a row. The shape of a streak.',
+        check: s => s.bestStreak >= 3,
+    },
+    {
         id: 'streak-5',
         name: 'On Fire',
         desc: 'Five correct in a row, no slipups.',
         check: s => s.bestStreak >= 5,
     },
+    {
+        id: 'daily-1',
+        name: 'First Daily',
+        desc: 'Finish a full Daily Challenge. Same set as everyone else today.',
+        check: s => (s.byType.daily?.solved ?? 0) >= 10,
+    },
+    {
+        id: 'topic-explorer',
+        name: 'Curious Mind',
+        desc: 'Try three different topics. Variety beats grinding one thing.',
+        check: s => {
+            const META: string[] = ['daily', 'challenge', 'mix-basic', 'mix-all', 'speedrun', 'ghost'];
+            const counted = Object.entries(s.byType).filter(([k, t]) => !META.includes(k) && t.solved >= 5);
+            return counted.length >= 3;
+        },
+    },
+    {
+        id: 'three-day',
+        name: 'Three in a Row',
+        desc: 'Three days playing in a row. Real habits start here.',
+        check: s => s.dayStreak >= 3,
+    },
+    {
+        id: 'accuracy-early',
+        name: 'Sharp Eye',
+        desc: '90%+ accuracy across your first 20 problems.',
+        check: s => s.totalSolved >= 20 && (s.totalCorrect / s.totalSolved) >= 0.9,
+    },
+    {
+        id: 'quick-fifty',
+        name: 'Quick Fifty',
+        desc: 'Fifty problems already. You\'re in.',
+        check: s => s.totalSolved >= 50,
+    },
+
+    // ── Mid-game ladder ──
     {
         id: 'streak-20',
         name: 'Unstoppable',

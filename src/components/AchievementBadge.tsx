@@ -107,6 +107,87 @@ const SpreadTheWord = ({ size = 48, unlocked }: BadgeProps) => (
     </svg>
 );
 
+/* ── Early-trial ladder badges ── */
+
+/** Small flame — Warming Up (3-streak). Lighter than On Fire (5-streak) */
+const WarmingUp = ({ size = 48, unlocked }: BadgeProps) => (
+    <svg viewBox="0 0 48 48" width={size} height={size} style={{ color: unlocked ? 'var(--color-streak-fire)' : 'var(--color-locked)' }}>
+        {/* Smaller, less aggressive flame than OnFire — single body, no inner flicker */}
+        <path d="M24 14c-3 6-8 10-5 18 1 3 4 5 5 5s4-2 5-5c3-8-2-12-5-18z" {...S} strokeWidth="2.5" />
+        <path d="M22 30c0-2 2-4 2-6 0 2 2 4 2 6" {...S} strokeWidth="2" opacity="0.5" />
+        {/* Three sparkles for "3-streak" */}
+        <circle cx="11" cy="18" r="1.5" fill="currentColor" opacity="0.6" />
+        <circle cx="38" cy="20" r="1.5" fill="currentColor" opacity="0.6" />
+        <circle cx="36" cy="36" r="1.5" fill="currentColor" opacity="0.6" />
+    </svg>
+);
+
+/** Calendar with a check — First Daily */
+const FirstDaily = ({ size = 48, unlocked }: BadgeProps) => (
+    <svg viewBox="0 0 48 48" width={size} height={size} style={{ color: unlocked ? 'var(--color-gold)' : 'var(--color-locked)' }}>
+        <rect x="8" y="12" width="32" height="28" rx="3" {...S} strokeWidth="2.5" />
+        <line x1="8" y1="20" x2="40" y2="20" {...S} strokeWidth="2" />
+        <line x1="16" y1="8" x2="16" y2="16" {...S} strokeWidth="2.5" />
+        <line x1="32" y1="8" x2="32" y2="16" {...S} strokeWidth="2.5" />
+        {/* Bold check mark inside the calendar — "done" */}
+        <path d="M16 30 L 22 35 L 32 24" {...S} strokeWidth="3" />
+    </svg>
+);
+
+/** Three branching paths — Curious Mind (tried 3 topics) */
+const CuriousMind = ({ size = 48, unlocked }: BadgeProps) => (
+    <svg viewBox="0 0 48 48" width={size} height={size} style={{ color: unlocked ? 'var(--color-gold)' : 'var(--color-locked)' }}>
+        {/* Trunk */}
+        <line x1="24" y1="42" x2="24" y2="28" {...S} strokeWidth="3" />
+        {/* Three branches diverging */}
+        <path d="M24 28 C 18 24 14 18 12 12" {...S} strokeWidth="2.5" />
+        <path d="M24 28 L 24 12" {...S} strokeWidth="2.5" />
+        <path d="M24 28 C 30 24 34 18 36 12" {...S} strokeWidth="2.5" />
+        {/* Three nodes at the ends */}
+        <circle cx="12" cy="12" r="3" {...S} strokeWidth="2" />
+        <circle cx="24" cy="10" r="3" {...S} strokeWidth="2" />
+        <circle cx="36" cy="12" r="3" {...S} strokeWidth="2" />
+    </svg>
+);
+
+/** Three calendar dots in a row — Three in a Row (3-day streak) */
+const ThreeDay = ({ size = 48, unlocked }: BadgeProps) => (
+    <svg viewBox="0 0 48 48" width={size} height={size} style={{ color: unlocked ? 'var(--color-streak-fire)' : 'var(--color-locked)' }}>
+        <rect x="8" y="14" width="32" height="26" rx="3" {...S} strokeWidth="2.5" />
+        <line x1="8" y1="22" x2="40" y2="22" {...S} strokeWidth="2" />
+        <line x1="16" y1="10" x2="16" y2="18" {...S} strokeWidth="2.5" />
+        <line x1="32" y1="10" x2="32" y2="18" {...S} strokeWidth="2.5" />
+        {/* Three filled boxes for three days */}
+        {[14, 22, 30].map(cx => (
+            <rect key={cx} x={cx - 3} y="28" width="6" height="6" rx="1" fill="currentColor" />
+        ))}
+    </svg>
+);
+
+/** Magnifying eye — Sharp Eye (90% over 20+) */
+const SharpEye = ({ size = 48, unlocked }: BadgeProps) => (
+    <svg viewBox="0 0 48 48" width={size} height={size} style={{ color: unlocked ? 'var(--color-correct)' : 'var(--color-locked)' }}>
+        {/* Eye almond shape */}
+        <path d="M8 24 C 14 14 34 14 40 24 C 34 34 14 34 8 24 Z" {...S} strokeWidth="2.5" />
+        {/* Iris */}
+        <circle cx="24" cy="24" r="6" {...S} strokeWidth="2" />
+        {/* Pupil */}
+        <circle cx="24" cy="24" r="2.5" fill="currentColor" />
+        {/* Tiny lash highlight */}
+        <line x1="24" y1="12" x2="24" y2="9" {...S} strokeWidth="2" opacity="0.5" />
+    </svg>
+);
+
+/** Lightning + 50 — Quick Fifty */
+const QuickFifty = ({ size = 48, unlocked }: BadgeProps) => (
+    <svg viewBox="0 0 48 48" width={size} height={size} style={{ color: unlocked ? 'var(--color-gold)' : 'var(--color-locked)' }}>
+        {/* Lightning bolt */}
+        <path d="M26 6 L 14 26 L 22 26 L 18 42 L 32 22 L 24 22 Z" {...S} strokeWidth="2.5" />
+        {/* The "50" sits as a subtle inscription on the lower-right — drawn small */}
+        <text x="36" y="42" textAnchor="middle" fill="currentColor" fontSize="9" fontFamily="var(--font-chalk)">50</text>
+    </svg>
+);
+
 /* ── Hard Mode Skull Badges ── */
 
 /** Skull — Skull Initiate */
@@ -262,8 +343,14 @@ const UltimatePerfect = ({ size = 48, unlocked }: BadgeProps) => (
 const BADGE_MAP: Record<string, React.FC<BadgeProps>> = {
     'first-steps': FirstSteps,
     'spread-the-word': SpreadTheWord,
+    'streak-3': WarmingUp,
     'streak-5': OnFire,
     'streak-20': Unstoppable,
+    'daily-1': FirstDaily,
+    'topic-explorer': CuriousMind,
+    'three-day': ThreeDay,
+    'accuracy-early': SharpEye,
+    'quick-fifty': QuickFifty,
     'century': Century,
     'math-machine': MathMachine,
     'sharpshooter': Sharpshooter,

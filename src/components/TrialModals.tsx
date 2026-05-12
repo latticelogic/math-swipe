@@ -28,7 +28,7 @@ import { safeGetItem, safeSetItem } from '../utils/safeStorage';
 // ── Acknowledgement keys (per uid) ────────────────────────────────────────────
 
 const WELCOME_KEY = (uid: string) => `math-swipe-welcome-seen:${uid}`;
-const REMINDER_KEY = (uid: string, day: 10 | 13) => `math-swipe-reminder-seen:${day}:${uid}`;
+const REMINDER_KEY = (uid: string, day: 7 | 10 | 13) => `math-swipe-reminder-seen:${day}:${uid}`;
 
 // ── Welcome modal ─────────────────────────────────────────────────────────────
 
@@ -38,21 +38,28 @@ interface WelcomeModalProps {
     /** True until the entitlement doc is loaded; we suppress the modal
      *  during this window so it never flashes before status is known. */
     entitlementLoading: boolean;
+    /** True when the user is mid-session. The welcome modal defers until
+     *  they're between sessions so they're never interrupted mid-play
+     *  (rare in practice on Day 1 since users haven't started yet, but
+     *  consistent with the same rule for trial reminders). */
+    inSession: boolean;
 }
 
-/** Day-1 single-button intro. Visible exactly once per uid. */
-export function WelcomeModal({ uid, status, entitlementLoading }: WelcomeModalProps) {
+/** Day-1 single-button intro. Visible exactly once per uid, only at
+ *  session-start (never mid-play). */
+export function WelcomeModal({ uid, status, entitlementLoading, inSession }: WelcomeModalProps) {
     const [open, setOpen] = useState(false);
 
     useEffect(() => {
         if (!uid || entitlementLoading) return;
         if (status !== 'trial') return;
+        if (inSession) return;
         if (safeGetItem(WELCOME_KEY(uid))) return;
         // Small delay so the modal lands after the app has rendered, not on
         // top of the initial paint — feels less like an interrupt.
         const t = setTimeout(() => setOpen(true), 600);
         return () => clearTimeout(t);
-    }, [uid, status, entitlementLoading]);
+    }, [uid, status, entitlementLoading, inSession]);
 
     function dismiss() {
         if (uid) safeSetItem(WELCOME_KEY(uid), String(Date.now()));
@@ -100,9 +107,13 @@ export function WelcomeModal({ uid, status, entitlementLoading }: WelcomeModalPr
                             Free for <span className="text-[var(--color-gold)]">14 days</span> — every topic, every mode.
                         </p>
 
-                        <p className="text-xs ui text-[rgb(var(--color-fg))]/50 mb-5 leading-relaxed">
-                            After that, ${PRICE_USD.toFixed(2)} keeps it forever.<br />
+                        <p className="text-xs ui text-[rgb(var(--color-fg))]/50 mb-2 leading-relaxed">
+                            After that, ${PRICE_USD.toFixed(2)} for lifetime access.<br />
                             One time. No subscription. No ads. Ever.
+                        </p>
+
+                        <p className="text-[10px] ui text-[rgb(var(--color-fg))]/35 mb-5 leading-relaxed">
+                            The Daily Challenge is always free.
                         </p>
 
                         <button
@@ -125,29 +136,59 @@ interface TrialReminderModalProps {
     status: EntitlementStatus;
     daysLeft: number;
     entitlementLoading: boolean;
+    /** True when the user is mid-session (has answered ≥1 problem on the
+     *  game tab). Reminders WAIT until this is false — they never
+     *  interrupt active play. The next session-start re-triggers the
+     *  effect's evaluation. */
+    inSession: boolean;
     /** Called when the user taps "Unlock now" — parent opens the paywall. */
     onUnlock?: () => void;
 }
 
-/** Day-10 and Day-13 nudges. Each fires once per uid per day-threshold. */
-export function TrialReminderModal({ uid, status, daysLeft, entitlementLoading, onUnlock }: TrialReminderModalProps) {
-    const [open, setOpen] = useState<10 | 13 | null>(null);
+/** Day-7, Day-10, and Day-13 nudges. Each fires once per uid per
+ *  threshold, ONLY at session-start (never mid-session). Three
+ *  clearly-spaced touchpoints chosen so:
+ *    - Day 7 (midpoint): habit-forming check-in, recruits cognitive
+ *                        commitment when the user is still discovering
+ *                        the app. Soft tone, not a warning.
+ *    - Day 10 (4 days left): "halfway between halfway and end" reminder,
+ *                            sharper but still warm.
+ *    - Day 13 (1 day left): last warning before the paywall fires.
+ *
+ *  Session-start gating rule: the effect waits until `inSession` is
+ *  false. If the threshold crosses mid-play, the reminder is queued
+ *  for the next time the user is between sessions — typically the
+ *  next time they open the app, after they finish a session, or when
+ *  they navigate to a non-game tab. The ack-key still ensures a single
+ *  fire per threshold per uid. */
+export function TrialReminderModal({ uid, status, daysLeft, entitlementLoading, inSession, onUnlock }: TrialReminderModalProps) {
+    const [open, setOpen] = useState<7 | 10 | 13 | null>(null);
 
     useEffect(() => {
         if (!uid || entitlementLoading) return;
         if (status !== 'trial') return;
-        // Day 10: 4 days left. Day 13: 1 day left (last reminder before paywall).
-        // These thresholds are picked so the user gets two clearly-spaced
-        // warnings without the modal feeling spammy.
-        const target: 10 | 13 | null =
+        // Defer if user is mid-session. The effect re-runs when inSession
+        // flips to false (typically: tab change, session end, or fresh
+        // app open), at which point we'll catch up on whatever threshold
+        // is current.
+        if (inSession) return;
+        // Targets:
+        //   Day 7 mark   → daysLeft <= 7 (first opens after Day 7 hit)
+        //   Day 10 mark  → daysLeft <= 4
+        //   Day 13 mark  → daysLeft <= 1
+        // Use strictly-incrementing thresholds so the user always sees
+        // the most relevant reminder for their current day — Day 7's
+        // ack-key prevents it from re-firing once they're at Day 10.
+        const target: 7 | 10 | 13 | null =
             daysLeft <= 1 ? 13 :
             daysLeft <= 4 ? 10 :
+            daysLeft <= 7 ? 7 :
             null;
         if (!target) return;
         if (safeGetItem(REMINDER_KEY(uid, target))) return;
         const t = setTimeout(() => setOpen(target), 600);
         return () => clearTimeout(t);
-    }, [uid, status, daysLeft, entitlementLoading]);
+    }, [uid, status, daysLeft, entitlementLoading, inSession]);
 
     function dismiss() {
         if (uid && open) safeSetItem(REMINDER_KEY(uid, open), String(Date.now()));
@@ -159,6 +200,7 @@ export function TrialReminderModal({ uid, status, daysLeft, entitlementLoading, 
         onUnlock?.();
     }
 
+    const isMidpoint = open === 7;
     const isUrgent = open === 13;
 
     return (
@@ -199,11 +241,22 @@ export function TrialReminderModal({ uid, status, daysLeft, entitlementLoading, 
                         <h2 className="text-xl chalk text-[var(--color-gold)] mb-2">
                             {isUrgent
                                 ? (daysLeft === 0 ? 'Trial ends today' : '1 day left in your trial')
-                                : `${daysLeft} days left in your trial`}
+                                : isMidpoint
+                                    ? "You're a week in"
+                                    : `${daysLeft} days left in your trial`}
                         </h2>
 
+                        {/* Body copy adapts to the threshold. Day 7 is a soft
+                            midpoint nudge framed as recognition ("nice, you're
+                            sticking with this"); Day 10/13 acknowledge the
+                            time pressure without naming the price as a threat.
+                            The CTA button does the price-naming. */}
                         <p className="text-sm ui text-[rgb(var(--color-fg))]/60 mb-5 leading-relaxed">
-                            ${PRICE_USD.toFixed(2)} keeps everything forever — every topic, every mode, no subscription.
+                            {isMidpoint
+                                ? `Halfway through your trial. If you like it, ${PRICE_USD.toFixed(0)}.${PRICE_USD.toFixed(2).split('.')[1]} keeps it.`
+                                : isUrgent
+                                    ? 'After today the rest locks. The Daily Challenge stays free.'
+                                    : 'A few days to decide. The Daily Challenge stays free either way.'}
                         </p>
 
                         <button

@@ -54,6 +54,7 @@ import { useEntitlement } from './hooks/useEntitlement';
 import { startCheckout } from './utils/checkout';
 import { Paywall } from './components/Paywall';
 import { WelcomeModal, TrialReminderModal } from './components/TrialModals';
+import { LegalPage, type LegalDocId } from './components/LegalPages';
 import { collection, query, where, onSnapshot, doc, updateDoc, orderBy, limit } from 'firebase/firestore';
 import { db } from './utils/firebase';
 import { generateProblem } from './utils/mathGenerator';
@@ -133,10 +134,14 @@ function App() {
   const uid = user?.uid ?? null;
 
   // 14-day trial → $3.14 lifetime gate. See utils/entitlement.ts +
-  // memory/monetization_model.md. Renders the full-screen Paywall as an
-  // early return when status === 'expired'.
+  // memory/monetization_model.md. The paywall is now a value-anchored
+  // OVERLAY, not an app-blocking early return — it fires AFTER the user
+  // completes a problem in a non-daily session, so they get the dopamine
+  // hit first, then the ask. Daily Challenge is exempt from the gate
+  // entirely (free forever per the model docs).
   const entitlement = useEntitlement(uid);
   const [paywallBusy, setPaywallBusy] = useState(false);
+  const [paywallOpen, setPaywallOpen] = useState(false);
 
   // Stripe Checkout success redirect handler. Stripe sends the user back
   // to /?paywall=ok&session_id=... after a successful payment; the webhook
@@ -182,6 +187,14 @@ function App() {
   const [bootDailyRequested] = useState<boolean>(() =>
     new URLSearchParams(window.location.search).get('daily') === '1',
   );
+  // Static legal pages — Refund / Privacy / Terms. Reachable directly
+  // via /refund, /privacy, /terms; also linked from the Paywall footer
+  // and the Me-tab footer. Same pathname-router pattern as profile +
+  // admin above.
+  const [legalRoute, setLegalRoute] = useState<LegalDocId | null>(() => {
+    const m = window.location.pathname.match(/^\/(refund|privacy|terms)\/?$/);
+    return m ? (m[1] as LegalDocId) : null;
+  });
   const [challengeId, setChallengeId] = useState<string | null>(() => {
     const params = new URLSearchParams(window.location.search);
     const c = params.get('c');
@@ -383,9 +396,20 @@ function App() {
     });
   }, [uid]);
 
-  // Check achievements whenever navigating away from game (i.e. stats recorded)
+  // Check achievements continuously, including BEFORE recordSession fires.
+  // Without the in-session totalAnswered/totalCorrect added to the snapshot,
+  // the "First Steps" achievement only unlocks when the user navigates away
+  // from the game tab — the *wrong* moment for the dopamine hit. Adding the
+  // in-session counts means the badge unlocks the instant they answer their
+  // first problem, which is the habit-formation lever per the conversion
+  // mechanics decisions (monetization_model.md, 2026-05-12).
   useEffect(() => {
-    const snap = { ...stats, bestStreak: Math.max(stats.bestStreak, bestStreak) };
+    const snap = {
+      ...stats,
+      bestStreak: Math.max(stats.bestStreak, bestStreak),
+      totalSolved: stats.totalSolved + totalAnswered,
+      totalCorrect: stats.totalCorrect + totalCorrect,
+    };
     const fresh = checkAchievements(EVERY_MATH_ACHIEVEMENT, snap, unlockedRef.current);
     if (fresh.length > 0) {
       const next = new Set(unlockedRef.current);
@@ -406,7 +430,27 @@ function App() {
         return () => clearTimeout(t);
       }
     }
-  }, [stats, bestStreak, uid]);
+  }, [stats, bestStreak, totalAnswered, totalCorrect, uid]);
+
+  // ── Paywall trigger (value-anchored, post-expiry) ──
+  // Fires the paywall AFTER the user completes their first problem in a
+  // non-daily session, once their trial has expired. The dopamine of
+  // earning XP lands first, then the ask. Daily Challenge sessions are
+  // exempt entirely — those stay free forever (see monetization_model.md).
+  useEffect(() => {
+    if (entitlement.status !== 'expired') return;
+    if (questionType === 'daily') return;
+    if (totalAnswered < 1) return;
+    if (paywallOpen) return;
+    setPaywallOpen(true);
+  }, [entitlement.status, questionType, totalAnswered, paywallOpen]);
+
+  // Auto-close the paywall the instant the user has paid (Stripe webhook
+  // fired and refresh() picked up the new paidAt). Without this, a paid
+  // user would still see the paywall overlay until they reloaded.
+  useEffect(() => {
+    if (entitlement.status === 'paid' && paywallOpen) setPaywallOpen(false);
+  }, [entitlement.status, paywallOpen]);
 
   // ── Personal best detection ──
   const showPB = usePersonalBest(bestStreak, stats.bestStreak);
@@ -544,37 +588,17 @@ function App() {
     );
   }
 
-  // Trial expired & not paid → full-screen paywall. Blocks every other
-  // surface — leaderboard, profile, magic, everything. Authoritative gate.
-  //
-  // We only render this once entitlement.loading is false; otherwise a
-  // fresh page load briefly flashes the paywall while the Firestore read
-  // is in flight. The authLoading early return above means user is always
-  // present here, but uid can still be null in error states — in that
-  // case we let the app render normally and trust the next session to
-  // resolve the gate.
-  if (uid && !entitlement.loading && entitlement.status === 'expired') {
+  // Static legal pages — refund / privacy / terms. Drafts marked at top;
+  // see LegalPages.tsx. Linked from the Paywall + Me-tab footer rows.
+  if (legalRoute) {
     return (
       <BlackboardLayout>
-        <Paywall
-          busy={paywallBusy}
-          onUnlock={async () => {
-            setPaywallBusy(true);
-            try {
-              await startCheckout(entitlement.mockGrantAccess);
-            } catch (err) {
-              console.error('[paywall] checkout failed', err);
-              // Surface to the user — if checkout failed they need to
-              // know. The paywall is already the focal screen so a
-              // simple alert is fine here.
-              alert('Could not start checkout. Try again in a moment.');
-            } finally {
-              setPaywallBusy(false);
-            }
+        <LegalPage
+          doc={legalRoute}
+          onBack={() => {
+            setLegalRoute(null);
+            window.history.replaceState({}, '', '/');
           }}
-          onDevReset={import.meta.env.DEV
-            ? () => entitlement.mockBackdateTrial(0)
-            : undefined}
         />
       </BlackboardLayout>
     );
@@ -1107,17 +1131,7 @@ function App() {
               uid={uid}
               entitlementStatus={entitlement.status}
               entitlementDaysLeft={entitlement.daysLeft}
-              onUnlock={async () => {
-                setPaywallBusy(true);
-                try {
-                  await startCheckout(entitlement.mockGrantAccess);
-                } catch (err) {
-                  console.error('[paywall] checkout failed', err);
-                  alert('Could not start checkout. Try again in a moment.');
-                } finally {
-                  setPaywallBusy(false);
-                }
-              }}
+              onUnlock={() => setPaywallOpen(true)}
             /></Suspense>
           </motion.div>
         )}
@@ -1167,35 +1181,66 @@ function App() {
         <WeeklyRecap stats={stats} suppress={activeTab !== 'game' || isMagicLessonActive} />
 
         {/* ── 14-day-trial touchpoints ──
-            Three pieces (see TrialModals.tsx):
-              - WelcomeModal: once on Day 1
-              - TrialReminderModal: once at Day 10 + once at Day 13
+            Four pieces (see TrialModals.tsx):
+              - WelcomeModal: once on Day 1, at session-start
+              - TrialReminderModal: Day 7 / 10 / 13, all at session-start only
               - TrialCountdownChip: rendered inline inside MePage (passed
                 via props below) so it lives where the user already looks
                 for account-level info, not as floating chrome.
+            `inSession` is derived as game-tab + ≥1 answered problem. Both
+            modals defer firing until inSession is false (between sessions,
+            on app open, or after a tab switch) — they never interrupt
+            mid-play. The next session-start naturally re-evaluates.
             All render NOTHING for paid users — no chrome cost. */}
         <WelcomeModal
           uid={uid}
           status={entitlement.status}
           entitlementLoading={entitlement.loading}
+          inSession={activeTab === 'game' && totalAnswered > 0}
         />
         <TrialReminderModal
           uid={uid}
           status={entitlement.status}
           daysLeft={entitlement.daysLeft}
           entitlementLoading={entitlement.loading}
-          onUnlock={async () => {
-            setPaywallBusy(true);
-            try {
-              await startCheckout(entitlement.mockGrantAccess);
-            } catch (err) {
-              console.error('[paywall] checkout failed', err);
-              alert('Could not start checkout. Try again in a moment.');
-            } finally {
-              setPaywallBusy(false);
-            }
-          }}
+          inSession={activeTab === 'game' && totalAnswered > 0}
+          onUnlock={() => setPaywallOpen(true)}
         />
+
+        {/* ── Paywall (value-anchored overlay) ──
+            Fires AFTER a non-daily problem is completed by an expired user,
+            OR when the user explicitly taps an unlock CTA. NOT an early
+            return — the user has already seen their familiar UI and earned
+            XP before the ask. Daily Challenge sessions are exempt
+            entirely; the trigger useEffect above skips them. */}
+        {paywallOpen && (
+          <Paywall
+            progress={{
+              totalSolved: stats.totalSolved,
+              bestStreak: Math.max(stats.bestStreak, bestStreak),
+              achievementCount: unlocked.size,
+              dayStreak: stats.dayStreak,
+            }}
+            busy={paywallBusy}
+            onUnlock={async () => {
+              setPaywallBusy(true);
+              try {
+                await startCheckout(entitlement.mockGrantAccess);
+              } catch (err) {
+                console.error('[paywall] checkout failed', err);
+                alert('Could not start checkout. Try again in a moment.');
+              } finally {
+                setPaywallBusy(false);
+              }
+            }}
+            onDevReset={import.meta.env.DEV
+              ? async () => {
+                  await entitlement.mockBackdateTrial(0);
+                  setPaywallOpen(false);
+                }
+              : undefined}
+          />
+        )}
 
         {/* ── Achievement unlock toast ──
             Theatrical version: shows the actual badge SVG with a sparkle
