@@ -97,6 +97,16 @@ const AllRounder = ({ size = 48, unlocked }: BadgeProps) => (
     </svg>
 );
 
+/** Paper plane — Spread the Word (first share). Outbound diagonal flight
+ *  with a soft trail underneath. */
+const SpreadTheWord = ({ size = 48, unlocked }: BadgeProps) => (
+    <svg viewBox="0 0 48 48" width={size} height={size} style={{ color: unlocked ? 'var(--color-gold)' : 'var(--color-locked)' }}>
+        <path d="M8 26 L 40 10 L 26 40 L 22 28 Z" {...S} strokeWidth="2.5" />
+        <path d="M22 28 L 40 10" {...S} strokeWidth="2" />
+        <path d="M6 36 C 12 36 14 34 18 32" {...S} strokeWidth="1.5" opacity="0.5" />
+    </svg>
+);
+
 /* ── Hard Mode Skull Badges ── */
 
 /** Skull — Skull Initiate */
@@ -251,6 +261,7 @@ const UltimatePerfect = ({ size = 48, unlocked }: BadgeProps) => (
 /** Map from achievement ID to SVG component */
 const BADGE_MAP: Record<string, React.FC<BadgeProps>> = {
     'first-steps': FirstSteps,
+    'spread-the-word': SpreadTheWord,
     'streak-5': OnFire,
     'streak-20': Unstoppable,
     'century': Century,

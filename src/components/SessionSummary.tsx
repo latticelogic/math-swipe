@@ -39,6 +39,10 @@ interface Props {
      *  forward the *same* problems instead of minting a fresh, unrelated
      *  seed (which made the old "challenge" link asymmetric in name only). */
     challengeId?: string | null;
+    /** Called after a share completes successfully (native share resolved
+     *  OR clipboard write succeeded OR modal share confirmed). Drives the
+     *  "Spread the Word" first-share achievement. */
+    onShared?: () => void;
 }
 
 function formatTime(ms: number): string {
@@ -100,7 +104,7 @@ function buildSharePayload(
 export const SessionSummary = memo(function SessionSummary({
     solved, bestStreak: streak, accuracy, xpEarned, answerHistory, questionType, visible, onDismiss,
     hardMode, timedMode, speedrunFinalTime, isNewSpeedrunRecord,
-    displayName, uid, claimedHandle, challengeId,
+    displayName, uid, claimedHandle, challengeId, onShared,
 }: Props) {
     const [isSharing, setIsSharing] = useState(false);
     const cardRef = useRef<HTMLDivElement>(null);
@@ -182,12 +186,14 @@ export const SessionSummary = memo(function SessionSummary({
                     const file = new File([blob], 'math-swipe-share.png', { type: 'image/png' });
                     if (navigator.canShare && navigator.canShare({ files: [file] })) {
                         await navigator.share({ files: [file], text });
+                        onShared?.();
                         setIsSharing(false);
                         return;
                     }
                 }
                 // Files unsupported but native share works — text-only path
                 await navigator.share({ text, url: challengeUrl });
+                onShared?.();
                 setIsSharing(false);
                 return;
             }
@@ -551,6 +557,7 @@ export const SessionSummary = memo(function SessionSummary({
                 url={shareUrl}
                 imageBlob={shareImage}
                 onRegenerate={regenerateForSheet}
+                onShared={onShared}
             />
         </AnimatePresence>
     );

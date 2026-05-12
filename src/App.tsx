@@ -174,7 +174,7 @@ function App() {
     challengeId ? 'challenge' : bootDailyRequested ? 'daily' : 'multiply'
   );
 
-  const { stats, accuracy, recordSession, resetStats, updateCosmetics, updateBestSpeedrunTime, updateBadge, consumeShield } = useStats(uid);
+  const { stats, accuracy, recordSession, resetStats, updateCosmetics, updateBestSpeedrunTime, updateBadge, consumeShield, recordShare } = useStats(uid);
 
   // ── Claimed @handle (one-shot fetch) ──
   // Used to build clean /u/<handle> share URLs. Stays null for users who
@@ -1081,6 +1081,7 @@ function App() {
           uid={uid}
           claimedHandle={claimedHandle}
           challengeId={challengeId}
+          onShared={recordShare}
         />
 
         {/* ── Weekly recap (first open of the week, only when idle on game tab) ── */}

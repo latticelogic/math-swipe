@@ -30,6 +30,11 @@ interface ShareSheetProps {
     imageBlob: Blob | null;
     /** Re-trigger image generation. The hosting Modal owns the cardRef. */
     onRegenerate?: () => void;
+    /** Fires once a channel actually completes a share/copy/download (i.e.
+     *  the artifact left the app). Drives the "Spread the Word" achievement.
+     *  Opening a third-party tab counts (we can't see the post, but the
+     *  intent was acted on). */
+    onShared?: () => void;
 }
 
 type Channel = 'copy-link' | 'copy-text' | 'download' | 'native' | 'twitter' | 'whatsapp' | 'telegram' | 'reddit' | 'facebook' | 'email';
@@ -75,7 +80,7 @@ function urlOpener(channel: Channel, text: string, url: string): string | null {
     }
 }
 
-export const ShareSheet = memo(function ShareSheet({ open, onClose, text, url, imageBlob, onRegenerate }: ShareSheetProps) {
+export const ShareSheet = memo(function ShareSheet({ open, onClose, text, url, imageBlob, onRegenerate, onShared }: ShareSheetProps) {
     const [toast, setToast] = useState<string | null>(null);
     const toastTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
     const channels = buildChannels().filter(c => c.available());
@@ -109,10 +114,12 @@ export const ShareSheet = memo(function ShareSheet({ open, onClose, text, url, i
                 case 'copy-link':
                     await navigator.clipboard.writeText(url);
                     flashToast('Link copied!');
+                    onShared?.();
                     return;
                 case 'copy-text':
                     await navigator.clipboard.writeText(text);
                     flashToast('Text copied!');
+                    onShared?.();
                     return;
                 case 'download':
                     if (!imageBlob) { flashToast('Generating image…'); return; }
@@ -126,6 +133,7 @@ export const ShareSheet = memo(function ShareSheet({ open, onClose, text, url, i
                         // Revoke after a tick to let the browser start the download
                         setTimeout(() => URL.revokeObjectURL(a.href), 1000);
                         flashToast('Saved!');
+                        onShared?.();
                     }
                     return;
                 case 'native': {
@@ -136,11 +144,15 @@ export const ShareSheet = memo(function ShareSheet({ open, onClose, text, url, i
                     } else if (navigator.share) {
                         await navigator.share({ text, url });
                     }
+                    onShared?.();
                     return;
                 }
                 default: {
                     const target = urlOpener(channel, text, url);
-                    if (target) window.open(target, '_blank', 'noopener,noreferrer');
+                    if (target) {
+                        window.open(target, '_blank', 'noopener,noreferrer');
+                        onShared?.();
+                    }
                     return;
                 }
             }
