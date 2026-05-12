@@ -312,9 +312,13 @@ export const SessionSummary = memo(function SessionSummary({
                         </div>
                         {questionType === 'speedrun' && speedrunFinalTime ? (
                             <>
-                                <motion.div className="text-3xl mb-2" animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 2, repeat: Infinity }}>
-                                    ⏱️
-                                </motion.div>
+                                {/* Stopwatch — hand-drawn, replaces ⏱️ emoji */}
+                                <motion.svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mb-2 mx-auto text-[var(--color-speedrun)]" animate={{ scale: [1, 1.15, 1] }} transition={{ duration: 2, repeat: Infinity }} aria-hidden>
+                                    <circle cx="12" cy="14" r="7" />
+                                    <line x1="12" y1="14" x2="15" y2="11" />
+                                    <line x1="10" y1="2" x2="14" y2="2" />
+                                    <line x1="12" y1="2" x2="12" y2="5" />
+                                </motion.svg>
                                 <motion.h3 className="text-2xl chalk text-[var(--color-gold)] mb-1">
                                     Speedrun Cleared!
                                 </motion.h3>
@@ -327,25 +331,32 @@ export const SessionSummary = memo(function SessionSummary({
                             </>
                         ) : accuracy === 100 ? (
                             <>
-                                <motion.div
-                                    className="text-3xl mb-2"
-                                    animate={{ scale: [1, 1.2, 1] }}
-                                    transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-                                >
-                                    🏆
-                                </motion.div>
+                                {/* Trophy — hand-drawn, replaces 🏆 emoji */}
+                                <motion.svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mb-2 mx-auto text-[var(--color-gold)]" animate={{ scale: [1, 1.15, 1] }} transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }} aria-hidden>
+                                    <path d="M7 3 L 7 11 C 7 14 9 16 12 16 C 15 16 17 14 17 11 L 17 3 Z" />
+                                    <path d="M7 5 C 4 5 3 7 3 9 C 3 11 5 12 7 12" />
+                                    <path d="M17 5 C 20 5 21 7 21 9 C 21 11 19 12 17 12" />
+                                    <line x1="12" y1="16" x2="12" y2="19" />
+                                    <line x1="9" y1="19" x2="15" y2="19" />
+                                </motion.svg>
                                 <motion.h3
                                     className="text-2xl chalk text-[var(--color-gold)] mb-4"
                                     initial={{ scale: 0 }}
                                     animate={{ scale: [0, 1.3, 1] }}
                                     transition={{ duration: 0.5, delay: 0.2 }}
                                 >
-                                    ✨ PERFECT ✨
+                                    Perfect
                                 </motion.h3>
                             </>
                         ) : (
                             <>
-                                <div className="text-2xl mb-2">📝</div>
+                                {/* Notebook — hand-drawn, replaces 📝 emoji */}
+                                <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mb-2 mx-auto text-[var(--color-chalk)]" aria-hidden>
+                                    <rect x="5" y="3" width="14" height="18" rx="1" />
+                                    <line x1="9" y1="8" x2="15" y2="8" />
+                                    <line x1="9" y1="12" x2="15" y2="12" />
+                                    <line x1="9" y1="16" x2="13" y2="16" />
+                                </svg>
                                 {(hardMode || timedMode) && (
                                     <div className="text-xs ui text-[rgb(var(--color-fg))]/40 mb-1">
                                         {hardMode && timedMode ? '💀⏱️ ULTIMATE MODE' : hardMode ? '💀 HARD MODE' : '⏱️ TIMED MODE'}

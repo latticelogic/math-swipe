@@ -91,9 +91,14 @@ export function PushOptIn({ uid }: Props) {
                 <button
                     onClick={() => handleEnable({ dailyEnabled: true, pingsEnabled: true })}
                     disabled={busy}
-                    className="w-full py-3 rounded-xl border border-[var(--color-gold)]/30 bg-[var(--color-gold)]/5 text-sm ui text-[var(--color-gold)] hover:bg-[var(--color-gold)]/10 transition-colors active:scale-95 disabled:opacity-60"
+                    className="w-full py-3 rounded-xl border border-[var(--color-gold)]/30 bg-[var(--color-gold)]/5 text-sm ui text-[var(--color-gold)] hover:bg-[var(--color-gold)]/10 transition-colors active:scale-95 disabled:opacity-60 flex items-center justify-center gap-2"
                 >
-                    🔔 {busy ? 'Asking…' : 'Turn on notifications'}
+                    {/* Bell — hand-drawn, replaces 🔔 emoji */}
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                        <path d="M6 17 L 6 11 A 6 6 0 0 1 18 11 L 18 17 L 20 19 L 4 19 Z" />
+                        <path d="M10 22 A 2 2 0 0 0 14 22" />
+                    </svg>
+                    <span>{busy ? 'Asking…' : 'Turn on notifications'}</span>
                 </button>
             ) : (
                 <div className="space-y-2">
