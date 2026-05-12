@@ -115,9 +115,12 @@ export function UsernameClaim({ uid, isAnonymous, suggestion, onClaimed }: Props
         return (
             <button
                 onClick={() => { setEditing(true); setInput(normalizeSlug(suggestion)); setError(null); }}
-                className="mt-1 text-[11px] ui text-[var(--color-gold)]/70 hover:text-[var(--color-gold)] transition-colors flex items-center gap-1"
+                className="mt-1 text-[11px] ui text-[var(--color-gold)]/70 hover:text-[var(--color-gold)] transition-colors flex items-center gap-1.5"
             >
-                <span>✨</span>
+                {/* Sparkle — hand-drawn, replaces ✨ emoji */}
+                <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <path d="M12 3 L 13.5 10.5 L 21 12 L 13.5 13.5 L 12 21 L 10.5 13.5 L 3 12 L 10.5 10.5 Z" />
+                </svg>
                 <span>Claim a @username</span>
             </button>
         );

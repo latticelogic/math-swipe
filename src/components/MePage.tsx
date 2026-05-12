@@ -112,9 +112,14 @@ export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked,
                         <span className="text-sm ui text-[rgb(var(--color-fg))]/60">{displayName}</span>
                         <button
                             onClick={() => { setNameInput(displayName); setEditingName(true); }}
-                            className="text-xs text-[rgb(var(--color-fg))]/20 hover:text-[rgb(var(--color-fg))]/40 transition-colors"
+                            aria-label="Edit name"
+                            className="text-[rgb(var(--color-fg))]/20 hover:text-[rgb(var(--color-fg))]/40 transition-colors"
                         >
-                            ✏️
+                            {/* Pencil — hand-drawn, matches the chalk aesthetic */}
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M3 21 L 9 19 L 19 9 L 15 5 L 5 15 Z" />
+                                <line x1="14" y1="6" x2="18" y2="10" />
+                            </svg>
                         </button>
                     </>
                 )}
@@ -146,8 +151,12 @@ export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked,
 
                         {!showEmailInput ? (
                             <div className="p-3">
-                                <div className="text-[11px] ui text-[rgb(var(--color-fg))]/50 mb-2.5">
-                                    ☁️ Save your {stats.totalXP.toLocaleString()} XP across devices
+                                <div className="text-[11px] ui text-[rgb(var(--color-fg))]/50 mb-2.5 flex items-center gap-1.5">
+                                    {/* Cloud — hand-drawn, replaces ☁️ emoji */}
+                                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                                        <path d="M7 18 A 5 5 0 1 1 8 8 A 4 4 0 0 1 16 8 A 4 4 0 0 1 17 18 Z" />
+                                    </svg>
+                                    <span>Save your {stats.totalXP.toLocaleString()} XP across devices</span>
                                 </div>
                                 <div className="flex gap-2">
                                     <button
@@ -249,7 +258,7 @@ export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked,
                 {!nextRank && mastery && (
                     <div className="mt-3 w-52 mx-auto">
                         <div className="flex items-center justify-between mb-1">
-                            <span className="text-xs ui font-semibold text-[var(--color-skull)]">✨ Mastery Lv. {mastery.level}</span>
+                            <span className="text-xs ui font-semibold text-[var(--color-skull)]">Mastery Lv. {mastery.level}</span>
                             <span className="text-[10px] ui text-[rgb(var(--color-fg))]/40">{stats.totalXP.toLocaleString()} XP</span>
                         </div>
                         <div className="h-1.5 rounded-full bg-[rgb(var(--color-fg))]/10 overflow-hidden">
@@ -533,11 +542,11 @@ export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked,
             <button
                 onClick={() => {
                     const prompts = [
-                        `You've earned ${stats.totalXP.toLocaleString()} points! Are you sure you want to start fresh? 🥺`,
-                        `Mr. Chalk will miss your ${stats.bestStreak}-streak record! Reset anyway? 🤔`,
-                        `${stats.totalSolved} problems solved and counting… wipe it all? 😱`,
-                        'A fresh start can be beautiful! Ready to begin again? 🌱',
-                        'Your math journey so far has been amazing! Really reset? ✨',
+                        `You've earned ${stats.totalXP.toLocaleString()} points. Are you sure you want to start fresh?`,
+                        `Your ${stats.bestStreak}-streak record will be lost. Reset anyway?`,
+                        `${stats.totalSolved} problems solved. Wipe it all?`,
+                        'A fresh start. Ready to begin again?',
+                        'All progress will be erased. Really reset?',
                         'Even superheroes get a fresh origin story! Reset? 🦸',
                     ];
                     setResetConfirm(prompts[Math.floor(Math.random() * prompts.length)]);

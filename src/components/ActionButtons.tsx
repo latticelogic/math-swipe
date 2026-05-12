@@ -117,7 +117,7 @@ export const ActionButtons = memo(function ActionButtons({
     const handleShare = async () => {
         const shareData = {
             title: 'Math Swipe',
-            text: 'Try this mental math game! 🧠✨',
+            text: 'Try this mental-math game.',
             url: window.location.href,
         };
         try {
@@ -186,7 +186,7 @@ export const ActionButtons = memo(function ActionButtons({
             </ActionTooltip>
 
             {/* Question type */}
-            <ActionTooltip label="Question type">
+            <ActionTooltip label="Switch topic">
                 <QuestionTypePicker current={questionType} onChange={onTypeChange} ageBand={ageBand} />
             </ActionTooltip>
 
