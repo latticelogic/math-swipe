@@ -121,7 +121,13 @@ service cloud.firestore {
     //     credentials. Production-side, the only legit promo grants happen
     //     server-side via the same webhook code path.
     match /entitlements/{uid} {
-      allow read: if request.auth != null && request.auth.uid == uid;
+      // Owner can read their own entitlement; users with the isAdmin
+      // custom claim can read ANY entitlement (powers the /admin/billing
+      // dashboard for monitoring conversion + refund rates). Same custom
+      // claim that pushEvents uses — there's only one admin tier.
+      allow read: if request.auth != null
+                  && (request.auth.uid == uid
+                      || request.auth.token.isAdmin == true);
       // Create: only the owner; only the bootstrap shape allowed.
       allow create: if request.auth != null
                     && request.auth.uid == uid

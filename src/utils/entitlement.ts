@@ -86,3 +86,36 @@ export function entitlementStatus(e: Entitlement | null, now: number = Date.now(
     if (isTrialActive(e.trialStartedAt, now)) return 'trial';
     return 'expired';
 }
+
+/** Inputs to the paywall fire decision. Mirrors what App.tsx's trigger
+ *  useEffect tracks. Extracted as a pure function so the logic is unit-
+ *  testable without React state. */
+export interface PaywallTriggerInputs {
+    /** Resolved entitlement status. Only 'expired' is a candidate for firing. */
+    status: EntitlementStatus;
+    /** Current questionType. 'daily' is exempt — Daily Challenge stays free
+     *  forever even post-trial (see monetization_model.md). */
+    questionType: string;
+    /** Problems answered in the current session. We require >=1 so the user
+     *  earns at least one dopamine hit before the paywall arrives. */
+    totalAnswered: number;
+    /** Is the paywall already open? Avoids re-firing on every render. */
+    paywallOpen: boolean;
+}
+
+/** Value-anchored paywall fire rule. Returns true iff:
+ *    • the user's trial has expired AND
+ *    • they're not on the daily-challenge (which stays free) AND
+ *    • they've completed at least one non-daily problem in this session AND
+ *    • the paywall isn't already showing
+ *
+ *  Single source of truth — App.tsx's trigger useEffect calls this so
+ *  there can't be drift. The truth-table test in paywallTrigger.test.ts
+ *  asserts every branch. */
+export function shouldFirePaywall(inputs: PaywallTriggerInputs): boolean {
+    if (inputs.status !== 'expired') return false;
+    if (inputs.questionType === 'daily') return false;
+    if (inputs.totalAnswered < 1) return false;
+    if (inputs.paywallOpen) return false;
+    return true;
+}

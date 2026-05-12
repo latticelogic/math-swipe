@@ -38,6 +38,7 @@ const MePage = lazy(() => lazyRetry(() => import('./components/MePage')).then(m 
 const TricksPage = lazy(() => lazyRetry(() => import('./components/TricksPage')).then(m => ({ default: m.TricksPage })));
 const ProfilePage = lazy(() => lazyRetry(() => import('./components/ProfilePage')).then(m => ({ default: m.ProfilePage })));
 const AdminPushAnalytics = lazy(() => lazyRetry(() => import('./components/AdminPushAnalytics')).then(m => ({ default: m.AdminPushAnalytics })));
+const AdminBilling = lazy(() => lazyRetry(() => import('./components/AdminBilling')).then(m => ({ default: m.AdminBilling })));
 
 import { useGameLoop } from './hooks/useGameLoop';
 import { useStats } from './hooks/useStats';
@@ -51,6 +52,7 @@ import { applyMode } from './hooks/useThemeMode';
 import { useLocalState } from './hooks/useLocalState';
 import { useFirebaseAuth } from './hooks/useFirebaseAuth';
 import { useEntitlement } from './hooks/useEntitlement';
+import { shouldFirePaywall } from './utils/entitlement';
 import { startCheckout } from './utils/checkout';
 import { Paywall } from './components/Paywall';
 import { WelcomeModal, TrialReminderModal } from './components/TrialModals';
@@ -175,9 +177,16 @@ function App() {
     const m = window.location.pathname.match(/^\/u\/([^/]+)\/?$/);
     return m ? m[1] : null;
   });
-  const [isAdminRoute, setIsAdminRoute] = useState<boolean>(() =>
-    /^\/admin\/push\/?$/.test(window.location.pathname),
-  );
+  // Admin routes — owner-only by Firebase custom claim. Add new admin
+  // surfaces here as path-matchers; the matched value drives which
+  // component renders below. /admin/push (push notification analytics)
+  // and /admin/billing (entitlement / refund-rate dashboard).
+  const [adminRoute, setAdminRoute] = useState<'push' | 'billing' | null>(() => {
+    const p = window.location.pathname;
+    if (/^\/admin\/push\/?$/.test(p)) return 'push';
+    if (/^\/admin\/billing\/?$/.test(p)) return 'billing';
+    return null;
+  });
   // ?c=<seed> loads a seeded challenge. ?daily=1 routes straight to today's
   // daily (so a friend's link lands them in the same session structure).
   // ?target=<n> renders a "Beat X" overlay in the banner so the receiver
@@ -437,12 +446,18 @@ function App() {
   // non-daily session, once their trial has expired. The dopamine of
   // earning XP lands first, then the ask. Daily Challenge sessions are
   // exempt entirely — those stay free forever (see monetization_model.md).
+  //
+  // Rule lives in shouldFirePaywall() so the truth-table is unit-tested
+  // and there's no drift between this useEffect and the spec.
   useEffect(() => {
-    if (entitlement.status !== 'expired') return;
-    if (questionType === 'daily') return;
-    if (totalAnswered < 1) return;
-    if (paywallOpen) return;
-    setPaywallOpen(true);
+    if (shouldFirePaywall({
+      status: entitlement.status,
+      questionType,
+      totalAnswered,
+      paywallOpen,
+    })) {
+      setPaywallOpen(true);
+    }
   }, [entitlement.status, questionType, totalAnswered, paywallOpen]);
 
   // Auto-close the paywall the instant the user has paid (Stripe webhook
@@ -604,16 +619,30 @@ function App() {
     );
   }
 
-  // Admin push analytics route — owner-only by Firebase custom claim.
-  // Renders an authorization gate first so non-admins still get a clean
-  // "back to game" path if they stumble onto the URL.
-  if (isAdminRoute) {
+  // Admin routes — owner-only by Firebase custom claim. Each renders its
+  // own authorization gate so non-admins get a clean "back to game" path
+  // if they stumble onto the URL.
+  if (adminRoute === 'push') {
     return (
       <BlackboardLayout>
         <Suspense fallback={<LoadingFallback />}>
           <AdminPushAnalytics
             onBackToGame={() => {
-              setIsAdminRoute(false);
+              setAdminRoute(null);
+              window.history.replaceState({}, '', '/');
+            }}
+          />
+        </Suspense>
+      </BlackboardLayout>
+    );
+  }
+  if (adminRoute === 'billing') {
+    return (
+      <BlackboardLayout>
+        <Suspense fallback={<LoadingFallback />}>
+          <AdminBilling
+            onBackToGame={() => {
+              setAdminRoute(null);
               window.history.replaceState({}, '', '/');
             }}
           />
