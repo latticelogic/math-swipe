@@ -37,6 +37,11 @@ const db = admin.firestore();
 // keep the push code self-contained — both are independently deployable.
 export { createCheckoutSession, stripeWebhook } from './stripe';
 
+// Leaderboard cache rebuilder — see ./leaderboard.ts for the 60s cron
+// that pre-aggregates the top-20 score and top-10 speedrun cache docs
+// the client reads instead of running N live user-doc listeners.
+export { rebuildLeaderboardCache } from './leaderboard';
+
 // VAPID credentials live in Secret Manager. Even the public key is a secret
 // here (rather than a plain param) so rotation is one CLI command + a
 // function redeploy, with no code edits.

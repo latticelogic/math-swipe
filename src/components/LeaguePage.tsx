@@ -1,6 +1,6 @@
 import { memo, useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { collection, query, orderBy, limit, onSnapshot, where, addDoc, serverTimestamp, doc, setDoc } from 'firebase/firestore';
+import { collection, onSnapshot, addDoc, serverTimestamp, doc, setDoc } from 'firebase/firestore';
 import { db } from '../utils/firebase';
 import { getThemeColor } from '../utils/chalkThemes';
 import { COSTUMES } from '../utils/costumes';
@@ -84,59 +84,46 @@ export const LeaguePage = memo(function LeaguePage({ userXP, userStreak, uid, di
         }
     }, [selectedPlayer, pingCooldown, uid, displayName]);
 
-    // ── Score leaderboard query ──
+    // ── Leaderboard cache subscriptions ──
+    // We read the pre-aggregated `leaderboards/{score-top20,speedrun-top10}`
+    // docs maintained by the `rebuildLeaderboardCache` Cloud Function
+    // every 60s — NOT the raw `users` collection. This collapses 20×
+    // user-doc reads per snap-change to 1 cache-doc read, which is the
+    // entire point of the optimization (see functions/src/leaderboard.ts).
+    //
+    // If the cache doc is missing (e.g., right after first deploy before
+    // the cron has run, or if the function is failing), entries stays
+    // empty and the UI shows the loading state — preferable to falling
+    // back to the direct query which would defeat the cache.
     useEffect(() => {
-        const q = query(
-            collection(db, 'users'),
-            where('totalXP', '>', 0),
-            orderBy('totalXP', 'desc'),
-            limit(20),
+        const unsub = onSnapshot(
+            doc(db, 'leaderboards', 'score-top20'),
+            (snap) => {
+                const data = snap.data();
+                setEntries(Array.isArray(data?.entries) ? data.entries as LeaderboardEntry[] : []);
+                setLoading(false);
+            },
+            (err) => {
+                console.warn('Leaderboard cache read failed:', err);
+                setLoading(false);
+            },
         );
-        const unsub = onSnapshot(q, (snap) => {
-            const data: LeaderboardEntry[] = snap.docs.map(doc => ({
-                uid: doc.id,
-                displayName: doc.data().displayName || 'Anonymous',
-                totalXP: doc.data().totalXP || 0,
-                bestStreak: doc.data().bestStreak || 0,
-                bestSpeedrunTime: doc.data().bestSpeedrunTime || 0,
-                activeThemeId: doc.data().activeThemeId || 'classic',
-                activeCostume: doc.data().activeCostume || '',
-                activeBadgeId: doc.data().activeBadgeId || '',
-            }));
-            setEntries(data);
-            setLoading(false);
-        }, (err) => {
-            console.warn('Leaderboard query failed:', err);
-            setLoading(false);
-        });
         return unsub;
     }, []);
 
-    // ── Speedrun leaderboard query ──
     useEffect(() => {
-        const q = query(
-            collection(db, 'users'),
-            where('bestSpeedrunTime', '>', 0),
-            orderBy('bestSpeedrunTime', 'asc'),
-            limit(10),
+        const unsub = onSnapshot(
+            doc(db, 'leaderboards', 'speedrun-top10'),
+            (snap) => {
+                const data = snap.data();
+                setSpeedrunEntries(Array.isArray(data?.entries) ? data.entries as LeaderboardEntry[] : []);
+                setSpeedrunLoading(false);
+            },
+            (err) => {
+                console.warn('Speedrun cache read failed:', err);
+                setSpeedrunLoading(false);
+            },
         );
-        const unsub = onSnapshot(q, (snap) => {
-            const data: LeaderboardEntry[] = snap.docs.map(doc => ({
-                uid: doc.id,
-                displayName: doc.data().displayName || 'Anonymous',
-                totalXP: doc.data().totalXP || 0,
-                bestStreak: doc.data().bestStreak || 0,
-                bestSpeedrunTime: doc.data().bestSpeedrunTime || 0,
-                activeThemeId: doc.data().activeThemeId || 'classic',
-                activeCostume: doc.data().activeCostume || '',
-                activeBadgeId: doc.data().activeBadgeId || '',
-            }));
-            setSpeedrunEntries(data);
-            setSpeedrunLoading(false);
-        }, (err) => {
-            console.warn('Speedrun leaderboard query failed:', err);
-            setSpeedrunLoading(false);
-        });
         return unsub;
     }, []);
 

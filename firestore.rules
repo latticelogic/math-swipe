@@ -152,6 +152,26 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // ── Leaderboards Collection (pre-aggregated cache) ──
+    // Two docs maintained by the `rebuildLeaderboardCache` Cloud Function
+    // every 60s:
+    //   leaderboards/score-top20      — top 20 by totalXP
+    //   leaderboards/speedrun-top10   — top 10 by bestSpeedrunTime ASC
+    //
+    // Client reads from here instead of running an `onSnapshot` on
+    // users/, which collapses the per-client read cost from 20× to 1×
+    // and keeps Firestore quota linear in top-board size rather than in
+    // total user count. The data here is fully public (it's already
+    // displayed on the open League tab to any visitor) so READ is open.
+    //
+    // WRITE is locked off entirely. The cache rebuilder runs as admin
+    // SDK and bypasses rules; rejecting all client writes prevents
+    // anyone from spoofing the cache.
+    match /leaderboards/{boardId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     // ── Pings Collection (social nudges) ──
     match /pings/{pingId} {
       // Users can only read pings targeted at them
