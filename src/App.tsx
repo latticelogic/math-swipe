@@ -16,6 +16,9 @@ import { useAutoSummary, usePersonalBest } from './hooks/useSessionUI';
 import { OfflineBanner } from './components/OfflineBanner';
 import { ReloadPrompt } from './components/ReloadPrompt';
 import { MilestoneBurst } from './components/MilestoneBurst';
+import { DailyFlourish } from './components/DailyFlourish';
+import { AchievementBadge } from './components/AchievementBadge';
+import { useFirstCorrectFlourish } from './hooks/useFirstCorrectFlourish';
 /** Retry a dynamic import once on chunk-load failure (Cloudflare Pages cache busting) */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function lazyRetry<T extends Record<string, any>>(factory: () => Promise<T>): Promise<T> {
@@ -315,7 +318,9 @@ function App() {
   const [unlocked, setUnlocked] = useState(() => loadUnlocked());
   const unlockedRef = useRef(unlocked);
   useEffect(() => { unlockedRef.current = unlocked; }, [unlocked]);
-  const [unlockToast, setUnlockToast] = useState('');
+  // Achievement unlock toast — carries id (to render the actual badge SVG)
+  // and name (to display). Null when nothing is being celebrated.
+  const [unlockToast, setUnlockToast] = useState<{ id: string; name: string } | null>(null);
 
   // Restore achievements from Firestore on auth
   useEffect(() => {
@@ -337,11 +342,13 @@ function App() {
       fresh.forEach(id => next.add(id));
       setUnlocked(next);
       saveUnlocked(next, uid);
-      // Show toast for first new unlock
+      // Show toast for first new unlock — extended to 3.2s so the more
+      // theatrical visual has time to land. The badge SVG renders inline
+      // with a soft halo so the player actually sees what they earned.
       const badge = EVERY_ACHIEVEMENT.find(a => a.id === fresh[0]);
       if (badge) {
-        setUnlockToast(badge.name);
-        const t = setTimeout(() => setUnlockToast(''), 2500);
+        setUnlockToast({ id: badge.id, name: badge.name });
+        const t = setTimeout(() => setUnlockToast(null), 3200);
         return () => clearTimeout(t);
       }
     }
@@ -349,6 +356,11 @@ function App() {
 
   // ── Personal best detection ──
   const showPB = usePersonalBest(bestStreak, stats.bestStreak);
+
+  // ── First-correct-of-the-day flourish ──
+  // Triggers once per device per day when the user answers correctly.
+  // Dismisses itself after the animation completes (~2s) via the dismiss callback.
+  const dailyFlourish = useFirstCorrectFlourish(flash);
 
   const handleTabChange = useCallback((tab: Tab) => {
     if (prevTab.current === 'game' && tab !== 'game' && totalAnswered > 0) {
@@ -904,6 +916,16 @@ function App() {
               )}
             </AnimatePresence>
 
+            {/* ── First-correct-of-day flourish ──
+                Quiet welcome-back moment, once per device per day. The hook
+                auto-dismisses after ~2.2s so we don't need any orchestration
+                on the React side beyond <AnimatePresence>. */}
+            <AnimatePresence>
+              {dailyFlourish.shouldShow && (
+                <DailyFlourish key="daily-flourish" dayStreak={stats.dayStreak} />
+              )}
+            </AnimatePresence>
+
             {/* ── Speed bonus ── */}
             {speedBonus && (
               <div key={'speed' + score} className="speed-pop absolute left-1/2 -translate-x-1/2 top-[30%] z-40 text-sm ui text-[var(--color-gold)] whitespace-nowrap">
@@ -1006,41 +1028,76 @@ function App() {
         {/* ── Weekly recap (first open of the week, only when idle on game tab) ── */}
         <WeeklyRecap stats={stats} suppress={activeTab !== 'game' || isMagicLessonActive} />
 
-        {/* ── Achievement unlock toast ── */}
+        {/* ── Achievement unlock toast ──
+            Theatrical version: shows the actual badge SVG with a sparkle
+            halo behind it on appearance. Toast itself has a gold border
+            glow + scales in for a beat then settles. Sparkles fire once
+            on mount, then fade away — leaving a clean readable card. */}
         <AnimatePresence>
           {unlockToast && (
             <motion.div
-              key={unlockToast}
-              initial={{ opacity: 0, y: 40 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 40 }}
-              transition={{ duration: 0.3 }}
-              className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-[var(--color-overlay)] border border-[var(--color-gold)]/30 rounded-2xl px-5 py-3 flex items-center gap-3"
+              key={unlockToast.id}
+              initial={{ opacity: 0, y: 40, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 40, scale: 0.9 }}
+              transition={{ duration: 0.35, ease: 'easeOut' }}
+              className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-[var(--color-overlay)] border-2 border-[var(--color-gold)]/50 rounded-2xl px-5 py-3 flex items-center gap-3 shadow-[0_0_24px_rgba(251,191,36,0.25)]"
             >
-              <span className="text-2xl">🏅</span>
+              {/* Badge halo: sparkles fly outward once, fade fast */}
+              <div className="relative w-12 h-12 flex items-center justify-center">
+                {[0, 60, 120, 180, 240, 300].map(deg => {
+                  const rad = (deg * Math.PI) / 180;
+                  return (
+                    <motion.div
+                      key={deg}
+                      className="absolute text-[var(--color-gold)]"
+                      initial={{ x: 0, y: 0, opacity: 0, scale: 0.3 }}
+                      animate={{
+                        x: Math.cos(rad) * 32,
+                        y: Math.sin(rad) * 32,
+                        opacity: [0, 1, 0],
+                        scale: [0.3, 1, 0.4],
+                      }}
+                      transition={{ duration: 0.9, ease: 'easeOut' }}
+                    >
+                      <svg viewBox="0 0 8 8" width="6" height="6" fill="currentColor"><circle cx="4" cy="4" r="3" /></svg>
+                    </motion.div>
+                  );
+                })}
+                {/* The actual unlocked badge SVG, with a soft glow */}
+                <div className="relative drop-shadow-[0_0_12px_rgba(251,191,36,0.6)]">
+                  <AchievementBadge achievementId={unlockToast.id} unlocked={true} name="" desc="" />
+                </div>
+              </div>
               <div>
-                <div className="text-xs ui text-[rgb(var(--color-fg))]/40">Achievement Unlocked!</div>
-                <div className="text-sm chalk text-[var(--color-gold)]">{unlockToast}</div>
+                <div className="text-[10px] ui uppercase tracking-widest text-[var(--color-gold)]/70">Achievement Unlocked</div>
+                <div className="text-sm chalk text-[var(--color-gold)]">{unlockToast.name}</div>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* ── Streak shield consumed toast ── */}
+        {/* ── Streak shield consumed toast ──
+            Same upgrade as the achievement toast — hand-drawn shield SVG
+            with a subtle glow so it doesn't read as an emoji-shaped pill. */}
         <AnimatePresence>
           {shieldToast && (
             <motion.div
               key="shield-toast"
-              initial={{ opacity: 0, y: 40 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 40 }}
-              transition={{ duration: 0.3 }}
-              className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-[var(--color-overlay)] border border-[var(--color-gold)]/30 rounded-2xl px-5 py-3 flex items-center gap-3"
+              initial={{ opacity: 0, y: 40, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 40, scale: 0.9 }}
+              transition={{ duration: 0.35, ease: 'easeOut' }}
+              className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-[var(--color-overlay)] border-2 border-[var(--color-gold)]/50 rounded-2xl px-5 py-3 flex items-center gap-3 shadow-[0_0_24px_rgba(251,191,36,0.25)]"
             >
-              <span className="text-2xl">🛡️</span>
+              <div className="text-[var(--color-gold)] drop-shadow-[0_0_8px_rgba(251,191,36,0.6)]">
+                <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2 L 20 5 L 20 12 C 20 17 16 21 12 22 C 8 21 4 17 4 12 L 4 5 Z" />
+                </svg>
+              </div>
               <div>
-                <div className="text-xs ui text-[rgb(var(--color-fg))]/40">Streak Saved!</div>
-                <div className="text-sm chalk text-[var(--color-gold)]">Shield protected your streak</div>
+                <div className="text-[10px] ui uppercase tracking-widest text-[var(--color-gold)]/70">Streak Saved</div>
+                <div className="text-sm chalk text-[var(--color-gold)]">Shield absorbed the miss</div>
               </div>
             </motion.div>
           )}
