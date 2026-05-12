@@ -365,14 +365,44 @@ button.action-icon-skull-active:focus:not(:focus-visible) {
   animation: wrong-shake 0.2s ease-out;
 }
 
-/* ── Correct-answer bounce ── */
+/* ── Near-miss shake (gentler, warmer) ──
+   For wrong answers within ~15% of correct OR off-by-one. The shake
+   distance is reduced and the duration shortened — reads as "ohhh, so
+   close" rather than the sharp "WRONG" of a wild guess. No color tint
+   from the keyframe itself; the FeedbackOverlay component handles the
+   warm-orange flash instead of red. */
+@keyframes wrong-shake-near {
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  30% {
+    transform: translateX(-0.8px);
+  }
+
+  70% {
+    transform: translateX(0.8px);
+  }
+}
+
+.wrong-shake-near {
+  animation: wrong-shake-near 0.16s ease-out;
+}
+
+/* ── Correct-answer bounce (intensity scales with streak) ──
+   The --bounce-strength custom property is set inline by App.tsx based on
+   the current streak. Base of 1.06 (6% scale-up) at streak 0, reaching
+   ~1.36 (36% scale-up) at streak ≥25. The bouncing element subtly
+   announces "you're building" without any new UI surface. */
 @keyframes answer-bounce {
   0% {
     transform: scale(1);
   }
 
   40% {
-    transform: scale(1.06);
+    transform: scale(calc(1 + (var(--bounce-strength, 1) - 1) * 0.6 + 0.06));
   }
 
   100% {
@@ -421,6 +451,30 @@ button.action-icon-skull-active:focus:not(:focus-visible) {
 .flash-wrong {
   animation: wrong-flash 0.5s ease-out forwards;
   background: var(--color-wrong);
+}
+
+/* Near-miss: warm orange, gentler peak, shorter duration.
+   Conveys "ohhh, close!" instead of "WRONG!". The opacity peaks at 0.06
+   (vs 0.10 for hard-wrong) so it's softer; the duration is 0.35s vs 0.50s
+   so it dismisses faster. Uses the existing streak-fire color (orange)
+   for warm-not-hostile tone. */
+@keyframes near-miss-flash {
+  0% {
+    opacity: 0;
+  }
+
+  25% {
+    opacity: 0.06;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+.flash-near-miss {
+  animation: near-miss-flash 0.35s ease-out forwards;
+  background: var(--color-streak-fire);
 }
 
 /* ── Streak fire (GPU-only, no filter) ── */

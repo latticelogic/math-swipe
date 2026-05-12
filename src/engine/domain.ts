@@ -62,7 +62,15 @@ export type ChalkState =
     | 'comeback'
     | 'struggling';
 
-export type FeedbackFlash = 'none' | 'correct' | 'wrong';
+/**
+ * 'near-miss' indicates a wrong answer that's within ~15% of the correct
+ * value (or off-by-1 for small integers). UI treats it as wrong (streak
+ * resets, no points) but uses softer color + gentler shake — the
+ * "ohhh, close!" feel — so wrong answers don't read as pure failure.
+ * Important for kids' confidence: most "almost right" mistakes are real
+ * thinking, not random guesses.
+ */
+export type FeedbackFlash = 'none' | 'correct' | 'wrong' | 'near-miss';
 
 // ── Engine configuration ──────────────────────────────────────────────────────
 

@@ -569,11 +569,24 @@ function App() {
 
         {activeTab === 'game' && (
           <div ref={(el) => {
-            // Restart CSS animation without remounting entire subtree
-            if (el && (flash === 'wrong' || flash === 'correct')) {
-              el.classList.remove('wrong-shake', 'answer-bounce');
+            // Restart CSS animation without remounting entire subtree.
+            // Sets `--bounce-strength` CSS custom property so the bounce
+            // amplitude scales with current streak — bigger bounce when
+            // you're rolling. .wrong-shake-near is a gentler shake for
+            // "almost right" answers (off-by-one or within 15%).
+            if (el && flash !== 'none') {
+              el.classList.remove('wrong-shake', 'wrong-shake-near', 'answer-bounce');
               void el.offsetHeight; // force reflow
-              el.classList.add(flash === 'wrong' && !shieldBroken ? 'wrong-shake' : flash === 'correct' ? 'answer-bounce' : '');
+              if (flash === 'correct') {
+                // 0 streak → 1.0× scale, 10 streak → 1.18×, 25 streak → 1.30× (capped)
+                const strength = 1 + Math.min(streak * 0.012, 0.30);
+                el.style.setProperty('--bounce-strength', String(strength));
+                el.classList.add('answer-bounce');
+              } else if (flash === 'near-miss') {
+                el.classList.add('wrong-shake-near');
+              } else if (flash === 'wrong' && !shieldBroken) {
+                el.classList.add('wrong-shake');
+              }
             }
           }} className="flex-1 flex flex-col w-full">
             {/* ── Score (centered, pushed down from edge) ── */}
@@ -633,6 +646,7 @@ function App() {
               {/* Screen reader announcement for game feedback */}
               <div className="sr-only" role="status" aria-live="assertive">
                 {flash === 'correct' && `Correct! Streak: ${streak}`}
+                {flash === 'near-miss' && 'Close! Streak reset.'}
                 {flash === 'wrong' && (shieldBroken ? 'Wrong! Shield used, streak saved.' : 'Wrong! Streak reset.')}
                 {milestone && `Milestone reached at ${streak} in a row!`}
               </div>
@@ -869,10 +883,14 @@ function App() {
               />
             </div>
 
-            {/* ── Feedback flash overlay ── */}
+            {/* ── Feedback flash overlay ──
+                near-miss uses a warm-orange flash instead of the sharp red,
+                so wrong-but-close answers don't sting like wild guesses. */}
             {flash !== 'none' && (
               <div
-                className={`absolute inset-0 pointer-events-none z-30 ${flash === 'correct' ? 'flash-correct' : 'flash-wrong'
+                className={`absolute inset-0 pointer-events-none z-30 ${flash === 'correct' ? 'flash-correct'
+                  : flash === 'near-miss' ? 'flash-near-miss'
+                    : 'flash-wrong'
                   }`}
               />
             )}

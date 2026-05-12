@@ -58,6 +58,29 @@ export type ItemGenerator = (
     rng?: () => number,
 ) => EngineItem;
 
+/**
+ * Returns true when `selected` is "close enough" to `answer` that the
+ * mistake reads as real thinking — not a wild guess.
+ *
+ * Two cases:
+ *   1. Off-by-one for any answer (covers compare, evenodd, etc.)
+ *   2. Within 15% of the answer magnitude (covers multiply, fractions, etc.
+ *      where being close to the right value indicates real reasoning).
+ *
+ * Bounds picked empirically: 15% catches "knew the operation, miscomputed
+ * a digit" without flagging wildly different distractors as near-miss.
+ */
+function isNearMissAnswer(selected: number, answer: number): boolean {
+    if (!Number.isFinite(selected) || !Number.isFinite(answer)) return false;
+    const diff = Math.abs(selected - answer);
+    if (diff === 0) return false;
+    // Off-by-one rule (handles 0 answer case where 15% trivially fails)
+    if (diff <= 1) return true;
+    const mag = Math.abs(answer);
+    if (mag === 0) return false;
+    return diff / mag <= 0.15;
+}
+
 // ── Hook ──────────────────────────────────────────────────────────────────────
 
 export function useGameLoop(
@@ -222,6 +245,18 @@ export function useGameLoop(
 
         const selectedValue = current.options[SWIPE_TO_INDEX[direction]];
         const correct = selectedValue === current.answer;
+        // Near-miss = wrong but within ~15% of correct OR off-by-one for
+        // small integers. We treat it as wrong (no points, streak resets)
+        // but the UI flashes a warmer color than a wild guess — keeps kids
+        // from feeling like every wrong tap is a stinging "FAILURE".
+        // Doesn't affect game mechanics, only the flash type passed to UI.
+        // Both selected and answer must be numeric for near-miss to apply.
+        // String-option topics (fractions with displayed labels) skip the
+        // near-miss path and fall through to standard wrong.
+        const isNearMiss = !correct
+            && typeof selectedValue === 'number'
+            && typeof current.answer === 'number'
+            && isNearMissAnswer(selectedValue, current.answer);
 
         if (correct) {
             recordAnswer(tts, true);
@@ -284,7 +319,7 @@ export function useGameLoop(
                         setGs(p => ({ ...p, flash: 'none', frozen: false }));
                         frozenRef.current = false;
                     }, failPauseMs);
-                    return { ...prev, flash: 'wrong' as const, chalkState: 'fail' as ChalkState, frozen: true };
+                    return { ...prev, flash: (isNearMiss ? 'near-miss' : 'wrong') as FeedbackFlash, chalkState: 'fail' as ChalkState, frozen: true };
                 }
 
                 recordAnswer(tts, false);
@@ -302,7 +337,7 @@ export function useGameLoop(
                         ...prev,
                         totalAnswered: prev.totalAnswered + 1,
                         answerHistory: [...prev.answerHistory, false].slice(-50),
-                        flash: 'wrong' as const,
+                        flash: (isNearMiss ? 'near-miss' : 'wrong') as FeedbackFlash,
                         chalkState: 'fail' as ChalkState,
                         frozen: true,
                         shieldBroken: true,
@@ -328,7 +363,7 @@ export function useGameLoop(
                     totalAnswered: prev.totalAnswered + 1,
                     answerHistory: [...prev.answerHistory, false].slice(-50),
                     score: scorePenalty(prev.score),
-                    flash: 'wrong' as const,
+                    flash: (isNearMiss ? 'near-miss' : 'wrong') as FeedbackFlash,
                     chalkState: (wrongStreak >= 3 ? 'struggling' : 'fail') as ChalkState,
                     milestone: '',
                     wrongStreak,
