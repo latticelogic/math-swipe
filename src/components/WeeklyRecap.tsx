@@ -53,18 +53,21 @@ export function WeeklyRecap({ stats, suppress = false }: Props) {
 
     const acc = stats.totalSolved > 0 ? Math.round((stats.totalCorrect / stats.totalSolved) * 100) : 0;
 
-    // Build positive messages
+    // Build the recap lines. Tone: specific facts in the user's own
+    // numbers, no motivational-poster phrasing, no emoji (per the
+    // chalkboard aesthetic rules in CLAUDE.md). Each line is a single
+    // observation, not a cheer.
     const messages: string[] = [];
-    if (stats.totalSolved > 0) messages.push(`You've solved ${stats.totalSolved.toLocaleString()} problems! 🧠`);
-    if (acc >= 80) messages.push(`${acc}% accuracy — impressive! 🎯`);
-    else if (acc >= 50) messages.push(`${acc}% accuracy — keep it up! 📈`);
-    else if (stats.totalSolved > 0) messages.push(`Every mistake is a lesson learned 💪`);
-    if (stats.bestStreak >= 10) messages.push(`Your best streak: ${stats.bestStreak} in a row! 🔥`);
-    if (stats.dayStreak >= 3) messages.push(`${stats.dayStreak}-day streak and counting! 🌟`);
-    if (stats.sessionsPlayed >= 5) messages.push(`${stats.sessionsPlayed} sessions played — you're dedicated! 💎`);
+    if (stats.totalSolved > 0) messages.push(`${stats.totalSolved.toLocaleString()} problems solved.`);
+    if (acc >= 90) messages.push(`${acc}% accuracy. Sharp.`);
+    else if (acc >= 70) messages.push(`${acc}% accuracy — steady.`);
+    else if (stats.totalSolved >= 5) messages.push(`${acc}% accuracy — getting your reps in.`);
+    if (stats.bestStreak >= 10) messages.push(`Best streak: ${stats.bestStreak} in a row.`);
+    if (stats.dayStreak >= 3) messages.push(`${stats.dayStreak} days in a row. A real habit.`);
+    if (stats.sessionsPlayed >= 5) messages.push(`${stats.sessionsPlayed} sessions in.`);
 
-    // Ensure at least one message
-    if (messages.length === 0) messages.push(`Great start! Keep playing to see your progress 🚀`);
+    // Quietly-positive default for users who only just started this week
+    if (messages.length === 0) messages.push(`A few problems in. The shape of a habit starting.`);
 
     return (
         <AnimatePresence>
@@ -83,7 +86,21 @@ export function WeeklyRecap({ stats, suppress = false }: Props) {
                         exit={{ scale: 0.85, opacity: 0 }}
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <div className="text-3xl mb-2">📊</div>
+                        {/* Hand-drawn bar chart — chalkboard aesthetic, replaces the
+                            📊 emoji previously used here. Three uneven bars rising
+                            left-to-right read as "growth this week" without saying it. */}
+                        <svg
+                            viewBox="0 0 24 24" width="32" height="32"
+                            fill="none" stroke="currentColor" strokeWidth="2"
+                            strokeLinecap="round" strokeLinejoin="round"
+                            aria-hidden
+                            className="mx-auto mb-2 text-[var(--color-gold)]"
+                        >
+                            <line x1="4" y1="21" x2="20" y2="21" />
+                            <rect x="6" y="14" width="3" height="7" />
+                            <rect x="11" y="9" width="3" height="12" />
+                            <rect x="16" y="5" width="3" height="16" />
+                        </svg>
                         <h3 className="text-lg chalk text-[var(--color-gold)] mb-4">Your Week So Far</h3>
 
                         <div className="space-y-2 mb-5">
@@ -111,7 +128,13 @@ export function WeeklyRecap({ stats, suppress = false }: Props) {
                             </div>
                             {stats.dayStreak >= 3 && (
                                 <div className="text-center">
-                                    <div className="text-xl chalk text-[var(--color-streak-fire)]">{stats.dayStreak}🔥</div>
+                                    <div className="flex items-center justify-center gap-0.5">
+                                        <span className="text-xl chalk text-[var(--color-streak-fire)] tabular-nums">{stats.dayStreak}</span>
+                                        {/* Hand-drawn flame, matches the share-card streak cell */}
+                                        <svg viewBox="0 0 24 24" width="14" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="text-[var(--color-streak-fire)] -mb-0.5">
+                                            <path d="M12 3 C 12 8 7 9 7 14 C 7 18 9 21 12 21 C 15 21 17 18 17 14 C 17 11 14 10 14 7 C 13 8.5 12.5 9 12 3 Z" />
+                                        </svg>
+                                    </div>
                                     <div className="text-[9px] ui text-[rgb(var(--color-fg))]/30">day streak</div>
                                 </div>
                             )}
