@@ -15,14 +15,15 @@
  * 10-20× at scale.
  *
  * The cache is rebuilt:
- *   - every 60 seconds via onSchedule (steady state)
+ *   - every 1 minute via onSchedule (steady state; Cloud Scheduler's
+ *     minimum resolution is 1 minute, so we can't go sub-minute via
+ *     the schedule path)
  *   - on demand when stats land (commented-out trigger; enable when
  *     the synchronous staleness cost matters)
  *
- * Staleness: up to 60s between a user's score landing and the
- * leaderboard reflecting it. For a fun game the lag is invisible;
- * for a competitive ladder we'd shorten the cron interval or wire
- * up the trigger path.
+ * Staleness: up to ~60s between a user's score landing and the
+ * leaderboard reflecting it. For a casual game the lag is invisible;
+ * for a competitive ladder we'd wire up the trigger path.
  */
 
 import { onSchedule } from 'firebase-functions/v2/scheduler';
@@ -41,11 +42,12 @@ interface LeaderboardEntry {
     activeBadgeId: string;
 }
 
-/** Default cache TTL — 60 seconds. Sweet spot between freshness and
- *  read-amplification: a 60s rebuild touching ≤30 user docs is ~14K
- *  reads/day, while the client side drops from N×20 reads-per-view
+/** Cache rebuild interval. Cloud Scheduler's minimum resolution is 1
+ *  minute, so we can't go sub-minute via Firebase's onSchedule. 1
+ *  minute is plenty: a 1-minute rebuild touching ≤30 user docs is
+ *  ~43K reads/day, while the client side drops from N×20 reads-per-view
  *  to N×1. */
-const REBUILD_INTERVAL_SECONDS = 60;
+const REBUILD_INTERVAL = 'every 1 minutes';
 
 /** Read a row out of the users collection and project to the
  *  LeaderboardEntry shape that the client expects. The client's type
@@ -72,7 +74,7 @@ function projectUserRow(uid: string, data: admin.firestore.DocumentData): Leader
  */
 export const rebuildLeaderboardCache = onSchedule(
     {
-        schedule: `every ${REBUILD_INTERVAL_SECONDS} seconds`,
+        schedule: REBUILD_INTERVAL,
         timeZone: 'UTC',
         // Memory/timeout: this is a 2-query, 2-write function. 256MiB and
         // 30s are plenty; setting them explicitly so cold-start cost is
