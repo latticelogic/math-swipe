@@ -26,6 +26,7 @@
 
 import { motion } from 'framer-motion';
 import { PRICE_USD } from '../utils/entitlement';
+import { LegalFooterRow } from './LegalPages';
 
 interface PaywallProgress {
     /** Total problems solved across the trial. */
@@ -223,6 +224,13 @@ export function Paywall({ progress, onUnlock, busy, onDevReset }: PaywallProps) 
                 <p className="text-[10px] ui text-[rgb(var(--color-fg))]/30 mt-3">
                     The Daily Challenge is always free.
                 </p>
+
+                {/* Legal links — refund / privacy / terms. Quiet but discoverable
+                    at the moment of payment. The 14-day refund is also a
+                    trust signal that reduces purchase hesitation. */}
+                <div className="mt-5 pt-3 border-t border-[rgb(var(--color-fg))]/8">
+                    <LegalFooterRow />
+                </div>
 
                 {import.meta.env.DEV && onDevReset && (
                     <button

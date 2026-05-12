@@ -54,6 +54,7 @@ import { useEntitlement } from './hooks/useEntitlement';
 import { startCheckout } from './utils/checkout';
 import { Paywall } from './components/Paywall';
 import { WelcomeModal, TrialReminderModal } from './components/TrialModals';
+import { LegalPage, type LegalDocId } from './components/LegalPages';
 import { collection, query, where, onSnapshot, doc, updateDoc, orderBy, limit } from 'firebase/firestore';
 import { db } from './utils/firebase';
 import { generateProblem } from './utils/mathGenerator';
@@ -186,6 +187,14 @@ function App() {
   const [bootDailyRequested] = useState<boolean>(() =>
     new URLSearchParams(window.location.search).get('daily') === '1',
   );
+  // Static legal pages — Refund / Privacy / Terms. Reachable directly
+  // via /refund, /privacy, /terms; also linked from the Paywall footer
+  // and the Me-tab footer. Same pathname-router pattern as profile +
+  // admin above.
+  const [legalRoute, setLegalRoute] = useState<LegalDocId | null>(() => {
+    const m = window.location.pathname.match(/^\/(refund|privacy|terms)\/?$/);
+    return m ? (m[1] as LegalDocId) : null;
+  });
   const [challengeId, setChallengeId] = useState<string | null>(() => {
     const params = new URLSearchParams(window.location.search);
     const c = params.get('c');
@@ -575,6 +584,22 @@ function App() {
             }}
           />
         </Suspense>
+      </BlackboardLayout>
+    );
+  }
+
+  // Static legal pages — refund / privacy / terms. Drafts marked at top;
+  // see LegalPages.tsx. Linked from the Paywall + Me-tab footer rows.
+  if (legalRoute) {
+    return (
+      <BlackboardLayout>
+        <LegalPage
+          doc={legalRoute}
+          onBack={() => {
+            setLegalRoute(null);
+            window.history.replaceState({}, '', '/');
+          }}
+        />
       </BlackboardLayout>
     );
   }

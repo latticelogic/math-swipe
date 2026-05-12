@@ -11,6 +11,7 @@ import { RANKS, getRank } from '../domains/math/ranks';
 import { PushOptIn } from './PushOptIn';
 import { UsernameClaim } from './UsernameClaim';
 import { TrialCountdownChip } from './TrialModals';
+import { LegalFooterRow } from './LegalPages';
 import { CategoryIcon } from './CategoryIcon';
 
 interface Props {
@@ -708,6 +709,13 @@ export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked,
             >
                 v{__APP_VERSION__} · tap to update
             </button>
+
+            {/* Legal links — always discoverable in the profile area,
+                regardless of trial / paid / expired state. Same row also
+                renders in the Paywall footer. */}
+            <div className="mt-4 mb-2">
+                <LegalFooterRow />
+            </div>
         </div>
     );
 });
