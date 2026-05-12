@@ -34,6 +34,11 @@ interface Props {
     /** Player's claimed @handle — when present, the share URL uses the
      *  clean `/u/<handle>` form instead of `/u/<displayName>-<uid4>`. */
     claimedHandle?: string | null;
+    /** When the just-finished session was itself a seeded challenge, this
+     *  is the seed the receiver should replay. Lets "Challenge a Friend"
+     *  forward the *same* problems instead of minting a fresh, unrelated
+     *  seed (which made the old "challenge" link asymmetric in name only). */
+    challengeId?: string | null;
 }
 
 function formatTime(ms: number): string {
@@ -95,7 +100,7 @@ function buildSharePayload(
 export const SessionSummary = memo(function SessionSummary({
     solved, bestStreak: streak, accuracy, xpEarned, answerHistory, questionType, visible, onDismiss,
     hardMode, timedMode, speedrunFinalTime, isNewSpeedrunRecord,
-    displayName, uid, claimedHandle,
+    displayName, uid, claimedHandle, challengeId,
 }: Props) {
     const [isSharing, setIsSharing] = useState(false);
     const cardRef = useRef<HTMLDivElement>(null);
@@ -471,23 +476,61 @@ export const SessionSummary = memo(function SessionSummary({
                             {isSharing ? 'Generating image…' : '📤 Share Result'}
                         </motion.button>
 
-                        <button
-                            onClick={async (e) => {
-                                e.stopPropagation();
-                                const url = `${window.location.origin}?c=${createChallengeId()}`;
-                                const text = `⚔️ Can you beat my score? Try this challenge!\n${url}`;
-                                try {
-                                    if (navigator.share) {
-                                        await navigator.share({ text, url });
+                        {/* "Challenge a Friend" is only shown when we can build a
+                            link the friend can ACTUALLY race against:
+                              • seeded challenge — replay the same seed + target score
+                              • speedrun — fixed 10 problems, target the clear time
+                              • daily — friend opens today's daily directly
+                            For topical sessions (multiply, fractions, …) the
+                            sender's problems were generated ad-hoc, so there's
+                            no fair shared set; we drop the button rather than
+                            mint a misleading new seed. */}
+                        {(challengeId || questionType === 'speedrun' || questionType === 'daily') && (
+                            <button
+                                onClick={async (e) => {
+                                    e.stopPropagation();
+                                    let url: string;
+                                    let text: string;
+                                    if (questionType === 'speedrun' && speedrunFinalTime) {
+                                        // Speedrun: the 10 problems aren't shareable
+                                        // (they're random), but the *time target* is —
+                                        // the friend starts their own speedrun and
+                                        // sees "Beat 47.2s" until they do.
+                                        url = `${window.location.origin}?c=${createChallengeId()}&targetTime=${Math.round(speedrunFinalTime)}`;
+                                        text = `Cleared Math Swipe Speedrun in ${formatTime(speedrunFinalTime)}. Try it: ${url}`;
+                                    } else if (questionType === 'daily') {
+                                        // Daily: friend lands directly on today's
+                                        // daily challenge — no seed needed because
+                                        // generateDailyChallenge() is date-keyed.
+                                        url = `${window.location.origin}?daily=1&target=${xpEarned}`;
+                                        text = `Got ${xpEarned} pts on today's Math Swipe Daily. Beat me: ${url}`;
                                     } else {
-                                        await navigator.clipboard.writeText(text);
+                                        // Challenge: forward the seed the sender
+                                        // actually played + target score so the
+                                        // banner shows "Beat 145 pts".
+                                        url = `${window.location.origin}?c=${challengeId}&target=${xpEarned}`;
+                                        text = `Beat my ${xpEarned} pts on this Math Swipe challenge: ${url}`;
                                     }
-                                } catch { /* cancelled */ }
-                            }}
-                            className="w-full py-2 rounded-xl border text-xs ui mb-3 border-[rgb(var(--color-fg))]/10 text-[rgb(var(--color-fg))]/40 hover:text-[rgb(var(--color-fg))]/60 transition-colors"
-                        >
-                            ⚔️ Challenge a Friend
-                        </button>
+                                    try {
+                                        if (navigator.share) {
+                                            await navigator.share({ text, url });
+                                        } else {
+                                            await navigator.clipboard.writeText(text);
+                                        }
+                                    } catch { /* cancelled */ }
+                                }}
+                                className="w-full py-2 rounded-xl border text-xs ui mb-3 border-[rgb(var(--color-fg))]/10 text-[rgb(var(--color-fg))]/40 hover:text-[rgb(var(--color-fg))]/60 transition-colors flex items-center justify-center gap-1.5"
+                            >
+                                {/* Crossed swords — hand-drawn, replaces ⚔️ emoji */}
+                                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                                    <line x1="4" y1="4" x2="14" y2="14" />
+                                    <line x1="20" y1="4" x2="10" y2="14" />
+                                    <line x1="11" y1="17" x2="13" y2="19" />
+                                    <line x1="13" y1="17" x2="11" y2="19" />
+                                </svg>
+                                <span>Challenge a Friend</span>
+                            </button>
+                        )}
 
                         <button
                             onClick={onDismiss}

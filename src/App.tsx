@@ -143,16 +143,35 @@ function App() {
   const [isAdminRoute, setIsAdminRoute] = useState<boolean>(() =>
     /^\/admin\/push\/?$/.test(window.location.pathname),
   );
+  // ?c=<seed> loads a seeded challenge. ?daily=1 routes straight to today's
+  // daily (so a friend's link lands them in the same session structure).
+  // ?target=<n> renders a "Beat X" overlay in the banner so the receiver
+  // knows what they're shooting for. ?targetTime=<ms> does the same for
+  // speedrun-style time targets. The sender's "Challenge a Friend" button
+  // packages all of these.
+  const [bootDailyRequested] = useState<boolean>(() =>
+    new URLSearchParams(window.location.search).get('daily') === '1',
+  );
   const [challengeId, setChallengeId] = useState<string | null>(() => {
     const params = new URLSearchParams(window.location.search);
     const c = params.get('c');
-    if (c) {
+    if (c || params.get('daily') === '1' || params.get('target') || params.get('targetTime')) {
       window.history.replaceState({}, '', window.location.pathname);
     }
     return c;
   });
+  const [challengeTarget] = useState<{ score: number | null; timeMs: number | null } | null>(() => {
+    const params = new URLSearchParams(window.location.search);
+    const t = params.get('target');
+    const tt = params.get('targetTime');
+    if (!t && !tt) return null;
+    return {
+      score: t ? Number.parseInt(t, 10) || null : null,
+      timeMs: tt ? Number.parseInt(tt, 10) || null : null,
+    };
+  });
   const [questionType, setQuestionType] = useState<QuestionType>(
-    challengeId ? 'challenge' : 'multiply'
+    challengeId ? 'challenge' : bootDailyRequested ? 'daily' : 'multiply'
   );
 
   const { stats, accuracy, recordSession, resetStats, updateCosmetics, updateBestSpeedrunTime, updateBadge, consumeShield } = useStats(uid);
@@ -614,41 +633,74 @@ function App() {
                   was the calendar/sword/stopwatch icon in the action
                   sidebar — easy to miss. */}
               {questionType === 'challenge' && (
-                <div className="text-xs ui text-[var(--color-gold)] mb-2 flex items-center gap-2">
-                  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                    <line x1="5" y1="5" x2="19" y2="19" />
-                    <line x1="19" y1="5" x2="5" y2="19" />
-                  </svg>
-                  <span>Challenge</span>
-                  <span className="text-[rgb(var(--color-fg))]/30">·</span>
-                  <span className="text-[rgb(var(--color-fg))]/40">{totalAnswered}/10</span>
+                <div className="mb-2 flex flex-col items-center gap-0.5">
+                  <div className="text-xs ui text-[var(--color-gold)] flex items-center gap-2">
+                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                      <line x1="5" y1="5" x2="19" y2="19" />
+                      <line x1="19" y1="5" x2="5" y2="19" />
+                    </svg>
+                    <span>Challenge</span>
+                    <span className="text-[rgb(var(--color-fg))]/30">·</span>
+                    <span className="text-[rgb(var(--color-fg))]/40">{totalAnswered}/10</span>
+                  </div>
+                  {/* Target overlay — only when the link carried a target. Shows
+                      what the sender scored so the receiver has something
+                      concrete to beat (asymmetric-link payoff). */}
+                  {challengeTarget && (challengeTarget.score !== null || challengeTarget.timeMs !== null) && (
+                    <div className="text-[10px] ui text-[var(--color-gold)]/70">
+                      Beat{' '}
+                      {challengeTarget.timeMs !== null
+                        ? `${(challengeTarget.timeMs / 1000).toFixed(1)}s`
+                        : `${challengeTarget.score} pts`}
+                      {score > 0 && challengeTarget.score !== null && score >= challengeTarget.score && (
+                        <span className="text-[var(--color-correct)] ml-1">passed</span>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
               {questionType === 'speedrun' && (
-                <div className="text-xs ui text-[var(--color-speedrun)] mb-2 flex items-center gap-2">
-                  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                    <circle cx="12" cy="14" r="7" />
-                    <line x1="12" y1="14" x2="15" y2="11" />
-                    <line x1="10" y1="2" x2="14" y2="2" />
-                    <line x1="12" y1="2" x2="12" y2="5" />
-                  </svg>
-                  <span>Speedrun</span>
-                  <span className="text-[rgb(var(--color-fg))]/30">·</span>
-                  <span className="text-[rgb(var(--color-fg))]/40">{totalCorrect}/10</span>
+                <div className="mb-2 flex flex-col items-center gap-0.5">
+                  <div className="text-xs ui text-[var(--color-speedrun)] flex items-center gap-2">
+                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                      <circle cx="12" cy="14" r="7" />
+                      <line x1="12" y1="14" x2="15" y2="11" />
+                      <line x1="10" y1="2" x2="14" y2="2" />
+                      <line x1="12" y1="2" x2="12" y2="5" />
+                    </svg>
+                    <span>Speedrun</span>
+                    <span className="text-[rgb(var(--color-fg))]/30">·</span>
+                    <span className="text-[rgb(var(--color-fg))]/40">{totalCorrect}/10</span>
+                  </div>
+                  {challengeTarget && challengeTarget.timeMs !== null && (
+                    <div className="text-[10px] ui text-[var(--color-speedrun)]/70">
+                      Beat {(challengeTarget.timeMs / 1000).toFixed(1)}s
+                    </div>
+                  )}
                 </div>
               )}
               {questionType === 'daily' && (
-                <div className="text-xs ui text-[var(--color-gold)] mb-2 flex items-center gap-2">
-                  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                    <rect x="3" y="5" width="18" height="16" rx="2" />
-                    <line x1="8" y1="3" x2="8" y2="7" />
-                    <line x1="16" y1="3" x2="16" y2="7" />
-                    <line x1="3" y1="10" x2="21" y2="10" />
-                    <circle cx="12" cy="15" r="1.2" fill="currentColor" stroke="none" />
-                  </svg>
-                  <span>Daily Challenge</span>
-                  <span className="text-[rgb(var(--color-fg))]/30">·</span>
-                  <span className="text-[rgb(var(--color-fg))]/40">{totalAnswered}/10</span>
+                <div className="mb-2 flex flex-col items-center gap-0.5">
+                  <div className="text-xs ui text-[var(--color-gold)] flex items-center gap-2">
+                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                      <rect x="3" y="5" width="18" height="16" rx="2" />
+                      <line x1="8" y1="3" x2="8" y2="7" />
+                      <line x1="16" y1="3" x2="16" y2="7" />
+                      <line x1="3" y1="10" x2="21" y2="10" />
+                      <circle cx="12" cy="15" r="1.2" fill="currentColor" stroke="none" />
+                    </svg>
+                    <span>Daily Challenge</span>
+                    <span className="text-[rgb(var(--color-fg))]/30">·</span>
+                    <span className="text-[rgb(var(--color-fg))]/40">{totalAnswered}/10</span>
+                  </div>
+                  {challengeTarget && challengeTarget.score !== null && (
+                    <div className="text-[10px] ui text-[var(--color-gold)]/70">
+                      Beat {challengeTarget.score} pts
+                      {score >= challengeTarget.score && (
+                        <span className="text-[var(--color-correct)] ml-1">passed</span>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
               {questionType === 'speedrun' ? (
@@ -1028,6 +1080,7 @@ function App() {
           displayName={user?.displayName}
           uid={uid}
           claimedHandle={claimedHandle}
+          challengeId={challengeId}
         />
 
         {/* ── Weekly recap (first open of the week, only when idle on game tab) ── */}
