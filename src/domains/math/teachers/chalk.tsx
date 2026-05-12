@@ -14,31 +14,40 @@ export const MR_CHALK: Teacher = {
     name: 'Mr. Chalk',
     tagline: 'The encouraging classic.',
     isDefault: true,
+    // Mr. Chalk's voice: the calm veteran teacher. Notices *how* you
+    // think, not just whether you got it right. Never hypes. Never
+    // pressures. Specific praise > generic praise.
     voice: {
         idle: [
-            'Take your time 🌟',
-            'I believe in you!',
-            'Ready when you are.',
-            'Focus mode: ON 🎯',
-            'Deep breath… here we go.',
+            'Take your time.',
+            'I\'m here when you\'re ready.',
+            'No rush.',
+            'Read it twice if you need to.',
+            'Whenever you\'re set.',
         ],
         success: [
-            'Brilliant! ⭐',
-            'Beautiful work! 🎨',
-            'Textbook perfect! 📖',
-            'Chef\'s kiss! 👨‍🍳',
-            'Nailed it! ✅',
+            'Good thinking.',
+            'You saw it.',
+            'Nicely reasoned.',
+            'Clean work.',
+            'That\'s the move.',
+            'Right on the first look — well done.',
+            'Confident answer.',
         ],
         fail: [
-            'Almost! Try again 💙',
-            'Mistakes are how we learn 📚',
-            'You\'re getting closer.',
-            'Shake it off! 🐕',
+            'Close. Try again — what changes?',
+            'No worries. Have another look.',
+            'Almost. The pattern\'s nearly right.',
+            'Easy fix. What did you see?',
         ],
+        // Small facts I drop during idle moments. The vibe is "veteran
+        // teacher with one good story per topic" — not a quiz-show host.
         easterEggs: [
-            'Did you know? Zero was invented in India around 5th-century AD.',
-            'Fun fact: every number is interesting — that itself is provable.',
-            'Pi never repeats. Neither do you. 🌀',
+            'Did you know? Zero was developed in India around the 5th century.',
+            'Every number is interesting — that itself is provable.',
+            'Pi never repeats. Neither do you.',
+            'There are more decimal places in pi than atoms we\'ve counted.',
+            'Math wasn\'t invented; it was noticed.',
         ],
     },
     Portrait({ state, streak }) {

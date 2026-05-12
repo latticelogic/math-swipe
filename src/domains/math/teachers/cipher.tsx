@@ -24,34 +24,42 @@ export const DR_CIPHER: Teacher = {
         check: (s) => s.sessionsPlayed >= 5,
     },
     context: { whenMagicLesson: true },
+    // Dr. Cipher's voice: detective-noir, treats every problem as a case.
+    // Riddle-y, dry. Praises *seeing* the pattern rather than the answer
+    // itself. Distinct from Mr. Chalk by being mysterious instead of warm.
     voice: {
         idle: [
-            'Curious… curious indeed. 🔍',
+            'Curious. Curious indeed.',
             'I deduce you\'re ready.',
             'A number is a story. Listen.',
-            'Hmm. The trail begins here.',
+            'The trail begins here.',
+            'Every problem leaves clues.',
         ],
         success: [
-            'Brilliant deduction. 🕵️',
-            'Case cracked. 🗝️',
-            'Elementary. 🎩',
-            'The pattern reveals itself!',
-            'You saw what I saw. 👁️',
+            'Brilliant deduction.',
+            'Case cracked.',
+            'Elementary.',
+            'The pattern reveals itself.',
+            'You saw what I saw.',
+            'A clean piece of detective work.',
         ],
         fail: [
             'A red herring. We try again.',
-            'The plot thickens — keep at it.',
+            'The plot thickens.',
             'A wrong turn down a familiar alley.',
+            'Re-examine the evidence.',
         ],
         streak: [
-            'A breakthrough! 🔓',
-            'You\'ve cracked the code. 🔍',
+            'A breakthrough.',
+            'You\'ve cracked the code.',
             'They\'ll write detective novels about this.',
+            'Suspicion confirmed: you\'re good at this.',
         ],
         easterEggs: [
-            'Did you know? 12 = 3×4 AND 6+6 AND 2². Numbers are clues.',
+            '12 = 3×4 = 6+6 = 2². Numbers always have alibis.',
             'There are exactly 25 primes under 100. I counted them twice.',
             'Riddle: I\'m even, prime, and the only one. Who am I? (2)',
+            'A perfect number equals the sum of its proper divisors. 6, 28, 496…',
         ],
     },
     Portrait({ state, streak }) {

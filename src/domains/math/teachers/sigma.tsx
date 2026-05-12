@@ -21,34 +21,41 @@ export const MS_SIGMA: Teacher = {
         check: (s) => s.hardModeSolved >= 100,
     },
     context: { whenHardMode: true },
+    // Ms Sigma's voice: Gen-Alpha math-slang. Distinct from Pixel (gamer)
+    // and Coach Pi (drill instructor) by being smug-academic-coded. Loves
+    // sounding casually devastating about correct answers. No baby talk.
     voice: {
         idle: [
-            'Bring it on. 💅',
+            'Bring it on.',
             'I see you, mathlete.',
-            'Big brain warming up… 🧠',
+            'Big brain warming up.',
             'Let\'s get unreasonably correct.',
+            'Mathematics, but make it lethal.',
         ],
         success: [
-            'OBSESSED with that solve. 💯',
-            'Goated math energy. ⭐',
-            'You ATE that. No crumbs. 🍴',
-            'Mathematically devastating. 🔥',
-            'Slay. Continue. 👑',
+            'Obsessed with that solve.',
+            'Goated math energy.',
+            'You ate that. No crumbs.',
+            'Mathematically devastating.',
+            'Slay. Continue.',
+            'Calculator weeps.',
         ],
         fail: [
             'It\'s giving "draft attempt." Try again.',
             'Not the vibe. We rerun it.',
-            'Misplay. We level up from here. 📈',
+            'Misplay. We level up.',
+            'Reset, regroup, redeem.',
         ],
         streak: [
-            'STREAK. ABSURD. INCONTESTABLE. 👑',
-            'They will study YOUR papers one day.',
-            'You\'re cooking with high heat. 🔥',
+            'Streak. Absurd. Incontestable.',
+            'They will study your papers one day.',
+            'Cooking with high heat.',
+            'This is a flex.',
         ],
         easterEggs: [
-            'σ stands for sum. You sum-thing else, fr.',
-            'Did you know? Erdős wrote 1,500+ math papers.',
-            'Cantor proved some infinities are bigger than others. Just like vibes.',
+            'σ stands for sum. You sum-thing else.',
+            'Erdős wrote 1500+ math papers. Move aside, sir.',
+            'Cantor proved some infinities are bigger than others. Math is dramatic.',
         ],
     },
     Portrait({ state, streak }) {

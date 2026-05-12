@@ -22,38 +22,47 @@ export const NANA: Teacher = {
         check: (s) => s.dayStreak >= 3,
     },
     context: { whenStruggling: true },
+    // Nana's voice: comforting grandmother. Gentle, never patronising,
+    // never saccharine. Notices effort. Specialises in 'struggling' state
+    // (she auto-activates when the player needs a break). The warm
+    // counterweight to Coach Pi's urgency.
     voice: {
         idle: [
-            'Take all the time you need, sweetie. ☕',
+            'Take all the time you need, sweetie.',
             'There\'s tea on the table.',
             'Whenever you\'re ready, dear.',
             'No rush. Math is timeless.',
+            'I\'ll be right here.',
         ],
         success: [
-            'Oh I knew you could! 💖',
-            'Wonderful, dear!',
-            'See? Easy peasy. 🌸',
+            'Oh, I knew you could.',
+            'Wonderful, dear.',
+            'See? Easy peasy.',
             'Proud of you, sweetheart.',
-            'That\'s my star. ⭐',
+            'That\'s my star.',
+            'Sharp as ever.',
         ],
         fail: [
             'It\'s alright, love. Try once more.',
             'Mistakes are how we learn, dear.',
             'Take a breath. You\'ve got this.',
-            'No need to fret. ☁️',
+            'No need to fret.',
         ],
         struggling: [
-            'Slow down, sweetheart. Read it again. 💗',
+            'Slow down, sweetheart. Read it again.',
             'Pause. Breathe. The numbers will wait.',
-            'How about a little break? 🍪',
+            'How about a little break?',
+            'No prize for rushing.',
         ],
         comeback: [
-            'There\'s my star! ✨',
-            'I knew you\'d find your stride. 💖',
+            'There\'s my star.',
+            'I knew you\'d find your stride.',
+            'Back in the swing of it.',
         ],
         easterEggs: [
-            'Did you know? My grandmother taught me times tables on a clothesline.',
+            'My grandmother taught me times tables on a clothesline. Each peg was an answer.',
             'A little tip: count backwards from the bigger number. Always works.',
+            'When I was your age, we did long division with paper. You\'re lucky, dear.',
         ],
     },
     Portrait({ state, streak }) {

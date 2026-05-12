@@ -20,34 +20,42 @@ export const LEX: Teacher = {
         reason: 'Play 3 sessions',
         check: (s) => s.sessionsPlayed >= 3,
     },
+    // Lex's voice: stage magician. Treats every solve as a magic trick
+    // being performed. Sly, theatrical, never mean. Distinct by being
+    // showy-confident rather than warm/clinical/etc.
     voice: {
         idle: [
-            'Heh. Wanna see something cool? 🦊',
+            'Wanna see something cool?',
             'Pick a number, any number…',
             'I know a shortcut. Just watch.',
-            'Stand back — and pay attention.',
+            'Stand back. Pay attention.',
+            'The trick is in the setup.',
         ],
         success: [
-            'Magic! ✨🦊',
-            'Told ya I knew a shortcut.',
+            'Magic.',
+            'Told you I knew a shortcut.',
             'Smooth. Like silk.',
-            'Hah! 🎩',
             'Easy when you know the trick.',
+            'Now you see it.',
+            'Sleight of hand, sharp of mind.',
         ],
         fail: [
             'Lost the trail. Try again.',
-            'My sleight of hand slipped 🪄',
-            'Even foxes fumble. Keep going.',
+            'Sleight of hand slipped.',
+            'Even foxes fumble.',
+            'Off-script. Restart the trick.',
         ],
         streak: [
-            'STREAK! Stealing the spotlight 🦊✨',
-            'On a roll! Nine tails of luck.',
-            'Sly fox, smart streak. 🔥',
+            'Stealing the spotlight.',
+            'On a roll. Nine tails of luck.',
+            'Audience is hooked.',
+            'They\'ll demand an encore.',
         ],
         easterEggs: [
-            'Trick: any number divided by 9 — sum the digits.',
-            'Trick: × by 5 is ÷ by 2 then × 10.',
-            'My favorite number is 9. It tells the truth in mod 9.',
+            'Trick: any number divisible by 9 has a digit-sum divisible by 9.',
+            'Trick: × 5 is the same as ÷ 2 × 10.',
+            'My favorite number is 9. It always tells the truth (in mod 9).',
+            'A 2-digit number times 11? Split the digits, tuck their sum in the middle.',
         ],
     },
     Portrait({ state, streak }) {
