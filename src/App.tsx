@@ -51,6 +51,7 @@ import { applyMode } from './hooks/useThemeMode';
 import { useLocalState } from './hooks/useLocalState';
 import { useFirebaseAuth } from './hooks/useFirebaseAuth';
 import { useEntitlement } from './hooks/useEntitlement';
+import { startCheckout } from './utils/checkout';
 import { Paywall } from './components/Paywall';
 import { WelcomeModal, TrialReminderModal } from './components/TrialModals';
 import { collection, query, where, onSnapshot, doc, updateDoc, orderBy, limit } from 'firebase/firestore';
@@ -136,6 +137,26 @@ function App() {
   // early return when status === 'expired'.
   const entitlement = useEntitlement(uid);
   const [paywallBusy, setPaywallBusy] = useState(false);
+
+  // Stripe Checkout success redirect handler. Stripe sends the user back
+  // to /?paywall=ok&session_id=... after a successful payment; the webhook
+  // has already written paidAt by then, but we still need to nudge the
+  // hook to re-read so the paywall closes immediately. Also strips the
+  // query params so a refresh doesn't loop the same effect.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const paywallStatus = params.get('paywall');
+    if (paywallStatus !== 'ok' && paywallStatus !== 'cancelled') return;
+    // Always clear the URL so subsequent reloads don't re-trigger this.
+    window.history.replaceState({}, '', window.location.pathname);
+    if (paywallStatus === 'ok') {
+      // Best-effort refresh — if it fails the next render still picks up
+      // the new paidAt on its own. Don't block the UI on this.
+      entitlement.refresh().catch(() => { /* silent */ });
+    }
+  // Intentional: run once on mount (the URL is the source of truth)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const [activeTab, setActiveTab] = useState<Tab>('game');
   const [isMagicLessonActive, setIsMagicLessonActive] = useState(false);
@@ -540,15 +561,13 @@ function App() {
           onUnlock={async () => {
             setPaywallBusy(true);
             try {
-              // Phase 4 will swap this for a Stripe Checkout redirect.
-              // In dev we grant via the mock so the flow is testable end
-              // to end. In prod (until Stripe is wired) it's a no-op
-              // that surfaces the not-yet-wired state via console.
-              if (import.meta.env.DEV) {
-                await entitlement.mockGrantAccess();
-              } else {
-                console.warn('[paywall] Stripe checkout not yet wired (Phase 4 pending)');
-              }
+              await startCheckout(entitlement.mockGrantAccess);
+            } catch (err) {
+              console.error('[paywall] checkout failed', err);
+              // Surface to the user — if checkout failed they need to
+              // know. The paywall is already the focal screen so a
+              // simple alert is fine here.
+              alert('Could not start checkout. Try again in a moment.');
             } finally {
               setPaywallBusy(false);
             }
@@ -1091,11 +1110,10 @@ function App() {
               onUnlock={async () => {
                 setPaywallBusy(true);
                 try {
-                  if (import.meta.env.DEV) {
-                    await entitlement.mockGrantAccess();
-                  } else {
-                    console.warn('[paywall] Stripe checkout not yet wired');
-                  }
+                  await startCheckout(entitlement.mockGrantAccess);
+                } catch (err) {
+                  console.error('[paywall] checkout failed', err);
+                  alert('Could not start checkout. Try again in a moment.');
                 } finally {
                   setPaywallBusy(false);
                 }
@@ -1169,11 +1187,10 @@ function App() {
           onUnlock={async () => {
             setPaywallBusy(true);
             try {
-              if (import.meta.env.DEV) {
-                await entitlement.mockGrantAccess();
-              } else {
-                console.warn('[paywall] Stripe checkout not yet wired');
-              }
+              await startCheckout(entitlement.mockGrantAccess);
+            } catch (err) {
+              console.error('[paywall] checkout failed', err);
+              alert('Could not start checkout. Try again in a moment.');
             } finally {
               setPaywallBusy(false);
             }

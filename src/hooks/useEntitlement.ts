@@ -46,6 +46,10 @@ interface UseEntitlementResult {
     /** DEV-ONLY: rewind trialStartedAt by N days to test expiry/reminder
      *  surfaces. No-ops outside dev builds. */
     mockBackdateTrial: (days: number) => Promise<void>;
+    /** Re-read the entitlement doc from Firestore. Called from the App after
+     *  the Stripe Checkout success-redirect so the new `paidAt` shows up
+     *  without waiting for the next session. Safe to call any time. */
+    refresh: () => Promise<void>;
 }
 
 export function useEntitlement(uid: string | null): UseEntitlementResult {
@@ -133,6 +137,18 @@ export function useEntitlement(uid: string | null): UseEntitlementResult {
         }));
     }, [uid]);
 
+    const refresh = useCallback(async () => {
+        if (!uid) return;
+        try {
+            const snap = await getDoc(doc(db, FIRESTORE.ENTITLEMENTS, uid));
+            if (snap.exists()) {
+                setEntitlement(toEntitlement(snap.data()));
+            }
+        } catch (err) {
+            console.warn('[entitlement] refresh failed:', err);
+        }
+    }, [uid]);
+
     const mockBackdateTrial = useCallback(async (days: number) => {
         if (!import.meta.env.DEV || !uid) return;
         const newStart = Date.now() - days * 86_400_000;
@@ -164,6 +180,7 @@ export function useEntitlement(uid: string | null): UseEntitlementResult {
         entitlement,
         mockGrantAccess,
         mockBackdateTrial,
+        refresh,
     };
 }
 
