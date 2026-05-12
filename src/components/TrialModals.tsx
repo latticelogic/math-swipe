@@ -38,21 +38,28 @@ interface WelcomeModalProps {
     /** True until the entitlement doc is loaded; we suppress the modal
      *  during this window so it never flashes before status is known. */
     entitlementLoading: boolean;
+    /** True when the user is mid-session. The welcome modal defers until
+     *  they're between sessions so they're never interrupted mid-play
+     *  (rare in practice on Day 1 since users haven't started yet, but
+     *  consistent with the same rule for trial reminders). */
+    inSession: boolean;
 }
 
-/** Day-1 single-button intro. Visible exactly once per uid. */
-export function WelcomeModal({ uid, status, entitlementLoading }: WelcomeModalProps) {
+/** Day-1 single-button intro. Visible exactly once per uid, only at
+ *  session-start (never mid-play). */
+export function WelcomeModal({ uid, status, entitlementLoading, inSession }: WelcomeModalProps) {
     const [open, setOpen] = useState(false);
 
     useEffect(() => {
         if (!uid || entitlementLoading) return;
         if (status !== 'trial') return;
+        if (inSession) return;
         if (safeGetItem(WELCOME_KEY(uid))) return;
         // Small delay so the modal lands after the app has rendered, not on
         // top of the initial paint — feels less like an interrupt.
         const t = setTimeout(() => setOpen(true), 600);
         return () => clearTimeout(t);
-    }, [uid, status, entitlementLoading]);
+    }, [uid, status, entitlementLoading, inSession]);
 
     function dismiss() {
         if (uid) safeSetItem(WELCOME_KEY(uid), String(Date.now()));
@@ -129,24 +136,42 @@ interface TrialReminderModalProps {
     status: EntitlementStatus;
     daysLeft: number;
     entitlementLoading: boolean;
+    /** True when the user is mid-session (has answered ≥1 problem on the
+     *  game tab). Reminders WAIT until this is false — they never
+     *  interrupt active play. The next session-start re-triggers the
+     *  effect's evaluation. */
+    inSession: boolean;
     /** Called when the user taps "Unlock now" — parent opens the paywall. */
     onUnlock?: () => void;
 }
 
 /** Day-7, Day-10, and Day-13 nudges. Each fires once per uid per
- *  threshold. Three clearly-spaced touchpoints chosen so:
+ *  threshold, ONLY at session-start (never mid-session). Three
+ *  clearly-spaced touchpoints chosen so:
  *    - Day 7 (midpoint): habit-forming check-in, recruits cognitive
  *                        commitment when the user is still discovering
  *                        the app. Soft tone, not a warning.
  *    - Day 10 (4 days left): "halfway between halfway and end" reminder,
  *                            sharper but still warm.
- *    - Day 13 (1 day left): last warning before the paywall fires. */
-export function TrialReminderModal({ uid, status, daysLeft, entitlementLoading, onUnlock }: TrialReminderModalProps) {
+ *    - Day 13 (1 day left): last warning before the paywall fires.
+ *
+ *  Session-start gating rule: the effect waits until `inSession` is
+ *  false. If the threshold crosses mid-play, the reminder is queued
+ *  for the next time the user is between sessions — typically the
+ *  next time they open the app, after they finish a session, or when
+ *  they navigate to a non-game tab. The ack-key still ensures a single
+ *  fire per threshold per uid. */
+export function TrialReminderModal({ uid, status, daysLeft, entitlementLoading, inSession, onUnlock }: TrialReminderModalProps) {
     const [open, setOpen] = useState<7 | 10 | 13 | null>(null);
 
     useEffect(() => {
         if (!uid || entitlementLoading) return;
         if (status !== 'trial') return;
+        // Defer if user is mid-session. The effect re-runs when inSession
+        // flips to false (typically: tab change, session end, or fresh
+        // app open), at which point we'll catch up on whatever threshold
+        // is current.
+        if (inSession) return;
         // Targets:
         //   Day 7 mark   → daysLeft <= 7 (first opens after Day 7 hit)
         //   Day 10 mark  → daysLeft <= 4
@@ -163,7 +188,7 @@ export function TrialReminderModal({ uid, status, daysLeft, entitlementLoading, 
         if (safeGetItem(REMINDER_KEY(uid, target))) return;
         const t = setTimeout(() => setOpen(target), 600);
         return () => clearTimeout(t);
-    }, [uid, status, daysLeft, entitlementLoading]);
+    }, [uid, status, daysLeft, entitlementLoading, inSession]);
 
     function dismiss() {
         if (uid && open) safeSetItem(REMINDER_KEY(uid, open), String(Date.now()));

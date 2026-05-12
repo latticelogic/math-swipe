@@ -1156,23 +1156,29 @@ function App() {
         <WeeklyRecap stats={stats} suppress={activeTab !== 'game' || isMagicLessonActive} />
 
         {/* ── 14-day-trial touchpoints ──
-            Three pieces (see TrialModals.tsx):
-              - WelcomeModal: once on Day 1
-              - TrialReminderModal: once at Day 10 + once at Day 13
+            Four pieces (see TrialModals.tsx):
+              - WelcomeModal: once on Day 1, at session-start
+              - TrialReminderModal: Day 7 / 10 / 13, all at session-start only
               - TrialCountdownChip: rendered inline inside MePage (passed
                 via props below) so it lives where the user already looks
                 for account-level info, not as floating chrome.
+            `inSession` is derived as game-tab + ≥1 answered problem. Both
+            modals defer firing until inSession is false (between sessions,
+            on app open, or after a tab switch) — they never interrupt
+            mid-play. The next session-start naturally re-evaluates.
             All render NOTHING for paid users — no chrome cost. */}
         <WelcomeModal
           uid={uid}
           status={entitlement.status}
           entitlementLoading={entitlement.loading}
+          inSession={activeTab === 'game' && totalAnswered > 0}
         />
         <TrialReminderModal
           uid={uid}
           status={entitlement.status}
           daysLeft={entitlement.daysLeft}
           entitlementLoading={entitlement.loading}
+          inSession={activeTab === 'game' && totalAnswered > 0}
           onUnlock={() => setPaywallOpen(true)}
         />
 
