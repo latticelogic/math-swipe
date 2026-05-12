@@ -50,6 +50,9 @@ import { CHALK_THEMES, applyTheme, type ChalkTheme } from './utils/chalkThemes';
 import { applyMode } from './hooks/useThemeMode';
 import { useLocalState } from './hooks/useLocalState';
 import { useFirebaseAuth } from './hooks/useFirebaseAuth';
+import { useEntitlement } from './hooks/useEntitlement';
+import { Paywall } from './components/Paywall';
+import { WelcomeModal, TrialReminderModal } from './components/TrialModals';
 import { collection, query, where, onSnapshot, doc, updateDoc, orderBy, limit } from 'firebase/firestore';
 import { db } from './utils/firebase';
 import { generateProblem } from './utils/mathGenerator';
@@ -127,6 +130,12 @@ function LoadingFallback() {
 function App() {
   const { user, loading: authLoading, setDisplayName, linkGoogle, sendEmailLink } = useFirebaseAuth();
   const uid = user?.uid ?? null;
+
+  // 14-day trial → $3.14 lifetime gate. See utils/entitlement.ts +
+  // memory/monetization_model.md. Renders the full-screen Paywall as an
+  // early return when status === 'expired'.
+  const entitlement = useEntitlement(uid);
+  const [paywallBusy, setPaywallBusy] = useState(false);
 
   const [activeTab, setActiveTab] = useState<Tab>('game');
   const [isMagicLessonActive, setIsMagicLessonActive] = useState(false);
@@ -510,6 +519,44 @@ function App() {
             }}
           />
         </Suspense>
+      </BlackboardLayout>
+    );
+  }
+
+  // Trial expired & not paid → full-screen paywall. Blocks every other
+  // surface — leaderboard, profile, magic, everything. Authoritative gate.
+  //
+  // We only render this once entitlement.loading is false; otherwise a
+  // fresh page load briefly flashes the paywall while the Firestore read
+  // is in flight. The authLoading early return above means user is always
+  // present here, but uid can still be null in error states — in that
+  // case we let the app render normally and trust the next session to
+  // resolve the gate.
+  if (uid && !entitlement.loading && entitlement.status === 'expired') {
+    return (
+      <BlackboardLayout>
+        <Paywall
+          busy={paywallBusy}
+          onUnlock={async () => {
+            setPaywallBusy(true);
+            try {
+              // Phase 4 will swap this for a Stripe Checkout redirect.
+              // In dev we grant via the mock so the flow is testable end
+              // to end. In prod (until Stripe is wired) it's a no-op
+              // that surfaces the not-yet-wired state via console.
+              if (import.meta.env.DEV) {
+                await entitlement.mockGrantAccess();
+              } else {
+                console.warn('[paywall] Stripe checkout not yet wired (Phase 4 pending)');
+              }
+            } finally {
+              setPaywallBusy(false);
+            }
+          }}
+          onDevReset={import.meta.env.DEV
+            ? () => entitlement.mockBackdateTrial(0)
+            : undefined}
+        />
       </BlackboardLayout>
     );
   }
@@ -1039,6 +1086,20 @@ function App() {
               activeTeacherId={savedTeacherId as string}
               onTeacherChange={setSavedTeacherId}
               uid={uid}
+              entitlementStatus={entitlement.status}
+              entitlementDaysLeft={entitlement.daysLeft}
+              onUnlock={async () => {
+                setPaywallBusy(true);
+                try {
+                  if (import.meta.env.DEV) {
+                    await entitlement.mockGrantAccess();
+                  } else {
+                    console.warn('[paywall] Stripe checkout not yet wired');
+                  }
+                } finally {
+                  setPaywallBusy(false);
+                }
+              }}
             /></Suspense>
           </motion.div>
         )}
@@ -1086,6 +1147,38 @@ function App() {
 
         {/* ── Weekly recap (first open of the week, only when idle on game tab) ── */}
         <WeeklyRecap stats={stats} suppress={activeTab !== 'game' || isMagicLessonActive} />
+
+        {/* ── 14-day-trial touchpoints ──
+            Three pieces (see TrialModals.tsx):
+              - WelcomeModal: once on Day 1
+              - TrialReminderModal: once at Day 10 + once at Day 13
+              - TrialCountdownChip: rendered inline inside MePage (passed
+                via props below) so it lives where the user already looks
+                for account-level info, not as floating chrome.
+            All render NOTHING for paid users — no chrome cost. */}
+        <WelcomeModal
+          uid={uid}
+          status={entitlement.status}
+          entitlementLoading={entitlement.loading}
+        />
+        <TrialReminderModal
+          uid={uid}
+          status={entitlement.status}
+          daysLeft={entitlement.daysLeft}
+          entitlementLoading={entitlement.loading}
+          onUnlock={async () => {
+            setPaywallBusy(true);
+            try {
+              if (import.meta.env.DEV) {
+                await entitlement.mockGrantAccess();
+              } else {
+                console.warn('[paywall] Stripe checkout not yet wired');
+              }
+            } finally {
+              setPaywallBusy(false);
+            }
+          }}
+        />
 
         {/* ── Achievement unlock toast ──
             Theatrical version: shows the actual badge SVG with a sparkle
