@@ -108,8 +108,8 @@ export function WelcomeModal({ uid, status, entitlementLoading, inSession }: Wel
                         </p>
 
                         <p className="text-xs ui text-[rgb(var(--color-fg))]/50 mb-2 leading-relaxed">
-                            After that, ${PRICE_USD.toFixed(2)} for lifetime access.<br />
-                            One time. No subscription. No ads. Ever.
+                            After that, one payment of ${PRICE_USD.toFixed(2)} for lifetime access.<br />
+                            No subscription.
                         </p>
 
                         <p className="text-[10px] ui text-[rgb(var(--color-fg))]/35 mb-5 leading-relaxed">

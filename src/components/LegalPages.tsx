@@ -34,7 +34,7 @@ const TITLES: Record<LegalDocId, string> = {
     terms: 'Terms of Service',
 };
 
-const LAST_UPDATED = '2026-05-12';
+const LAST_UPDATED = '2026-07-14';
 
 export function LegalPage({ doc, onBack }: Props) {
     // Scroll to top on mount — these are full pages, not modals
@@ -226,8 +226,8 @@ function TermsBody() {
     return (
         <>
             <Section title="Plain language">
-                <p>You pay $3.14 once, and Math Swipe keeps working for you. There's
-                    no subscription, no ads, no recurring charge.</p>
+                <p>You pay $3.14 once, and Math Swipe keeps working for you. It's a
+                    one-time purchase — no subscription and no recurring charge.</p>
                 <p>This page is the more formal version of that. If anything below
                     contradicts the simple version, the simple version wins on
                     intent and we'll fix the formal text.</p>
@@ -242,6 +242,19 @@ function TermsBody() {
                     forever — products evolve. We commit to not adding features
                     or restrictions that materially reduce the value of what
                     you've already paid for.</p>
+            </Section>
+
+            <Section title="Changes to these terms">
+                <p>As the app and our business evolve, we may update these terms,
+                    the price, and what the free tier includes. Any change applies
+                    going forward — to new purchases and continued use from the
+                    change date — and never retroactively reduces the core value
+                    of a lifetime purchase you've already made (see "What
+                    'lifetime' means").</p>
+                <p>When we make a material change, we'll update the "last updated"
+                    date on this page and, where practical, note it in the app.
+                    Continuing to use Math Swipe after a change means you accept
+                    the updated terms.</p>
             </Section>
 
             <Section title="The trial">
