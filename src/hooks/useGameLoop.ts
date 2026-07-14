@@ -418,8 +418,17 @@ export function useGameLoop(
             return;
         }
         if (speedrunStartRef.current === 0) return;
+        // The stopwatch displays 0.1s precision, so emit at ~10Hz rather than
+        // once per animation frame. Each setState here reconciles the whole App
+        // tree; throttling cuts that ~6x during a latency-sensitive mode with
+        // no visible change to the readout.
+        let lastEmit = -Infinity;
         const tick = () => {
-            setSpeedrunElapsed(Date.now() - speedrunStartRef.current);
+            const elapsed = Date.now() - speedrunStartRef.current;
+            if (elapsed - lastEmit >= 100) {
+                lastEmit = elapsed;
+                setSpeedrunElapsed(elapsed);
+            }
             speedrunRafRef.current = requestAnimationFrame(tick);
         };
         speedrunRafRef.current = requestAnimationFrame(tick);

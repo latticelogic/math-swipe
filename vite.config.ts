@@ -18,12 +18,26 @@ export default defineConfig({
     VitePWA({
       registerType: 'prompt',
       workbox: {
-        // woff2 in glob → fonts in public/fonts/ are precached at install time.
+        // woff2 in glob → the two self-hosted display fonts in public/fonts/
+        // are precached at install (needed for first paint). The ~145KB of
+        // KaTeX_* fonts are excluded — they're only used when a latex problem
+        // renders, so they cache on first actual use via runtimeCaching below
+        // instead of downloading on every install/update on kids' data plans.
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        globIgnores: ['**/KaTeX_*'],
         // Avoid stale precache HTML serving the old theme-bootstrap path
         navigateFallbackDenylist: [/^\/theme-bootstrap\.js$/],
-        // No runtimeCaching needed — fonts are now self-hosted and covered
-        // by globPatterns above. Previously we cached Google Fonts CDN here.
+        runtimeCaching: [
+          {
+            urlPattern: /KaTeX_[^/]*\.woff2$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'katex-fonts',
+              expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+        ],
       },
       manifest: {
         name: 'Math Swipe',

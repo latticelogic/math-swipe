@@ -81,6 +81,9 @@ export const rebuildLeaderboardCache = onSchedule(
         // predictable rather than picking up Firebase defaults.
         memory: '256MiB',
         timeoutSeconds: 30,
+        // Singleton cron — one instance at a time. Prevents overlapping runs
+        // from double-writing the cache docs and bounds cost.
+        maxInstances: 1,
     },
     async () => {
         const db = admin.firestore();

@@ -9,7 +9,14 @@ import type { Metric } from 'web-vitals';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from './firebase';
 
+// Sample rate for vitals writes. At scale, 10% is statistically identical
+// signal for aggregate percentiles while cutting the write volume (and the
+// unbounded growth of the `vitals` collection) 10x. Bump toward 1.0 only if
+// low traffic makes the sample too noisy.
+const VITALS_SAMPLE_RATE = 0.1;
+
 function reportMetric(metric: Metric) {
+    if (Math.random() > VITALS_SAMPLE_RATE) return;
     // Identifier-only id — does not include uid (no PII), still uniquely-keyed
     const id = `${metric.name}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
 

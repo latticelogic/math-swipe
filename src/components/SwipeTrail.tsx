@@ -20,6 +20,7 @@ export const SwipeTrail = memo(function SwipeTrail({ streak, activeTrailId, base
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const pointsRef = useRef<TrailPoint[]>([]);
     const animationFrameRef = useRef<number>(0);
+    const runningRef = useRef(false);
 
     // Determine target color based on streak and unlocks
     const getTrailColor = useCallback(() => {
@@ -67,6 +68,7 @@ export const SwipeTrail = memo(function SwipeTrail({ streak, activeTrailId, base
             if (pointsRef.current.length > MAX_POINTS) {
                 pointsRef.current.splice(0, pointsRef.current.length - MAX_POINTS);
             }
+            ensureRunning();
         };
 
         const handleTouchMove = (e: TouchEvent) => {
@@ -82,6 +84,7 @@ export const SwipeTrail = memo(function SwipeTrail({ streak, activeTrailId, base
                 if (pointsRef.current.length > MAX_POINTS) {
                     pointsRef.current.splice(0, pointsRef.current.length - MAX_POINTS);
                 }
+                ensureRunning();
             }
         };
 
@@ -188,16 +191,31 @@ export const SwipeTrail = memo(function SwipeTrail({ streak, activeTrailId, base
             // Restore alpha
             ctx.globalAlpha = 1.0;
 
+            // Stop the loop once the trail has fully faded — no reason to burn
+            // a full-screen clear + GPU composite every frame while idle. The
+            // next pointer/touch move restarts it via ensureRunning().
+            if (points.length === 0) {
+                runningRef.current = false;
+                animationFrameRef.current = 0;
+                return;
+            }
+
             animationFrameRef.current = requestAnimationFrame(render);
         };
 
-        animationFrameRef.current = requestAnimationFrame(render);
+        // Start the render loop on demand; no-op if already running.
+        const ensureRunning = () => {
+            if (runningRef.current) return;
+            runningRef.current = true;
+            animationFrameRef.current = requestAnimationFrame(render);
+        };
 
         // Cleanup
         return () => {
             window.removeEventListener('resize', resizeCanvas);
             window.removeEventListener('pointermove', handlePointerMove);
             window.removeEventListener('touchmove', handleTouchMove);
+            runningRef.current = false;
             if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
         };
     }, [getTrailColor]); // Extracted and memoized

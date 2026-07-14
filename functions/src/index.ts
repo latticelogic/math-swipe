@@ -128,6 +128,10 @@ export const dailyReminder = onSchedule(
         schedule: '0 17 * * *',
         timeZone: 'America/Los_Angeles',
         secrets: [VAPID_PUBLIC, VAPID_PRIVATE, VAPID_SUBJECT],
+        // Once-a-day singleton — one instance is plenty. Cap keeps a stuck
+        // run from fanning out and bounds cost pre-launch (quota caps are
+        // still open per docs/billing-safety.md).
+        maxInstances: 2,
     },
     async () => {
         configurePush();
@@ -167,6 +171,10 @@ export const notifyBeaten = onDocumentUpdated(
     {
         document: 'users/{uid}',
         secrets: [VAPID_PUBLIC, VAPID_PRIVATE, VAPID_SUBJECT],
+        // Fires on every users/{uid} write — the highest-fan-out trigger here.
+        // Cap instances so a traffic spike (or a write storm) can't scale out
+        // unboundedly and blow the pre-launch budget.
+        maxInstances: 10,
     },
     async (event) => {
     const before = event.data?.before.data();

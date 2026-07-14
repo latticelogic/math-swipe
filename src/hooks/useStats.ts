@@ -306,12 +306,18 @@ export function useStats(uid: string | null) {
     }, [stats]);
 
     const updateCosmetics = useCallback((themeId: string, costumeId: string, trailId: string) => {
-        setStats(prev => ({
-            ...prev,
-            activeThemeId: themeId,
-            activeCostume: costumeId,
-            activeTrailId: trailId,
-        }));
+        setStats(prev => {
+            // No-op if nothing changed — returning prev keeps object identity
+            // stable so the [stats] effect above doesn't schedule a redundant
+            // whole-doc cloud write (and the notifyBeaten trigger it invokes)
+            // on every app-open, where cosmetics re-assert unchanged values.
+            if (prev.activeThemeId === themeId
+                && prev.activeCostume === costumeId
+                && prev.activeTrailId === trailId) {
+                return prev;
+            }
+            return { ...prev, activeThemeId: themeId, activeCostume: costumeId, activeTrailId: trailId };
+        });
     }, []);
 
     const recordSession = useCallback((
