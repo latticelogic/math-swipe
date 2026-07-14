@@ -25,6 +25,18 @@ const ANIMS: Record<ChalkState, TargetAndTransition> = {
     struggling: { x: [-8, 8, -6, 6, -3, 3, 0], y: [0, 3, 0], transition: { duration: 0.55 } },
 };
 
+// Spontaneous one-shot gestures layered over the idle sway at random intervals,
+// so the teacher reads as *alive* (little unprompted movements) rather than a
+// looping drawing. Each plays once, then we return to the idle sway.
+const IDLE_GESTURES: TargetAndTransition[] = [
+    // a curious head-tilt
+    { rotate: [0, -7, 5, 0], y: [0, -3, 0], transition: { duration: 0.75, ease: 'easeInOut' as const } },
+    // a little hop
+    { y: [0, -9, 0, -3, 0], transition: { duration: 0.8, ease: 'easeInOut' as const } },
+    // a quick "blink" nod (vertical squash)
+    { scaleY: [1, 0.88, 1], transition: { duration: 0.28, ease: 'easeInOut' as const } },
+];
+
 export interface TeacherProps {
     state: ChalkState;
     /** Teacher ID — controls which SVG + voice to use. Falls back to Mr. Chalk. */
@@ -66,6 +78,7 @@ export const Teacher = memo(function Teacher({
 }: TeacherProps) {
     const teacher = getTeacher(teacherId);
     const [message, setMessage] = useState('');
+    const [gesture, setGesture] = useState<TargetAndTransition | null>(null);
     const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
     // Voice merge — teacher's per-state pools override the engine defaults.
@@ -132,6 +145,23 @@ export const Teacher = memo(function Teacher({
         };
     }, [state, questionType, streak, totalAnswered, hardMode, timedMode, voice, teacher]);
 
+    // Spontaneous idle gestures — fire a random one-shot gesture every 7–14s
+    // while idle (and the tab is visible), then return to the idle sway.
+    useEffect(() => {
+        if (pingMessage || state !== 'idle') return;
+        let triggerT: ReturnType<typeof setTimeout>;
+        let clearT: ReturnType<typeof setTimeout>;
+        const schedule = () => {
+            triggerT = setTimeout(() => {
+                if (document.hidden) { schedule(); return; }
+                setGesture(IDLE_GESTURES[Math.floor(Math.random() * IDLE_GESTURES.length)]);
+                clearT = setTimeout(() => { setGesture(null); schedule(); }, 900);
+            }, 7000 + Math.random() * 7000);
+        };
+        schedule();
+        return () => { clearTimeout(triggerT); clearTimeout(clearT); setGesture(null); };
+    }, [state, pingMessage]);
+
     const displayState = pingMessage ? 'comeback' : state;
     const currentMessage = pingMessage || message;
     const PortraitSvg = teacher.Portrait;
@@ -139,7 +169,7 @@ export const Teacher = memo(function Teacher({
     return (
         <motion.div
             className={`absolute bottom-4 right-2 pointer-events-none z-30 ${displayState === 'streak' ? 'on-fire' : ''}`}
-            animate={ANIMS[displayState]}
+            animate={displayState === 'idle' ? (gesture ?? ANIMS.idle) : ANIMS[displayState]}
             aria-label={teacher.name}
         >
             <AnimatePresence mode="wait">

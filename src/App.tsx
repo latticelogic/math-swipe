@@ -58,6 +58,8 @@ import { Paywall } from './components/Paywall';
 import { WelcomeModal, TrialReminderModal } from './components/TrialModals';
 import { LegalPage, type LegalDocId } from './components/LegalPages';
 import { TabSkeleton } from './components/TabSkeleton';
+import { PersonalBestRibbon } from './components/PersonalBestRibbon';
+import { NumberFactAside } from './components/NumberFactAside';
 import { getFirebase } from './utils/firebase';
 import { generateProblem } from './utils/mathGenerator';
 import { generateDailyChallenge, generateChallenge } from './utils/dailyChallenge';
@@ -1115,19 +1117,13 @@ function App() {
               </div>
             )}
 
-            {/* ── Personal best ── */}
+            {/* ── Personal best — hand-drawn ribbon with your specific number ── */}
             <AnimatePresence>
-              {showPB && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.5 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.5 }}
-                  className="absolute left-1/2 -translate-x-1/2 top-[18%] z-40 text-lg chalk text-[var(--color-gold)] whitespace-nowrap"
-                >
-                  🏆 NEW PERSONAL BEST!
-                </motion.div>
-              )}
+              {showPB && <PersonalBestRibbon streak={bestStreak} />}
             </AnimatePresence>
+
+            {/* ── Occasional chalk aside about the number you just solved ── */}
+            <NumberFactAside flash={flash} answer={currentProblem?.answer} />
           </div>
         )}
 
