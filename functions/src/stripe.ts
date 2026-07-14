@@ -35,19 +35,27 @@ import { onCall, onRequest, HttpsError } from 'firebase-functions/v2/https';
 import { defineSecret } from 'firebase-functions/params';
 import * as admin from 'firebase-admin';
 import * as logger from 'firebase-functions/logger';
-import Stripe from 'stripe';
+// Type-only import — erased at compile time, so it does NOT pull the Stripe
+// SDK into this module's load graph. The runtime SDK is dynamically imported
+// inside stripeClient() below, so functions that never touch Stripe (the
+// every-minute leaderboard cron, the push senders) don't pay to parse it on
+// cold start.
+import type Stripe from 'stripe';
 
 const STRIPE_SECRET_KEY = defineSecret('STRIPE_SECRET_KEY');
 const STRIPE_WEBHOOK_SECRET = defineSecret('STRIPE_WEBHOOK_SECRET');
 const STRIPE_PRICE_ID = defineSecret('STRIPE_PRICE_ID');
 const PUBLIC_ORIGIN = defineSecret('PUBLIC_ORIGIN');
 
-/** Lazy Stripe client — instantiated per invocation so secret values are
- *  fresh at runtime (defineSecret values aren't available at module load).
- *  API version pinned to whatever the installed SDK declares as its default,
- *  so Stripe-side schema changes don't surprise us silently. */
-function stripeClient(): Stripe {
-    return new Stripe(STRIPE_SECRET_KEY.value());
+/** Lazy Stripe client — the SDK is dynamically imported on first use (kept off
+ *  the shared bundle's cold-start path for non-Stripe functions), and the
+ *  client is instantiated per invocation so secret values are fresh at runtime
+ *  (defineSecret values aren't available at module load). API version pinned to
+ *  whatever the installed SDK declares as its default, so Stripe-side schema
+ *  changes don't surprise us silently. */
+async function stripeClient(): Promise<Stripe> {
+    const { default: StripeCtor } = await import('stripe');
+    return new StripeCtor(STRIPE_SECRET_KEY.value());
 }
 
 // ── createCheckoutSession ─────────────────────────────────────────────────────
@@ -62,7 +70,12 @@ function stripeClient(): Stripe {
  * forcing sign-in adds friction at the worst possible moment (payment).
  */
 export const createCheckoutSession = onCall(
-    { secrets: [STRIPE_SECRET_KEY, STRIPE_PRICE_ID, PUBLIC_ORIGIN] },
+    {
+        secrets: [STRIPE_SECRET_KEY, STRIPE_PRICE_ID, PUBLIC_ORIGIN],
+        // Bound fan-out on the purchase path so a spike can't scale out
+        // unboundedly pre-launch (quota caps still open per billing-safety.md).
+        maxInstances: 10,
+    },
     async (request) => {
         const uid = request.auth?.uid;
         if (!uid) {
@@ -82,7 +95,8 @@ export const createCheckoutSession = onCall(
 
         const origin = PUBLIC_ORIGIN.value();
         try {
-            const session = await stripeClient().checkout.sessions.create({
+            const stripe = await stripeClient();
+            const session = await stripe.checkout.sessions.create({
                 mode: 'payment',
                 line_items: [{ price: STRIPE_PRICE_ID.value(), quantity: 1 }],
                 // success/cancel route back to the app. The Worker rewrites
@@ -138,6 +152,9 @@ export const stripeWebhook = onRequest(
         // Webhook is publicly POSTed by Stripe — no auth check, but the
         // signature verification below proves the caller has the secret.
         cors: false,
+        // Bound instances so a burst of (or replayed) webhook deliveries
+        // can't fan out unboundedly.
+        maxInstances: 10,
     },
     async (req, res) => {
         if (req.method !== 'POST') {
@@ -152,7 +169,8 @@ export const stripeWebhook = onRequest(
 
         let event: Stripe.Event;
         try {
-            event = stripeClient().webhooks.constructEvent(
+            const stripe = await stripeClient();
+            event = stripe.webhooks.constructEvent(
                 req.rawBody,
                 sig,
                 STRIPE_WEBHOOK_SECRET.value()
@@ -262,7 +280,8 @@ async function handleChargeRefunded(charge: Stripe.Charge, res: WebhookResponse)
             const piId = typeof charge.payment_intent === 'string'
                 ? charge.payment_intent
                 : charge.payment_intent.id;
-            const pi = await stripeClient().paymentIntents.retrieve(piId);
+            const stripe = await stripeClient();
+            const pi = await stripe.paymentIntents.retrieve(piId);
             if (typeof pi.metadata?.uid === 'string') uid = pi.metadata.uid;
         } catch (err) {
             logger.error('[stripeWebhook] refund: PaymentIntent lookup failed for charge', charge.id, err);
