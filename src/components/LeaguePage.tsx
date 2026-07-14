@@ -1,7 +1,7 @@
 import { memo, useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { collection, onSnapshot, addDoc, serverTimestamp, doc, setDoc } from 'firebase/firestore';
-import { db } from '../utils/firebase';
+import { getFirebase } from '../utils/firebase';
 import { getThemeColor } from '../utils/chalkThemes';
 import { COSTUMES } from '../utils/costumes';
 import { formatTime } from '../utils/formatTime';
@@ -60,6 +60,7 @@ export const LeaguePage = memo(function LeaguePage({ userXP, userStreak, uid, di
             if (pingCooldown) return;
             setPingCooldown(true);
             try {
+                const { db } = await getFirebase();
                 await addDoc(collection(db, 'pings'), {
                     targetUid: selectedPlayer.uid,
                     senderUid: uid || 'anonymous',
@@ -96,35 +97,45 @@ export const LeaguePage = memo(function LeaguePage({ userXP, userStreak, uid, di
     // empty and the UI shows the loading state — preferable to falling
     // back to the direct query which would defeat the cache.
     useEffect(() => {
-        const unsub = onSnapshot(
-            doc(db, 'leaderboards', 'score-top20'),
-            (snap) => {
-                const data = snap.data();
-                setEntries(Array.isArray(data?.entries) ? data.entries as LeaderboardEntry[] : []);
-                setLoading(false);
-            },
-            (err) => {
-                console.warn('Leaderboard cache read failed:', err);
-                setLoading(false);
-            },
-        );
-        return unsub;
+        let unsub: (() => void) | undefined;
+        let cancelled = false;
+        getFirebase().then(({ db }) => {
+            if (cancelled) return;
+            unsub = onSnapshot(
+                doc(db, 'leaderboards', 'score-top20'),
+                (snap) => {
+                    const data = snap.data();
+                    setEntries(Array.isArray(data?.entries) ? data.entries as LeaderboardEntry[] : []);
+                    setLoading(false);
+                },
+                (err) => {
+                    console.warn('Leaderboard cache read failed:', err);
+                    setLoading(false);
+                },
+            );
+        });
+        return () => { cancelled = true; if (unsub) unsub(); };
     }, []);
 
     useEffect(() => {
-        const unsub = onSnapshot(
-            doc(db, 'leaderboards', 'speedrun-top10'),
-            (snap) => {
-                const data = snap.data();
-                setSpeedrunEntries(Array.isArray(data?.entries) ? data.entries as LeaderboardEntry[] : []);
-                setSpeedrunLoading(false);
-            },
-            (err) => {
-                console.warn('Speedrun cache read failed:', err);
-                setSpeedrunLoading(false);
-            },
-        );
-        return unsub;
+        let unsub: (() => void) | undefined;
+        let cancelled = false;
+        getFirebase().then(({ db }) => {
+            if (cancelled) return;
+            unsub = onSnapshot(
+                doc(db, 'leaderboards', 'speedrun-top10'),
+                (snap) => {
+                    const data = snap.data();
+                    setSpeedrunEntries(Array.isArray(data?.entries) ? data.entries as LeaderboardEntry[] : []);
+                    setSpeedrunLoading(false);
+                },
+                (err) => {
+                    console.warn('Speedrun cache read failed:', err);
+                    setSpeedrunLoading(false);
+                },
+            );
+        });
+        return () => { cancelled = true; if (unsub) unsub(); };
     }, []);
 
     // ── Build score board with current user injected ──

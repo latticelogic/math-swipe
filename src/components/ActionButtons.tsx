@@ -1,4 +1,4 @@
-import { memo, useState, useRef, useCallback, type ReactNode } from 'react';
+import { memo, useState, useEffect, useRef, useCallback, type ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { QuestionTypePicker } from './QuestionTypePicker';
 import type { QuestionType } from '../utils/mathGenerator';
@@ -62,14 +62,37 @@ interface Props {
     onHardModeToggle: () => void;
     timedMode: boolean;
     onTimedModeToggle: () => void;
-    timerProgress: number; // 0 → 1
+    timedDurationMs: number;        // full-ring duration for the current level
+    problemKey: string | number | null; // changes per problem → restarts the ring
     ageBand: AgeBand;
 }
 
 /** Circular countdown ring drawn as an SVG arc */
-function TimerRing({ progress, active }: { progress: number; active: boolean }) {
+// Self-driving countdown ring. It runs its OWN rAF and holds its OWN progress
+// state, so the per-frame updates re-render just these two <circle>s instead of
+// the whole App tree. It restarts whenever `problemKey` changes (new problem)
+// or timed mode toggles on. The game-loop hook still owns the actual expiry.
+function TimerRing({ active, durationMs }: { active: boolean; durationMs: number }) {
     const r = 19;
     const circumference = 2 * Math.PI * r;
+    // progress starts at 0 on mount. The parent gives us a `key` derived from
+    // active+problemKey, so a new problem (or a timed-mode toggle) REMOUNTS this
+    // leaf — resetting progress to 0 with no synchronous setState-in-effect.
+    const [progress, setProgress] = useState(0);
+    const rafRef = useRef<number>(0);
+
+    useEffect(() => {
+        if (!active || durationMs <= 0) return;
+        const start = performance.now();
+        const tick = (now: number) => {
+            const p = Math.min((now - start) / durationMs, 1);
+            setProgress(p); // setState inside an rAF callback (allowed — not sync in effect body)
+            if (p < 1) rafRef.current = requestAnimationFrame(tick);
+        };
+        rafRef.current = requestAnimationFrame(tick);
+        return () => cancelAnimationFrame(rafRef.current);
+    }, [active, durationMs]);
+
     const offset = circumference * (1 - progress);
 
     return (
@@ -100,7 +123,7 @@ function TimerRing({ progress, active }: { progress: number; active: boolean }) 
 
 export const ActionButtons = memo(function ActionButtons({
     questionType, onTypeChange, hardMode, onHardModeToggle,
-    timedMode, onTimedModeToggle, timerProgress,
+    timedMode, onTimedModeToggle, timedDurationMs, problemKey,
     ageBand,
 }: Props) {
     // Transient feedback toast for the share button. Without this, share
@@ -201,7 +224,7 @@ export const ActionButtons = memo(function ActionButtons({
                         }`}
                     whileTap={{ scale: 0.88 }}
                 >
-                    <TimerRing progress={timerProgress} active={timedMode} />
+                    <TimerRing key={`tr-${timedMode ? 1 : 0}-${problemKey ?? 'none'}`} active={timedMode} durationMs={timedDurationMs} />
                     <motion.svg
                         viewBox="0 0 24 24"
                         className="w-6 h-6 relative z-10"

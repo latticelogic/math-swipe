@@ -7,8 +7,7 @@
  * rule allows. Adding a field that the rule doesn't permit causes the entire
  * write to fail silently — so this list must stay in sync with firestore.rules.
  */
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from './firebase';
+import { getFirebase } from './firebase';
 
 let reportCount = 0;
 const MAX_REPORTS = 10;
@@ -25,15 +24,18 @@ function reportError(error: ErrorPayload) {
 
     const errorId = `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
 
-    // Fire and forget — don't block the main thread
-    setDoc(doc(db, 'errors', errorId), {
-        message: (error.message || 'Unknown error').slice(0, 500),
-        stack: (error.stack || '').slice(0, 2000),
-        source: (error.source || 'unknown').slice(0, 200),
-        userAgent: navigator.userAgent.slice(0, 200),
-        url: window.location.href.slice(0, 500),
-        timestamp: serverTimestamp(),
-    }).catch(() => {
+    // Fire and forget — don't block the main thread. Firebase loads lazily,
+    // so pull it in on demand (the first error is rarely at t=0 anyway).
+    Promise.all([getFirebase(), import('firebase/firestore')]).then(([{ db }, { doc, setDoc, serverTimestamp }]) =>
+        setDoc(doc(db, 'errors', errorId), {
+            message: (error.message || 'Unknown error').slice(0, 500),
+            stack: (error.stack || '').slice(0, 2000),
+            source: (error.source || 'unknown').slice(0, 200),
+            userAgent: navigator.userAgent.slice(0, 200),
+            url: window.location.href.slice(0, 500),
+            timestamp: serverTimestamp(),
+        })
+    ).catch(() => {
         // Silently fail — error monitoring shouldn't cause more errors
     });
 }

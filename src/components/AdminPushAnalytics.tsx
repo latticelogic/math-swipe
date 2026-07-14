@@ -12,8 +12,7 @@
 
 import { useEffect, useState } from 'react';
 import { collection, query, where, orderBy, limit, getDocs, Timestamp } from 'firebase/firestore';
-import { db } from '../utils/firebase';
-import { auth } from '../utils/firebase';
+import { getFirebase } from '../utils/firebase';
 
 interface RawEvent {
     uid: string;
@@ -48,6 +47,8 @@ export function AdminPushAnalytics({ onBackToGame }: Props) {
     useEffect(() => {
         let cancelled = false;
         (async () => {
+            const { auth } = await getFirebase();
+            if (cancelled) return;
             const user = auth.currentUser;
             if (!user) {
                 if (!cancelled) { setAuthorized(false); setLoading(false); }
@@ -73,6 +74,8 @@ export function AdminPushAnalytics({ onBackToGame }: Props) {
         let cancelled = false;
         (async () => {
             try {
+                const { db } = await getFirebase();
+                if (cancelled) return;
                 const cutoff = Timestamp.fromMillis(Date.now() - windowDays * 24 * 60 * 60 * 1000);
                 const q = query(
                     collection(db, 'pushEvents'),

@@ -57,8 +57,7 @@ import { startCheckout } from './utils/checkout';
 import { Paywall } from './components/Paywall';
 import { WelcomeModal, TrialReminderModal } from './components/TrialModals';
 import { LegalPage, type LegalDocId } from './components/LegalPages';
-import { collection, query, where, onSnapshot, doc, updateDoc, orderBy, limit } from 'firebase/firestore';
-import { db } from './utils/firebase';
+import { getFirebase } from './utils/firebase';
 import { generateProblem } from './utils/mathGenerator';
 import { generateDailyChallenge, generateChallenge } from './utils/dailyChallenge';
 import { todayKey } from './utils/dateKey';
@@ -133,7 +132,7 @@ function LoadingFallback() {
 }
 
 function App() {
-  const { user, loading: authLoading, setDisplayName, linkGoogle, sendEmailLink } = useFirebaseAuth();
+  const { user, setDisplayName, linkGoogle, sendEmailLink } = useFirebaseAuth();
   const uid = user?.uid ?? null;
 
   // 14-day trial → $3.14 lifetime gate. See utils/entitlement.ts +
@@ -236,7 +235,7 @@ function App() {
   useEffect(() => {
     if (!uid) { setClaimedHandle(null); return; }
     let cancelled = false;
-    import('firebase/firestore').then(({ doc, getDoc }) => {
+    Promise.all([getFirebase(), import('firebase/firestore')]).then(([{ db }, { doc, getDoc }]) => {
       getDoc(doc(db, 'users', uid)).then(snap => {
         if (cancelled) return;
         const handle = snap.exists() ? (snap.data().username as string | undefined) : undefined;
@@ -260,7 +259,7 @@ function App() {
     milestone,
     speedBonus,
     handleSwipe,
-    timerProgress,
+    timedDurationMs,
     dailyComplete,
     speedrunFinalTime,
     speedrunElapsed,
@@ -349,34 +348,41 @@ function App() {
   const [pingMessage, setPingMessage] = useState<string | null>(null);
   useEffect(() => {
     if (!uid) return;
-    const q = query(
-      collection(db, FIRESTORE.PINGS),
-      where('targetUid', '==', uid),
-      where('read', '==', false),
-      orderBy('createdAt', 'desc'),
-      limit(1)
-    );
     let clearTimer: ReturnType<typeof setTimeout> | undefined;
-    const unsub = onSnapshot(q, (snap) => {
-      if (snap.empty) return;
-      const pingDoc = snap.docs[0];
-      const data = pingDoc.data();
-      // Sanitize incoming senderName: it's user-controlled; render as text only.
-      // React already escapes it, but cap the length defensively.
-      const senderName = String(data.senderName ?? 'Someone').slice(0, 20);
-      setPingMessage(`${senderName} challenged you! ⚔️`);
+    let unsub: (() => void) | undefined;
+    let cancelled = false;
+    Promise.all([getFirebase(), import('firebase/firestore')]).then(([{ db }, fs]) => {
+      if (cancelled) return;
+      const { collection, query, where, onSnapshot, doc, updateDoc, orderBy, limit } = fs;
+      const q = query(
+        collection(db, FIRESTORE.PINGS),
+        where('targetUid', '==', uid),
+        where('read', '==', false),
+        orderBy('createdAt', 'desc'),
+        limit(1)
+      );
+      unsub = onSnapshot(q, (snap) => {
+        if (snap.empty) return;
+        const pingDoc = snap.docs[0];
+        const data = pingDoc.data();
+        // Sanitize incoming senderName: it's user-controlled; render as text only.
+        // React already escapes it, but cap the length defensively.
+        const senderName = String(data.senderName ?? 'Someone').slice(0, 20);
+        setPingMessage(`${senderName} challenged you! ⚔️`);
 
-      // Mark as read so it doesn't pop again
-      updateDoc(doc(db, FIRESTORE.PINGS, pingDoc.id), { read: true }).catch(() => { /* silent */ });
+        // Mark as read so it doesn't pop again
+        updateDoc(doc(db, FIRESTORE.PINGS, pingDoc.id), { read: true }).catch(() => { /* silent */ });
 
-      // Clear after 6 seconds (replace any in-flight clear timer)
-      if (clearTimer) clearTimeout(clearTimer);
-      clearTimer = setTimeout(() => setPingMessage(null), 6000);
-    }, (err) => {
-      console.warn('Ping listener failed:', err);
-    });
+        // Clear after 6 seconds (replace any in-flight clear timer)
+        if (clearTimer) clearTimeout(clearTimer);
+        clearTimer = setTimeout(() => setPingMessage(null), 6000);
+      }, (err) => {
+        console.warn('Ping listener failed:', err);
+      });
+    }).catch((err) => console.warn('Ping listener init failed:', err));
     return () => {
-      unsub();
+      cancelled = true;
+      if (unsub) unsub();
       if (clearTimer) clearTimeout(clearTimer);
     };
   }, [uid]);
@@ -573,10 +579,13 @@ function App() {
     }
   }, [questionType, setAgeBand, setQuestionType]);
 
-  // Show loading screen while Firebase auth initializes
-  if (authLoading) {
-    return <BlackboardLayout><LoadingFallback /></BlackboardLayout>;
-  }
+  // NOTE: we intentionally do NOT block first paint on Firebase auth. The
+  // game (problem generation, difficulty, local stats) is fully local, so we
+  // render immediately with uid=null and let auth + entitlement hydrate in
+  // the background (Firebase itself loads lazily — see utils/firebase.ts).
+  // Every uid-consuming effect already guards on `if (!uid) return`, and the
+  // paywall is a post-answer overlay, never an app-open gate — so there's no
+  // paywall flash while entitlement resolves.
 
   // Public profile route — its own surface, replaces the rest of the app.
   // Anonymous Firebase auth fires automatically for visitors landing here
@@ -1048,7 +1057,8 @@ function App() {
               onHardModeToggle={toggleHardMode}
               timedMode={timedMode}
               onTimedModeToggle={toggleTimedMode}
-              timerProgress={timerProgress}
+              timedDurationMs={timedDurationMs}
+              problemKey={currentProblem?.id ?? null}
               ageBand={ageBand}
 
             />

@@ -1,6 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../utils/firebase';
+import { getFirebase } from '../utils/firebase';
 import { safeGetItem, safeSetItem } from '../utils/safeStorage';
 
 /** Map storage key → preferences sub-field on the user doc.
@@ -38,15 +37,17 @@ export function useLocalState(
         if (localVal && !uidChanged) return; // already have local data and same user
         const field = FIELD_MAP[key];
         if (!field) return;
-        getDoc(doc(db, 'users', uid)).then(snap => {
-            if (snap.exists() && snap.data().preferences) {
-                const prefs = snap.data().preferences;
-                if (prefs[field]) {
-                    setInner(prefs[field]);
-                    safeSetItem(key, prefs[field]);
+        Promise.all([getFirebase(), import('firebase/firestore')]).then(([{ db }, { doc, getDoc }]) =>
+            getDoc(doc(db, 'users', uid)).then(snap => {
+                if (snap.exists() && snap.data().preferences) {
+                    const prefs = snap.data().preferences;
+                    if (prefs[field]) {
+                        setInner(prefs[field]);
+                        safeSetItem(key, prefs[field]);
+                    }
                 }
-            }
-        }).catch(() => { /* silent */ });
+            })
+        ).catch(() => { /* silent */ });
     }, [uid, key]);
 
     const setState = useCallback((value: string) => {
@@ -56,10 +57,12 @@ export function useLocalState(
         if (!uid) return;
         const field = FIELD_MAP[key];
         if (!field) return;
-        setDoc(doc(db, 'users', uid), {
-            preferences: { [field]: value },
-            updatedAt: serverTimestamp(),
-        }, { merge: true }).catch(() => { /* silent */ });
+        Promise.all([getFirebase(), import('firebase/firestore')]).then(([{ db }, { doc, setDoc, serverTimestamp }]) =>
+            setDoc(doc(db, 'users', uid), {
+                preferences: { [field]: value },
+                updatedAt: serverTimestamp(),
+            }, { merge: true })
+        ).catch(() => { /* silent */ });
     }, [key, uid]);
 
     return [state, setState];

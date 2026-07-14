@@ -1,6 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../utils/firebase';
+import { getFirebase } from '../utils/firebase';
 import { STORAGE_KEYS, FIRESTORE } from '../config';
 import { QUESTION_TYPES } from '../domains/math/mathCategories';
 import { safeGetItem, safeSetItem } from '../utils/safeStorage';
@@ -151,6 +150,9 @@ async function saveStatsCloud(uid: string, s: Stats) {
         // bestSpeedrunTime rule: must be 0 or >= 5000. Defensively clamp tiny values
         // that could only arise from clock skew or a corrupted local store.
         const safeSpeedrun = !s.bestSpeedrunTime || s.bestSpeedrunTime >= 5000 ? (s.bestSpeedrunTime || 0) : 0;
+        const [{ db }, { doc, setDoc, serverTimestamp }] = await Promise.all([
+            getFirebase(), import('firebase/firestore'),
+        ]);
         await setDoc(doc(db, FIRESTORE.USERS, uid), {
             // Top-level leaderboard-queryable fields
             totalXP: s.totalXP,
@@ -176,6 +178,9 @@ async function saveStatsCloud(uid: string, s: Stats) {
 /** Load from Firestore (async fallback) */
 async function loadStatsCloud(uid: string): Promise<Stats | null> {
     try {
+        const [{ db }, { doc, getDoc }] = await Promise.all([
+            getFirebase(), import('firebase/firestore'),
+        ]);
         const snap = await getDoc(doc(db, FIRESTORE.USERS, uid));
         if (snap.exists() && snap.data().stats) {
             const cloud = snap.data().stats;

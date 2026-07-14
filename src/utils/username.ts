@@ -14,7 +14,7 @@
  */
 
 import { doc, runTransaction, getDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from './firebase';
+import { getFirebase } from './firebase';
 
 export const RESERVED_SLUGS = new Set([
     // Routing collisions
@@ -60,6 +60,7 @@ export function validateSlug(slug: string): ClaimResult['error'] | null {
 export async function isSlugAvailable(slug: string, currentUid: string | null): Promise<boolean> {
     if (validateSlug(slug)) return false;
     try {
+        const { db } = await getFirebase();
         const snap = await getDoc(doc(db, 'usernames', slug));
         if (!snap.exists()) return true;
         // If the current user already owns it, it's "available" from their POV
@@ -86,6 +87,7 @@ export async function claimUsername(
     if (validation) return { ok: false, error: validation, slug };
 
     try {
+        const { db } = await getFirebase();
         const result = await runTransaction(db, async (tx) => {
             const targetRef = doc(db, 'usernames', slug);
             const targetSnap = await tx.get(targetRef);
@@ -117,6 +119,7 @@ export async function claimUsername(
 /** Resolve a slug to a uid, or null if unclaimed. Uses a single get. */
 export async function lookupUidBySlug(slug: string): Promise<string | null> {
     try {
+        const { db } = await getFirebase();
         const snap = await getDoc(doc(db, 'usernames', normalizeSlug(slug)));
         if (snap.exists()) return snap.data().uid as string;
     } catch {

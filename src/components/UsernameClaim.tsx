@@ -15,7 +15,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../utils/firebase';
+import { getFirebase } from '../utils/firebase';
 import {
     claimUsername, isSlugAvailable, normalizeSlug, validateSlug,
     type ClaimResult,
@@ -47,10 +47,13 @@ export function UsernameClaim({ uid, isAnonymous, suggestion, onClaimed }: Props
             return;
         }
         let cancelled = false;
-        getDoc(doc(db, 'users', uid)).then(snap => {
+        getFirebase().then(({ db }) => {
             if (cancelled) return;
-            const claim = snap.exists() ? (snap.data().username as string | undefined) : undefined;
-            setCurrentClaim(claim ?? null);
+            return getDoc(doc(db, 'users', uid)).then(snap => {
+                if (cancelled) return;
+                const claim = snap.exists() ? (snap.data().username as string | undefined) : undefined;
+                setCurrentClaim(claim ?? null);
+            });
         }).catch(() => { /* silent */ });
         return () => { cancelled = true; };
     }, [uid]);

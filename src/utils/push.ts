@@ -12,7 +12,7 @@
  */
 
 import { doc, setDoc, getDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from './firebase';
+import { getFirebase } from './firebase';
 
 const SW_PATH = '/firebase-messaging-sw.js';
 
@@ -73,6 +73,7 @@ export async function getPushStatus(uid: string | null): Promise<PushStatus> {
     let prefs: PushPreferences | null = null;
     if (uid) {
         try {
+            const { db } = await getFirebase();
             const snap = await getDoc(doc(db, 'pushSubscriptions', uid));
             if (snap.exists()) prefs = snap.data() as PushPreferences;
         } catch {
@@ -107,6 +108,7 @@ export async function enablePush(uid: string, prefs: PushPreferences): Promise<P
     }
     // 3. Persist to Firestore — the Cloud Function reads from here.
     const json = subscription.toJSON();
+    const { db } = await getFirebase();
     await setDoc(doc(db, 'pushSubscriptions', uid), {
         endpoint: json.endpoint,
         keys: json.keys,
@@ -121,6 +123,7 @@ export async function enablePush(uid: string, prefs: PushPreferences): Promise<P
 /** Update only the preference flags without re-subscribing. */
 export async function updatePushPreferences(uid: string, prefs: PushPreferences): Promise<void> {
     if (!isPushConfigured()) return;
+    const { db } = await getFirebase();
     await setDoc(doc(db, 'pushSubscriptions', uid), {
         ...prefs,
         updatedAt: serverTimestamp(),
@@ -139,6 +142,7 @@ export async function disablePush(uid: string): Promise<void> {
         // Best-effort — keep going even if browser unsubscribe fails
     }
     try {
+        const { db } = await getFirebase();
         await deleteDoc(doc(db, 'pushSubscriptions', uid));
     } catch {
         // Subscription doc cleanup is best-effort

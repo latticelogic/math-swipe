@@ -6,8 +6,7 @@
  * cause silent rejection).
  */
 import type { Metric } from 'web-vitals';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from './firebase';
+import { getFirebase } from './firebase';
 
 // Sample rate for vitals writes. At scale, 10% is statistically identical
 // signal for aggregate percentiles while cutting the write volume (and the
@@ -15,21 +14,26 @@ import { db } from './firebase';
 // low traffic makes the sample too noisy.
 const VITALS_SAMPLE_RATE = 0.1;
 
-function reportMetric(metric: Metric) {
+async function reportMetric(metric: Metric) {
     if (Math.random() > VITALS_SAMPLE_RATE) return;
     // Identifier-only id — does not include uid (no PII), still uniquely-keyed
     const id = `${metric.name}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
 
-    setDoc(doc(db, 'vitals', id), {
-        name: metric.name,
-        value: Math.round(metric.value),
-        rating: metric.rating, // 'good' | 'needs-improvement' | 'poor'
-        navigationType: metric.navigationType,
-        userAgent: navigator.userAgent.slice(0, 200),
-        timestamp: serverTimestamp(),
-    }).catch(() => {
+    try {
+        const [{ db }, { doc, setDoc, serverTimestamp }] = await Promise.all([
+            getFirebase(), import('firebase/firestore'),
+        ]);
+        await setDoc(doc(db, 'vitals', id), {
+            name: metric.name,
+            value: Math.round(metric.value),
+            rating: metric.rating, // 'good' | 'needs-improvement' | 'poor'
+            navigationType: metric.navigationType,
+            userAgent: navigator.userAgent.slice(0, 200),
+            timestamp: serverTimestamp(),
+        });
+    } catch {
         // Silently fail — monitoring shouldn't cause errors
-    });
+    }
 }
 
 export function initWebVitals() {

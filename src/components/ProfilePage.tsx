@@ -15,7 +15,7 @@
 import { memo, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { collection, query, where, limit, getDoc, getDocs, doc } from 'firebase/firestore';
-import { db } from '../utils/firebase';
+import { getFirebase } from '../utils/firebase';
 import { getRank } from '../domains/math/ranks';
 import { getTeacher } from '../domains/math/teachers';
 import { getThemeColor } from '../utils/chalkThemes';
@@ -88,6 +88,8 @@ export const ProfilePage = memo(function ProfilePage({ slug, onChallenge, onBack
         let cancelled = false;
         (async () => {
             try {
+                const { db } = await getFirebase();
+                if (cancelled) return;
                 // Path 1: pure-handle lookup. Single get on usernames/{slug},
                 // then a single get on the resolved user doc — fast and
                 // unique. Falls through to legacy lookup if the handle is

@@ -18,8 +18,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../utils/firebase';
+import { getFirebase } from '../utils/firebase';
 import { FIRESTORE } from '../config';
 import {
     blankEntitlement, hasAccess, entitlementStatus, trialDaysLeft,
@@ -74,6 +73,10 @@ export function useEntitlement(uid: string | null): UseEntitlementResult {
 
         (async () => {
             try {
+                const [{ db }, { doc, getDoc, setDoc, serverTimestamp }] = await Promise.all([
+                    getFirebase(), import('firebase/firestore'),
+                ]);
+                if (cancelled) return;
                 const ref = doc(db, FIRESTORE.ENTITLEMENTS, uid);
                 const snap = await getDoc(ref);
 
@@ -121,6 +124,9 @@ export function useEntitlement(uid: string | null): UseEntitlementResult {
     const mockGrantAccess = useCallback(async () => {
         if (!import.meta.env.DEV || !uid) return;
         const now = Date.now();
+        const [{ db }, { doc, setDoc, serverTimestamp }] = await Promise.all([
+            getFirebase(), import('firebase/firestore'),
+        ]);
         const ref = doc(db, FIRESTORE.ENTITLEMENTS, uid);
         await setDoc(ref, {
             paidAt: now,
@@ -140,6 +146,9 @@ export function useEntitlement(uid: string | null): UseEntitlementResult {
     const refresh = useCallback(async () => {
         if (!uid) return;
         try {
+            const [{ db }, { doc, getDoc }] = await Promise.all([
+                getFirebase(), import('firebase/firestore'),
+            ]);
             const snap = await getDoc(doc(db, FIRESTORE.ENTITLEMENTS, uid));
             if (snap.exists()) {
                 setEntitlement(toEntitlement(snap.data()));
@@ -152,6 +161,9 @@ export function useEntitlement(uid: string | null): UseEntitlementResult {
     const mockBackdateTrial = useCallback(async (days: number) => {
         if (!import.meta.env.DEV || !uid) return;
         const newStart = Date.now() - days * 86_400_000;
+        const [{ db }, { doc, setDoc, serverTimestamp }] = await Promise.all([
+            getFirebase(), import('firebase/firestore'),
+        ]);
         const ref = doc(db, FIRESTORE.ENTITLEMENTS, uid);
         await setDoc(ref, {
             trialStartedAt: newStart,

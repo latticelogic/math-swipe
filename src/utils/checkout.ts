@@ -14,8 +14,7 @@
  * phases.
  */
 
-import { httpsCallable } from 'firebase/functions';
-import { functions } from './firebase';
+import { getFirebase } from './firebase';
 
 interface CheckoutResponse {
     url: string;
@@ -39,6 +38,9 @@ export async function startCheckout(mockGrant?: () => Promise<void>): Promise<vo
         return;
     }
 
+    const [{ functions }, { httpsCallable }] = await Promise.all([
+        getFirebase(), import('firebase/functions'),
+    ]);
     const call = httpsCallable<unknown, CheckoutResponse>(functions, 'createCheckoutSession');
     const result = await call({});
     const url = result.data?.url;

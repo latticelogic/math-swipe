@@ -124,7 +124,10 @@ export function useGameLoop(
     }, []);
 
     // ── Timed mode ────────────────────────────────────────────────────────────
-    const [timerProgress, setTimerProgress] = useState(0);
+    // Timed mode: the hook owns the EXPIRY (game logic), but the visual ring
+    // self-drives inside the <TimerRing> leaf so App no longer re-renders every
+    // animation frame. We keep the rAF here only to detect expiry (and it still
+    // pauses in a backgrounded tab, matching the ring's own rAF).
     const timerStartRef = useRef<number>(0);
     const timerRafRef = useRef<number>(0);
     const timedModeRef = useRef(timedMode);
@@ -205,7 +208,6 @@ export function useGameLoop(
         });
         if (timedModeRef.current) {
             timerStartRef.current = Date.now();
-            setTimerProgress(0);
         }
     }, []);
 
@@ -369,16 +371,13 @@ export function useGameLoop(
     useEffect(() => {
         if (!timedMode || gs.frozen || items.length === 0) {
             cancelAnimationFrame(timerRafRef.current);
-            if (!timedMode) setTimerProgress(0);
             return;
         }
         timerStartRef.current = Date.now();
-        setTimerProgress(0);
 
         const tick = () => {
             const elapsed = Date.now() - timerStartRef.current;
             const p = Math.min(elapsed / config.timedModeMs, 1);
-            setTimerProgress(p);
             if (p >= 1) {
                 cancelAnimationFrame(timerRafRef.current);
                 frozenRef.current = true;
@@ -456,7 +455,7 @@ export function useGameLoop(
         ...gs,
         level,
         handleSwipe,
-        timerProgress,
+        timedDurationMs: config.timedModeMs,
         dailyComplete,
         speedrunFinalTime,
         speedrunElapsed,

@@ -11,8 +11,7 @@
  */
 import { STORAGE_KEYS, FIRESTORE } from '../config';
 import { EVERY_MATH_ACHIEVEMENT } from '../domains/math/mathAchievements';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { db } from './firebase';
+import { getFirebase } from './firebase';
 import { safeGetItem, safeSetItem } from './safeStorage';
 
 // ── Generic Achievement interface ─────────────────────────────────────────────
@@ -42,6 +41,9 @@ export function loadUnlocked(): Set<string> {
 /** Restore from Firestore if localStorage is empty */
 export async function restoreUnlockedFromCloud(uid: string): Promise<Set<string> | null> {
     try {
+        const [{ db }, { doc, getDoc }] = await Promise.all([
+            getFirebase(), import('firebase/firestore'),
+        ]);
         const snap = await getDoc(doc(db, FIRESTORE.USERS, uid));
         if (snap.exists() && snap.data().achievements) {
             const cloudIds = new Set<string>(snap.data().achievements);
@@ -60,9 +62,11 @@ export async function restoreUnlockedFromCloud(uid: string): Promise<Set<string>
 export function saveUnlocked(ids: Set<string>, uid?: string | null) {
     safeSetItem(STORAGE_KEY, JSON.stringify([...ids]));
     if (uid) {
-        setDoc(doc(db, FIRESTORE.USERS, uid), {
-            achievements: [...ids],
-        }, { merge: true }).catch(err => {
+        Promise.all([getFirebase(), import('firebase/firestore')]).then(([{ db }, { doc, setDoc }]) =>
+            setDoc(doc(db, FIRESTORE.USERS, uid), {
+                achievements: [...ids],
+            }, { merge: true })
+        ).catch(err => {
             console.warn('Failed to sync achievements to cloud:', err);
         });
     }

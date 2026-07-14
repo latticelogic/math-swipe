@@ -26,7 +26,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore';
-import { db, auth } from '../utils/firebase';
+import { getFirebase } from '../utils/firebase';
 import { entitlementStatus, type Entitlement } from '../utils/entitlement';
 
 interface Row {
@@ -54,6 +54,8 @@ export function AdminBilling({ onBackToGame }: Props) {
     useEffect(() => {
         let cancelled = false;
         (async () => {
+            const { auth } = await getFirebase();
+            if (cancelled) return;
             const user = auth.currentUser;
             if (!user) {
                 if (!cancelled) { setAuthorized(false); setLoading(false); }
@@ -81,6 +83,8 @@ export function AdminBilling({ onBackToGame }: Props) {
         let cancelled = false;
         (async () => {
             try {
+                const { db } = await getFirebase();
+                if (cancelled) return;
                 // Fetch up to 500 most-recently-updated entitlements. That's
                 // a hard cap so the dashboard doesn't accidentally trigger
                 // a massive read against the entire collection at scale.

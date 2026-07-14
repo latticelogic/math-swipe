@@ -10,8 +10,7 @@
  * directly via the admin SDK — those don't pass through this path.
  */
 
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from './firebase';
+import { getFirebase } from './firebase';
 
 const DB_NAME = 'math-swipe-push-events';
 const STORE = 'events';
@@ -71,6 +70,9 @@ export async function flushPendingPushEvents(uid: string | null): Promise<number
     if (!database) return 0;
     const queued = await readAndClear(database);
     if (queued.length === 0) return 0;
+    const [{ db }, { collection, addDoc, serverTimestamp }] = await Promise.all([
+        getFirebase(), import('firebase/firestore'),
+    ]);
     let written = 0;
     for (const ev of queued) {
         try {
