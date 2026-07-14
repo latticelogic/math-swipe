@@ -208,7 +208,7 @@ export function Paywall({ progress, onUnlock, busy, onDevReset }: PaywallProps) 
                 {/* Sub-line clarifies what "keep playing" means without baking
                     a possession threat into the headline itself. */}
                 <p className="text-[10px] ui text-[rgb(var(--color-fg))]/35 mt-2">
-                    Lifetime access · No subscription · No ads
+                    Lifetime access · No subscription
                 </p>
 
                 <button
