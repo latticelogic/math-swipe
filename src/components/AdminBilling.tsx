@@ -38,6 +38,12 @@ interface Row {
     updatedAt: number;
 }
 
+/** Local YYYY-MM-DD for a ms timestamp — buckets trials by the day they began. */
+function dayKeyLocal(ms: number): string {
+    const d = new Date(ms);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 interface Props {
     onBackToGame: () => void;
 }
@@ -145,6 +151,7 @@ export function AdminBilling({ onBackToGame }: Props) {
         let trial = 0, paid = 0, expired = 0;
         let refunded = 0; // paidAt cleared but originalTransactionId still set
         const recentPurchases: Row[] = [];
+        const trialDayCounts: Record<string, number> = {};
 
         for (const r of rows) {
             const synth: Entitlement = {
@@ -160,6 +167,13 @@ export function AdminBilling({ onBackToGame }: Props) {
             else if (s === 'expired') expired++;
             if (r.paidAt === null && r.originalTransactionId) refunded++;
             if (r.paidAt && r.originalTransactionId) recentPurchases.push(r);
+            // Bucket each trial by the day it started — the abuse signal for
+            // trial-farming is a spike in new trials/day out of step with real
+            // installs + conversions.
+            if (r.trialStartedAt > 0) {
+                const key = dayKeyLocal(r.trialStartedAt);
+                trialDayCounts[key] = (trialDayCounts[key] ?? 0) + 1;
+            }
         }
 
         recentPurchases.sort((a, b) => (b.paidAt ?? 0) - (a.paidAt ?? 0));
@@ -173,7 +187,20 @@ export function AdminBilling({ onBackToGame }: Props) {
             ? ((refunded / (paid + refunded)) * 100).toFixed(1)
             : '—';
 
-        return { trial, paid, expired, refunded, topPurchases, conversionPct, refundPct };
+        // Last 14 days of new-trial creation, based off the pure snapshot time
+        // (`now`). Empty for the one frame before the snapshot lands — keeps the
+        // memo pure (no Date.now() here; that's what snapshotAt is for).
+        const newTrialsByDay = now
+            ? Array.from({ length: 14 }, (_, idx) => {
+                const d = new Date(now - (13 - idx) * 86_400_000);
+                const key = dayKeyLocal(d.getTime());
+                return { key, label: `${d.getMonth() + 1}/${d.getDate()}`, count: trialDayCounts[key] ?? 0 };
+            })
+            : [];
+        const newTrials7d = newTrialsByDay.slice(-7).reduce((s, x) => s + x.count, 0);
+        const peakDay = Math.max(1, ...newTrialsByDay.map(x => x.count));
+
+        return { trial, paid, expired, refunded, topPurchases, conversionPct, refundPct, newTrialsByDay, newTrials7d, peakDay };
     }, [rows, snapshotAt]);
 
     if (authorized === null || loading) {
@@ -212,7 +239,7 @@ export function AdminBilling({ onBackToGame }: Props) {
         );
     }
 
-    const { trial, paid, expired, refunded, topPurchases, conversionPct, refundPct } = agg;
+    const { trial, paid, expired, refunded, topPurchases, conversionPct, refundPct, newTrialsByDay, newTrials7d, peakDay } = agg;
 
     return (
         <div className="min-h-screen w-full bg-[var(--color-board)] text-[rgb(var(--color-fg))]/85 px-5 py-6 overflow-y-auto">
@@ -256,6 +283,37 @@ export function AdminBilling({ onBackToGame }: Props) {
                         tint={Number(refundPct) > 5 ? 'wrong' : 'default'}
                     />
                 </div>
+
+                {/* New trials per day — watch for farming spikes */}
+                <div className="flex items-baseline justify-between mb-3">
+                    <h2 className="text-sm ui font-semibold text-[var(--color-gold)] uppercase tracking-widest">
+                        New trials · 14 days
+                    </h2>
+                    <span className="text-[10px] ui text-[rgb(var(--color-fg))]/40">{newTrials7d} in last 7d</span>
+                </div>
+                <div className="border border-[rgb(var(--color-fg))]/10 rounded-2xl px-4 pt-4 pb-3 mb-2">
+                    <div className="flex items-end gap-1.5 h-24">
+                        {newTrialsByDay.map(d => (
+                            <div key={d.key} className="flex-1 flex flex-col items-center justify-end gap-1 group">
+                                <span className="text-[9px] ui text-[rgb(var(--color-fg))]/45 tabular-nums opacity-0 group-hover:opacity-100 transition-opacity">
+                                    {d.count}
+                                </span>
+                                <div
+                                    className="w-full rounded-t-sm bg-[var(--color-gold)]/70 min-h-[2px]"
+                                    style={{ height: `${(d.count / peakDay) * 100}%` }}
+                                    title={`${d.key}: ${d.count} new trial${d.count === 1 ? '' : 's'}`}
+                                />
+                                <span className="text-[8px] ui text-[rgb(var(--color-fg))]/30 tabular-nums">{d.label}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+                <p className="text-[10px] ui text-[rgb(var(--color-fg))]/30 mb-8 leading-relaxed">
+                    A new trial = a new <code>entitlements/</code> doc (one per anonymous device/install).
+                    Trial-farming (clear data → fresh 14 days) shows up as new-trial volume that runs ahead of
+                    installs + conversions. Bounded by the most-recent-500 read, so accurate for recent days at
+                    launch scale.
+                </p>
 
                 {/* Recent purchases */}
                 <h2 className="text-sm ui font-semibold text-[var(--color-gold)] uppercase tracking-widest mb-3">

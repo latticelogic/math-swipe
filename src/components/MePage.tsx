@@ -160,6 +160,16 @@ export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked,
                 // Only show after 5 sessions, and not within 5 sessions of last dismiss
                 if (stats.sessionsPlayed < 5 || (dismissedAt > 0 && sessionsSinceDismiss < 5)) return null;
 
+                // Loss-framed, specific: name what actually lives only on this
+                // device, so signing in reads as protecting real progress (and
+                // clearing/switching devices reads as losing it). Warm, not
+                // pressure-y — just their own numbers.
+                const bits: string[] = [];
+                if (stats.dayStreak >= 2) bits.push(`${stats.dayStreak}-day streak`);
+                bits.push(`${stats.totalXP.toLocaleString()} XP`);
+                if (unlocked.size > 0) bits.push(`${unlocked.size} achievement${unlocked.size === 1 ? '' : 's'}`);
+                const progressSummary = bits.join(' · ');
+
                 return (
                     <div className="mb-3 relative bg-[rgb(var(--color-fg))]/[0.03] border border-[rgb(var(--color-fg))]/8 rounded-xl overflow-hidden">
                         {/* Dismiss button */}
@@ -170,12 +180,12 @@ export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked,
 
                         {!showEmailInput ? (
                             <div className="p-3">
-                                <div className="text-[11px] ui text-[rgb(var(--color-fg))]/50 mb-2.5 flex items-center gap-1.5">
+                                <div className="text-[11px] ui text-[rgb(var(--color-fg))]/55 mb-2.5 flex items-start gap-1.5">
                                     {/* Cloud — hand-drawn, replaces ☁️ emoji */}
-                                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="mt-0.5 shrink-0">
                                         <path d="M7 18 A 5 5 0 1 1 8 8 A 4 4 0 0 1 16 8 A 4 4 0 0 1 17 18 Z" />
                                     </svg>
-                                    <span>Save your {stats.totalXP.toLocaleString()} XP across devices</span>
+                                    <span>Your {progressSummary} live only on this device. Sign in to keep them safe.</span>
                                 </div>
                                 <div className="flex gap-2">
                                     <button
