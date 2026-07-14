@@ -115,11 +115,12 @@ service cloud.firestore {
     //   • Client must NEVER be allowed to set paidAt itself — that field
     //     only writes from the Stripe webhook Cloud Function (admin SDK
     //     bypasses rules). A client setting paidAt = anything is rejected.
-    //   • Mock helpers in dev (mockGrantAccess) call into Firestore from
-    //     the client in DEV builds; rules below intentionally allow this
-    //     for the source='promo' case so dev testing works without admin
-    //     credentials. Production-side, the only legit promo grants happen
-    //     server-side via the same webhook code path.
+    //   • Mock helpers in dev (mockGrantAccess) write a non-null paidAt.
+    //     They are DEV-build-only (import.meta.env.DEV) AND are now rejected
+    //     by these rules, so dev paid-state testing must run against the
+    //     Firestore emulator or via Stripe test-mode Checkout — never against
+    //     production. Deliberate: no client write path, in any build, may
+    //     self-grant paid access on prod.
     match /entitlements/{uid} {
       // Owner can read their own entitlement; users with the isAdmin
       // custom claim can read ANY entitlement (powers the /admin/billing
@@ -128,7 +129,11 @@ service cloud.firestore {
       allow read: if request.auth != null
                   && (request.auth.uid == uid
                       || request.auth.token.isAdmin == true);
-      // Create: only the owner; only the bootstrap shape allowed.
+      // Create: only the owner; only the bootstrap shape allowed. The
+      // client bootstraps its own trial clock but must write paidAt/source/
+      // originalTransactionId as NULL only — a non-null value there is a
+      // self-granted purchase and is rejected. Real paid state is written
+      // exclusively by the Stripe webhook (admin SDK, bypasses rules).
       allow create: if request.auth != null
                     && request.auth.uid == uid
                     && request.resource.data.keys().hasOnly([
@@ -137,16 +142,22 @@ service cloud.firestore {
                        ])
                     && request.resource.data.trialStartedAt is number
                     && request.resource.data.trialStartedAt > 0
-                    && (request.resource.data.paidAt == null
-                        || request.resource.data.paidAt is number);
-      // Update: owner-only. Field allow-list enforced; rate-limited to 1
-      // write per second to deter accidental tight-loop writes.
+                    && request.resource.data.paidAt == null
+                    && request.resource.data.source == null
+                    && request.resource.data.originalTransactionId == null;
+      // Update: owner-only. Field allow-list enforced; the three payment
+      // fields must remain UNCHANGED from their stored values — the client
+      // can never mutate paidAt/source/originalTransactionId (only the
+      // admin-SDK webhook can). Rate-limited to 1 write/sec.
       allow update: if request.auth != null
                     && request.auth.uid == uid
                     && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
                          'trialStartedAt', 'paidAt', 'source',
                          'originalTransactionId', 'updatedAt'
                        ])
+                    && request.resource.data.paidAt == resource.data.paidAt
+                    && request.resource.data.source == resource.data.source
+                    && request.resource.data.originalTransactionId == resource.data.originalTransactionId
                     && (!('updatedAt' in resource.data)
                         || request.time > resource.data.updatedAt + duration.value(1, 's'));
       allow delete: if false;

@@ -90,8 +90,9 @@ export const createCheckoutSession = onCall(
                 success_url: `${origin}/?paywall=ok&session_id={CHECKOUT_SESSION_ID}`,
                 cancel_url: `${origin}/?paywall=cancelled`,
                 // Metadata so the webhook knows which Firestore doc to write.
-                // Stripe persists this on the Session, the PaymentIntent, AND
-                // the Charge — all three readable from the webhook event.
+                // Stripe persists this on the Session and the PaymentIntent
+                // (NOT auto-copied to the Charge — the refund handler resolves
+                // uid off the PaymentIntent for that reason).
                 metadata: { uid },
                 payment_intent_data: { metadata: { uid } },
                 // Customer hint — prefill if we have one from a past abandoned
@@ -195,6 +196,17 @@ async function handleSessionCompleted(session: Stripe.Checkout.Session, res: Web
         res.status(200).send('no uid');
         return;
     }
+    // Only grant on captured funds. For card payments payment_status is
+    // 'paid' here; but async/delayed methods (some bank debits, vouchers)
+    // fire session.completed with 'unpaid'/'no_payment_required'. Granting
+    // then would hand out lifetime access before money settles. If we ever
+    // enable such a method, the settlement fires checkout.session
+    // .async_payment_succeeded — handle that too at that point.
+    if (session.payment_status !== 'paid') {
+        logger.info(`[stripeWebhook] session ${session.id} completed but payment_status=${session.payment_status}; not granting`);
+        res.status(200).send('not paid');
+        return;
+    }
     try {
         const ref = admin.firestore().doc(`entitlements/${uid}`);
         const snap = await ref.get();
@@ -239,13 +251,28 @@ async function handleSessionCompleted(session: Stripe.Checkout.Session, res: Web
  *  Idempotency: re-deliveries of the same `charge.refunded` event hit the
  *  already-cleared short-circuit and are no-ops. */
 async function handleChargeRefunded(charge: Stripe.Charge, res: WebhookResponse) {
-    const uid = charge.metadata?.uid;
-    if (!uid || typeof uid !== 'string') {
-        logger.error('[stripeWebhook] charge.refunded without uid metadata', charge.id);
-        // The uid is set on the PaymentIntent at checkout-session-create time
-        // (see createCheckoutSession's payment_intent_data.metadata). If a
-        // charge is missing it, the purchase was created outside our flow —
-        // 200 because retrying can't fix bad metadata.
+    // uid is set on the PaymentIntent at checkout-session-create time
+    // (payment_intent_data.metadata). Stripe does NOT copy PaymentIntent
+    // metadata onto the Charge, so charge.metadata.uid is normally absent —
+    // resolve it off the PaymentIntent. (We still check charge.metadata first
+    // in case a future flow sets it directly on the charge.)
+    let uid = typeof charge.metadata?.uid === 'string' ? charge.metadata.uid : undefined;
+    if (!uid && charge.payment_intent) {
+        try {
+            const piId = typeof charge.payment_intent === 'string'
+                ? charge.payment_intent
+                : charge.payment_intent.id;
+            const pi = await stripeClient().paymentIntents.retrieve(piId);
+            if (typeof pi.metadata?.uid === 'string') uid = pi.metadata.uid;
+        } catch (err) {
+            logger.error('[stripeWebhook] refund: PaymentIntent lookup failed for charge', charge.id, err);
+        }
+    }
+    if (!uid) {
+        logger.error('[stripeWebhook] charge.refunded without resolvable uid', charge.id);
+        // The purchase was created outside our flow (or the PI lookup failed).
+        // 200 because a retry won't add missing metadata; 500 only on the
+        // transient-write path below.
         res.status(200).send('no uid');
         return;
     }
