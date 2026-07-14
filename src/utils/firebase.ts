@@ -82,6 +82,30 @@ export function getFirebase(): Promise<FirebaseBundle> {
             const { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } = firestore;
 
             const app = initializeApp(buildConfig());
+
+            // App Check — attestation that requests come from the genuine app,
+            // not a scripted client hitting Firestore/Functions directly with
+            // the public web keys. This is the PRIMARY control behind the
+            // leaderboard-integrity and write-spam gaps (rules alone can't stop
+            // a determined script; App Check can). Env-gated: with no site key
+            // set (local dev / preview before provisioning) it's a no-op, so
+            // nothing breaks. Enforcement is toggled per-service in the Firebase
+            // console — see docs/app-check.md.
+            const appCheckSiteKey = (import.meta.env as Record<string, string | undefined>).VITE_APPCHECK_SITE_KEY;
+            if (appCheckSiteKey) {
+                const { initializeAppCheck, ReCaptchaV3Provider } = await import('firebase/app-check');
+                // In dev, register a debug token so localhost (not a registered
+                // reCAPTCHA domain) still passes. The token is printed to the
+                // console on first load; add it under App Check → Debug tokens.
+                if (import.meta.env.DEV) {
+                    (self as unknown as { FIREBASE_APPCHECK_DEBUG_TOKEN?: boolean }).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+                }
+                initializeAppCheck(app, {
+                    provider: new ReCaptchaV3Provider(appCheckSiteKey),
+                    isTokenAutoRefreshEnabled: true,
+                });
+            }
+
             const auth = getAuth(app);
             // Firestore with multi-tab persistent cache. Must be initialised
             // before any other Firestore call — the memoised promise guarantees

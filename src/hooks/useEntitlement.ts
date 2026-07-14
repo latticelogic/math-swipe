@@ -78,7 +78,25 @@ export function useEntitlement(uid: string | null): UseEntitlementResult {
                 ]);
                 if (cancelled) return;
                 const ref = doc(db, FIRESTORE.ENTITLEMENTS, uid);
-                const snap = await getDoc(ref);
+
+                // Bounded retry on the read. A transient Firestore blip
+                // shouldn't drop the user into the permissive fallback below
+                // (which grants soft trial access without a real entitlement
+                // check) — that widens into "reliably fail the read → free
+                // access". Retry a few times with backoff; only a sustained
+                // outage reaches the fallback.
+                let snap;
+                for (let attempt = 0; ; attempt++) {
+                    try {
+                        snap = await getDoc(ref);
+                        break;
+                    } catch (readErr) {
+                        if (cancelled) return;
+                        if (attempt >= 2) throw readErr; // exhausted → outer catch
+                        await new Promise(r => setTimeout(r, 400 * (attempt + 1)));
+                        if (cancelled) return;
+                    }
+                }
 
                 if (cancelled) return;
 
