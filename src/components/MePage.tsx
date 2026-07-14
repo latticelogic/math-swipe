@@ -4,6 +4,7 @@ import type { useStats } from '../hooks/useStats';
 import { typesForBand, type AgeBand } from '../utils/questionTypes';
 import { ACHIEVEMENTS, HARD_MODE_ACHIEVEMENTS, TIMED_MODE_ACHIEVEMENTS, ULTIMATE_ACHIEVEMENTS, EVERY_ACHIEVEMENT } from '../utils/achievements';
 import { AchievementBadge } from './AchievementBadge';
+import { StreakGarden } from './StreakGarden';
 import { CHALK_THEMES, type ChalkTheme } from '../utils/chalkThemes';
 import { SWIPE_TRAILS } from '../utils/trails';
 import { TEACHERS, DEFAULT_TEACHER_ID } from '../domains/math/teachers';
@@ -321,6 +322,11 @@ export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked,
                     </div>
                     <div className="text-xs ui text-[rgb(var(--color-fg))]/60">📅 daily</div>
                 </div>
+            </div>
+
+            {/* Streak garden — the day-streak, drawn */}
+            <div className="w-full max-w-sm mb-8">
+                <StreakGarden dayStreak={stats.dayStreak} lastPlayedDate={stats.lastPlayedDate} today={today} />
             </div>
 
             {/* Per question type row */}
