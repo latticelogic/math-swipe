@@ -24,6 +24,11 @@ interface Props {
  * `\div` source from the MathML annotation.
  */
 export const MathExpr = memo(function MathExpr({ latex, className = '', displayMode = false, ariaLabel }: Props) {
+    // `html` only ever holds KaTeX-rendered output (escaped at the source).
+    // If KaTeX fails to load or throws, we fall back to `null` and render the
+    // raw `latex` as a TEXT node below — never through the HTML sink. That way,
+    // if a future caller ever passes user-influenced `latex`, a KaTeX failure
+    // can't turn it into HTML injection.
     const [html, setHtml] = useState<string | null>(null);
 
     useEffect(() => {
@@ -33,8 +38,13 @@ export const MathExpr = memo(function MathExpr({ latex, className = '', displayM
             try {
                 setHtml(katex.renderToString(latex, { throwOnError: false, displayMode }));
             } catch {
-                setHtml(latex);
+                // Stay in the text-node fallback rather than piping latex into
+                // dangerouslySetInnerHTML.
+                setHtml(null);
             }
+        }).catch(() => {
+            // katex chunk failed to load — text fallback.
+            if (!cancelled) setHtml(null);
         });
         return () => { cancelled = true; };
     }, [latex, displayMode]);

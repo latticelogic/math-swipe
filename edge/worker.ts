@@ -208,6 +208,27 @@ function injectMeta(html: string, metaBlock: string): string {
     return out.replace(/<\/head>/i, `  ${metaBlock}\n</head>`);
 }
 
+/**
+ * Security headers for Worker-SYNTHESISED responses (the /u/<slug> pages).
+ * Cloudflare Pages' `public/_headers` rules apply only to responses served
+ * from the static-asset binding — NOT to responses this Worker builds with
+ * `new Response(...)`. Without this, the most-shared public surface (profile
+ * links) would ship with no CSP / anti-clickjacking / nosniff protection.
+ *
+ * KEEP IN SYNC with the global block in `public/_headers`. The CSP is the same
+ * because these pages serve the same SPA shell.
+ */
+const SECURITY_HEADERS: Record<string, string> = {
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'DENY',
+    'Referrer-Policy': 'strict-origin-when-cross-origin',
+    'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), interest-cohort=(), payment=(), usb=()',
+    'Strict-Transport-Security': 'max-age=63072000; includeSubDomains; preload',
+    'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
+    'Cross-Origin-Resource-Policy': 'same-origin',
+    'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.cloudfunctions.net https://firebaseinstallations.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com wss://*.firebaseio.com; frame-src 'self' https://*.firebaseapp.com; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests",
+};
+
 export default {
     async fetch(request: Request, env: Env): Promise<Response> {
         const url = new URL(request.url);
@@ -254,6 +275,7 @@ export default {
         return new Response(injected, {
             status: 200,
             headers: {
+                ...SECURITY_HEADERS,
                 'content-type': 'text/html; charset=utf-8',
                 // Edge cache for 5 min so subsequent crawls are cheap, but
                 // browsers always revalidate so a stats update appears fast.
