@@ -1,0 +1,34 @@
+name: Firestore Rules Tests
+
+# Runs the emulator-backed security-rules suite. Kept separate from the deploy
+# workflow so a rules regression blocks the PR without touching the deploy path.
+on:
+  pull_request:
+    paths:
+      - 'firestore.rules'
+      - 'firestore-tests/**'
+      - 'firebase.json'
+      - 'vitest.rules.config.ts'
+      - 'package.json'
+  workflow_dispatch:
+
+jobs:
+  rules:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # The Firestore emulator is a Java process.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - run: npm ci
+      - run: npm install -g firebase-tools
+      - run: npm run test:rules

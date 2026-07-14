@@ -35,19 +35,27 @@ import { onCall, onRequest, HttpsError } from 'firebase-functions/v2/https';
 import { defineSecret } from 'firebase-functions/params';
 import * as admin from 'firebase-admin';
 import * as logger from 'firebase-functions/logger';
-import Stripe from 'stripe';
+// Type-only import — erased at compile time, so it does NOT pull the Stripe
+// SDK into this module's load graph. The runtime SDK is dynamically imported
+// inside stripeClient() below, so functions that never touch Stripe (the
+// every-minute leaderboard cron, the push senders) don't pay to parse it on
+// cold start.
+import type Stripe from 'stripe';
 
 const STRIPE_SECRET_KEY = defineSecret('STRIPE_SECRET_KEY');
 const STRIPE_WEBHOOK_SECRET = defineSecret('STRIPE_WEBHOOK_SECRET');
 const STRIPE_PRICE_ID = defineSecret('STRIPE_PRICE_ID');
 const PUBLIC_ORIGIN = defineSecret('PUBLIC_ORIGIN');
 
-/** Lazy Stripe client — instantiated per invocation so secret values are
- *  fresh at runtime (defineSecret values aren't available at module load).
- *  API version pinned to whatever the installed SDK declares as its default,
- *  so Stripe-side schema changes don't surprise us silently. */
-function stripeClient(): Stripe {
-    return new Stripe(STRIPE_SECRET_KEY.value());
+/** Lazy Stripe client — the SDK is dynamically imported on first use (kept off
+ *  the shared bundle's cold-start path for non-Stripe functions), and the
+ *  client is instantiated per invocation so secret values are fresh at runtime
+ *  (defineSecret values aren't available at module load). API version pinned to
+ *  whatever the installed SDK declares as its default, so Stripe-side schema
+ *  changes don't surprise us silently. */
+async function stripeClient(): Promise<Stripe> {
+    const { default: StripeCtor } = await import('stripe');
+    return new StripeCtor(STRIPE_SECRET_KEY.value());
 }
 
 // ── createCheckoutSession ─────────────────────────────────────────────────────
@@ -62,7 +70,12 @@ function stripeClient(): Stripe {
  * forcing sign-in adds friction at the worst possible moment (payment).
  */
 export const createCheckoutSession = onCall(
-    { secrets: [STRIPE_SECRET_KEY, STRIPE_PRICE_ID, PUBLIC_ORIGIN] },
+    {
+        secrets: [STRIPE_SECRET_KEY, STRIPE_PRICE_ID, PUBLIC_ORIGIN],
+        // Bound fan-out on the purchase path so a spike can't scale out
+        // unboundedly pre-launch (quota caps still open per billing-safety.md).
+        maxInstances: 10,
+    },
     async (request) => {
         const uid = request.auth?.uid;
         if (!uid) {
@@ -82,7 +95,8 @@ export const createCheckoutSession = onCall(
 
         const origin = PUBLIC_ORIGIN.value();
         try {
-            const session = await stripeClient().checkout.sessions.create({
+            const stripe = await stripeClient();
+            const session = await stripe.checkout.sessions.create({
                 mode: 'payment',
                 line_items: [{ price: STRIPE_PRICE_ID.value(), quantity: 1 }],
                 // success/cancel route back to the app. The Worker rewrites
@@ -90,8 +104,9 @@ export const createCheckoutSession = onCall(
                 success_url: `${origin}/?paywall=ok&session_id={CHECKOUT_SESSION_ID}`,
                 cancel_url: `${origin}/?paywall=cancelled`,
                 // Metadata so the webhook knows which Firestore doc to write.
-                // Stripe persists this on the Session, the PaymentIntent, AND
-                // the Charge — all three readable from the webhook event.
+                // Stripe persists this on the Session and the PaymentIntent
+                // (NOT auto-copied to the Charge — the refund handler resolves
+                // uid off the PaymentIntent for that reason).
                 metadata: { uid },
                 payment_intent_data: { metadata: { uid } },
                 // Customer hint — prefill if we have one from a past abandoned
@@ -137,6 +152,9 @@ export const stripeWebhook = onRequest(
         // Webhook is publicly POSTed by Stripe — no auth check, but the
         // signature verification below proves the caller has the secret.
         cors: false,
+        // Bound instances so a burst of (or replayed) webhook deliveries
+        // can't fan out unboundedly.
+        maxInstances: 10,
     },
     async (req, res) => {
         if (req.method !== 'POST') {
@@ -151,7 +169,8 @@ export const stripeWebhook = onRequest(
 
         let event: Stripe.Event;
         try {
-            event = stripeClient().webhooks.constructEvent(
+            const stripe = await stripeClient();
+            event = stripe.webhooks.constructEvent(
                 req.rawBody,
                 sig,
                 STRIPE_WEBHOOK_SECRET.value()
@@ -193,6 +212,17 @@ async function handleSessionCompleted(session: Stripe.Checkout.Session, res: Web
         logger.error('[stripeWebhook] session.completed without uid metadata', session.id);
         // 200 because retrying won't help — bad data, not transient.
         res.status(200).send('no uid');
+        return;
+    }
+    // Only grant on captured funds. For card payments payment_status is
+    // 'paid' here; but async/delayed methods (some bank debits, vouchers)
+    // fire session.completed with 'unpaid'/'no_payment_required'. Granting
+    // then would hand out lifetime access before money settles. If we ever
+    // enable such a method, the settlement fires checkout.session
+    // .async_payment_succeeded — handle that too at that point.
+    if (session.payment_status !== 'paid') {
+        logger.info(`[stripeWebhook] session ${session.id} completed but payment_status=${session.payment_status}; not granting`);
+        res.status(200).send('not paid');
         return;
     }
     try {
@@ -239,13 +269,29 @@ async function handleSessionCompleted(session: Stripe.Checkout.Session, res: Web
  *  Idempotency: re-deliveries of the same `charge.refunded` event hit the
  *  already-cleared short-circuit and are no-ops. */
 async function handleChargeRefunded(charge: Stripe.Charge, res: WebhookResponse) {
-    const uid = charge.metadata?.uid;
-    if (!uid || typeof uid !== 'string') {
-        logger.error('[stripeWebhook] charge.refunded without uid metadata', charge.id);
-        // The uid is set on the PaymentIntent at checkout-session-create time
-        // (see createCheckoutSession's payment_intent_data.metadata). If a
-        // charge is missing it, the purchase was created outside our flow —
-        // 200 because retrying can't fix bad metadata.
+    // uid is set on the PaymentIntent at checkout-session-create time
+    // (payment_intent_data.metadata). Stripe does NOT copy PaymentIntent
+    // metadata onto the Charge, so charge.metadata.uid is normally absent —
+    // resolve it off the PaymentIntent. (We still check charge.metadata first
+    // in case a future flow sets it directly on the charge.)
+    let uid = typeof charge.metadata?.uid === 'string' ? charge.metadata.uid : undefined;
+    if (!uid && charge.payment_intent) {
+        try {
+            const piId = typeof charge.payment_intent === 'string'
+                ? charge.payment_intent
+                : charge.payment_intent.id;
+            const stripe = await stripeClient();
+            const pi = await stripe.paymentIntents.retrieve(piId);
+            if (typeof pi.metadata?.uid === 'string') uid = pi.metadata.uid;
+        } catch (err) {
+            logger.error('[stripeWebhook] refund: PaymentIntent lookup failed for charge', charge.id, err);
+        }
+    }
+    if (!uid) {
+        logger.error('[stripeWebhook] charge.refunded without resolvable uid', charge.id);
+        // The purchase was created outside our flow (or the PI lookup failed).
+        // 200 because a retry won't add missing metadata; 500 only on the
+        // transient-write path below.
         res.status(200).send('no uid');
         return;
     }
