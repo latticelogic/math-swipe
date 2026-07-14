@@ -467,6 +467,17 @@ function App() {
     }
   }, [entitlement.status, questionType, totalAnswered, paywallOpen]);
 
+  // Post-trial gate for the Magic tricks tab. The answer-flow trigger above
+  // only guards the game; the tricks tab is premium content too (only the
+  // Daily Challenge stays free after the trial), so an expired user opening it
+  // gets the paywall. Closes the enforcement gap between "everything but daily
+  // is paid" and a gate that previously only fired on the game surface.
+  useEffect(() => {
+    if (entitlement.status === 'expired' && activeTab === 'magic' && !paywallOpen) {
+      setPaywallOpen(true);
+    }
+  }, [entitlement.status, activeTab, paywallOpen]);
+
   // Auto-close the paywall the instant the user has paid (Stripe webhook
   // fired and refresh() picked up the new paidAt). Without this, a paid
   // user would still see the paywall overlay until they reloaded.

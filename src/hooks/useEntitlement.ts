@@ -24,6 +24,16 @@ import {
     blankEntitlement, hasAccess, entitlementStatus, trialDaysLeft,
     type Entitlement, type EntitlementStatus,
 } from '../utils/entitlement';
+import { cacheEntitlement, readCachedEntitlement } from '../utils/entitlementCache';
+
+/** Clock-rollback guard: trust the latest of the device clock and the server
+ *  timestamps carried on the entitlement (updatedAt / trialStartedAt were
+ *  written with serverTimestamp). Setting the device clock back can't rewind
+ *  the trial below the last time the server actually saw us. */
+function guardedNow(e: Entitlement | null): number {
+    const floor = e ? Math.max(e.updatedAt || 0, e.trialStartedAt || 0) : 0;
+    return Math.max(Date.now(), floor);
+}
 
 interface UseEntitlementResult {
     /** Granular state for UI branching: 'paid' | 'trial' | 'expired' | 'unknown' */
@@ -101,7 +111,9 @@ export function useEntitlement(uid: string | null): UseEntitlementResult {
                 if (cancelled) return;
 
                 if (snap.exists()) {
-                    setEntitlement(toEntitlement(snap.data()));
+                    const ent = toEntitlement(snap.data());
+                    cacheEntitlement(uid, ent); // last-known-good for offline/failed reads
+                    setEntitlement(ent);
                     setLoading(false);
                     return;
                 }
@@ -121,15 +133,19 @@ export function useEntitlement(uid: string | null): UseEntitlementResult {
                     updatedAt: serverTimestamp(),
                 });
                 if (cancelled) return;
+                cacheEntitlement(uid, next);
                 setEntitlement(next);
             } catch (err) {
-                // Don't lock the user out of the app on a transient read failure
-                // — fall back to a stale-but-permissive state (treat as trial,
-                // re-check next session). The Firestore rule will still gate
-                // any write that depends on entitlement on the server side.
-                console.warn('[entitlement] load failed, falling back:', err);
+                // Read failed after retries. Fall back to the last-known-good
+                // cached entitlement (an expired user stays expired, a paid user
+                // stays paid) rather than a blanket-permissive trial — otherwise
+                // reliably breaking the read would grant free access. Only when
+                // there's NO cache (genuine first run + offline) do we treat as
+                // trial, since locking out a brand-new user is the worse failure.
+                console.warn('[entitlement] load failed, using cached fallback:', err);
                 if (!cancelled) {
-                    setEntitlement({ ...blankEntitlement(), trialStartedAt: Date.now() });
+                    const cached = readCachedEntitlement(uid);
+                    setEntitlement(cached ?? { ...blankEntitlement(), trialStartedAt: Date.now() });
                 }
             } finally {
                 if (!cancelled) setLoading(false);
@@ -169,7 +185,9 @@ export function useEntitlement(uid: string | null): UseEntitlementResult {
             ]);
             const snap = await getDoc(doc(db, FIRESTORE.ENTITLEMENTS, uid));
             if (snap.exists()) {
-                setEntitlement(toEntitlement(snap.data()));
+                const ent = toEntitlement(snap.data());
+                cacheEntitlement(uid, ent);
+                setEntitlement(ent);
             }
         } catch (err) {
             console.warn('[entitlement] refresh failed:', err);
@@ -202,11 +220,12 @@ export function useEntitlement(uid: string | null): UseEntitlementResult {
         }));
     }, [uid]);
 
+    const now = guardedNow(entitlement);
     return {
-        status: entitlementStatus(entitlement),
-        daysLeft: entitlement ? trialDaysLeft(entitlement.trialStartedAt) : 0,
+        status: entitlementStatus(entitlement, now),
+        daysLeft: entitlement ? trialDaysLeft(entitlement.trialStartedAt, now) : 0,
         loading,
-        hasAccess: hasAccess(entitlement),
+        hasAccess: hasAccess(entitlement, now),
         entitlement,
         mockGrantAccess,
         mockBackdateTrial,
