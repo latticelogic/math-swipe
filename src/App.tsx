@@ -57,6 +57,7 @@ import { startCheckout } from './utils/checkout';
 import { Paywall } from './components/Paywall';
 import { WelcomeModal, TrialReminderModal } from './components/TrialModals';
 import { LegalPage, type LegalDocId } from './components/LegalPages';
+import { TabSkeleton } from './components/TabSkeleton';
 import { getFirebase } from './utils/firebase';
 import { generateProblem } from './utils/mathGenerator';
 import { generateDailyChallenge, generateChallenge } from './utils/dailyChallenge';
@@ -117,19 +118,6 @@ function AgeBandIcon({ band }: { band: AgeBand }) {
     );
 }
 
-function LoadingFallback() {
-  return (
-    <div className="flex-1 flex items-center justify-center">
-      <motion.div
-        className="text-lg chalk text-[var(--color-chalk)]/50"
-        animate={{ opacity: [0.3, 1, 0.3] }}
-        transition={{ duration: 1.5, repeat: Infinity }}
-      >
-        Loading...
-      </motion.div>
-    </div>
-  );
-}
 
 function App() {
   const { user, setDisplayName, linkGoogle, sendEmailLink } = useFirebaseAuth();
@@ -593,7 +581,7 @@ function App() {
   if (profileSlug) {
     return (
       <BlackboardLayout>
-        <Suspense fallback={<LoadingFallback />}>
+        <Suspense fallback={<TabSkeleton variant="generic" />}>
           <ProfilePage
             slug={profileSlug}
             onChallenge={(id) => {
@@ -635,7 +623,7 @@ function App() {
   if (adminRoute === 'push') {
     return (
       <BlackboardLayout>
-        <Suspense fallback={<LoadingFallback />}>
+        <Suspense fallback={<TabSkeleton variant="generic" />}>
           <AdminPushAnalytics
             onBackToGame={() => {
               setAdminRoute(null);
@@ -649,7 +637,7 @@ function App() {
   if (adminRoute === 'billing') {
     return (
       <BlackboardLayout>
-        <Suspense fallback={<LoadingFallback />}>
+        <Suspense fallback={<TabSkeleton variant="generic" />}>
           <AdminBilling
             onBackToGame={() => {
               setAdminRoute(null);
@@ -1135,13 +1123,13 @@ function App() {
         {/* Non-game tabs (no wrapper — each page scrolls independently) */}
         {activeTab === 'league' && (
           <motion.div className="flex-1 flex flex-col min-h-0" onPanEnd={handleTabSwipe}>
-            <Suspense fallback={<LoadingFallback />}><LeaguePage userXP={stats.totalXP} userStreak={stats.bestStreak} uid={uid} displayName={user?.displayName ?? 'You'} activeThemeId={activeThemeId as string} activeCostume={activeCostume as string} bestSpeedrunTime={stats.bestSpeedrunTime} speedrunHardMode={stats.speedrunHardMode} onStartSpeedrun={() => { setQuestionType('speedrun'); setActiveTab('game'); }} /></Suspense>
+            <Suspense fallback={<TabSkeleton variant="league" />}><LeaguePage userXP={stats.totalXP} userStreak={stats.bestStreak} uid={uid} displayName={user?.displayName ?? 'You'} activeThemeId={activeThemeId as string} activeCostume={activeCostume as string} bestSpeedrunTime={stats.bestSpeedrunTime} speedrunHardMode={stats.speedrunHardMode} onStartSpeedrun={() => { setQuestionType('speedrun'); setActiveTab('game'); }} /></Suspense>
           </motion.div>
         )}
 
         {activeTab === 'me' && (
           <motion.div className="flex-1 flex flex-col min-h-0" onPanEnd={handleTabSwipe}>
-            <Suspense fallback={<LoadingFallback />}><MePage
+            <Suspense fallback={<TabSkeleton variant="me" />}><MePage
               stats={stats}
               accuracy={accuracy}
               sessionScore={score}
@@ -1174,7 +1162,7 @@ function App() {
 
         {activeTab === 'magic' && (
           <motion.div className="flex-1 flex flex-col min-h-0" onPanEnd={!isMagicLessonActive ? handleTabSwipe : undefined}>
-            <Suspense fallback={<LoadingFallback />}><TricksPage onLessonActive={setIsMagicLessonActive} /></Suspense>
+            <Suspense fallback={<TabSkeleton variant="tricks" />}><TricksPage onLessonActive={setIsMagicLessonActive} /></Suspense>
           </motion.div>
         )}
 
