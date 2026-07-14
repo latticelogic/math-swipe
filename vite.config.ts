@@ -54,5 +54,9 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: './src/setupTests.ts',
+    // Emulator-backed rules tests run separately (npm run test:rules) since
+    // they need Java + the Firestore emulator — keep them out of the default
+    // unit-test/CI-build lane so it stays hermetic.
+    exclude: ['**/node_modules/**', '**/dist/**', 'firestore-tests/**'],
   },
 })

@@ -69,18 +69,43 @@ service cloud.firestore {
                            && request.resource.data.bestSpeedrunTime >= 0
                            && (request.resource.data.bestSpeedrunTime == 0
                                || request.resource.data.bestSpeedrunTime >= 5000)))  // can't finish 10 problems in < 5s
+                   // Leaderboard-integrity constraints on the cache-projected
+                   // stat fields. These are DEFENSE-IN-DEPTH: stats are
+                   // client-authoritative, so App Check (attestation that the
+                   // caller is the genuine app) is the primary control, and
+                   // true integrity would require server-side score accrual.
+                   // What these rules add: on updates, the values are
+                   // non-decreasing (except a full reset to 0) and can't jump
+                   // by an implausible amount in a single write — turning a
+                   // one-shot "totalXP = 1,000,000" forge into sustained
+                   // scripted writes. Generous ceilings so a heavy offline
+                   // session that syncs as one write is never rejected.
                    && (!('totalXP' in request.resource.data)
                        || (request.resource.data.totalXP is number
                            && request.resource.data.totalXP >= 0
-                           && request.resource.data.totalXP <= 1000000))             // 1M XP cap
+                           && request.resource.data.totalXP <= 1000000              // 1M XP cap
+                           && (resource == null
+                               || request.resource.data.totalXP == 0                // reset
+                               || !('totalXP' in resource.data)
+                               || (request.resource.data.totalXP >= resource.data.totalXP
+                                   && request.resource.data.totalXP <= resource.data.totalXP + 50000))))
                    && (!('bestStreak' in request.resource.data)
                        || (request.resource.data.bestStreak is number
                            && request.resource.data.bestStreak >= 0
-                           && request.resource.data.bestStreak <= 1000))             // 1000 streak cap
+                           && request.resource.data.bestStreak <= 1000              // 1000 streak cap
+                           && (resource == null
+                               || request.resource.data.bestStreak == 0             // reset
+                               || !('bestStreak' in resource.data)
+                               || request.resource.data.bestStreak >= resource.data.bestStreak)))
                    && (!('totalSolved' in request.resource.data)
                        || (request.resource.data.totalSolved is number
                            && request.resource.data.totalSolved >= 0
-                           && request.resource.data.totalSolved <= 500000))          // 500K problems cap
+                           && request.resource.data.totalSolved <= 500000           // 500K problems cap
+                           && (resource == null
+                               || request.resource.data.totalSolved == 0            // reset
+                               || !('totalSolved' in resource.data)
+                               || (request.resource.data.totalSolved >= resource.data.totalSolved
+                                   && request.resource.data.totalSolved <= resource.data.totalSolved + 5000))))
                    && (!('accuracy' in request.resource.data)
                        || (request.resource.data.accuracy is number
                            && request.resource.data.accuracy >= 0
