@@ -89,25 +89,9 @@ export const QUESTION_TYPES: ReadonlyArray<CategoryEntry<QuestionType>> = [
     { id: 'mix-all', icon: '🌀', label: 'All Mix', group: 'mixed' },
 ] as const;
 
-// ── Acronym glossary (shown as footnotes in the question type picker) ─────────
-
-/** Explanations for acronyms used in category labels/questions */
-export const ACRONYM_GLOSSARY: Record<string, string> = {
-    'PEMDAS': 'Parentheses, Exponents, Multiplication, Division, Addition, Subtraction — aka BODMAS / BIDMAS (order of operations)',
-    'GCF': 'Greatest Common Factor — aka HCF (Highest Common Factor)',
-    'LCM': 'Least Common Multiple',
-};
-
-/** Returns glossary entries relevant to the visible category IDs */
-export function glossaryForTypes(typeIds: readonly string[]): [string, string][] {
-    const entries: [string, string][] = [];
-    if (typeIds.some(id => id === 'orderops')) entries.push(['PEMDAS', ACRONYM_GLOSSARY['PEMDAS']]);
-    if (typeIds.some(id => id === 'gcflcm')) {
-        entries.push(['GCF', ACRONYM_GLOSSARY['GCF']]);
-        entries.push(['LCM', ACRONYM_GLOSSARY['LCM']]);
-    }
-    return entries;
-}
+// (The PEMDAS/GCF/LCM acronym-glossary footnotes were removed from the picker
+// 2026-07-16 — owner call, visual noise. Git history has the code if a
+// glossary surface ever returns.)
 
 // ── Band definitions ──────────────────────────────────────────────────────────
 
