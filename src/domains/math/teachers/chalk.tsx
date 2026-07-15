@@ -22,7 +22,6 @@ export const MR_CHALK: Teacher = {
             'Take your time.',
             'I\'m here when you\'re ready.',
             'No rush.',
-            'Read it twice if you need to.',
             'Whenever you\'re set.',
         ],
         success: [

@@ -59,7 +59,6 @@ import { WelcomeModal, TrialReminderModal } from './components/TrialModals';
 import { LegalPage, type LegalDocId } from './components/LegalPages';
 import { TabSkeleton } from './components/TabSkeleton';
 import { PersonalBestRibbon } from './components/PersonalBestRibbon';
-import { NumberFactAside } from './components/NumberFactAside';
 import { getFirebase } from './utils/firebase';
 import { generateProblem } from './utils/mathGenerator';
 import { generateDailyChallenge, generateChallenge } from './utils/dailyChallenge';
@@ -387,9 +386,24 @@ function App() {
   const [unlocked, setUnlocked] = useState(() => loadUnlocked());
   const unlockedRef = useRef(unlocked);
   useEffect(() => { unlockedRef.current = unlocked; }, [unlocked]);
-  // Achievement unlock toast — carries id (to render the actual badge SVG)
-  // and name (to display). Null when nothing is being celebrated.
-  const [unlockToast, setUnlockToast] = useState<{ id: string; name: string } | null>(null);
+  // Achievement unlock toasts — Minecraft-style: slide in top-right, auto-
+  // dismiss, and if several unlock at once they queue and show one at a time.
+  // currentToast is the queue head (derived); the effect dequeues after a beat.
+  const [achievementQueue, setAchievementQueue] = useState<{ id: string; name: string }[]>([]);
+  const [currentToast, setCurrentToast] = useState<{ id: string; name: string } | null>(null);
+  // Pull the next queued unlock onto the display when the current one clears.
+  useEffect(() => {
+    if (currentToast || achievementQueue.length === 0) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setCurrentToast(achievementQueue[0]);
+    setAchievementQueue(q => q.slice(1));
+  }, [currentToast, achievementQueue]);
+  // Auto-dismiss the current toast after a beat.
+  useEffect(() => {
+    if (!currentToast) return;
+    const t = setTimeout(() => setCurrentToast(null), 2800);
+    return () => clearTimeout(t);
+  }, [currentToast]);
 
   // Restore achievements from Firestore on auth
   useEffect(() => {
@@ -422,18 +436,15 @@ function App() {
       fresh.forEach(id => next.add(id));
       setUnlocked(next);
       saveUnlocked(next, uid);
-      // Show toast for first new unlock — extended to 3.2s so the more
-      // theatrical visual has time to land. The badge SVG renders inline
-      // with a soft halo so the player actually sees what they earned.
-      // Haptic match: achievement unlocks now buzz like streak milestones
-      // — previously they were silent which was a miss for what's often
-      // the rarest, most-celebratable moment in the app.
-      const badge = EVERY_ACHIEVEMENT.find(a => a.id === fresh[0]);
-      if (badge) {
+      // Enqueue every fresh unlock — the queue shows them one at a time.
+      // Haptic match: achievement unlocks buzz like streak milestones.
+      const items = fresh
+        .map(id => EVERY_ACHIEVEMENT.find(a => a.id === id))
+        .filter((b): b is NonNullable<typeof b> => !!b)
+        .map(b => ({ id: b.id, name: b.name }));
+      if (items.length) {
         hapticMilestone();
-        setUnlockToast({ id: badge.id, name: badge.name });
-        const t = setTimeout(() => setUnlockToast(null), 3200);
-        return () => clearTimeout(t);
+        setAchievementQueue(q => [...q, ...items]);
       }
     }
   }, [stats, bestStreak, totalAnswered, totalCorrect, uid]);
@@ -1121,9 +1132,6 @@ function App() {
             <AnimatePresence>
               {showPB && <PersonalBestRibbon streak={bestStreak} />}
             </AnimatePresence>
-
-            {/* ── Occasional chalk aside about the number you just solved ── */}
-            <NumberFactAside flash={flash} answer={currentProblem?.answer} />
           </div>
         )}
 
@@ -1273,50 +1281,25 @@ function App() {
           />
         )}
 
-        {/* ── Achievement unlock toast ──
-            Theatrical version: shows the actual badge SVG with a sparkle
-            halo behind it on appearance. Toast itself has a gold border
-            glow + scales in for a beat then settles. Sparkles fire once
-            on mount, then fade away — leaving a clean readable card. */}
-        <AnimatePresence>
-          {unlockToast && (
+        {/* ── Achievement unlock toast ── Minecraft-style: slides in from the
+            top-right, holds a beat, slides out. mode="wait" so a queue of
+            unlocks plays one at a time, cleanly. */}
+        <AnimatePresence mode="wait">
+          {currentToast && (
             <motion.div
-              key={unlockToast.id}
-              initial={{ opacity: 0, y: 40, scale: 0.9 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 40, scale: 0.9 }}
-              transition={{ duration: 0.35, ease: 'easeOut' }}
-              className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-[var(--color-overlay)] border-2 border-[var(--color-gold)]/50 rounded-2xl px-5 py-3 flex items-center gap-3 shadow-[0_0_24px_rgba(251,191,36,0.25)]"
+              key={currentToast.id}
+              initial={{ opacity: 0, x: 340 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 340 }}
+              transition={{ type: 'spring', stiffness: 340, damping: 32 }}
+              className="fixed top-3 right-3 z-[60] flex items-center gap-2.5 bg-[var(--color-overlay)] border border-[var(--color-gold)]/40 rounded-xl pl-2 pr-3.5 py-1.5 shadow-[0_6px_22px_rgba(0,0,0,0.4)] max-w-[78vw]"
             >
-              {/* Badge halo: sparkles fly outward once, fade fast */}
-              <div className="relative w-12 h-12 flex items-center justify-center">
-                {[0, 60, 120, 180, 240, 300].map(deg => {
-                  const rad = (deg * Math.PI) / 180;
-                  return (
-                    <motion.div
-                      key={deg}
-                      className="absolute text-[var(--color-gold)]"
-                      initial={{ x: 0, y: 0, opacity: 0, scale: 0.3 }}
-                      animate={{
-                        x: Math.cos(rad) * 32,
-                        y: Math.sin(rad) * 32,
-                        opacity: [0, 1, 0],
-                        scale: [0.3, 1, 0.4],
-                      }}
-                      transition={{ duration: 0.9, ease: 'easeOut' }}
-                    >
-                      <svg viewBox="0 0 8 8" width="6" height="6" fill="currentColor"><circle cx="4" cy="4" r="3" /></svg>
-                    </motion.div>
-                  );
-                })}
-                {/* The actual unlocked badge SVG, with a soft glow */}
-                <div className="relative drop-shadow-[0_0_12px_rgba(251,191,36,0.6)]">
-                  <AchievementBadge achievementId={unlockToast.id} unlocked={true} name="" desc="" />
-                </div>
+              <div className="w-9 h-9 flex items-center justify-center shrink-0">
+                <AchievementBadge achievementId={currentToast.id} unlocked={true} name="" desc="" />
               </div>
-              <div>
-                <div className="text-[10px] ui uppercase tracking-widest text-[var(--color-gold)]/70">Achievement Unlocked</div>
-                <div className="text-sm chalk text-[var(--color-gold)]">{unlockToast.name}</div>
+              <div className="min-w-0">
+                <div className="text-[9px] ui uppercase tracking-widest text-[var(--color-gold)]/70 leading-tight">Achievement Unlocked</div>
+                <div className="text-sm chalk text-[var(--color-gold)] truncate leading-tight">{currentToast.name}</div>
               </div>
             </motion.div>
           )}

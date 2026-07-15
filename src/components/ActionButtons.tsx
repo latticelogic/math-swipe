@@ -255,9 +255,9 @@ export const ActionButtons = memo(function ActionButtons({
                     onClick={onHardModeToggle}
                     aria-label={hardMode ? 'Disable hard mode' : 'Enable hard mode'}
                     aria-pressed={hardMode}
-                    className={`w-11 h-11 flex flex-col items-center justify-center text-xl ${hardMode
-                        ? 'opacity-100 action-icon-skull-active'
-                        : 'opacity-50 action-icon-skull'
+                    className={`action-icon w-11 h-11 flex items-center justify-center ${hardMode
+                        ? 'text-[var(--color-gold)]'
+                        : 'text-[rgb(var(--color-fg))]/70'
                         }`}
                     whileTap={{ scale: 0.88 }}
                     animate={hardMode ? {
@@ -271,10 +271,15 @@ export const ActionButtons = memo(function ActionButtons({
                         ease: 'easeInOut' as const,
                     } : {}}
                 >
-                    💀
-                    {hardMode && (
-                        <span className="w-1 h-1 rounded-full bg-[var(--color-gold)] mt-0.5" />
-                    )}
+                    {/* Hand-drawn skull — matches the line weight + sizing of the
+                        other controls (was a heavier, off-aesthetic emoji). */}
+                    <svg viewBox="0 0 24 24" className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M20 11 C 20 6.6 16.4 3.5 12 3.5 C 7.6 3.5 4 6.6 4 11 C 4 13.4 5.2 15 6.6 15.8 L 6.6 18 C 6.6 18.8 7.1 19.3 8 19.3 L 16 19.3 C 16.9 19.3 17.4 18.8 17.4 18 L 17.4 15.8 C 18.8 15 20 13.4 20 11 Z" />
+                        <circle cx="9" cy="11.5" r="1.5" fill="currentColor" stroke="none" />
+                        <circle cx="15" cy="11.5" r="1.5" fill="currentColor" stroke="none" />
+                        <path d="M12 14 L 10.9 16 L 13.1 16 Z" fill="currentColor" stroke="none" />
+                        <path d="M10 19.3 L 10 17.5 M12 19.3 L 12 17.5 M14 19.3 L 14 17.5" />
+                    </svg>
                 </motion.button>
             </ActionTooltip>
         </div>
