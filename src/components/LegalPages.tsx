@@ -183,9 +183,16 @@ function PrivacyBody() {
                     opt the child in via Google or email sign-in; otherwise the
                     app works fully on the anonymous account.</p>
                 <p className="text-[rgb(var(--color-fg))]/55 text-xs italic">
-                    DRAFT NOTE: this section needs explicit COPPA-compliance
-                    language and possibly a parental-consent flow before launch
-                    if we ship in the US to under-13 users.
+                    DRAFT NOTE — stance chosen (counsel to finalise wording):
+                    mixed-audience model on the "support for internal operations"
+                    basis (no ad-tech, no third-party analytics, no data sale),
+                    NOT a full verifiable-parental-consent flow; opt-in features
+                    (email / Google link / push) gated for under-13 where
+                    required. Market sequencing: launch under Singapore PDPA
+                    first (no personal data required to play), and add a neutral
+                    US age-screen + parental notice only on US market entry,
+                    since COPPA is triggered by serving US under-13s regardless
+                    of where the operator sits. See the legal-review brief.
                 </p>
             </Section>
 
@@ -297,13 +304,17 @@ function TermsBody() {
 
             <Section title="Governing law">
                 <p>
-                    Lattice Logic operates from the United States. These terms
-                    are governed by the laws of the state of incorporation
-                    (currently being finalised; final draft will specify).
+                    Math Swipe is operated by Lattice Logic Pte. Ltd., a company
+                    incorporated in the Republic of Singapore (UEN 202610912N).
+                    These terms are governed by the laws of Singapore, and any
+                    dispute will be resolved under the mechanism specified below.
                 </p>
                 <p className="text-[rgb(var(--color-fg))]/55 text-xs italic">
-                    DRAFT NOTE: replace with actual state of incorporation +
-                    chosen dispute-resolution clause before launch.
+                    DRAFT NOTE: governing law set to Singapore (the operator's
+                    jurisdiction). Counsel to finalise the dispute-resolution
+                    mechanism — Singapore courts vs SIAC arbitration, and any
+                    class-action waiver — and scope obligations per launch market
+                    (see the Children section + the legal-review brief).
                 </p>
             </Section>
 
