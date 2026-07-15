@@ -3,7 +3,17 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { QuestionType, AgeBand } from '../utils/questionTypes';
 import { typesForBand, GROUP_LABELS, type QuestionGroup } from '../utils/questionTypes';
+import { setFocusTable, getFocusTable } from '../utils/mathGenerator';
 import { CategoryIcon } from './CategoryIcon';
+
+const FOCUS_TABLE_KEY = 'math-swipe-focus-table';
+
+/** Restore the drilled times-table across sessions. Module-scope so it runs
+ *  once, before any Tables problem can be generated. */
+try {
+    const stored = Number(localStorage.getItem(FOCUS_TABLE_KEY));
+    if (Number.isFinite(stored) && stored >= 2) setFocusTable(stored);
+} catch { /* storage unavailable — default table stands */ }
 
 interface Props {
     current: QuestionType;
@@ -18,9 +28,19 @@ const ALL_GROUPS: QuestionGroup[] = ['daily', 'young', 'whole', 'core', 'parts',
 
 export const QuestionTypePicker = memo(function QuestionTypePicker({ current, onChange, ageBand }: Props) {
     const [open, setOpen] = useState(false);
+    // Second step for the Tables tile: pick WHICH table to drill (2–12).
+    const [tableChooser, setTableChooser] = useState(false);
     const bandTypes = useMemo(() => typesForBand(ageBand), [ageBand]);
     const groups = useMemo(() => ALL_GROUPS.filter(g => bandTypes.some(t => t.group === g)), [bandTypes]);
     const currentEntry = bandTypes.find(t => t.id === current);
+
+    function pickTable(n: number) {
+        setFocusTable(n);
+        try { localStorage.setItem(FOCUS_TABLE_KEY, String(n)); } catch { /* fine */ }
+        setTableChooser(false);
+        onChange('tables');
+        setOpen(false);
+    }
 
     return (
         <>
@@ -29,7 +49,7 @@ export const QuestionTypePicker = memo(function QuestionTypePicker({ current, on
                 latency for a button that opens a modal; CSS :active fires on
                 pointerdown. */}
             <button
-                onClick={() => setOpen(o => !o)}
+                onClick={() => { setOpen(o => !o); setTableChooser(false); }}
                 aria-label={`Switch topic. Current: ${currentEntry?.label ?? 'select'}`}
                 aria-expanded={open}
                 className="action-icon w-12 flex flex-col items-center justify-center gap-0.5 text-[rgb(var(--color-fg))]/70 active:text-[var(--color-gold)] active:scale-90"
@@ -58,7 +78,7 @@ export const QuestionTypePicker = memo(function QuestionTypePicker({ current, on
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
                                 transition={{ duration: 0.1 }}
-                                onClick={() => setOpen(false)}
+                                onClick={() => { setOpen(false); setTableChooser(false); }}
                             />
 
                             {/* Centered grouped picker — faster entrance and a
@@ -71,7 +91,35 @@ export const QuestionTypePicker = memo(function QuestionTypePicker({ current, on
                                 exit={{ opacity: 0, scale: 0.96 }}
                                 transition={{ duration: 0.12 }}
                             >
-                                {groups.map(group => {
+                                {tableChooser ? (
+                                    // Step 2 of the Tables tile: which table?
+                                    <div>
+                                        <div className="text-[10px] ui text-[rgb(var(--color-fg))]/30 uppercase tracking-widest mb-2 px-1">
+                                            Which table?
+                                        </div>
+                                        <div className="grid grid-cols-4 gap-2">
+                                            {[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(n => (
+                                                <motion.button
+                                                    key={n}
+                                                    onClick={() => pickTable(n)}
+                                                    className={`py-3 rounded-xl text-base chalk transition-colors ${current === 'tables' && getFocusTable() === n
+                                                        ? 'bg-[var(--color-gold)]/15 border border-[var(--color-gold)]/40 text-[var(--color-gold)]'
+                                                        : 'border border-[rgb(var(--color-fg))]/10 text-[rgb(var(--color-fg))]/70 active:bg-[var(--color-surface)]'
+                                                        }`}
+                                                    whileTap={{ scale: 0.92 }}
+                                                >
+                                                    {n}s
+                                                </motion.button>
+                                            ))}
+                                        </div>
+                                        <button
+                                            onClick={() => setTableChooser(false)}
+                                            className="w-full mt-3 py-2 text-xs ui text-[rgb(var(--color-fg))]/45 hover:text-[rgb(var(--color-fg))]/65 transition-colors"
+                                        >
+                                            Back to topics
+                                        </button>
+                                    </div>
+                                ) : groups.map(group => {
                                     const items = bandTypes.filter(t => t.group === group);
                                     return (
                                         <div key={group} className="mb-3 last:mb-0">
@@ -84,7 +132,13 @@ export const QuestionTypePicker = memo(function QuestionTypePicker({ current, on
                                                 {items.map(t => (
                                                     <motion.button
                                                         key={t.id}
-                                                        onClick={() => { onChange(t.id); setOpen(false); }}
+                                                        onClick={() => {
+                                                            // Tables drills ONE chosen table — route to
+                                                            // the chooser instead of selecting directly.
+                                                            if (t.id === 'tables') { setTableChooser(true); return; }
+                                                            onChange(t.id);
+                                                            setOpen(false);
+                                                        }}
                                                         className={`flex flex-col items-center gap-1 py-2 px-1 rounded-xl transition-colors ${t.id === current
                                                             ? 'bg-[var(--color-gold)]/15 border border-[var(--color-gold)]/40'
                                                             : 'border border-transparent active:bg-[var(--color-surface)]'
@@ -95,7 +149,7 @@ export const QuestionTypePicker = memo(function QuestionTypePicker({ current, on
                                                             <CategoryIcon id={t.id} size={28} />
                                                         </div>
                                                         <span className={`text-[10px] ui ${t.id === current ? 'text-[var(--color-gold)]/80' : 'text-[rgb(var(--color-fg))]/40'}`}>
-                                                            {t.label}
+                                                            {t.id === 'tables' && current === 'tables' ? `${getFocusTable()}s Table` : t.label}
                                                         </span>
                                                     </motion.button>
                                                 ))}

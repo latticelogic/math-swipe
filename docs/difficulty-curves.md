@@ -262,6 +262,42 @@ flat are marked **(flat by design)** with reasoning.
 #### `mix-basic` and `mix-all` — current strength: 4/5 ✓ keep
 - These are dispatch-only types — they pick a sub-type and use that type's difficulty curve. Once every sub-type has a real curve (this spec), these get the benefit for free.
 
+### 2026-07-16 batch (owner-approved: tables · missing · primes · estimate · money · sequence · time)
+
+#### `tables` — focused drill of ONE chosen times-table (picker sub-chooser, persisted)
+- Easy (d=1): table × 1–5 · Med (d=2–3): × 1–9 then × 1–12 · Hard (d=4–5): × 2–19 then × 2–25 (escapes the chart)
+- hardMode: × 13–99 (real mental multiplication on the chosen table)
+- Excluded from `mix-all`/daily (duplicates `multiply` in mixed play)
+
+#### `missing` — inverse operations ("23 + ? = 41")
+- Easy: +/− within 10 · Med: +−× with 2-digit ranges · Hard (d≥3): all four ops, ranges to 300
+- hardMode: 3-digit +/− and 13–99 ×÷
+
+#### `primes` — "Which is prime?" / "Which divides N?" (d≥3)
+- Easy: primes ≤29 vs. look-prime composites (9…49) · Med: 31–97 vs. 51…99 + semiprime factor-spotting · Hard: 101–199 vs. 119…221
+- hardMode: big-prime recognition only
+- Distractors are CURATED composites that look prime — that's the whole game
+
+#### `estimate` — ballpark answers ("≈ 41 × 19")
+- Easy: 3-digit sums · Med: 2-digit × 1-digit, then 2×2 · Hard: 3-digit × 2-digit
+- hardMode: 3-digit × 3-digit
+- Options are magnitude-spread: the answer is the nice number nearest truth; distractors sit ≤0.5× or ≥2× of the TRUE value (tested)
+
+#### `money` — change-making + totals, cents-exact with $ labels
+- Easy: quarters, small totals · Med: dimes then arbitrary cents · Hard: prices to $19, change from $20
+- hardMode: multi-item purchases, change from $50/$100
+
+#### `sequence` — continue the pattern ("2, 6, 18, ?")
+- Easy: +2/+5/+10 · Med: odd steps + ×2 · Hard (d4–5): squares, alternating steps, Fibonacci-style, ×3
+- hardMode: two-step rules (×2+c) and big-seed Fibonacci
+- Signature distractor: the WRONG rule applied correctly (arithmetic continuation of a geometric run)
+
+#### `time` — text-only (no clock face, deliberately)
+- Easy–Med (d1–3): add-minutes with clock-labelled options (quarter-hours → 5-min steps → arbitrary)
+- Hard (d4–5): elapsed minutes between two times (20–90 → 60–180 min)
+- hardMode: multi-hour elapsed (120–420 min), odd minutes
+- Signature distractor: the 60-based miscount (±40 = "treated an hour as 100 minutes")
+
 ---
 
 ## Implementation notes for the next PR

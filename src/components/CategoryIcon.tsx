@@ -116,6 +116,47 @@ export function CategoryIcon({ id, size = 24, className }: Props) {
                     <path d="M12 12 m -1 0 a 1 1 0 1 1 2 0 a 3 3 0 1 1 -3 -3 a 5 5 0 1 1 5 5 a 7 7 0 1 1 -7 -7 a 9 9 0 1 1 9 9" />
                 </svg>
             );
+        case 'tables':
+            // Times-table chart — 3×3 grid with a × in the corner cell
+            return (
+                <svg {...svgProps}>
+                    <rect x="4" y="4" width="16" height="16" rx="1.5" />
+                    <line x1="4" y1="9.3" x2="20" y2="9.3" />
+                    <line x1="4" y1="14.6" x2="20" y2="14.6" />
+                    <line x1="9.3" y1="4" x2="9.3" y2="20" />
+                    <line x1="14.6" y1="4" x2="14.6" y2="20" />
+                    <line x1="5.8" y1="5.8" x2="7.8" y2="7.8" />
+                    <line x1="7.8" y1="5.8" x2="5.8" y2="7.8" />
+                </svg>
+            );
+        case 'primes':
+            // Indivisible atom — hexagon with a solid nucleus
+            return (
+                <svg {...svgProps}>
+                    <path d="M12 3.5 L 19.4 7.75 L 19.4 16.25 L 12 20.5 L 4.6 16.25 L 4.6 7.75 Z" />
+                    <circle cx="12" cy="12" r="1.8" fill="currentColor" stroke="none" />
+                </svg>
+            );
+        case 'sequence':
+            // Ascending steps with dots — the pattern climbs
+            return (
+                <svg {...svgProps}>
+                    <circle cx="5" cy="18" r="1.5" fill="currentColor" stroke="none" />
+                    <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none" />
+                    <circle cx="19" cy="6" r="1.5" fill="currentColor" stroke="none" />
+                    <path d="M6.5 16.5 L 10.5 13.2" />
+                    <path d="M13.5 10.5 L 17.5 7.2" />
+                </svg>
+            );
+        case 'time':
+            // Clock — face + hands at ten past ten
+            return (
+                <svg {...svgProps}>
+                    <circle cx="12" cy="12" r="8.5" />
+                    <line x1="12" y1="12" x2="12" y2="6.5" />
+                    <line x1="12" y1="12" x2="16" y2="14" />
+                </svg>
+            );
         default:
             // For categories whose "icon" is math notation (+, ×, ÷, x², √, %, a:b, GCF, etc.)
             // — render the text in chalk font at the requested size.
@@ -163,4 +204,7 @@ const TEXT_ICONS: Partial<Record<QuestionType, string>> = {
     decimal: '.5',
     percent: '%',
     'mix-basic': '+−×÷',
+    missing: '?',
+    estimate: '≈?',
+    money: '$',
 };
