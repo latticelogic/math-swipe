@@ -39,8 +39,8 @@ generic ("Sharp." > "AMAZING! 🎉").
 | Category icons | 28 | `src/components/CategoryIcon.tsx` — hand-drawn SVGs |
 | Trick icons | 36 | `src/components/TrickIcon.tsx` — hand-drawn SVGs |
 | Difficulty curves spec | — | `docs/difficulty-curves.md` (what Easy/Medium/Hard means per topic) |
-| Mobile UX audit | 2026-05-11 | `docs/audit-2026-05-11.md` (visual + interaction findings) |
-| Content audit | 2026-05-12 | `docs/content-audit-2026-05-12.md` (teacher voice, tricks, achievements, copy) |
+| Docs index | — | `docs/README.md` (one-line map of every doc: runbooks, specs, decision records) |
+| Multi-channel release model | — | `docs/release-sync.md` (one deploy updates web + Play + iOS; what needs a store release) |
 | Firestore data audit util | — | `scripts/audit-firestore.cjs` (needs `gcloud auth application-default login` once) |
 
 ### Local dev
