@@ -54,7 +54,8 @@ import { useLocalState } from './hooks/useLocalState';
 import { useFirebaseAuth } from './hooks/useFirebaseAuth';
 import { useEntitlement } from './hooks/useEntitlement';
 import { shouldFirePaywall } from './utils/entitlement';
-import { startCheckout } from './utils/checkout';
+import { startCheckout, getPurchaseChannel, restorePlayPurchases, type PurchaseChannel } from './utils/checkout';
+import { detectChannel, isAndroidApp } from './utils/channel';
 import { Paywall } from './components/Paywall';
 import { WelcomeModal, TrialReminderModal } from './components/TrialModals';
 import { LegalPage, type LegalDocId } from './components/LegalPages';
@@ -88,6 +89,11 @@ function generateMathItem(
 // lost. No-op without the param (and in non-browser/test contexts).
 capturePendingReferrer();
 
+// Distribution-channel capture (web vs Google Play TWA). Also at module load:
+// the android-app:// referrer and the TWA start_url's ?src=twa param are only
+// reliably present on the FIRST navigation, before any URL rewriting.
+detectChannel();
+
 /**
  * Math finite-set generator for daily / challenge modes.
  */
@@ -117,6 +123,23 @@ function App() {
   // 'expired' = post-trial hard gate; 'pro' = dismissible early upsell shown
   // when a locked Pro feature is tapped during the trial.
   const [paywallMode, setPaywallMode] = useState<'expired' | 'pro'>('expired');
+
+  // Purchase channel: 'web' (Airwallex) | 'play' (Google Play Billing inside
+  // the TWA) | 'none' (Android app without Play Billing — selling anything
+  // there would violate Play policy, so the paywall hides the purchase path).
+  const [purchaseChannel, setPurchaseChannel] = useState<PurchaseChannel>('web');
+  useEffect(() => {
+    getPurchaseChannel().then(setPurchaseChannel).catch(() => setPurchaseChannel('web'));
+    // Inside the Android app, restore any prior Play purchase (reinstall, new
+    // device, Play Pass). Server-verified; a hit writes paidAt → the
+    // entitlement hook picks it up on refresh.
+    if (isAndroidApp()) {
+      restorePlayPurchases().then(found => {
+        if (found) entitlement.refresh().catch(() => { /* next read catches up */ });
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Airwallex checkout success redirect handler. Airwallex sends the user back
   // to /?paywall=ok&session_id=... after a successful payment; the webhook
@@ -1307,11 +1330,19 @@ function App() {
             }}
             busy={paywallBusy}
             mode={paywallMode}
+            purchaseUnavailable={purchaseChannel === 'none'}
             onClose={paywallMode === 'pro' ? () => setPaywallOpen(false) : undefined}
             onUnlock={async () => {
               setPaywallBusy(true);
               try {
                 await startCheckout(entitlement.mockGrantAccess);
+                // Play Billing completes IN PLACE (no redirect, unlike the
+                // Airwallex hosted page) — the server has written paidAt by
+                // now, so refresh the gate and close the paywall right here.
+                if (purchaseChannel === 'play') {
+                  await entitlement.refresh().catch(() => { /* next read catches up */ });
+                  setPaywallOpen(false);
+                }
               } catch (err) {
                 console.error('[paywall] checkout failed', err);
                 alert('Could not start checkout. Try again in a moment.');

@@ -39,19 +39,12 @@ export default defineConfig({
           },
         ],
       },
-      manifest: {
-        name: 'Math Challenge',
-        short_name: 'Math Challenge',
-        description: 'Fast-paced mental math game',
-        theme_color: '#1a1a24',
-        background_color: '#1a1a24',
-        display: 'standalone',
-        start_url: '/',
-        icons: [
-          { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
-          { src: '/icon-512.png', sizes: '512x512', type: 'image/png' },
-        ],
-      },
+      // Single-manifest policy: public/manifest.json is the ONE web app
+      // manifest (index.html links it directly). It carries the TWA-critical
+      // fields (id, orientation, maskable 512 icon) that Bubblewrap reads to
+      // package the Google Play app — letting VitePWA emit a second
+      // manifest.webmanifest here caused drift between the two.
+      manifest: false,
     }),
   ],
   build: {

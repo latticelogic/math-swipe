@@ -38,6 +38,12 @@ const db = admin.firestore();
 // (Payments are Airwallex-only; Stripe was removed 2026-07-15.)
 export { createAirwallexPayment, airwallexWebhook } from './airwallex';
 
+// Google Play Billing (Android/TWA channel): server-side purchase verification
+// + grant (source:'google'), and RTDN-driven refund revocation — the Play
+// analogue of the Airwallex webhook. Inert until the one-time TODO(play)
+// Play Console steps in ./playBilling.ts are done.
+export { verifyPlayPurchase, playRtdn } from './playBilling';
+
 // Leaderboard cache rebuilder — see ./leaderboard.ts for the 60s cron
 // that pre-aggregates the top-20 score and top-10 speedrun cache docs
 // the client reads instead of running N live user-doc listeners.
