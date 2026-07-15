@@ -1242,6 +1242,7 @@ function App() {
           claimedHandle={claimedHandle}
           challengeId={challengeId}
           challengeTarget={challengeTarget}
+          totalXP={stats.totalXP}
           onShared={recordShare}
         />
 

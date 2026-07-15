@@ -321,7 +321,7 @@ service cloud.firestore {
                    && request.auth.uid == uid
                    && request.resource.data.keys().hasOnly([
                         'endpoint', 'keys', 'userAgent',
-                        'dailyEnabled', 'pingsEnabled', 'updatedAt'
+                        'dailyEnabled', 'pingsEnabled', 'timezone', 'updatedAt'
                       ]);
     }
 

@@ -71,6 +71,9 @@ interface PushSubscriptionDoc {
     userAgent?: string;
     dailyEnabled?: boolean;
     pingsEnabled?: boolean;
+    /** IANA timezone from the client, e.g. "Asia/Singapore". Reminders fire at
+     *  the user's local evening; absent → falls back to the default zone. */
+    timezone?: string;
     /** Server timestamp (ms) of the last 'beaten' notification we sent.
      *  Used to throttle so a hot streak of leaderboard bumps doesn't
      *  hammer the user with notifications in quick succession. */
@@ -81,7 +84,7 @@ interface NotificationPayload {
     title: string;
     body: string;
     url?: string;
-    kind: 'daily' | 'beaten' | 'generic';
+    kind: 'daily' | 'beaten' | 'generic' | 'streak-risk';
 }
 
 /** Append a row to `pushEvents/` so the analytics view can compute
@@ -125,47 +128,87 @@ async function sendOne(uid: string, sub: PushSubscriptionDoc, payload: Notificat
     }
 }
 
-// ── 1. Daily reminder ─────────────────────────────────────────────────────────
+// ── 1. Daily reminder (timezone-aware + streak-risk) ──────────────────────────
 
+/** Hour of the user's local day to nudge at (18 = 6pm). */
+const REMINDER_LOCAL_HOUR = 18;
+/** Default zone when a subscription predates timezone capture. */
+const DEFAULT_TZ = 'America/Los_Angeles';
+
+/** The user's local hour (0–23) and calendar date (YYYY-MM-DD) right now.
+ *  YYYY-MM-DD matches the client's todayKey() format so it compares directly
+ *  against stats.lastPlayedDate. */
+function localHourAndDate(tz: string, now: Date): { hour: number; date: string } {
+    let hour: number;
+    let date: string;
+    try {
+        hour = parseInt(new Intl.DateTimeFormat('en-US', { timeZone: tz, hour: '2-digit', hour12: false }).format(now), 10) % 24;
+        date = new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
+    } catch {
+        // Bad/unknown tz string — fall back to the default zone.
+        hour = parseInt(new Intl.DateTimeFormat('en-US', { timeZone: DEFAULT_TZ, hour: '2-digit', hour12: false }).format(now), 10) % 24;
+        date = new Intl.DateTimeFormat('en-CA', { timeZone: DEFAULT_TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
+    }
+    return { hour, date };
+}
+
+// Runs hourly. Each subscriber is only nudged once/day — in the hour that is
+// their local REMINDER_LOCAL_HOUR — so a global user base is reached at a
+// humane local time rather than a fixed Pacific hour (S2). When an active
+// day-streak is genuinely at risk (no shield left, not played today), the copy
+// switches to a soft loss-aversion variant (S1).
 export const dailyReminder = onSchedule(
     {
-        schedule: '0 17 * * *',
-        timeZone: 'America/Los_Angeles',
+        schedule: '0 * * * *',
+        timeZone: 'Etc/UTC',
         secrets: [VAPID_PUBLIC, VAPID_PRIVATE, VAPID_SUBJECT],
-        // Once-a-day singleton — one instance is plenty. Cap keeps a stuck
-        // run from fanning out and bounds cost pre-launch (quota caps are
-        // still open per docs/billing-safety.md).
+        // One instance handles the hourly pass; cap bounds cost pre-launch.
         maxInstances: 2,
     },
     async () => {
         configurePush();
-        const cutoff = Date.now() - 18 * 60 * 60 * 1000; // 18h ago
+        const now = new Date();
 
         const subsSnap = await db.collection('pushSubscriptions').where('dailyEnabled', '==', true).get();
         let sent = 0;
+        let streakRisk = 0;
         for (const doc of subsSnap.docs) {
             const uid = doc.id;
             const sub = doc.data() as PushSubscriptionDoc;
-            // Skip users who already played today
-            const userSnap = await db.collection('users').doc(uid).get();
-            const lastPlayedDate = userSnap.data()?.stats?.lastPlayedDate;
-            if (typeof lastPlayedDate === 'string') {
-                // YYYY-MM-DD format from useStats
-                const lastTime = Date.parse(lastPlayedDate + 'T12:00:00Z');
-                if (!Number.isNaN(lastTime) && lastTime > cutoff) continue;
-            }
-            // Softer-toned copy. The previous "Keep your streak alive!"
-            // was effective but pressure-y; goal here is to feel like a
-            // friendly nudge from a teacher, not a streak-anxiety alert.
-            const ok = await sendOne(uid, sub, {
-                title: 'A few problems waiting',
-                body: "Whenever you're ready — your spot is held.",
-                url: '/',
-                kind: 'daily',
-            });
-            if (ok) sent++;
+            const { hour, date: localToday } = localHourAndDate(sub.timezone || DEFAULT_TZ, now);
+            // Only in the subscriber's local evening hour.
+            if (hour !== REMINDER_LOCAL_HOUR) continue;
+
+            const stats = (await db.collection('users').doc(uid).get()).data()?.stats;
+            const lastPlayedDate: string | undefined = stats?.lastPlayedDate;
+            // Already played today (their local day)? Nothing to nudge.
+            if (lastPlayedDate === localToday) continue;
+
+            const dayStreak = Number(stats?.dayStreak ?? 0);
+            const shields = Number(stats?.streakShields ?? 0);
+            // Streak is truly on the line tonight only if it's worth protecting,
+            // hasn't been played today, and there's no shield to forgive a miss.
+            const atRisk = dayStreak >= 3 && shields === 0;
+
+            const payload: NotificationPayload = atRisk
+                ? {
+                    title: `Your ${dayStreak}-day streak ends tonight`,
+                    body: 'A quick round keeps it going — no pressure.',
+                    url: '/',
+                    kind: 'streak-risk',
+                }
+                : {
+                    // Soft, teacher-not-alarm tone — matches the existing bar.
+                    title: 'A few problems waiting',
+                    body: "Whenever you're ready — your spot is held.",
+                    url: '/',
+                    kind: 'daily',
+                };
+
+            const ok = await sendOne(uid, sub, payload);
+            if (ok) { sent++; if (atRisk) streakRisk++; }
         }
-        logger.info('dailyReminder complete', { totalSubs: subsSnap.size, sent });
+        logger.info('dailyReminder complete', { totalSubs: subsSnap.size, sent, streakRisk });
     },
 );
 

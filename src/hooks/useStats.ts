@@ -377,7 +377,16 @@ export function useStats(uid: string | null) {
                             streakShields = Math.min(3, streakShields + 1);
                         }
                     } else {
-                        dayStreak = 1; // Streak broken (too many days missed or no shield)
+                        // Streak broken (too many days missed or no shield).
+                        // Comeback courtesy (S4): if they'd built a real streak
+                        // (>=7), hand them one shield as they restart so a single
+                        // future slip won't sting — softens the churn spiral.
+                        // Not farmable: you still lose the whole streak to get it,
+                        // and shields cap at 3.
+                        if (prev.dayStreak >= 7) {
+                            streakShields = Math.min(3, streakShields + 1);
+                        }
+                        dayStreak = 1;
                     }
                 } else {
                     dayStreak = 1; // First session ever

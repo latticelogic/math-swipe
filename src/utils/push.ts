@@ -14,6 +14,16 @@
 import { doc, setDoc, getDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { getFirebase } from './firebase';
 
+/** The browser's IANA timezone (e.g. "Asia/Singapore"), or a sensible default
+ *  if the platform doesn't expose it. Used to time daily reminders locally. */
+function resolveTimezone(): string {
+    try {
+        return Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Los_Angeles';
+    } catch {
+        return 'America/Los_Angeles';
+    }
+}
+
 const SW_PATH = '/firebase-messaging-sw.js';
 
 export interface PushPreferences {
@@ -115,6 +125,9 @@ export async function enablePush(uid: string, prefs: PushPreferences): Promise<P
         userAgent: navigator.userAgent.slice(0, 200),
         dailyEnabled: !!prefs.dailyEnabled,
         pingsEnabled: !!prefs.pingsEnabled,
+        // IANA timezone so reminders fire in the user's local evening, not a
+        // fixed Pacific hour. Read by the reminder Cloud Function.
+        timezone: resolveTimezone(),
         updatedAt: serverTimestamp(),
     }, { merge: true });
     return { available: true, granted: true, prefs };
