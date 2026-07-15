@@ -38,6 +38,27 @@ function packTrick(expr: string, ans: number, off1: number, off2: number) {
     };
 }
 
+/** Bundle a multiple-choice trick whose options carry display labels (fractions
+ *  like "17/18", symbols like "φ (1.618)"). Shuffles the value+label pairs
+ *  together so the labels stay index-aligned with the options (never render as
+ *  long decimals) and the answer isn't permanently in slot 0. */
+function packLabeledTrick(
+    expr: string,
+    ans: number,
+    pairs: { v: number; l: string }[],
+    latex?: string,
+) {
+    const shuffled = [...pairs].sort(() => Math.random() - 0.5);
+    return {
+        expression: expr,
+        ...(latex ? { latex } : {}),
+        answer: ans,
+        options: shuffled.map(p => p.v),
+        optionLabels: shuffled.map(p => p.l),
+        correctIndex: shuffled.findIndex(p => p.v === ans),
+    };
+}
+
 export const MAGIC_TRICKS: MagicTrick[] = [
     {
         id: 'square-5',
@@ -793,21 +814,16 @@ export const MAGIC_TRICKS: MagicTrick[] = [
         generatePractice: () => {
             const n = Math.floor(Math.random() * 15) + 5; // 5-19
             const answer = n / (n + 1);
-            // Shuffle value + label together so the fraction labels stay aligned
-            // with the options (and never render as long decimals).
-            const pairs = [
-                { v: answer, l: `${n}/${n + 1}` },
-                { v: (n - 1) / n, l: `${n - 1}/${n}` },
-                { v: (n + 1) / (n + 2), l: `${n + 1}/${n + 2}` },
-            ].sort(() => Math.random() - 0.5);
-            return {
-                expression: `Telescoping sum to 1/(${n}×${n + 1})`,
-                latex: `\\sum_{k=1}^{${n}} \\frac{1}{k(k+1)}`,
+            return packLabeledTrick(
+                `Telescoping sum to 1/(${n}×${n + 1})`,
                 answer,
-                options: pairs.map(p => p.v),
-                optionLabels: pairs.map(p => p.l),
-                correctIndex: pairs.findIndex(p => p.v === answer),
-            };
+                [
+                    { v: answer, l: `${n}/${n + 1}` },
+                    { v: (n - 1) / n, l: `${n - 1}/${n}` },
+                    { v: (n + 1) / (n + 2), l: `${n + 1}/${n + 2}` },
+                ],
+                `\\sum_{k=1}^{${n}} \\frac{1}{k(k+1)}`,
+            );
         }
     },
     {
@@ -833,19 +849,16 @@ export const MAGIC_TRICKS: MagicTrick[] = [
             const ans = 1 - Math.pow(0.5, n);
             const den = Math.pow(2, n);
             const num = den - 1;
-            const pairs = [
-                { v: ans, l: `${num}/${den}` },
-                { v: 1 - Math.pow(0.5, n - 1), l: `${den / 2 - 1}/${den / 2}` },
-                { v: 1 - Math.pow(0.5, n + 1), l: `${den * 2 - 1}/${den * 2}` },
-            ].sort(() => Math.random() - 0.5);
-            return {
-                expression: `Sum 1/2^k from k=1 to ${n}`,
-                latex: `\\sum_{k=1}^{${n}} \\frac{1}{2^k}`,
-                answer: ans,
-                options: pairs.map(p => p.v),
-                optionLabels: pairs.map(p => p.l),
-                correctIndex: pairs.findIndex(p => p.v === ans),
-            };
+            return packLabeledTrick(
+                `Sum 1/2^k from k=1 to ${n}`,
+                ans,
+                [
+                    { v: ans, l: `${num}/${den}` },
+                    { v: 1 - Math.pow(0.5, n - 1), l: `${den / 2 - 1}/${den / 2}` },
+                    { v: 1 - Math.pow(0.5, n + 1), l: `${den * 2 - 1}/${den * 2}` },
+                ],
+                `\\sum_{k=1}^{${n}} \\frac{1}{2^k}`,
+            );
         }
     },
     {
@@ -1006,21 +1019,16 @@ export const MAGIC_TRICKS: MagicTrick[] = [
             result: '\u03c6 (1.618...)'
         },
         generatePractice: () => {
-            // Shuffle value+label pairs together so the answer isn't permanently
-            // in slot 0 (and so the 5 practice questions aren't byte-identical).
             const answer = 1.618;
-            const pairs = [
-                { v: answer, l: 'φ (1.618)' },
-                { v: 1.414, l: '√2 (1.414)' },
-                { v: 2, l: '2' },
-            ].sort(() => Math.random() - 0.5);
-            return {
-                expression: `Value of 1 + 1/(1 + 1/(1+...))`,
+            return packLabeledTrick(
+                'Value of 1 + 1/(1 + 1/(1+...))',
                 answer,
-                options: pairs.map(p => p.v),
-                optionLabels: pairs.map(p => p.l),
-                correctIndex: pairs.findIndex(p => p.v === answer),
-            };
+                [
+                    { v: answer, l: 'φ (1.618)' },
+                    { v: 1.414, l: '√2 (1.414)' },
+                    { v: 2, l: '2' },
+                ],
+            );
         }
     },
 

@@ -67,6 +67,32 @@ interface Props {
 // Rank ladder + getRank/getMastery helpers extracted to ../domains/math/ranks
 // so the public profile page and share card can reuse them.
 
+/** A grid of badges for one mode's achievement set (Hard / Timed / Ultimate).
+ *  Each is badge-only: tapping an unlocked one equips/unequips it on the
+ *  leaderboard. The main ACHIEVEMENTS grid stays inline because it carries the
+ *  extra costume-equip branch these mode sets don't have. */
+function ModeAchievementGrid({ achievements, cols, unlocked, activeBadge, onBadgeChange }: {
+    achievements: readonly { id: string; name: string; desc: string }[];
+    cols: string;
+    unlocked: Set<string>;
+    activeBadge: string;
+    onBadgeChange: (id: string) => void;
+}) {
+    return (
+        <div className={`grid ${cols} gap-3 justify-items-center`}>
+            {achievements.map(a => {
+                const isUnlocked = unlocked.has(a.id);
+                const isBadge = activeBadge === a.id;
+                return (
+                    <div key={a.id} onClick={() => isUnlocked && onBadgeChange(isBadge ? '' : a.id)} className={isUnlocked ? 'cursor-pointer' : ''}>
+                        <AchievementBadge achievementId={a.id} unlocked={isUnlocked} equipped={isBadge} name={a.name} desc={isBadge ? '🏷️ badge' : a.desc} />
+                    </div>
+                );
+            })}
+        </div>
+    );
+}
+
 export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked, activeCostume, onCostumeChange, activeTheme, onThemeChange, activeTrailId, onTrailChange, displayName, onDisplayNameChange, isAnonymous, onLinkGoogle, onLinkApple, onSendEmailLink, authMessage, onClearAuthMessage, ageBand, activeBadge, onBadgeChange, activeTeacherId, onTeacherChange, uid, entitlementStatus, entitlementDaysLeft, onUnlock, hasPro = true, onRequestPro }: Props) {
     const [showRanks, setShowRanks] = useState(false);
     const [resetConfirm, setResetConfirm] = useState<string | null>(null);
@@ -434,49 +460,19 @@ export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked,
                 <div className="mt-5 text-xs ui text-[var(--color-skull)] uppercase tracking-widest text-center mb-2">
                     💀 hard mode
                 </div>
-                <div className="grid grid-cols-3 gap-3 justify-items-center">
-                    {HARD_MODE_ACHIEVEMENTS.map(a => {
-                        const isUnlocked = unlocked.has(a.id);
-                        const isBadge = activeBadge === a.id;
-                        return (
-                            <div key={a.id} onClick={() => isUnlocked && onBadgeChange(isBadge ? '' : a.id)} className={isUnlocked ? 'cursor-pointer' : ''}>
-                                <AchievementBadge achievementId={a.id} unlocked={isUnlocked} equipped={isBadge} name={a.name} desc={isBadge ? '🏷️ badge' : a.desc} />
-                            </div>
-                        );
-                    })}
-                </div>
+                <ModeAchievementGrid achievements={HARD_MODE_ACHIEVEMENTS} cols="grid-cols-3" unlocked={unlocked} activeBadge={activeBadge} onBadgeChange={onBadgeChange} />
 
                 {/* ⏱️ Timed Mode */}
                 <div className="mt-5 text-xs ui text-[var(--color-timed)] uppercase tracking-widest text-center mb-2">
                     ⏱️ timed mode
                 </div>
-                <div className="grid grid-cols-4 gap-3 justify-items-center">
-                    {TIMED_MODE_ACHIEVEMENTS.map(a => {
-                        const isUnlocked = unlocked.has(a.id);
-                        const isBadge = activeBadge === a.id;
-                        return (
-                            <div key={a.id} onClick={() => isUnlocked && onBadgeChange(isBadge ? '' : a.id)} className={isUnlocked ? 'cursor-pointer' : ''}>
-                                <AchievementBadge achievementId={a.id} unlocked={isUnlocked} equipped={isBadge} name={a.name} desc={isBadge ? '🏷️ badge' : a.desc} />
-                            </div>
-                        );
-                    })}
-                </div>
+                <ModeAchievementGrid achievements={TIMED_MODE_ACHIEVEMENTS} cols="grid-cols-4" unlocked={unlocked} activeBadge={activeBadge} onBadgeChange={onBadgeChange} />
 
                 {/* 💀⏱️ Ultimate Mode */}
                 <div className="mt-5 text-xs ui text-[var(--color-ultimate)] uppercase tracking-widest text-center mb-2">
                     💀⏱️ ultimate
                 </div>
-                <div className="grid grid-cols-3 gap-3 justify-items-center">
-                    {ULTIMATE_ACHIEVEMENTS.map(a => {
-                        const isUnlocked = unlocked.has(a.id);
-                        const isBadge = activeBadge === a.id;
-                        return (
-                            <div key={a.id} onClick={() => isUnlocked && onBadgeChange(isBadge ? '' : a.id)} className={isUnlocked ? 'cursor-pointer' : ''}>
-                                <AchievementBadge achievementId={a.id} unlocked={isUnlocked} equipped={isBadge} name={a.name} desc={isBadge ? '🏷️ badge' : a.desc} />
-                            </div>
-                        );
-                    })}
-                </div>
+                <ModeAchievementGrid achievements={ULTIMATE_ACHIEVEMENTS} cols="grid-cols-3" unlocked={unlocked} activeBadge={activeBadge} onBadgeChange={onBadgeChange} />
             </div>
 
             {/* Teacher (companion) picker — drives the in-game character + voice */}

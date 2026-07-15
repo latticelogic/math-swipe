@@ -37,6 +37,12 @@ async function runAccountReconcile(fromIdToken: string): Promise<void> {
     }
 }
 
+/** Firebase codes meaning "this credential already belongs to another account"
+ *  — the trigger to switch into that account and merge the anon one across. */
+function isCredentialInUse(code?: string): boolean {
+    return code === 'auth/credential-already-in-use' || code === 'auth/email-already-in-use';
+}
+
 /** Firebase popup errors that mean "use the redirect flow instead" — common in
  *  iOS Safari and installed PWAs where popups are blocked or unsupported. */
 function shouldFallBackToRedirect(code?: string): boolean {
@@ -180,7 +186,7 @@ export function useFirebaseAuth() {
                         setAuthMessage('Signed in — progress saved.');
                     } catch (linkErr) {
                         const code = (linkErr as { code?: string }).code;
-                        if (code === 'auth/credential-already-in-use' || code === 'auth/email-already-in-use') {
+                        if (isCredentialInUse(code)) {
                             // Email already on another account — switch to it and
                             // merge the anonymous account across (proven by token).
                             await signInWithEmailLink(auth, email, window.location.href);
@@ -276,7 +282,7 @@ export function useFirebaseAuth() {
             }
         } catch (err: unknown) {
             const code = (err as { code?: string }).code;
-            if (code === 'auth/credential-already-in-use' || code === 'auth/email-already-in-use') {
+            if (isCredentialInUse(code)) {
                 // That Google account already exists — switch into it, then merge
                 // the anonymous account's paid/trial/stats across (proven by token).
                 try {
