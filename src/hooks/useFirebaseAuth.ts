@@ -21,6 +21,9 @@ export interface FirebaseUser {
 // Stash for the anon account's ID token across a redirect-based sign-in (the
 // in-memory token is lost when the page navigates away for the redirect flow).
 const RECONCILE_TOKEN_KEY = 'math-swipe-reconcile-token';
+// Which provider the pending redirect used, so the return handler can recover
+// the right credential if the account turns out to already exist.
+const RECONCILE_PROVIDER_KEY = 'math-swipe-reconcile-provider';
 
 /** Merge the anonymous account's entitlement (paid + earliest trial) + stats
  *  into the account just signed into, proven by the anon account's ID token.
@@ -63,27 +66,61 @@ export function useFirebaseAuth() {
                 import('firebase/firestore'),
             ]);
             if (cancelled) return;
-            const { onAuthStateChanged, signInAnonymously, getRedirectResult } = fbAuth;
+            const {
+                onAuthStateChanged, signInAnonymously, getRedirectResult,
+                GoogleAuthProvider, OAuthProvider, signInWithCredential,
+            } = fbAuth;
             const { doc, getDoc, setDoc, serverTimestamp } = fbFs;
 
             // Complete a redirect-based sign-in (the iOS/PWA fallback) and merge
             // the stashed anonymous account into it.
             getRedirectResult(auth).then(async (result) => {
                 if (!result?.user) return;
+                // Happy path: the redirect LINKED in place (same uid) — merge any
+                // stashed token defensively, then done.
                 const token = sessionStorage.getItem(RECONCILE_TOKEN_KEY);
                 if (token) {
                     await runAccountReconcile(token);
                     sessionStorage.removeItem(RECONCILE_TOKEN_KEY);
                 }
+                sessionStorage.removeItem(RECONCILE_PROVIDER_KEY);
                 if (!cancelled) setAuthMessage('Signed in — progress saved.');
                 setDoc(doc(db, 'users', result.user.uid), { isAnonymous: false, updatedAt: serverTimestamp() }, { merge: true }).catch(() => { });
-            }).catch(err => {
+            }).catch(async (err) => {
+                const code = (err as { code?: string })?.code;
+                // The Google/Apple account already belongs to another (earlier
+                // anonymous) uid — linkWithRedirect can't attach it, so it rejects
+                // HERE on return with the credential attached. The popup path
+                // handles this by switching accounts + merging; the redirect path
+                // must do the same or the user bounces back still anonymous (the
+                // "went to Google, came back not signed in" report).
+                if (code === 'auth/credential-already-in-use' || code === 'auth/email-already-in-use') {
+                    const token = sessionStorage.getItem(RECONCILE_TOKEN_KEY);
+                    const kind = sessionStorage.getItem(RECONCILE_PROVIDER_KEY);
+                    try {
+                        const cred = kind === 'apple'
+                            ? OAuthProvider.credentialFromError(err)
+                            : GoogleAuthProvider.credentialFromError(err);
+                        if (cred) {
+                            await signInWithCredential(auth, cred); // switch into the existing account
+                            if (token) await runAccountReconcile(token); // merge the anon progress across
+                            if (!cancelled) setAuthMessage('Welcome back — your progress was merged.');
+                        } else if (!cancelled) {
+                            setAuthMessage('Sign-in didn\'t complete. Please try again.');
+                        }
+                    } catch (e) {
+                        console.warn('Redirect collision recovery failed:', e);
+                        if (!cancelled) setAuthMessage('Sign-in didn\'t complete. Please try again.');
+                    } finally {
+                        sessionStorage.removeItem(RECONCILE_TOKEN_KEY);
+                        sessionStorage.removeItem(RECONCILE_PROVIDER_KEY);
+                    }
+                    return;
+                }
                 // Only a genuine auth error (has a code) should surface — a normal
                 // page load with no pending redirect resolves null, not an error.
                 console.warn('Redirect sign-in result failed:', err);
-                if (!cancelled && (err as { code?: string })?.code) {
-                    setAuthMessage('Sign-in didn\'t complete. Please try again.');
-                }
+                if (!cancelled && code) setAuthMessage('Sign-in didn\'t complete. Please try again.');
             });
 
             unsub = onAuthStateChanged(auth, (fbUser: User | null) => {
@@ -310,6 +347,7 @@ export function useFirebaseAuth() {
             // popup codes fell back; every other error dead-ended on a generic
             // "Sign-in failed" — the bug this fixes.)
             if (anonToken) sessionStorage.setItem(RECONCILE_TOKEN_KEY, anonToken);
+            sessionStorage.setItem(RECONCILE_PROVIDER_KEY, kind);
             try {
                 if (wasAnon) await linkWithRedirect(currentUser, provider);
                 else await signInWithRedirect(auth, provider);
