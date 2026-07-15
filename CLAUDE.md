@@ -228,9 +228,9 @@ update`, Stripe verification + webhook registration, refund policy +
 support email, App Check, beta with 5-10 friends. Three steps are
 web-only (Blaze upgrade, card entry, KYC) — everything else is CLI.
 
-When live Stripe keys land, the QA playbook at
-`docs/first-purchase-qa.md` walks through the first real $3.14 purchase
-end-to-end as a 30-minute regression suite.
+When Airwallex goes live, the go-live QA section of `docs/airwallex.md`
+walks the full purchase → grant → refund → revoke loop, sandbox first,
+then once with live keys as the real launch gate.
 
 ### Legal pages (drafts, replace before launch)
 
@@ -340,7 +340,7 @@ What's **done in code** (no further blockers to launch from the codebase side):
 - **PWA install prompt** in Me tab + iOS end-of-first-session prompt inside SessionSummary (`InstallPrompt.tsx`)
 - **Admin billing dashboard** at /admin/billing (`AdminBilling.tsx`) — gated by `isAdmin` custom claim, surfaces trial/paid/expired counts + conversion % + refund rate
 - **Truth-table tests** for the paywall fire rule (`shouldFirePaywall`), plus a manual e2e runbook for visual regressions (`docs/paywall-e2e.md`)
-- **First-purchase QA playbook** (`docs/first-purchase-qa.md`) — 10-section runbook executable when live Stripe keys land
+- **Payments go-live QA** — the sandbox→live loop in `docs/airwallex.md` (web) + the license-tester loop in `docs/google-play-launch.md` (Android)
 
 What's **blocking commercial launch** (operational, not code):
 - **Stripe account verification + bank** — 1-3 day KYC turnaround for Lattice Logic. Stripe SDK is wired in `functions/src/stripe.ts`; what's pending is the dashboard.stripe.com KYC submission. Check status with `stripe accounts retrieve` looking for `charges_enabled: true` and `payouts_enabled: true`.
