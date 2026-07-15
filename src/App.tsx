@@ -221,6 +221,27 @@ function App() {
     challengeId ? 'challenge' : bootDailyRequested ? 'daily' : 'multiply'
   );
 
+  // Hard/Timed don't apply to daily/challenge — those are fixed, deterministic
+  // sets (generateMathFiniteSet ignores hard). Neutralize the toggles for those
+  // types so they can't impose a timer on the daily or pollute hard/timed stats
+  // on record. The raw toggle state is preserved for topical play.
+  const isFixedSet = questionType === 'daily' || questionType === 'challenge';
+  const effectiveHard = isFixedSet ? false : hardMode;
+  const effectiveTimed = isFixedSet ? false : timedMode;
+
+  // A challenge seed + "Beat X" target arrive from a share link and are only
+  // meaningful for the session they arrived in. Once the player switches to a
+  // different mode, abandon them so a stale target can't bleed into (and show a
+  // bogus head-to-head on) an unrelated daily/topical session. Entering a
+  // fresh challenge keeps its own context.
+  const firstTypeRef = useRef(true);
+  useEffect(() => {
+    if (firstTypeRef.current) { firstTypeRef.current = false; return; }
+    if (questionType === 'challenge') return;
+    setChallengeId(null);
+    setChallengeTarget(null);
+  }, [questionType]);
+
   const { stats, accuracy, recordSession, resetStats, updateCosmetics, updateBestSpeedrunTime, updateBadge, consumeShield, recordShare } = useStats(uid);
 
   // ── Claimed @handle (one-shot fetch) ──
@@ -282,9 +303,9 @@ function App() {
   } = useGameLoop(
     generateMathItem,
     questionType,
-    hardMode,
+    effectiveHard,
     challengeId,
-    timedMode,
+    effectiveTimed,
     stats.streakShields,
     consumeShield,
     undefined, // use DEFAULT_GAME_CONFIG
@@ -524,11 +545,11 @@ function App() {
     // then reset the loop so returning starts fresh and a later leave-without-
     // playing can't re-record (the old double-count) or re-open the summary.
     if (prevTab.current === 'game' && tab !== 'game' && totalAnswered > 0) {
-      recordSession(score, totalCorrect, totalAnswered, bestStreak, questionType, hardMode, timedMode);
+      recordSession(score, totalCorrect, totalAnswered, bestStreak, questionType, effectiveHard, effectiveTimed);
       resetSession();
     }
     setActiveTab(tab);
-  }, [score, totalCorrect, totalAnswered, bestStreak, questionType, recordSession, hardMode, timedMode, resetSession]);
+  }, [score, totalCorrect, totalAnswered, bestStreak, questionType, recordSession, effectiveHard, effectiveTimed, resetSession]);
 
   // ── Tab swipe (non-game tabs only) ──
   const handleTabSwipe = useCallback((_: unknown, info: PanInfo) => {
@@ -557,13 +578,13 @@ function App() {
   }, [stats]);
   const isMagicLessonForTeacher = activeTab === 'magic' && isMagicLessonActive;
   const activeTeacher = useMemo(() => resolveActiveTeacher(savedTeacherId, {
-    isHardMode: hardMode,
-    isTimedMode: timedMode,
+    isHardMode: effectiveHard,
+    isTimedMode: effectiveTimed,
     isSpeedrun: questionType === 'speedrun',
     isMagicLesson: isMagicLessonForTeacher,
     isStruggling: wrongStreak >= 3,
     unlocked: unlockedTeacherIds,
-  }), [savedTeacherId, hardMode, timedMode, questionType, isMagicLessonForTeacher, wrongStreak, unlockedTeacherIds]);
+  }), [savedTeacherId, effectiveHard, effectiveTimed, questionType, isMagicLessonForTeacher, wrongStreak, unlockedTeacherIds]);
 
   // ── Chalk themes ──
   const [activeThemeId, setActiveThemeId] = useLocalState(STORAGE_KEYS.chalkTheme, 'classic', uid);
@@ -1116,8 +1137,8 @@ function App() {
                 streak={streak}
                 totalAnswered={totalAnswered}
                 questionType={questionType}
-                hardMode={hardMode}
-                timedMode={timedMode}
+                hardMode={effectiveHard}
+                timedMode={effectiveTimed}
                 pingMessage={pingMessage}
               />
             </div>
@@ -1234,7 +1255,7 @@ function App() {
             // tab-leave that already banked it is a no-op), then reset so it
             // can't double-record or re-open.
             if (totalAnswered > 0) {
-              recordSession(score, totalCorrect, totalAnswered, bestStreak, questionType, hardMode, timedMode);
+              recordSession(score, totalCorrect, totalAnswered, bestStreak, questionType, effectiveHard, effectiveTimed);
             }
             if (questionType === 'speedrun') {
               setActiveTab('league');
@@ -1243,8 +1264,8 @@ function App() {
               resetSession();
             }
           }}
-          hardMode={hardMode}
-          timedMode={timedMode}
+          hardMode={effectiveHard}
+          timedMode={effectiveTimed}
           speedrunFinalTime={speedrunFinalTime}
           isNewSpeedrunRecord={isNewSpeedrunRecord}
           displayName={user?.displayName}

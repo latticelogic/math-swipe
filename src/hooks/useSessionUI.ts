@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 /**
  * Auto-shows session summary when daily challenge or speedrun finishes.
@@ -34,20 +34,28 @@ export function useAutoSummary(
 
     const showSummary = activeToken !== null && activeToken !== dismissedToken;
 
-    const isNewSpeedrunRecord = !!(
-        speedrunFinalTime &&
-        (bestSpeedrunTime === 0 || speedrunFinalTime < bestSpeedrunTime)
-    );
-
-    // Side-effect: persist the new best speedrun time. This *is* a true
-    // synchronization with external state, which is the legitimate use of
-    // an effect — the effect is reading from props and pushing into the
-    // useStats store, not feeding its own setState.
+    // Snapshot record-ness at the instant a NEW speedrun time arrives — before
+    // the effect below lowers bestSpeedrunTime. Computing it live would flip the
+    // flag to false the moment updateBestSpeedrunTime lands, so "New Record!"
+    // flashed for a single frame then vanished. We latch it into state, keyed on
+    // the time we processed, so it stays stable for the whole summary.
+    const [isNewSpeedrunRecord, setIsNewSpeedrunRecord] = useState(false);
+    const processedTimeRef = useRef<number | null>(null);
     useEffect(() => {
         if (speedrunFinalTime) {
-            updateBestSpeedrunTime(speedrunFinalTime, hardMode);
+            if (speedrunFinalTime !== processedTimeRef.current) {
+                processedTimeRef.current = speedrunFinalTime;
+                // Read best BEFORE the update on this same tick (prop still holds
+                // the previous best here).
+                // eslint-disable-next-line react-hooks/set-state-in-effect
+                setIsNewSpeedrunRecord(bestSpeedrunTime === 0 || speedrunFinalTime < bestSpeedrunTime);
+                updateBestSpeedrunTime(speedrunFinalTime, hardMode);
+            }
+        } else if (processedTimeRef.current !== null) {
+            processedTimeRef.current = null;
+            setIsNewSpeedrunRecord(false);
         }
-    }, [speedrunFinalTime, hardMode, updateBestSpeedrunTime]);
+    }, [speedrunFinalTime, bestSpeedrunTime, hardMode, updateBestSpeedrunTime]);
 
     const setShowSummary = useCallback((open: boolean) => {
         if (open) {

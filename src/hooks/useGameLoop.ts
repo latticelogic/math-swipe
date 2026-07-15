@@ -112,6 +112,11 @@ export function useGameLoop(
     const frozenRef = useRef(false);
     const correctCountRef = useRef(0);
     const pendingTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
+    // Dedupe the shield-consume side effect by answer index: the setGs updater
+    // it lives in is invoked twice under React StrictMode (dev), which would
+    // otherwise decrement streakShields by 2. Keyed on prev.totalAnswered, which
+    // is unique per wrong-answer event (a shield save increments it).
+    const shieldConsumedForRef = useRef(-1);
 
     /** Schedule a timeout that gets auto-cleared on unmount */
     const safeTimeout = useCallback((fn: () => void, ms: number) => {
@@ -331,7 +336,11 @@ export function useGameLoop(
                 recordAnswer(tts, false);
 
                 if (streakShields > 0 && prev.streak > 0 && onConsumeShield) {
-                    onConsumeShield();
+                    // Guard against StrictMode's double-invoke of this updater.
+                    if (shieldConsumedForRef.current !== prev.totalAnswered) {
+                        shieldConsumedForRef.current = prev.totalAnswered;
+                        onConsumeShield();
+                    }
                     frozenRef.current = true;
                     scheduleChalkReset(failPauseMs);
                     safeTimeout(() => {

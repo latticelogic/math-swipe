@@ -230,9 +230,13 @@ function mergeStats(local: Stats, cloud: Stats): Stats {
         totalCorrect: Math.max(local.totalCorrect, cloud.totalCorrect),
         bestStreak: Math.max(local.bestStreak, cloud.bestStreak),
         sessionsPlayed: Math.max(local.sessionsPlayed, cloud.sessionsPlayed),
-        dayStreak: Math.max(local.dayStreak, cloud.dayStreak),
-        streakShields: Math.max(local.streakShields, cloud.streakShields),
-        dailyStreak: Math.max(local.dailyStreak ?? 0, cloud.dailyStreak ?? 0),
+        // CURRENT streaks + shield inventory are RESETTABLE (a break lowers them),
+        // so max-merging would resurrect a legitimately-broken streak from a
+        // stale-higher side. Take them from whichever side played more recently
+        // (mirrors the todayDaily* handling above). `best*` stays max (monotonic).
+        dayStreak: (local.lastPlayedDate >= cloud.lastPlayedDate ? local : cloud).dayStreak,
+        streakShields: (local.lastPlayedDate >= cloud.lastPlayedDate ? local : cloud).streakShields,
+        dailyStreak: (local.lastDailyDate >= cloud.lastDailyDate ? local : cloud).dailyStreak ?? 0,
         bestDailyStreak: Math.max(local.bestDailyStreak ?? 0, cloud.bestDailyStreak ?? 0),
         lastPlayedDate: local.lastPlayedDate > cloud.lastPlayedDate ? local.lastPlayedDate : cloud.lastPlayedDate,
         byType: mergedByType,

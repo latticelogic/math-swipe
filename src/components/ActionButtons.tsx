@@ -126,6 +126,9 @@ export const ActionButtons = memo(function ActionButtons({
     timedMode, onTimedModeToggle, timedDurationMs, problemKey,
     ageBand,
 }: Props) {
+    // Hard/Timed don't apply to the fixed daily/challenge sets, so hide the
+    // toggles there (App also neutralizes the flags for those types).
+    const hideModeToggles = questionType === 'daily' || questionType === 'challenge';
     // Transient feedback toast for the share button. Without this, share
     // appears to do nothing on platforms where navigator.share is missing
     // or rejects (tester report).
@@ -213,6 +216,7 @@ export const ActionButtons = memo(function ActionButtons({
                 <QuestionTypePicker current={questionType} onChange={onTypeChange} ageBand={ageBand} />
             </ActionTooltip>
 
+            {!hideModeToggles && (<>
             {/* Stopwatch / timed mode */}
             <ActionTooltip label={timedMode ? 'Timed: ON' : 'Timed mode'}>
                 <motion.button
@@ -282,6 +286,7 @@ export const ActionButtons = memo(function ActionButtons({
                     </svg>
                 </motion.button>
             </ActionTooltip>
+            </>)}
         </div>
     );
 });
