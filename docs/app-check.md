@@ -12,6 +12,23 @@ on enforcement.
 > (no gcloud/firebase-CLI path today). These are the genuinely web-only steps;
 > everything after is code + env.
 
+## Already wired in code (nothing to do here)
+
+The surrounding scaffolding is in place and **auto-activates the moment
+`VITE_APPCHECK_SITE_KEY` is set** — no code changes needed at enable time:
+
+- `getFirebase()` initialises App Check with reCAPTCHA v3 (env-gated).
+- **CSP** in `public/_headers` and the edge worker already allow the reCAPTCHA
+  script/frame (`www.google.com/recaptcha/`, `www.gstatic.com/recaptcha/`).
+- The floating reCAPTCHA **badge is hidden** (`index.css`) and the required
+  **attribution** renders in the Me-tab footer (`<RecaptchaNotice>`) — both only
+  when the key is set.
+- The **privacy policy** auto-adds a reCAPTCHA/abuse-prevention disclosure when
+  the key is set.
+
+So the whole remaining job is: provision the key, set the env var, deploy,
+watch metrics, enforce.
+
 ## 1. Register the web app with reCAPTCHA v3 (console)
 
 Firebase console → **App Check** → **Apps** → select the web app → **reCAPTCHA v3**.

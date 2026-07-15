@@ -569,3 +569,11 @@ button.action-icon-skull-active:focus:not(:focus-visible) {
     display: none !important;
   }
 }
+
+/* reCAPTCHA v3 (Firebase App Check) badge — hidden per Google's terms, which
+   allow hiding it as long as the required "protected by reCAPTCHA" attribution
+   is shown in the flow (see <RecaptchaNotice>). Only appears once App Check is
+   configured; harmless otherwise. */
+.grecaptcha-badge {
+  visibility: hidden;
+}

@@ -13,6 +13,7 @@ import { PushOptIn } from './PushOptIn';
 import { UsernameClaim } from './UsernameClaim';
 import { TrialCountdownChip } from './TrialModals';
 import { LegalFooterRow } from './LegalPages';
+import { RecaptchaNotice } from './RecaptchaNotice';
 import { InstallPill } from './InstallPrompt';
 import { CategoryIcon } from './CategoryIcon';
 import { todayKey } from '../utils/dateKey';
@@ -733,6 +734,12 @@ export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked,
                 renders in the Paywall footer. */}
             <div className="mt-4 mb-2">
                 <LegalFooterRow />
+            </div>
+
+            {/* Google-required reCAPTCHA attribution (renders only when App
+                Check is configured; badge is hidden via index.css). */}
+            <div className="mt-2 mb-2 text-center max-w-xs">
+                <RecaptchaNotice />
             </div>
         </div>
     );

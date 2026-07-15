@@ -202,6 +202,9 @@ function PrivacyBody() {
                 <Bullet><strong>Firebase</strong> (Google) — authentication and structured database hosting; push delivery</Bullet>
                 <Bullet><strong>Cloudflare</strong> — global edge routing, hosting, and DDoS mitigation</Bullet>
                 <Bullet><strong>Stripe</strong> — secure tokenised payment processing (purchases only)</Bullet>
+                {import.meta.env.VITE_APPCHECK_SITE_KEY && (
+                    <Bullet><strong>Google reCAPTCHA</strong> — abuse and fraud prevention only (via Firebase App Check, to verify requests come from the genuine app); subject to Google's Privacy Policy and Terms. No advertising or profiling.</Bullet>
+                )}
             </Section>
 
             <Section title="Your rights">
