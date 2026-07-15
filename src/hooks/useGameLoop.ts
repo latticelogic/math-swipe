@@ -10,7 +10,7 @@ import type { EngineItem, GameConfig, ChalkState, FeedbackFlash } from '../engin
 import { SWIPE_TO_INDEX, DEFAULT_GAME_CONFIG } from '../engine/domain';
 import { scoreCorrect, scorePenalty, FAST_ANSWER_MS } from '../engine/scoring';
 import { useDifficulty } from './useDifficulty';
-import { hapticTap, hapticCorrect, hapticWrong, hapticMilestone } from '../utils/haptics';
+import { hapticCorrect, hapticWrong, hapticMilestone } from '../utils/haptics';
 import { milestoneDurationMs } from '../components/milestoneTiers';
 
 // Re-export engine types so callers that import from useGameLoop still work
@@ -301,21 +301,9 @@ export function useGameLoop(
         if (!current) return;
         const tts = Date.now() - (current.startTime ?? Date.now());
 
-        // Up = skip
-        if (direction === 'up') {
-            hapticTap();
-            frozenRef.current = true;
-            setGs(prev => ({ ...prev, streak: 0, chalkState: 'idle', frozen: true }));
-            if (isSpeedrun(categoryId)) {
-                setItems(p => [...p, generateItem(level, 'mix-all', hardMode)]);
-            }
-            safeTimeout(() => {
-                setGs(prev => ({ ...prev, frozen: false }));
-                frozenRef.current = false;
-                advanceProblem();
-            }, 100);
-            return;
-        }
+        // Skip (swipe-up) was removed 2026-07-16 — owner call. Up-swipes are
+        // ignored so accidental upward gestures can't do anything.
+        if (direction === 'up') return;
 
         const selectedValue = current.options[SWIPE_TO_INDEX[direction]];
         const correct = selectedValue === current.answer;

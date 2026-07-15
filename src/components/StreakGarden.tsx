@@ -46,17 +46,11 @@ export function StreakGarden({
         return { filled, isToday };
     });
 
-    const playedToday = lastNum !== null && lastNum === todayNum;
-    const caption =
-        dayStreak <= 0
-            ? 'Start a streak today — one session counts.'
-            : playedToday
-                ? `${dayStreak} day${dayStreak === 1 ? '' : 's'} in a row. Sketched in.`
-                : `${dayStreak} day${dayStreak === 1 ? '' : 's'} going — play today to keep the chain.`;
-
+    // Header + caption removed 2026-07-16 (owner calls: "your practice" was
+    // self-explanatory; "N days in a row. Sketched in." was noise). The grid
+    // speaks for itself.
     return (
         <div className="flex flex-col items-center">
-            <div className="text-xs ui text-[rgb(var(--color-fg))]/50 mb-2 text-center">your practice</div>
             <div className="grid grid-cols-7 gap-1.5 w-full max-w-[240px] mx-auto">
                 {cells.map((c, i) => (
                     <div
@@ -73,7 +67,6 @@ export function StreakGarden({
                     />
                 ))}
             </div>
-            <div className="text-[11px] ui text-[rgb(var(--color-fg))]/55 mt-2 chalk text-center">{caption}</div>
         </div>
     );
 }

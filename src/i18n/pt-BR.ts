@@ -88,7 +88,7 @@ export const ptBR: Record<MsgKey, string> = {
     'count.day.other': '{count} dias',
 
     'endRun.title': 'Encerrar esta rodada?',
-    'endRun.stats': '{problems} · {pts} pts até agora',
+    'endRun.stats': '{problems} · {pts} pontos até agora',
     'endRun.end': 'Encerrar e ver resultado',
     'endRun.keep': 'Continuar jogando',
 
@@ -146,6 +146,14 @@ export const ptBR: Record<MsgKey, string> = {
     'share.textCopied': 'Texto copiado!',
     'share.saved': 'Salvo!',
     'share.previewAlt': 'Prévia do cartão',
+
+    'settings.title': 'Ajustes',
+    'settings.gearAria': 'Abrir ajustes',
+    'settings.done': 'Pronto',
+    'settings.reset': 'Apagar estatísticas',
+    'settings.neverMind': 'deixa pra lá',
+    'settings.resetCta': 'apagar',
+    'settings.versionTap': 'v{v} · toque para atualizar',
 
     'me.language': 'Idioma',
     'me.signinTitle': 'Guarde seu progresso',

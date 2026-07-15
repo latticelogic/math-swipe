@@ -100,7 +100,7 @@ export const en = {
 
     // ── End-run dialog ──
     'endRun.title': 'End this run?',
-    'endRun.stats': '{problems} · {pts} pts so far',
+    'endRun.stats': '{problems} · {pts} points so far',
     'endRun.end': 'End & see results',
     'endRun.keep': 'Keep playing',
 
@@ -162,6 +162,15 @@ export const en = {
     'share.textCopied': 'Text copied!',
     'share.saved': 'Saved!',
     'share.previewAlt': 'Share card preview',
+
+    // ── Settings sheet ──
+    'settings.title': 'Settings',
+    'settings.gearAria': 'Open settings',
+    'settings.done': 'Done',
+    'settings.reset': 'Reset stats',
+    'settings.neverMind': 'never mind',
+    'settings.resetCta': 'reset',
+    'settings.versionTap': 'v{v} · tap to update',
 
     // ── Me tab (Tier-1 subset: language, sign-in card, stat labels) ──
     'me.language': 'Language',

@@ -1,6 +1,5 @@
 import { memo, useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence, useSpring, useMotionValueEvent } from 'framer-motion';
-import { getRank } from '../domains/math/ranks';
 import { ShareSheet } from './ShareSheet';
 import { buildProfileSlug } from '../utils/profileSlug';
 import { IosSessionEndPrompt } from './InstallPrompt';
@@ -54,7 +53,7 @@ interface Props {
 export const SessionSummary = memo(function SessionSummary({
     solved, bestStreak: streak, accuracy, xpEarned, answerHistory, questionType, visible, onDismiss,
     hardMode, timedMode, speedrunFinalTime, isNewSpeedrunRecord,
-    displayName, uid, claimedHandle, challengeId, challengeTarget, totalXP, onShared,
+    displayName, uid, claimedHandle, challengeId, challengeTarget, onShared,
 }: Props) {
     const [isSharing, setIsSharing] = useState(false);
     const cardRef = useRef<HTMLDivElement>(null);
@@ -443,21 +442,10 @@ export const SessionSummary = memo(function SessionSummary({
                             </div>
                         )}
 
-                        <div className="text-lg chalk text-[var(--color-gold)] mb-4 tabular-nums">+{xpDisplay} pts</div>
+                        <div className="text-lg chalk text-[var(--color-gold)] mb-4 tabular-nums">+{xpDisplay} points</div>
 
-                        {/* Next-rank teaser — only when it's close enough to feel
-                            like "one more", at the moment of peak momentum. */}
-                        {typeof totalXP === 'number' && (() => {
-                            const { nextRank } = getRank(totalXP);
-                            if (!nextRank) return null;
-                            const need = nextRank.xp - totalXP;
-                            if (need <= 0 || need > 400) return null;
-                            return (
-                                <div className="text-[11px] ui text-[rgb(var(--color-fg))]/45 mb-3">
-                                    {need} XP from <span className="text-[var(--color-gold)]">{nextRank.name}</span> — one more?
-                                </div>
-                            );
-                        })()}
+                        {/* (Next-rank teaser removed 2026-07-16 — owner call:
+                            the next rank's name stays a surprise.) */}
 
                         {/* Head-to-head resolution — when this session was played
                             against a friend's target, settle it out loud instead

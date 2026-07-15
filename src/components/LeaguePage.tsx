@@ -5,7 +5,6 @@ import { getFirebase } from '../utils/firebase';
 import { getThemeDisplayColor } from '../utils/chalkThemes';
 import { COSTUMES } from '../utils/costumes';
 import { formatTime } from '../utils/formatTime';
-import { AchievementBadge } from './AchievementBadge';
 
 interface LeaderboardEntry {
     uid: string;
@@ -363,13 +362,8 @@ export const LeaguePage = memo(function LeaguePage({ userXP, userStreak, uid, di
                                     ) : entry.rank}
                                 </div>
 
-                                {/* Name & Cosmetic & Badge */}
+                                {/* Name & Cosmetic (badge-equip display removed 2026-07-16 — owner call) */}
                                 <div className="flex-1 min-w-0 flex items-center gap-1.5" onClick={() => !entry.isYou && setSelectedPlayer(entry)}>
-                                    {entry.activeBadgeId && (
-                                        <div className="flex-shrink-0 w-[18px] h-[18px]">
-                                            <AchievementBadge achievementId={entry.activeBadgeId} unlocked={true} name="" desc="" />
-                                        </div>
-                                    )}
                                     <div
                                         className={`text-sm ui font-semibold truncate ${entry.isYou ? '' : 'text-[rgb(var(--color-fg))]/70'}`}
                                         style={entry.activeThemeId ? { color: getThemeDisplayColor(entry.activeThemeId) } : undefined}

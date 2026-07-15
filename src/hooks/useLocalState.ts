@@ -27,14 +27,19 @@ export function useLocalState(
         () => safeGetItem(key) ?? defaultValue,
     );
 
-    // Restore from Firestore if localStorage is empty or UID changed
+    // Restore from Firestore ONLY when this device has no local value.
+    // LOCAL WINS on uid changes too: the common uid change here is the same
+    // person signing in (anon → Google, reconcile), and letting the cloud
+    // value clobber the device's choice made cosmetics "change on their own"
+    // after sign-in (bug report 2026-07-16: swipe trail flipped to purple).
+    // The setter below pushes local up to the cloud, so the accounts converge
+    // on what the user actually sees.
     const prevUidRef = useRef(uid);
     useEffect(() => {
         if (!uid) return;
-        const uidChanged = prevUidRef.current !== uid;
         prevUidRef.current = uid;
         const localVal = safeGetItem(key);
-        if (localVal && !uidChanged) return; // already have local data and same user
+        if (localVal) return; // device choice stands
         const field = FIELD_MAP[key];
         if (!field) return;
         Promise.all([getFirebase(), import('firebase/firestore')]).then(([{ db }, { doc, getDoc }]) =>

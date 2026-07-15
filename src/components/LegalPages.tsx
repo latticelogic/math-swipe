@@ -273,6 +273,11 @@ function TermsBody() {
                     the app. After the demo ends, you can purchase lifetime
                     access for $3.14. If you don't purchase, the Daily Challenge
                     stays free; other content locks.</p>
+                <p>Purchases are covered by our 14-day, no-questions refund
+                    policy — the full policy is at{' '}
+                    <a href="/refund" className="underline text-[var(--color-gold)]/70">
+                        mathchallenge.app/refund
+                    </a>.</p>
             </Section>
 
             <Section title="Acceptable use">
@@ -403,8 +408,10 @@ interface FooterRowProps {
     current?: LegalDocId;
     /** Click handler for navigation. The parent decides routing strategy. */
     onNavigate?: (doc: LegalDocId) => void;
-    /** Hide the Refund link (used on the paywall — the refund policy stays
-     *  discoverable from the Me tab rather than the purchase moment). */
+    /** @deprecated Refund is no longer in the row at all (owner call
+     *  2026-07-16 — it's linked from inside the Terms instead; the /refund
+     *  page itself stays live for stores/support). Kept so old call sites
+     *  compile; has no effect. */
     omitRefund?: boolean;
 }
 
@@ -418,12 +425,12 @@ interface FooterRowProps {
  * onNavigate prop for SPA-internal soft-routing if the parent prefers
  * not to hit a full reload.
  */
-export function LegalFooterRow({ current, onNavigate, omitRefund }: FooterRowProps) {
+export function LegalFooterRow({ current, onNavigate }: FooterRowProps) {
+    // Refund deliberately absent — it lives inside the Terms (owner call).
     const items = ([
-        { id: 'refund', label: 'Refund' },
         { id: 'privacy', label: 'Privacy' },
         { id: 'terms', label: 'Terms' },
-    ] as { id: LegalDocId; label: string }[]).filter(item => !(omitRefund && item.id === 'refund'));
+    ] as { id: LegalDocId; label: string }[]);
 
     return (
         <div className="flex justify-center gap-3 text-[10px] ui text-[rgb(var(--color-fg))]/35">

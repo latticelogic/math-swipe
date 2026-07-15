@@ -490,6 +490,9 @@ export function useStats(uid: string | null) {
         });
     }, []);
 
+    // Badge-equip was removed from the UI 2026-07-16 (owner call). The
+    // activeBadgeId field remains readable for old cloud docs; this setter
+    // stays for the reset path only.
     const updateBadge = useCallback((badgeId: string) => {
         setStats(prev => ({ ...prev, activeBadgeId: badgeId }));
     }, []);
