@@ -155,6 +155,8 @@ export const es: Record<MsgKey, string> = {
     'settings.neverMind': 'mejor no',
     'settings.resetCta': 'borrar',
     'settings.versionTap': 'v{v} · toca para actualizar',
+    'settings.upToDate': 'v{v} · al día',
+    'settings.updateAvailable': 'v{v} · toca para v{n}',
 
     'me.language': 'Idioma',
     'me.signinTitle': 'Guarda tu progreso',

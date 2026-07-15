@@ -1,17 +1,10 @@
-import { memo, useState, useEffect, useRef, useMemo } from 'react';
+import { memo, useState, useEffect, useRef } from 'react';
 import { motion, useSpring, useMotionValueEvent } from 'framer-motion';
 
-/** Pre-score greetings — rotates daily so returning users don't see
- *  the exact same phrase every time. Chosen to feel energetic but not
- *  childish; works for both kids and adult learners. */
-const GREETINGS = [
-    "Let's Go!!",
-    'Ready?',
-    'Round one!',
-    'Back at it!',
-    'Quick one?',
-    "Let's roll!",
-];
+/** THE pre-score greeting. Owner call 2026-07-16: no rotation — it always
+ *  says "Let's Go!!" (matches the tab's name; the rotating variants read
+ *  dubious out of context). */
+const GREETING = "Let's Go!!";
 
 /**
  * Animated score counter that "rolls" up to the new value.
@@ -36,14 +29,6 @@ export const ScoreCounter = memo(function ScoreCounter({ value }: { value: numbe
         setDisplay(Math.round(v));
     });
 
-    // Deterministic per-day greeting — same all day, different tomorrow.
-    // Computed once per mount so it doesn't churn between renders.
-    const greeting = useMemo(() => {
-        const d = new Date();
-        const dayKey = d.getFullYear() * 1000 + (d.getMonth() + 1) * 50 + d.getDate();
-        return GREETINGS[dayKey % GREETINGS.length];
-    }, []);
-
     return (
         <motion.div
             className="chalk text-[var(--color-gold)] text-7xl leading-none tabular-nums"
@@ -55,7 +40,7 @@ export const ScoreCounter = memo(function ScoreCounter({ value }: { value: numbe
             aria-label={`Score: ${value}`}
         >
             {value === 0 ? (
-                <span className="text-5xl leading-tight">{greeting}</span>
+                <span className="text-5xl leading-tight">{GREETING}</span>
             ) : display}
         </motion.div>
     );

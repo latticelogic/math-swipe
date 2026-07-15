@@ -15,6 +15,15 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
+    // Emit /version.json so the running client can check whether a newer
+    // build is deployed (SettingsSheet's "up to date / tap for vX" line).
+    {
+      name: 'emit-version-json',
+      apply: 'build' as const,
+      generateBundle() {
+        this.emitFile({ type: 'asset', fileName: 'version.json', source: JSON.stringify({ version: pkg.version }) });
+      },
+    },
     VitePWA({
       registerType: 'prompt',
       workbox: {
