@@ -416,11 +416,13 @@ function App() {
   const [achievementQueue, setAchievementQueue] = useState<{ id: string; name: string }[]>([]);
   const [currentToast, setCurrentToast] = useState<{ id: string; name: string } | null>(null);
   // Pull the next queued unlock onto the display when the current one clears.
+  // Held back while a milestone burst is playing so the two celebrations don't
+  // stack — the queue persists, so the toast simply drains once the burst ends.
   useEffect(() => {
-    if (currentToast || achievementQueue.length === 0) return;
+    if (currentToast || milestone || achievementQueue.length === 0) return;
     setCurrentToast(achievementQueue[0]);
     setAchievementQueue(q => q.slice(1));
-  }, [currentToast, achievementQueue]);
+  }, [currentToast, milestone, achievementQueue]);
   // Auto-dismiss the current toast after a beat.
   useEffect(() => {
     if (!currentToast) return;
@@ -1149,9 +1151,12 @@ function App() {
               </div>
             )}
 
-            {/* ── Personal best — hand-drawn ribbon with your specific number ── */}
+            {/* ── Personal best — hand-drawn ribbon with your specific number ──
+                Lowest-priority celebration: yields to a milestone burst or an
+                achievement toast so only one thing celebrates at a time. A new
+                best that's also a streak tier is already covered by the burst. */}
             <AnimatePresence>
-              {showPB && <PersonalBestRibbon streak={bestStreak} />}
+              {showPB && !milestone && !currentToast && <PersonalBestRibbon streak={bestStreak} />}
             </AnimatePresence>
           </div>
         )}
