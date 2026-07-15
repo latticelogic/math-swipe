@@ -10,7 +10,6 @@ const GREETINGS = [
     'Round one!',
     'Back at it!',
     'Quick one?',
-    'Brain on.',
     "Let's roll!",
 ];
 
