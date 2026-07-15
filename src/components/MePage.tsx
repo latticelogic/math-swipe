@@ -90,10 +90,10 @@ export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked,
     const handleInvite = async () => {
         if (!uid) return;
         const url = buildInviteUrl(uid);
-        const text = 'Come do a bit of mental math with me on Math Swipe.';
+        const text = 'Come do a bit of mental math with me on Math Challenge.';
         try {
             if (typeof navigator !== 'undefined' && navigator.share) {
-                await navigator.share({ title: 'Math Swipe', text, url });
+                await navigator.share({ title: 'Math Challenge', text, url });
             } else {
                 await navigator.clipboard.writeText(url);
                 setInviteMsg('Invite link copied');

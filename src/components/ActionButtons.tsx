@@ -142,7 +142,7 @@ export const ActionButtons = memo(function ActionButtons({
 
     const handleShare = async () => {
         const shareData = {
-            title: 'Math Swipe',
+            title: 'Math Challenge',
             text: 'Try this mental-math game.',
             url: window.location.href,
         };

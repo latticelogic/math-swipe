@@ -88,7 +88,7 @@ function RefundBody() {
         <>
             <Section title="14-day refund, no questions asked">
                 <p>
-                    If you bought lifetime access to Math Swipe and aren't happy with
+                    If you bought lifetime access to Math Challenge and aren't happy with
                     it for any reason, email <Email /> within 14 days of purchase
                     and we'll refund you. No questions, no forms, no friction.
                 </p>
@@ -124,7 +124,7 @@ function RefundBody() {
             <Section title="Your statutory rights">
                 <p>
                     This policy is in addition to your rights under Singapore's
-                    Consumer Protection (Fair Trading) Act. Math Swipe is a digital
+                    Consumer Protection (Fair Trading) Act. Math Challenge is a digital
                     product delivered instantly on purchase; refunds are processed
                     exclusively through Stripe once the transaction is verified
                     against our records.
@@ -182,7 +182,7 @@ function PrivacyBody() {
                     name, email, or phone number to play — your account is just a
                     random id and your scores. If you're under 13, please ask a
                     parent before you turn on sign-in, email, or notifications.</p>
-                <p><strong>For parents:</strong> Math Swipe is designed for ages
+                <p><strong>For parents:</strong> Math Challenge is designed for ages
                     8–14 and needs no personal information for core play — only an
                     anonymous identifier and gameplay stats, used solely to run
                     the game (no advertising, no profiling, no third-party
@@ -236,7 +236,7 @@ function TermsBody() {
     return (
         <>
             <Section title="Plain language">
-                <p>You pay $3.14 once, and Math Swipe keeps working for you. It's a
+                <p>You pay $3.14 once, and Math Challenge keeps working for you. It's a
                     one-time purchase — no subscription and no recurring charge.</p>
                 <p>This page is the more formal version of that. If anything below
                     contradicts the simple version, the simple version wins on
@@ -263,7 +263,7 @@ function TermsBody() {
                     'lifetime' means").</p>
                 <p>When we make a material change, we'll update the "last updated"
                     date on this page and, where practical, note it in the app.
-                    Continuing to use Math Swipe after a change means you accept
+                    Continuing to use Math Challenge after a change means you accept
                     the updated terms.</p>
             </Section>
 
@@ -292,7 +292,7 @@ function TermsBody() {
             </Section>
 
             <Section title="No warranty">
-                <p>Math Swipe is provided "as is." We do our best to keep the app
+                <p>Math Challenge is provided "as is." We do our best to keep the app
                     working, but we don't warrant that it will be uninterrupted,
                     bug-free, or that your stats won't ever experience a
                     problem. If something serious breaks, we'll fix it as
@@ -305,8 +305,8 @@ function TermsBody() {
                     $3.14, that's the cap.</p>
             </Section>
 
-            <Section title="Where Math Swipe is offered">
-                <p>Math Swipe is built to comply with the regulatory standards of
+            <Section title="Where Math Challenge is offered">
+                <p>Math Challenge is built to comply with the regulatory standards of
                     Singapore and is offered from Singapore. It is not
                     intentionally directed at, or optimised for, users in the
                     European Union, the United Kingdom, or the United States. We
@@ -324,7 +324,7 @@ function TermsBody() {
 
             <Section title="Governing law and dispute resolution">
                 <p>
-                    Math Swipe is operated by Lattice Logic Pte. Ltd.
+                    Math Challenge is operated by Lattice Logic Pte. Ltd.
                     (UEN 202610912N), incorporated in the Republic of Singapore.
                     These Terms are governed by, and construed in accordance
                     with, the laws of the Republic of Singapore, without regard

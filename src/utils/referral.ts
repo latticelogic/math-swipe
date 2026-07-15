@@ -82,6 +82,6 @@ export async function fetchReferralCount(uid: string): Promise<number> {
 
 /** The shareable invite link that credits `uid` when a new player joins. */
 export function buildInviteUrl(uid: string): string {
-    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://math-swipe-c7k.pages.dev';
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://mathchallenge.app';
     return `${origin}/?r=${encodeURIComponent(uid)}`;
 }

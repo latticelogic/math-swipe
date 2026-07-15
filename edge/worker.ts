@@ -201,7 +201,7 @@ function rankLabel(xp: number): string {
 
 function buildProfileMeta(p: ProfileData, profileUrl: string, origin: string): string {
     const rank = rankLabel(p.totalXP);
-    const title = `${p.displayName} — ${rank} on Math Swipe`;
+    const title = `${p.displayName} — ${rank} on Math Challenge`;
     const speedrunSegment = p.bestSpeedrunTime && p.bestSpeedrunTime > 0
         ? ` · ⏱️ ${(p.bestSpeedrunTime / 1000).toFixed(1)}s speedrun`
         : '';

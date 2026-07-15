@@ -73,9 +73,9 @@ function urlOpener(channel: Channel, text: string, url: string): string | null {
         case 'twitter':   return `https://twitter.com/intent/tweet?text=${encText}`;
         case 'whatsapp':  return `https://wa.me/?text=${encText}`;
         case 'telegram':  return `https://t.me/share/url?url=${encUrl}&text=${encText}`;
-        case 'reddit':    return `https://www.reddit.com/submit?url=${encUrl}&title=${encodeURIComponent('Beat my Math Swipe streak?')}`;
+        case 'reddit':    return `https://www.reddit.com/submit?url=${encUrl}&title=${encodeURIComponent('Beat my Math Challenge streak?')}`;
         case 'facebook':  return `https://www.facebook.com/sharer/sharer.php?u=${encUrl}`;
-        case 'email':     return `mailto:?subject=${encodeURIComponent('Beat my Math Swipe streak')}&body=${encText}`;
+        case 'email':     return `mailto:?subject=${encodeURIComponent('Beat my Math Challenge streak')}&body=${encText}`;
         default:          return null;
     }
 }

@@ -1,4 +1,4 @@
-# Math Swipe — project context for Claude
+# Math Challenge — project context for Claude
 
 This file documents conventions and account ownership for anyone (or any
 AI assistant) working in this repo. Update as ownership/setup changes.
@@ -15,7 +15,7 @@ Tone target across all content: **warm, restrained, never pressure-y,
 never childish**. No motivational-poster hype. Specific praise over
 generic ("Sharp." > "AMAZING! 🎉").
 
-**Production URL**: https://math-swipe-c7k.pages.dev (Cloudflare Pages)
+**Production URL**: https://mathchallenge.app (Cloudflare Pages)
 
 ### Surface map — what lives where
 
@@ -71,7 +71,7 @@ production should be owned by the company account, not Tim's personal.**
 | Firebase project (production) | `math-swipe-prod` | Owned by `tim@latticelogic.app`. Org id `138884922843`. Created 2026-05-11. |
 | Firebase project (legacy / shared) | `scribble-math-prod` | DO NOT deploy to this. Hosts another company's classroom app with 80+ functions. A naive deploy would delete them all. |
 | GitHub | `latticelogic` org | Repo at `github.com/latticelogic/math-swipe`. Owner admin: `njytim-cyber` (renamed legacy account). Transferred 2026-05-11. |
-| Cloudflare Pages | `tim@latticelogic.app`, account id `00e07444cae65d675a140f8560429fad` | Project `math-swipe`, production URL `https://math-swipe-c7k.pages.dev`. Production branch `master`. Env vars `FIREBASE_PROJECT_ID`, `PUBLIC_ORIGIN`, `NODE_VERSION` set on both production + preview configs. Custom domain not yet attached (pending product name decision). |
+| Cloudflare Pages | `tim@latticelogic.app`, account id `00e07444cae65d675a140f8560429fad` | Project `math-swipe`, production URL `https://mathchallenge.app`. Production branch `master`. Env vars `FIREBASE_PROJECT_ID`, `PUBLIC_ORIGIN`, `NODE_VERSION` set on both production + preview configs. Custom domain not yet attached (pending product name decision). |
 | Stripe | code wired, account verification pending | Cloud Functions in `functions/src/stripe.ts` ready to deploy. Secrets needed: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID`, `PUBLIC_ORIGIN` — set via `firebase functions:secrets:set`. Webhook endpoint to register: `https://us-central1-math-swipe-prod.cloudfunctions.net/stripeWebhook` listening for `checkout.session.completed`. |
 | Apple Developer | not yet enrolled | Must enroll as Lattice Logic with company DUNS, $99/yr. 1-3 week verification window |
 | Google Play Console | not yet enrolled | Must enroll as Lattice Logic, $25 one-time |

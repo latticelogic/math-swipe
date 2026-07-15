@@ -42,11 +42,11 @@ self.addEventListener('push', (event) => {
         payload = event.data.json();
     } catch {
         // Fallback to text body
-        payload = { notification: { title: 'Math Swipe', body: event.data.text() } };
+        payload = { notification: { title: 'Math Challenge', body: event.data.text() } };
     }
     const notif = payload.notification || {};
     const data = payload.data || {};
-    const title = notif.title || 'Math Swipe';
+    const title = notif.title || 'Math Challenge';
     const options = {
         body: notif.body || '',
         icon: notif.icon || '/icon-192.png',

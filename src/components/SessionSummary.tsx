@@ -91,12 +91,12 @@ function buildSharePayload(
     // The daily case gets a date stamp so the artifact carries social context
     // ("got the May 12") — same trick Wordle uses to make shares conversational.
     const headline = questionType === 'daily'
-        ? `Math Swipe Daily · ${shortDateStamp()} — ${xp} pts, ${accuracy}% ${streak > 1 ? `, ${streak}🔥` : ''}`
+        ? `Math Challenge Daily · ${shortDateStamp()} — ${xp} pts, ${accuracy}% ${streak > 1 ? `, ${streak}🔥` : ''}`
         : questionType === 'speedrun' && speedrunTime
-            ? `⏱️ Cleared 10 in ${formatTime(speedrunTime)} on Math Swipe`
+            ? `⏱️ Cleared 10 in ${formatTime(speedrunTime)} on Math Challenge`
             : accuracy === 100
-                ? `💯 ${xp} pts, ${streak}🔥 — perfect run on Math Swipe${modeTag}`
-                : `${xp} pts · ${streak}🔥 streak · ${accuracy}% — Math Swipe ${typeLabel}${modeTag}`;
+                ? `💯 ${xp} pts, ${streak}🔥 — perfect run on Math Challenge${modeTag}`
+                : `${xp} pts · ${streak}🔥 streak · ${accuracy}% — Math Challenge ${typeLabel}${modeTag}`;
 
     const url = profileUrl ?? `${window.location.origin}?c=${createChallengeId()}`;
 
@@ -256,7 +256,7 @@ export const SessionSummary = memo(function SessionSummary({
                                 <div className="absolute inset-0 opacity-10 blur-[80px] bg-gradient-to-br from-[var(--color-speedrun)] via-transparent to-[#00FFFF]" />
 
                                 <div className="z-10 text-center flex flex-col items-center w-full">
-                                    <h1 className="text-8xl chalk text-[var(--color-gold)] mb-6">Math Swipe</h1>
+                                    <h1 className="text-8xl chalk text-[var(--color-gold)] mb-6">Math Challenge</h1>
                                     {/* Daily gets a date stamp instead of the plain mode tag — same Wordle
                                         trick that turns shares into "got the May 12 yet?" conversations. */}
                                     <div className="text-4xl ui text-white/50 mb-12 tracking-widest uppercase">
@@ -591,19 +591,19 @@ export const SessionSummary = memo(function SessionSummary({
                                         // the friend starts their own speedrun and
                                         // sees "Beat 47.2s" until they do.
                                         url = `${window.location.origin}?c=${createChallengeId()}&targetTime=${Math.round(speedrunFinalTime)}`;
-                                        text = `Cleared Math Swipe Speedrun in ${formatTime(speedrunFinalTime)}. Try it: ${url}`;
+                                        text = `Cleared Math Challenge Speedrun in ${formatTime(speedrunFinalTime)}. Try it: ${url}`;
                                     } else if (questionType === 'daily') {
                                         // Daily: friend lands directly on today's
                                         // daily challenge — no seed needed because
                                         // generateDailyChallenge() is date-keyed.
                                         url = `${window.location.origin}?daily=1&target=${xpEarned}`;
-                                        text = `Got ${xpEarned} pts on today's Math Swipe Daily. Beat me: ${url}`;
+                                        text = `Got ${xpEarned} pts on today's Math Challenge Daily. Beat me: ${url}`;
                                     } else {
                                         // Challenge: forward the seed the sender
                                         // actually played + target score so the
                                         // banner shows "Beat 145 pts".
                                         url = `${window.location.origin}?c=${challengeId}&target=${xpEarned}`;
-                                        text = `Beat my ${xpEarned} pts on this Math Swipe challenge: ${url}`;
+                                        text = `Beat my ${xpEarned} pts on this Math Challenge challenge: ${url}`;
                                     }
                                     try {
                                         if (navigator.share) {

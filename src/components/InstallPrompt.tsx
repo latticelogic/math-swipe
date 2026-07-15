@@ -196,7 +196,7 @@ export function InstallInstructionsModal({ open, onClose }: InstallInstructionsM
                         transition={{ duration: 0.22 }}
                     >
                         <h2 id="install-modal-title" className="text-xl chalk text-[var(--color-gold)] mb-1">
-                            Install Math Swipe
+                            Install Math Challenge
                         </h2>
                         <p className="text-xs ui text-[rgb(var(--color-fg))]/50 mb-5">
                             Two taps in Safari. Adds an icon to your home screen.
@@ -273,7 +273,7 @@ interface IosSessionEndPromptProps {
 
 /**
  * End-of-first-session install nudge, **iOS only**. Renders a small
- * row inside the SessionSummary saying "Save Math Swipe to your home
+ * row inside the SessionSummary saying "Save Math Challenge to your home
  * screen — you won't lose your progress." When tapped, opens the same
  * 2-step illustrated instructions modal that the Me-tab InstallPill uses.
  *

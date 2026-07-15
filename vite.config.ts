@@ -40,8 +40,8 @@ export default defineConfig({
         ],
       },
       manifest: {
-        name: 'Math Swipe',
-        short_name: 'Math Swipe',
+        name: 'Math Challenge',
+        short_name: 'Math Challenge',
         description: 'Fast-paced mental math game',
         theme_color: '#1a1a24',
         background_color: '#1a1a24',

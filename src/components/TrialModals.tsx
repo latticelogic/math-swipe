@@ -108,7 +108,7 @@ export function WelcomeModal({ uid, status, entitlementLoading, inSession, displ
                         </svg>
 
                         <h2 id="welcome-modal-title" className="text-2xl chalk text-[var(--color-gold)] mb-3">
-                            Welcome to Math Swipe!
+                            Welcome to Math Challenge!
                         </h2>
 
                         <p className="text-sm ui text-[rgb(var(--color-fg))]/70 mb-2 leading-relaxed">

@@ -1,6 +1,6 @@
 {
-  "name": "Math Swipe",
-  "short_name": "Math Swipe",
+  "name": "Math Challenge",
+  "short_name": "Math Challenge",
   "description": "Swipe your way to mental math mastery. Fast, fun, addictive.",
   "start_url": "/",
   "display": "standalone",

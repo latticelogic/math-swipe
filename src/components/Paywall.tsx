@@ -154,7 +154,7 @@ export function Paywall({ progress, onUnlock, busy, onDevReset }: PaywallProps) 
                 {/* The headline acknowledges the trial ended without naming the
                     price. The price lives at the bottom in the CTA. */}
                 <h1 id="paywall-title" className="text-2xl chalk text-[var(--color-gold)] mb-1">
-                    Two weeks of Math Swipe
+                    Two weeks of Math Challenge
                 </h1>
                 <p className="text-sm ui text-[rgb(var(--color-fg))]/55 mb-6">
                     Here's what you built.
