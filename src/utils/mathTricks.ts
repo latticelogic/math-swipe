@@ -164,7 +164,12 @@ export const MAGIC_TRICKS: MagicTrick[] = [
             const n = Math.floor(Math.random() * 10) + 3; // 3 to 12 terms
             const terms = [];
             for (let i = 0; i < n; i++) terms.push(1 + i * 2);
-            const expr = terms.slice(0, 3).join(' + ') + (n > 4 ? ' + ... + ' : ' + ') + terms[n - 1];
+            // Small n: show every term (n<=4 fits). Larger n: elide the middle
+            // with "…". The old slice(0,3)+last form duplicated the last term
+            // at n=3 ("1 + 3 + 5 + 5"), so the shown sum didn't equal the answer.
+            const expr = n <= 4
+                ? terms.join(' + ')
+                : terms.slice(0, 3).join(' + ') + ' + ... + ' + terms[n - 1];
             const spread = Math.max(2, Math.floor(n * 0.7));
             return packTrick(expr, n * n, spread, -spread);
         }
@@ -756,9 +761,13 @@ export const MAGIC_TRICKS: MagicTrick[] = [
             const easyPct = easyPcts[Math.floor(Math.random() * easyPcts.length)];
             // numA is the "hard" percentage to present
             let numA: number;
+            // Constrain numA so easyPct * numA / 100 is always a whole number —
+            // otherwise 10%/20% produced non-integer answers like 0.7 (with no
+            // label) and a negative distractor gave the answer away.
             if (easyPct === 50) numA = (Math.floor(Math.random() * 9) + 2) * 2; // even: 4-20
             else if (easyPct === 25) numA = (Math.floor(Math.random() * 5) + 1) * 4; // mult of 4: 4-20
-            else numA = Math.floor(Math.random() * 9) + 2; // 2-10 for 10%/20%
+            else if (easyPct === 10) numA = (Math.floor(Math.random() * 5) + 1) * 10; // mult of 10: 10-50
+            else numA = (Math.floor(Math.random() * 5) + 1) * 5; // 20%: mult of 5: 5-25
             const ans = easyPct * numA / 100;
             const spread = Math.max(1, Math.round(ans * 0.3));
             return packTrick(`${numA}% of ${easyPct}`, ans, spread, -spread);
@@ -905,7 +914,10 @@ export const MAGIC_TRICKS: MagicTrick[] = [
             // Distractors: other digits from the cycle
             const otherDigits = cycle.filter(d => d !== ans);
             const d1 = otherDigits.length > 0 ? otherDigits[0] : (ans + 1) % 10;
-            const d2 = otherDigits.length > 1 ? otherDigits[1] : (ans + 3) % 10;
+            let d2 = otherDigits.length > 1 ? otherDigits[1] : (ans + 3) % 10;
+            // Cycles like base 4 (4,6,4,6) or base 9 (9,1,9,1) yield d1===d2 →
+            // two identical wrong buttons. Nudge d2 to a distinct digit.
+            while (d2 === d1 || d2 === ans) d2 = (d2 + 1) % 10;
             const opts = [ans, d1, d2].sort(() => Math.random() - 0.5);
             return {
                 expression: `Last digit: ${base}^${exp}`,
@@ -994,12 +1006,20 @@ export const MAGIC_TRICKS: MagicTrick[] = [
             result: '\u03c6 (1.618...)'
         },
         generatePractice: () => {
+            // Shuffle value+label pairs together so the answer isn't permanently
+            // in slot 0 (and so the 5 practice questions aren't byte-identical).
+            const answer = 1.618;
+            const pairs = [
+                { v: answer, l: 'φ (1.618)' },
+                { v: 1.414, l: '√2 (1.414)' },
+                { v: 2, l: '2' },
+            ].sort(() => Math.random() - 0.5);
             return {
                 expression: `Value of 1 + 1/(1 + 1/(1+...))`,
-                answer: 1.618,
-                options: [1.618, 1.414, 2],
-                optionLabels: ['φ (1.618)', '√2 (1.414)', '2'],
-                correctIndex: 0 // Will be shuffled later
+                answer,
+                options: pairs.map(p => p.v),
+                optionLabels: pairs.map(p => p.l),
+                correctIndex: pairs.findIndex(p => p.v === answer),
             };
         }
     },
