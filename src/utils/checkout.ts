@@ -1,17 +1,16 @@
 /**
  * utils/checkout.ts
  *
- * Client-side wrapper for the createCheckoutSession Cloud Function.
- * Returns a Stripe Checkout URL; the caller redirects the browser there.
+ * Client-side wrapper for the payment callable. Returns a hosted checkout URL
+ * (Airwallex or Stripe, per VITE_PAYMENT_PROVIDER); the caller redirects the
+ * browser there. Both providers' functions return the same `{ url }` shape, so
+ * the redirect logic is identical.
  *
- * The "unlock now" buttons across the app (paywall, reminder modal,
- * countdown chip) all funnel through this helper so the redirect-or-fail
- * behavior is consistent.
+ * The "unlock now" buttons across the app (paywall, reminder modal, countdown
+ * chip) all funnel through this helper so behaviour is consistent.
  *
- * In dev (`import.meta.env.DEV`) the helper short-circuits to a mock
- * grant — useful when iterating on the paywall flow without a Stripe
- * test account. The mock path is the same one used pre-Stripe in earlier
- * phases.
+ * In dev (`import.meta.env.DEV`) it short-circuits to a mock grant so the
+ * paywall flow can be exercised without a live payment account.
  */
 
 import { getFirebase } from './firebase';
@@ -20,19 +19,20 @@ interface CheckoutResponse {
     url: string;
 }
 
+/** Payment provider. Defaults to Airwallex (the Singapore entity's provider);
+ *  set VITE_PAYMENT_PROVIDER=stripe to use the Stripe path instead. */
+const PROVIDER = ((import.meta.env as Record<string, string | undefined>).VITE_PAYMENT_PROVIDER ?? 'airwallex').toLowerCase();
+const CALLABLE = PROVIDER === 'stripe' ? 'createCheckoutSession' : 'createAirwallexPayment';
+
 /**
- * Start a Stripe Checkout session and redirect the browser to it.
- * Throws on error so the caller can surface a friendly message.
+ * Start a hosted checkout and redirect the browser to it. Throws on error so
+ * the caller can surface a friendly message.
  *
- * @param mockGrant — DEV-only fallback used when Stripe isn't wired or
- *                    the developer wants to bypass the real payment flow.
- *                    Ignored in production builds.
+ * @param mockGrant — DEV-only fallback used when no live payment account is
+ *                    wired. Ignored in production builds.
  */
 export async function startCheckout(mockGrant?: () => Promise<void>): Promise<void> {
-    // In dev, prefer the mock path — most contributors won't have a Stripe
-    // test account, and the goal of running locally is to exercise the UI
-    // not the billing system. The mock writes paidAt directly via the
-    // entitlement hook's mockGrantAccess().
+    // In dev, prefer the mock path — exercising the UI, not the billing system.
     if (import.meta.env.DEV && mockGrant) {
         await mockGrant();
         return;
@@ -41,13 +41,12 @@ export async function startCheckout(mockGrant?: () => Promise<void>): Promise<vo
     const [{ functions }, { httpsCallable }] = await Promise.all([
         getFirebase(), import('firebase/functions'),
     ]);
-    const call = httpsCallable<unknown, CheckoutResponse>(functions, 'createCheckoutSession');
+    const call = httpsCallable<unknown, CheckoutResponse>(functions, CALLABLE);
     const result = await call({});
     const url = result.data?.url;
     if (!url) throw new Error('No checkout URL returned');
-    // Redirect — Stripe Checkout owns the page from here. On success it
-    // returns the user to ?paywall=ok and the webhook will have already
-    // written paidAt by the time the page reloads. On cancel they land
-    // on ?paywall=cancelled and the trial/paywall state remains.
+    // Redirect — the hosted payment page owns the flow from here. On success it
+    // returns the user to ?paywall=ok and the webhook will have written paidAt
+    // by the time the page reloads.
     window.location.href = url;
 }

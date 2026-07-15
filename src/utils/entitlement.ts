@@ -29,7 +29,7 @@ export interface Entitlement {
      *  they haven't paid. Once set, paywall is bypassed forever. */
     paidAt: number | null;
     /** Where the purchase came from. Drives refund handling + analytics. */
-    source: 'stripe' | 'apple' | 'google' | 'promo' | null;
+    source: 'stripe' | 'airwallex' | 'apple' | 'google' | 'promo' | null;
     /** Stripe checkout session id (or store-equivalent) for refund lookups.
      *  Null when source is null or 'promo'. */
     originalTransactionId: string | null;

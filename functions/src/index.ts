@@ -36,6 +36,10 @@ const db = admin.firestore();
 // Re-export Stripe Checkout + webhook functions. Lives in its own module to
 // keep the push code self-contained — both are independently deployable.
 export { createCheckoutSession, stripeWebhook } from './stripe';
+// Airwallex payment path (the intended provider for the Singapore entity).
+// Deployed alongside Stripe but inert until its secrets are set; the client
+// picks the provider via VITE_PAYMENT_PROVIDER.
+export { createAirwallexPayment, airwallexWebhook } from './airwallex';
 
 // Leaderboard cache rebuilder — see ./leaderboard.ts for the 60s cron
 // that pre-aggregates the top-20 score and top-10 speedrun cache docs
