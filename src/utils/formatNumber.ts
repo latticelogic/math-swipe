@@ -20,3 +20,9 @@ export function formatOptionValue(n: number): string {
     if (Number.isInteger(n)) return n.toLocaleString('en-US');
     return n.toFixed(4).replace(/\.?0+$/, '');
 }
+
+/** "1 problem" / "3 problems" — a count + a regular (-s) noun, correctly
+ *  singular/plural (fixes "1 problems"). The count gets thousands separators. */
+export function countLabel(n: number, singular: string): string {
+    return `${n.toLocaleString('en-US')} ${singular}${n === 1 ? '' : 's'}`;
+}

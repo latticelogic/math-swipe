@@ -728,7 +728,7 @@ function App() {
 
         {/* ── Top-right controls (theme toggle) — game tab only ── */}
         {activeTab === 'game' && (
-          <div className="absolute top-[calc(env(safe-area-inset-top,12px)+12px)] right-4 z-50 flex items-center gap-2">
+          <div className="absolute top-[calc(env(safe-area-inset-top,12px)+12px)] right-3 z-50 flex items-center gap-2">
             <button
               onClick={toggleThemeMode}
               // 44×44 tap target (was 36×36) — see comment on Change level button.
