@@ -11,7 +11,7 @@ import { BottomNav } from './components/BottomNav';
 import { ActionButtons } from './components/ActionButtons';
 import { SwipeTrail } from './components/SwipeTrail';
 import type { AgeBand } from './utils/questionTypes';
-import { defaultTypeForBand, typesForBand, AGE_BANDS, BAND_LABELS, migrateLegacyBand } from './utils/questionTypes';
+import { defaultTypeForBand, typesForBand } from './utils/questionTypes';
 import { useAutoSummary, usePersonalBest } from './hooks/useSessionUI';
 import { OfflineBanner } from './components/OfflineBanner';
 import { ReloadPrompt } from './components/ReloadPrompt';
@@ -99,31 +99,6 @@ function generateMathFiniteSet(categoryId: string, challengeId: string | null): 
   return problems as EngineItem[];
 }
 
-/** Hand-drawn band icons. Two bands: starter (sapling — growth, recognition
- *  drills) and full (rocket — full arithmetic-and-beyond catalog). Both
- *  inherit currentColor so they pick up theme stroke colour. */
-function AgeBandIcon({ band }: { band: AgeBand }) {
-    const common = { width: 16, height: 16, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
-    if (band === 'starter') {
-        // Sapling — two leaves above a curved stem
-        return (
-            <svg {...common}>
-                <path d="M12 21V12" />
-                <path d="M12 12 C 8 10 6 7 7 4 C 10 5 12 8 12 12" />
-                <path d="M12 12 C 16 10 18 7 17 4 C 14 5 12 8 12 12" />
-            </svg>
-        );
-    }
-    // 'full' — rocket: narrow tip, body, fins
-    return (
-        <svg {...common}>
-            <path d="M12 2 C 16 6 16 12 12 16 C 8 12 8 6 12 2 Z" />
-            <path d="M12 16 L 12 21" />
-            <path d="M9 13 L 6 18 L 9 17" />
-            <path d="M15 13 L 18 18 L 15 17" />
-        </svg>
-    );
-}
 
 
 function App() {
@@ -626,12 +601,12 @@ function App() {
   const toggleThemeMode = useCallback(() => {
     setThemeMode(themeMode === 'dark' ? 'light' : 'dark');
   }, [themeMode, setThemeMode]);
-  // ── Age Band ──
-  // Default is 'full' (majority audience). useLocalState may return a legacy
-  // stored value ('k2' / '35' / '6+') from before the 3→2 band migration;
-  // migrateLegacyBand normalizes those to the new IDs.
-  const [rawAgeBand, setAgeBand] = useLocalState(STORAGE_KEYS.ageBand, 'full' as AgeBand, uid) as [AgeBand, (v: AgeBand) => void];
-  const ageBand = migrateLegacyBand(rawAgeBand);
+  // ── Age band (removed as a user-facing concept 2026-07-15) ──
+  // Testers found the starter/full picker confusing and unnecessary, so
+  // everyone now gets the full topic set. Kept as a constant (rather than
+  // ripping typesForBand out everywhere) so the topic-filtering plumbing is
+  // untouched and a band could return later without a big refactor.
+  const ageBand: AgeBand = 'full';
 
   // ── Practice focus: find lowest-accuracy topic ──
   const levelUpSuggestion = useMemo(() => {
@@ -644,15 +619,7 @@ function App() {
       if (!worst || acc < worst.acc) worst = { type: t.id as QuestionType, acc, label: t.label };
     }
     return worst && worst.acc < 0.8 ? worst : null;
-  }, [stats.byType, ageBand]);
-  const handleBandChange = useCallback((band: AgeBand) => {
-    setAgeBand(band);
-    // Reset to the band's default type if current type isn't in the new band
-    const available = typesForBand(band);
-    if (!available.some(t => t.id === questionType)) {
-      setQuestionType(defaultTypeForBand(band));
-    }
-  }, [questionType, setAgeBand, setQuestionType]);
+  }, [stats.byType]);
 
   // NOTE: we intentionally do NOT block first paint on Firebase auth. The
   // game (problem generation, difficulty, local stats) is fully local, so we
@@ -759,23 +726,9 @@ function App() {
           baseColor={getThemeDisplayColor(activeThemeId as string)}
         />
 
-        {/* ── Top-right controls (band picker + theme toggle) — game tab only ── */}
+        {/* ── Top-right controls (theme toggle) — game tab only ── */}
         {activeTab === 'game' && (
           <div className="absolute top-[calc(env(safe-area-inset-top,12px)+12px)] right-4 z-50 flex items-center gap-2">
-            <button
-              onClick={() => {
-                const idx = AGE_BANDS.indexOf(ageBand);
-                handleBandChange(AGE_BANDS[(idx + 1) % AGE_BANDS.length]);
-              }}
-              // min-h-11 (44px) keeps the touch target at iOS HIG / Material Design
-              // minimum even though the visible content is smaller. Top-right corner
-              // tap targets are the hardest to hit accurately on a phone.
-              className="flex items-center gap-1.5 px-3 py-2.5 min-h-11 rounded-lg text-[rgb(var(--color-fg))]/50 active:text-[var(--color-gold)] transition-colors"
-              aria-label="Change level"
-            >
-              <AgeBandIcon band={ageBand} />
-              <span className="text-[10px] ui">{BAND_LABELS[ageBand].label}</span>
-            </button>
             <button
               onClick={toggleThemeMode}
               // 44×44 tap target (was 36×36) — see comment on Change level button.
