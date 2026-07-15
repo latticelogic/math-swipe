@@ -10,6 +10,10 @@ export interface Problem {
     optionLabels?: string[];  // Optional display labels (e.g. fractions)
     correctIndex: number;     // which index in options[] is the answer
     startTime?: number;
+    /** The concrete operation this problem tests (e.g. 'multiply'). Stamped by
+     *  generateProblem — for daily/mixed sets this is the resolved sub-type, not
+     *  'daily'/'mix', so per-operation accuracy stats can attribute each answer. */
+    type?: QuestionType;
     /** Optional visual type — e.g. 'bond' shows an SVG number bond diagram */
     visual?: 'bond';
     /** Bond metadata when visual === 'bond' */
@@ -39,17 +43,24 @@ export function generateProblem(difficulty: number, type: QuestionType = 'multip
     const prevRng = _rng;
     if (rng) _rng = rng;
     try {
-        return _generateProblem(difficulty, type, hardMode);
+        // Resolve mixed/aggregate modes to a concrete operation up front so the
+        // returned problem can be tagged with the REAL operation it tests. That
+        // tag (`problem.type`) is what lets daily / mixed answers feed the
+        // per-operation accuracy stats instead of vanishing into a 'daily'/'mix'
+        // bucket. pickRandom draws from the (possibly seeded) _rng set above, so
+        // daily sets stay deterministic.
+        let concrete: QuestionType = type;
+        if (type === 'mix-basic' || type === 'daily' || type === 'challenge') concrete = pickRandom(BASIC_TYPES);
+        else if (type === 'mix-all') concrete = pickRandom(ALL_INDIVIDUAL);
+        const problem = _generateProblem(difficulty, concrete, hardMode);
+        problem.type = concrete;
+        return problem;
     } finally {
         _rng = prevRng;
     }
 }
 
 function _generateProblem(difficulty: number, type: QuestionType, hardMode: boolean): Problem {
-    // Mixed/special modes delegate to a random sub-type
-    if (type === 'mix-basic' || type === 'daily' || type === 'challenge') return _generateProblem(difficulty, pickRandom(BASIC_TYPES), hardMode);
-    if (type === 'mix-all') return _generateProblem(difficulty, pickRandom(ALL_INDIVIDUAL), hardMode);
-
     // Every generator now takes (difficulty, hardMode) per the difficulty-curve
     // spec (docs/difficulty-curves.md). Topics that previously had zero-arg
     // signatures were the source of the "flat curve" bug — they ignored both

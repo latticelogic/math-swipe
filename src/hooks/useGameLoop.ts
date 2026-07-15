@@ -117,6 +117,41 @@ export function useGameLoop(
     // otherwise decrement streakShields by 2. Keyed on prev.totalAnswered, which
     // is unique per wrong-answer event (a shield save increments it).
     const shieldConsumedForRef = useRef(-1);
+    // Per-operation tally for the session: { multiply: {solved, correct}, … }.
+    // Keyed on each item's concrete `type` (falls back to the mode's categoryId
+    // for single-topic modes), so daily/mixed answers attribute to the real
+    // operation they tested. Read by the caller at session-record time, then
+    // cleared alongside the game state on reset. `tallyGuardRef` dedupes the
+    // bump against React StrictMode's double-invoke of setGs updaters, exactly
+    // like `shieldConsumedForRef` above (keyed on the pre-increment answer count).
+    const typeTallyRef = useRef<Record<string, { solved: number; correct: number }>>({});
+    const tallyGuardRef = useRef(-1);
+
+    /** Bump the per-operation tally for one answered item. `item.type` is the
+     *  concrete operation (stamped by the generator for daily/mixed sets); it
+     *  falls back to the mode's own categoryId for single-topic play. */
+    const bumpTally = useCallback((item: EngineItem | undefined, correct: boolean) => {
+        const inc = (key: string) => {
+            const t = typeTallyRef.current[key] ?? { solved: 0, correct: 0 };
+            typeTallyRef.current[key] = { solved: t.solved + 1, correct: t.correct + (correct ? 1 : 0) };
+        };
+        const opKey = item?.type || categoryId;
+        inc(opKey);
+        // Additive: also credit the mode's own bucket (daily / challenge /
+        // speedrun / mix-*) when it differs from the concrete operation. This
+        // preserves the legacy per-mode counts that mode-level stats and
+        // achievements rely on (e.g. "byType.daily.solved >= 10") while the
+        // per-operation buckets feed the new per-type accuracy grid.
+        if (opKey !== categoryId) inc(categoryId);
+    }, [categoryId]);
+
+    /** Snapshot of the session's per-operation tally, for the caller to persist. */
+    const getTypeTally = useCallback(() => ({ ...typeTallyRef.current }), []);
+
+    const resetTypeTally = useCallback(() => {
+        typeTallyRef.current = {};
+        tallyGuardRef.current = -1;
+    }, []);
 
     /** Schedule a timeout that gets auto-cleared on unmount */
     const safeTimeout = useCallback((fn: () => void, ms: number) => {
@@ -190,6 +225,7 @@ export function useGameLoop(
             correctCountRef.current = 0;
         }
 
+        resetTypeTally();
         setItems(fresh);
         setGs(INITIAL_STATE);
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -204,9 +240,10 @@ export function useGameLoop(
         const fresh = buildInitialSet(categoryId, hardMode);
         if (fresh[0]) fresh[0].startTime = Date.now();
         correctCountRef.current = 0;
+        resetTypeTally();
         setItems(fresh);
         setGs(INITIAL_STATE);
-    }, [categoryId, hardMode, buildInitialSet]);
+    }, [categoryId, hardMode, buildInitialSet, resetTypeTally]);
 
     // ── Keep infinite buffer full ─────────────────────────────────────────────
     useEffect(() => {
@@ -273,6 +310,7 @@ export function useGameLoop(
             recordAnswer(tts, true);
             const isFast = tts < FAST_ANSWER_MS;
             correctCountRef.current += 1;
+            bumpTally(current, true);
             const actualCorrectCount = correctCountRef.current;
             let newStreak = 0;
             let milestoneEmoji = '';
@@ -334,6 +372,13 @@ export function useGameLoop(
                 }
 
                 recordAnswer(tts, false);
+                // Counted wrong (both the shield-saved and normal cases below
+                // increment totalAnswered); the tutorial case above returns
+                // first and is not counted. Guard mirrors the shield dedupe.
+                if (tallyGuardRef.current !== prev.totalAnswered) {
+                    tallyGuardRef.current = prev.totalAnswered;
+                    bumpTally(current, false);
+                }
 
                 if (streakShields > 0 && prev.streak > 0 && onConsumeShield) {
                     // Guard against StrictMode's double-invoke of this updater.
@@ -404,6 +449,11 @@ export function useGameLoop(
                 cancelAnimationFrame(timerRafRef.current);
                 frozenRef.current = true;
                 setGs(prev => {
+                    // Timer ran out — a counted wrong for the current item's type.
+                    if (tallyGuardRef.current !== prev.totalAnswered) {
+                        tallyGuardRef.current = prev.totalAnswered;
+                        bumpTally(items[0], false);
+                    }
                     const wrongStreak = prev.wrongStreak + 1;
                     return {
                         ...prev,
@@ -478,6 +528,7 @@ export function useGameLoop(
         level,
         handleSwipe,
         resetSession,
+        getTypeTally,
         timedDurationMs: config.timedModeMs,
         dailyComplete,
         speedrunFinalTime,

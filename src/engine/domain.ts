@@ -29,6 +29,13 @@ export interface EngineItem {
     optionLabels?: string[];
     /** Index into `options[]` that equals `answer` */
     correctIndex: number;
+    /**
+     * Concrete sub-category this item belongs to, if the active mode mixes
+     * categories (e.g. a math daily set spanning add/multiply/…). The engine
+     * treats it as an opaque string and only forwards it to per-category stats;
+     * single-category modes may leave it unset (the mode's own id is used).
+     */
+    type?: string;
     /** Set by the engine when the item becomes active — do not set in generators */
     startTime?: number;
     /**
