@@ -43,15 +43,6 @@ function isCredentialInUse(code?: string): boolean {
     return code === 'auth/credential-already-in-use' || code === 'auth/email-already-in-use';
 }
 
-/** Firebase popup errors that mean "use the redirect flow instead" — common in
- *  iOS Safari and installed PWAs where popups are blocked or unsupported. */
-function shouldFallBackToRedirect(code?: string): boolean {
-    return code === 'auth/popup-blocked'
-        || code === 'auth/cancelled-popup-request'
-        || code === 'auth/popup-closed-by-user'
-        || code === 'auth/operation-not-supported-in-this-environment';
-}
-
 export function useFirebaseAuth() {
     const [user, setUser] = useState<FirebaseUser | null>(null);
     const [loading, setLoading] = useState(true);
@@ -86,7 +77,14 @@ export function useFirebaseAuth() {
                 }
                 if (!cancelled) setAuthMessage('Signed in — progress saved.');
                 setDoc(doc(db, 'users', result.user.uid), { isAnonymous: false, updatedAt: serverTimestamp() }, { merge: true }).catch(() => { });
-            }).catch(err => console.warn('Redirect sign-in result failed:', err));
+            }).catch(err => {
+                // Only a genuine auth error (has a code) should surface — a normal
+                // page load with no pending redirect resolves null, not an error.
+                console.warn('Redirect sign-in result failed:', err);
+                if (!cancelled && (err as { code?: string })?.code) {
+                    setAuthMessage('Sign-in didn\'t complete. Please try again.');
+                }
+            });
 
             unsub = onAuthStateChanged(auth, (fbUser: User | null) => {
                 if (fbUser) {
@@ -282,6 +280,13 @@ export function useFirebaseAuth() {
             }
         } catch (err: unknown) {
             const code = (err as { code?: string }).code;
+            if (code === 'auth/operation-not-allowed') {
+                // Provider not enabled in Firebase (e.g. Apple before setup) —
+                // redirect wouldn't help, so surface it directly.
+                setAuthMessage('That sign-in option isn\'t available yet.');
+                console.warn(`${kind} sign-in not enabled:`, err);
+                return;
+            }
             if (isCredentialInUse(code)) {
                 // That Google account already exists — switch into it, then merge
                 // the anonymous account's paid/trial/stats across (proven by token).
@@ -289,33 +294,28 @@ export function useFirebaseAuth() {
                     await signInWithPopup(auth, provider);
                     if (anonToken) await runAccountReconcile(anonToken);
                     setAuthMessage('Welcome back — your progress was merged.');
+                    return;
                 } catch (e2) {
-                    if (shouldFallBackToRedirect((e2 as { code?: string }).code)) {
-                        if (anonToken) sessionStorage.setItem(RECONCILE_TOKEN_KEY, anonToken);
-                        await signInWithRedirect(auth, provider);
-                    } else {
-                        setAuthMessage("That account couldn't be opened. Please try again.");
-                        console.error('Google sign-in failed:', e2);
-                    }
+                    // Fall through to the redirect fallback below (the switch
+                    // popup failed for the same class of reasons a first popup can).
+                    console.warn('Account-switch popup failed, falling back to redirect:', e2);
                 }
-            } else if (shouldFallBackToRedirect(code)) {
-                // Popup blocked/unsupported (common on iOS Safari + installed
-                // PWAs) — stash the token and use the redirect flow instead.
-                if (anonToken) sessionStorage.setItem(RECONCILE_TOKEN_KEY, anonToken);
-                try {
-                    if (wasAnon) await linkWithRedirect(currentUser, provider);
-                    else await signInWithRedirect(auth, provider);
-                } catch (e3) {
-                    setAuthMessage('Sign-in is unavailable here. Try a different browser.');
-                    console.error('Redirect sign-in failed:', e3);
-                }
-            } else if (code === 'auth/operation-not-allowed') {
-                // Provider not enabled in Firebase (e.g. Apple before setup).
-                setAuthMessage('That sign-in option isn\'t available yet.');
-                console.warn(`${kind} sign-in not enabled:`, err);
-            } else {
-                setAuthMessage('Sign-in failed. Please try again.');
-                console.error(`${kind} link failed:`, err);
+            }
+            // Any other popup failure — popup blocked, an ad/tracking blocker
+            // killing the Firebase auth iframe, COOP quirks, or Chrome's
+            // third-party-storage/cookie restrictions (auth/internal-error,
+            // auth/web-storage-unsupported), or a transient network error. The
+            // full-page REDIRECT flow doesn't depend on popups or a third-party
+            // iframe, so it's the reliable fallback. (Previously only 4 specific
+            // popup codes fell back; every other error dead-ended on a generic
+            // "Sign-in failed" — the bug this fixes.)
+            if (anonToken) sessionStorage.setItem(RECONCILE_TOKEN_KEY, anonToken);
+            try {
+                if (wasAnon) await linkWithRedirect(currentUser, provider);
+                else await signInWithRedirect(auth, provider);
+            } catch (e3) {
+                setAuthMessage('Sign-in didn\'t work here — try turning off ad/tracking blockers for this site, or use "Continue with email".');
+                console.error(`${kind} sign-in failed (popup + redirect):`, err, e3);
             }
         }
     }, [user]);
