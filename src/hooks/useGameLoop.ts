@@ -184,16 +184,36 @@ export function useGameLoop(
     const isFiniteSet = (id: string) => finiteTypeIds.includes(id);
     const isSpeedrun = (id: string) => id === speedrunTypeId;
 
+    // ── Recent-repeat guard ─────────────────────────────────────────────────
+    // Keys of the last few problems shown/queued, so a freshly generated one
+    // that matches (e.g. "10 ÷ 5" again) is re-rolled. Thin low-difficulty pools
+    // otherwise recycle visibly within a single session. Cleared whenever the
+    // buffer is rebuilt (category change / reset) via buildInitialSet.
+    const recentKeysRef = useRef<string[]>([]);
+    const RECENT_MAX = 8;
+    const itemKey = (it: EngineItem): string =>
+        (it as { expression?: string }).expression ?? it.prompt ?? String(it.answer);
+    const genFresh = useCallback((catId: string, hard: boolean): EngineItem => {
+        let item = generateItem(level, catId, hard);
+        for (let tries = 0; tries < 6 && recentKeysRef.current.includes(itemKey(item)); tries++) {
+            item = generateItem(level, catId, hard);
+        }
+        const k = itemKey(item);
+        recentKeysRef.current = [k, ...recentKeysRef.current.filter(x => x !== k)].slice(0, RECENT_MAX);
+        return item;
+    }, [level, generateItem]);
+
     const buildInitialSet = useCallback((catId: string, hard: boolean): EngineItem[] => {
+        recentKeysRef.current = [];   // fresh buffer → fresh recency window
         if (isSpeedrun(catId)) {
-            return Array.from({ length: speedrunCount }, () => generateItem(level, 'mix-all', hard));
+            return Array.from({ length: speedrunCount }, () => genFresh('mix-all', hard));
         }
         if (isFiniteSet(catId) && generateFiniteSet) {
-            return generateFiniteSet(catId, challengeId);
+            return generateFiniteSet(catId, challengeId);   // seeded finite sets are intentionally fixed
         }
-        return Array.from({ length: bufferSize }, () => generateItem(level, catId, hard));
+        return Array.from({ length: bufferSize }, () => genFresh(catId, hard));
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [level, bufferSize, speedrunCount, challengeId, generateItem, generateFiniteSet]);
+    }, [level, bufferSize, speedrunCount, challengeId, genFresh, generateFiniteSet]);
 
     // ── Initialize buffer ─────────────────────────────────────────────────────
     useEffect(() => {
@@ -249,7 +269,7 @@ export function useGameLoop(
     useEffect(() => {
         if (isSpeedrun(categoryId) || isFiniteSet(categoryId)) return;
         if (items.length < bufferSize) {
-            setItems(prev => [...prev, generateItem(level, categoryId, hardMode)]);
+            setItems(prev => [...prev, genFresh(categoryId, hardMode)]);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [items.length, level, categoryId, hardMode]);
