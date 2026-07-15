@@ -7,6 +7,8 @@
   <title>Math Challenge — Mental Math Game</title>
   <meta name="description"
     content="Math Challenge is a fast, fun mental math game — practice times tables, addition, subtraction, and arithmetic tricks by swiping. Play the free daily challenge, build a streak, and race your friends." />
+  <link rel="canonical" href="https://mathchallenge.app/" />
+  <meta name="robots" content="index, follow" />
 
   <!-- PWA -->
   <link rel="manifest" href="/manifest.json" />
@@ -19,16 +21,19 @@
 
   <!-- Open Graph (social sharing) -->
   <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Math Challenge" />
+  <meta property="og:url" content="https://mathchallenge.app/" />
   <meta property="og:title" content="Math Challenge — Mental Math Game" />
   <meta property="og:description"
-    content="Swipe your way to mental math mastery. Fast, fun, addictive. Can you beat my streak? 🔥" />
-  <meta property="og:image" content="/icon.svg" />
+    content="A fast, fun mental math game. Practice times tables, addition, and arithmetic tricks by swiping — play the free daily challenge and race your friends." />
+  <meta property="og:image" content="https://mathchallenge.app/icon-512.png" />
 
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary" />
   <meta name="twitter:title" content="Math Challenge — Mental Math Game" />
   <meta name="twitter:description"
-    content="Swipe your way to mental math mastery. Fast, fun, addictive. Can you beat my streak? 🔥" />
+    content="A fast, fun mental math game. Practice times tables, addition, and arithmetic tricks by swiping — play the free daily challenge and race your friends." />
+  <meta name="twitter:image" content="https://mathchallenge.app/icon-512.png" />
 
   <!-- Fonts (self-hosted from /public/fonts; see @font-face in src/index.css).
        Pre-loading the latin subset (the one we actually use for English UI)
@@ -38,6 +43,27 @@
     href="/fonts/architects-daughter.latin.woff2">
   <link rel="preload" as="font" type="font/woff2" crossorigin
     href="/fonts/fredericka-the-great.latin.woff2">
+
+  <!-- Structured data — helps search engines classify this as a game/app.
+       type=application/ld+json is a data block (not executed), so the strict
+       script CSP doesn't apply. -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Math Challenge",
+    "url": "https://mathchallenge.app/",
+    "description": "A fast, fun mental math game — practice times tables, addition, subtraction, and arithmetic tricks by swiping. Play the free daily challenge, build a streak, and race your friends.",
+    "applicationCategory": "GameApplication",
+    "operatingSystem": "Web, iOS, Android",
+    "browserRequirements": "Requires JavaScript.",
+    "offers": {
+      "@type": "Offer",
+      "price": "3.14",
+      "priceCurrency": "USD"
+    }
+  }
+  </script>
 </head>
 
 <body>
