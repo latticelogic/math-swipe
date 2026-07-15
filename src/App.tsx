@@ -56,6 +56,8 @@ import { useEntitlement } from './hooks/useEntitlement';
 import { shouldFirePaywall } from './utils/entitlement';
 import { startCheckout, getPurchaseChannel, restorePlayPurchases, type PurchaseChannel } from './utils/checkout';
 import { detectChannel, isAndroidApp } from './utils/channel';
+import { buildSharePayloadFromArgs, type SharePayloadArgs } from './utils/sharePayload';
+import { buildProfileSlug } from './utils/profileSlug';
 import { Paywall } from './components/Paywall';
 import { WelcomeModal, TrialReminderModal } from './components/TrialModals';
 import { LegalPage, type LegalDocId } from './components/LegalPages';
@@ -244,6 +246,23 @@ function App() {
   }, [questionType]);
 
   const { stats, accuracy, recordSession, resetStats, updateCosmetics, updateBestSpeedrunTime, updateBadge, consumeShield, recordShare } = useStats(uid);
+
+  // ── Last banked session (for the rail share button) ──
+  // Snapshot taken whenever a session is recorded (tab-leave bank or summary
+  // dismiss). Lets the rail share button keep offering the player's REAL last
+  // result after the run is over — previously, switching tabs reset the loop
+  // and the only share left was a generic app plug (tester report). Persisted
+  // so it survives a reload; per-device is fine (it's a share convenience).
+  const [lastSession, setLastSession] = useState<SharePayloadArgs | null>(() => {
+    try {
+      const raw = localStorage.getItem('math-swipe-last-session');
+      return raw ? JSON.parse(raw) as SharePayloadArgs : null;
+    } catch { return null; }
+  });
+  const snapshotSession = useCallback((args: SharePayloadArgs) => {
+    setLastSession(args);
+    try { localStorage.setItem('math-swipe-last-session', JSON.stringify(args)); } catch { /* quota/private mode */ }
+  }, []);
 
   // ── Claimed @handle (one-shot fetch) ──
   // Used to build clean /u/<handle> share URLs. Stays null for users who
@@ -563,10 +582,42 @@ function App() {
       // Read the per-operation tally BEFORE resetSession clears it (getTypeTally
       // returns a snapshot copy, so the value is safe once captured here).
       recordSession(score, totalCorrect, totalAnswered, bestStreak, questionType, effectiveHard, effectiveTimed, getTypeTally());
+      // Keep the finished run shareable from the rail button after the loop
+      // resets (the summary is gone once the user wanders off).
+      snapshotSession({
+        xp: score, streak: bestStreak,
+        accuracy: Math.round((totalCorrect / totalAnswered) * 100),
+        history: answerHistory, questionType,
+        hardMode: effectiveHard, timedMode: effectiveTimed,
+        speedrunTime: speedrunFinalTime,
+      });
       resetSession();
     }
     setActiveTab(tab);
-  }, [score, totalCorrect, totalAnswered, bestStreak, questionType, recordSession, effectiveHard, effectiveTimed, resetSession, getTypeTally]);
+  }, [score, totalCorrect, totalAnswered, bestStreak, questionType, recordSession, effectiveHard, effectiveTimed, resetSession, getTypeTally, snapshotSession, answerHistory, speedrunFinalTime]);
+
+  // ── Rail share payload ──
+  // The game-rail share button shares something REAL: the live run when one
+  // is in progress, else the last banked session (kept across tab switches +
+  // reloads), else null → ActionButtons falls back to the generic app plug.
+  const railSharePayload = useMemo(() => {
+    const profileUrl = (uid && user?.displayName)
+      ? `${window.location.origin}/u/${buildProfileSlug(user.displayName, uid, claimedHandle)}`
+      : null;
+    if (totalAnswered > 0) {
+      return buildSharePayloadFromArgs({
+        xp: score, streak: bestStreak,
+        accuracy: Math.round((totalCorrect / totalAnswered) * 100),
+        history: answerHistory, questionType,
+        hardMode: effectiveHard, timedMode: effectiveTimed,
+        speedrunTime: speedrunFinalTime, profileUrl,
+      });
+    }
+    if (lastSession) {
+      return buildSharePayloadFromArgs({ ...lastSession, profileUrl });
+    }
+    return null;
+  }, [uid, user?.displayName, claimedHandle, totalAnswered, score, bestStreak, totalCorrect, answerHistory, questionType, effectiveHard, effectiveTimed, speedrunFinalTime, lastSession]);
 
   // ── Tab swipe (non-game tabs only) ──
   const handleTabSwipe = useCallback((_: unknown, info: PanInfo) => {
@@ -1122,6 +1173,7 @@ function App() {
               ageBand={ageBand}
               hasPro={hasPro}
               onProLocked={requestPro}
+              sharePayload={railSharePayload}
             />
 
             {/* ── Mr. Chalk PiP ── */}
@@ -1261,6 +1313,14 @@ function App() {
             if (totalAnswered > 0) {
               // Snapshot the per-operation tally before the reset below clears it.
               recordSession(score, totalCorrect, totalAnswered, bestStreak, questionType, effectiveHard, effectiveTimed, getTypeTally());
+              // Keep this run shareable from the rail button after dismissal.
+              snapshotSession({
+                xp: score, streak: bestStreak,
+                accuracy: Math.round((totalCorrect / totalAnswered) * 100),
+                history: answerHistory, questionType,
+                hardMode: effectiveHard, timedMode: effectiveTimed,
+                speedrunTime: speedrunFinalTime,
+              });
             }
             if (questionType === 'speedrun') {
               setActiveTab('league');
