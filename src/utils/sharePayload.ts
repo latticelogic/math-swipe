@@ -39,6 +39,10 @@ export interface SharePayloadArgs {
     streak: number;
     accuracy: number;
     history: boolean[];
+    /** Full counts for re-opening a summary from a snapshot — `history` is
+     *  capped at the last 50 answers, so long runs need the real totals. */
+    solved?: number;
+    correct?: number;
     questionType: string;
     hardMode?: boolean;
     timedMode?: boolean;

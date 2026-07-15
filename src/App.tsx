@@ -58,6 +58,7 @@ import { startCheckout, getPurchaseChannel, restorePlayPurchases, type PurchaseC
 import { detectChannel, isAndroidApp } from './utils/channel';
 import { buildSharePayloadFromArgs, type SharePayloadArgs } from './utils/sharePayload';
 import { buildProfileSlug } from './utils/profileSlug';
+import { EndRunDialog } from './components/EndRunDialog';
 import { Paywall } from './components/Paywall';
 import { WelcomeModal, TrialReminderModal } from './components/TrialModals';
 import { LegalPage, type LegalDocId } from './components/LegalPages';
@@ -347,8 +348,11 @@ function App() {
 
   const currentProblem = problems[0];
   const isFirstQuestion = totalAnswered === 0;
-  const toggleHardMode = useCallback(() => setHardMode(h => !h), []);
+  // Timed toggling does NOT rebuild the loop (the regenerate effect only
+  // watches categoryId + hardMode), so the run continues — no banking needed.
   const toggleTimedMode = useCallback(() => setTimedMode(t => !t), []);
+  // toggleHardMode + switchType live below bankCurrentRun — both END the
+  // current run (loop rebuild), so they bank it silently first.
 
   // ── First-run coach gating ──
   // Show the swipe-to-answer gesture hint only for genuinely new users — those
@@ -574,27 +578,69 @@ function App() {
   // Dismisses itself after the animation completes (~2s) via the dismiss callback.
   const dailyFlourish = useFirstCorrectFlourish(flash);
 
+  // Infinite free play (the default mode) vs the self-ending finite sets.
+  // Free-play runs only end at an explicit boundary — the EndRunDialog on tab
+  // leave, or a mid-run topic/hard-mode switch (banked silently).
+  const isInfinitePlay = questionType !== 'daily' && questionType !== 'challenge' && questionType !== 'speedrun';
+
+  // End-run flow state: pendingTab holds where the player was headed while the
+  // dialog (and then the summary) is up; endRunSummary feeds the summary from
+  // the banked snapshot (the live loop is already reset by then).
+  const [pendingTab, setPendingTab] = useState<Tab | null>(null);
+  const [endRunSummary, setEndRunSummary] = useState<SharePayloadArgs | null>(null);
+
+  /** Bank the current run exactly once: record stats (with the per-operation
+   *  tally) + persist the share snapshot. Returns the snapshot, or null when
+   *  there's nothing to bank. Does NOT reset the loop — callers own that. */
+  const bankCurrentRun = useCallback((): SharePayloadArgs | null => {
+    if (totalAnswered === 0) return null;
+    const args: SharePayloadArgs = {
+      xp: score, streak: bestStreak,
+      accuracy: Math.round((totalCorrect / totalAnswered) * 100),
+      history: answerHistory,
+      solved: totalAnswered, correct: totalCorrect,
+      questionType,
+      hardMode: effectiveHard, timedMode: effectiveTimed,
+      speedrunTime: speedrunFinalTime,
+    };
+    // Read the per-operation tally BEFORE any reset clears it (getTypeTally
+    // returns a snapshot copy, so the value is safe once captured here).
+    recordSession(score, totalCorrect, totalAnswered, bestStreak, questionType, effectiveHard, effectiveTimed, getTypeTally());
+    snapshotSession(args);
+    return args;
+  }, [score, totalCorrect, totalAnswered, bestStreak, questionType, effectiveHard, effectiveTimed, speedrunFinalTime, answerHistory, recordSession, getTypeTally, snapshotSession]);
+
+  // ── Mid-run reconfiguration: bank silently, no dialog ──
+  // Changing topic or toggling hard mode rebuilds the loop, which ENDS the
+  // run mechanically. These are "reconfigure play" gestures, not "leave" —
+  // interrupting them with a dialog would nag, so the run banks silently
+  // (previously it was DISCARDED: score reset, XP never recorded).
+  const switchType = useCallback((t: QuestionType) => {
+    if (t !== questionType && isInfinitePlay) bankCurrentRun();
+    setQuestionType(t);
+  }, [questionType, isInfinitePlay, bankCurrentRun]);
+
+  const toggleHardMode = useCallback(() => {
+    if (isInfinitePlay) bankCurrentRun();
+    setHardMode(h => !h);
+  }, [isInfinitePlay, bankCurrentRun]);
+
   const handleTabChange = useCallback((tab: Tab) => {
-    // Leaving the game tab mid-play ENDS the current session: bank it once,
-    // then reset the loop so returning starts fresh and a later leave-without-
-    // playing can't re-record (the old double-count) or re-open the summary.
     if (prevTab.current === 'game' && tab !== 'game' && totalAnswered > 0) {
-      // Read the per-operation tally BEFORE resetSession clears it (getTypeTally
-      // returns a snapshot copy, so the value is safe once captured here).
-      recordSession(score, totalCorrect, totalAnswered, bestStreak, questionType, effectiveHard, effectiveTimed, getTypeTally());
-      // Keep the finished run shareable from the rail button after the loop
-      // resets (the summary is gone once the user wanders off).
-      snapshotSession({
-        xp: score, streak: bestStreak,
-        accuracy: Math.round((totalCorrect / totalAnswered) * 100),
-        history: answerHistory, questionType,
-        hardMode: effectiveHard, timedMode: effectiveTimed,
-        speedrunTime: speedrunFinalTime,
-      });
+      // Infinite free play: the run has no natural end, so leaving the tab IS
+      // the end — but that's the player's call. Hold the navigation and ask
+      // (EndRunDialog): end → bank → summary → land on the chosen tab;
+      // keep playing → stay here with the run untouched.
+      if (isInfinitePlay) {
+        setPendingTab(tab);
+        return;
+      }
+      // Finite sets (daily/challenge/speedrun): silent bank + reset, as ever.
+      bankCurrentRun();
       resetSession();
     }
     setActiveTab(tab);
-  }, [score, totalCorrect, totalAnswered, bestStreak, questionType, recordSession, effectiveHard, effectiveTimed, resetSession, getTypeTally, snapshotSession, answerHistory, speedrunFinalTime]);
+  }, [totalAnswered, isInfinitePlay, bankCurrentRun, resetSession]);
 
   // ── Rail share payload ──
   // The game-rail share button shares something REAL: the live run when one
@@ -1054,7 +1100,7 @@ function App() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0 }}
                   className="mt-1 text-[10px] ui text-[var(--color-speedrun)]/80 hover:text-[var(--color-speedrun)] transition-colors flex items-center gap-1"
-                  onClick={() => setQuestionType('speedrun' as QuestionType)}
+                  onClick={() => switchType('speedrun' as QuestionType)}
                   aria-label="Try speedrun mode"
                 >
                   <span>⚡</span>
@@ -1067,7 +1113,7 @@ function App() {
                   initial={{ opacity: 0, y: -5 }}
                   animate={{ opacity: 1, y: 0 }}
                   className="mt-2 flex items-center gap-2 text-[10px] ui text-[var(--color-gold)]/70 hover:text-[var(--color-gold)] transition-colors"
-                  onClick={() => setQuestionType(levelUpSuggestion.type)}
+                  onClick={() => switchType(levelUpSuggestion.type)}
                 >
                   <span>🚀</span>
                   <span>Level up your {levelUpSuggestion.label}!</span>
@@ -1104,7 +1150,7 @@ function App() {
                       ? 'border-[var(--color-gold)]/60 text-[var(--color-gold)] bg-[var(--color-gold)]/10 active:bg-[var(--color-gold)]/20'
                       : 'border-[var(--color-gold)]/40 text-[var(--color-gold)]/90 bg-[var(--color-gold)]/5 active:bg-[var(--color-gold)]/15'
                       }`}
-                    onClick={() => setQuestionType('daily' as QuestionType)}
+                    onClick={() => switchType('daily' as QuestionType)}
                   >
                     {/* Hand-drawn calendar icon — matches CategoryIcon('daily') */}
                     <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -1163,7 +1209,7 @@ function App() {
             {/* ── TikTok-style action buttons ── */}
             <ActionButtons
               questionType={questionType}
-              onTypeChange={setQuestionType}
+              onTypeChange={switchType}
               hardMode={hardMode}
               onHardModeToggle={toggleHardMode}
               timedMode={timedMode}
@@ -1310,18 +1356,9 @@ function App() {
             // session is banked. Record once (guarded by totalAnswered so a
             // tab-leave that already banked it is a no-op), then reset so it
             // can't double-record or re-open.
-            if (totalAnswered > 0) {
-              // Snapshot the per-operation tally before the reset below clears it.
-              recordSession(score, totalCorrect, totalAnswered, bestStreak, questionType, effectiveHard, effectiveTimed, getTypeTally());
-              // Keep this run shareable from the rail button after dismissal.
-              snapshotSession({
-                xp: score, streak: bestStreak,
-                accuracy: Math.round((totalCorrect / totalAnswered) * 100),
-                history: answerHistory, questionType,
-                hardMode: effectiveHard, timedMode: effectiveTimed,
-                speedrunTime: speedrunFinalTime,
-              });
-            }
+            // Bank once (records stats + keeps the run shareable from the
+            // rail button); no-op when a tab-leave already banked it.
+            bankCurrentRun();
             if (questionType === 'speedrun') {
               setActiveTab('league');
               setQuestionType(defaultTypeForBand(ageBand)); // category change resets the loop
@@ -1341,6 +1378,61 @@ function App() {
           totalXP={stats.totalXP}
           onShared={recordShare}
         />
+
+        {/* ── End-run confirm (free play + tab leave) ──
+            Free play has no natural end, so leaving the game tab is the run
+            boundary — and the player decides: end (bank → summary → land on
+            the chosen tab) or keep playing (navigation cancelled). */}
+        <EndRunDialog
+          open={pendingTab !== null && endRunSummary === null}
+          answered={totalAnswered}
+          score={score}
+          onKeepPlaying={() => setPendingTab(null)}
+          onEnd={() => {
+            const args = bankCurrentRun();
+            resetSession();
+            if (args) {
+              setEndRunSummary(args);   // summary next; navigation on its dismiss
+            } else if (pendingTab) {
+              setActiveTab(pendingTab); // nothing to show — just go
+              setPendingTab(null);
+            }
+          }}
+        />
+
+        {/* ── End-run summary ── the same share screen finite modes get, fed
+            from the banked snapshot (the live loop is already reset). Its
+            dismissal completes the held tab navigation. */}
+        {endRunSummary && (
+          <SessionSummary
+            solved={endRunSummary.solved ?? endRunSummary.history.length}
+            correct={endRunSummary.correct ?? endRunSummary.history.filter(Boolean).length}
+            bestStreak={endRunSummary.streak}
+            accuracy={endRunSummary.accuracy}
+            xpEarned={endRunSummary.xp}
+            answerHistory={endRunSummary.history}
+            questionType={endRunSummary.questionType}
+            visible
+            onDismiss={() => {
+              setEndRunSummary(null);
+              if (pendingTab) {
+                setActiveTab(pendingTab);
+                setPendingTab(null);
+              }
+            }}
+            hardMode={endRunSummary.hardMode}
+            timedMode={endRunSummary.timedMode}
+            speedrunFinalTime={null}
+            isNewSpeedrunRecord={false}
+            displayName={user?.displayName}
+            uid={uid}
+            claimedHandle={claimedHandle}
+            challengeId={null}
+            challengeTarget={null}
+            totalXP={stats.totalXP}
+            onShared={recordShare}
+          />
+        )}
 
         {/* ── Weekly recap (first open of the week, only when idle on game tab) ── */}
         <WeeklyRecap stats={stats} suppress={activeTab !== 'game' || isMagicLessonActive} />
