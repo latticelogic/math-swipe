@@ -289,6 +289,14 @@ is in place" instruction.
   array (`src/domains/math/teachers/*.tsx`), base pool
   (`chalkMessages.ts`), trick lesson (`mathTricks.ts`), or achievement
   description (`mathAchievements.ts`), match this bar.
+- **i18n (see `docs/i18n.md`).** Tier-1 UI is localized (en/es/pt-BR live;
+  zh-Hans/zh-Hant/ja/hi committed, gated on a font pass). New UI strings go
+  through `t()`/`tCount()` from `src/i18n` — add the key to ALL catalogs
+  (parity + length budgets + no-emoji are CI-enforced in `i18n.test.ts`).
+  Full-sentence templates with {placeholders}; never concatenate fragments;
+  never `slice()` display text. Math notation stays locale-invariant ('.'
+  decimals) by policy. Teacher/achievement/trick copy stays English until a
+  native-review pass (Tier 2/3) — don't machine-translate the voice.
 - **No emoji in user-facing copy.** Every emoji that previously lived in
   a string has been replaced by a hand-drawn SVG (`CategoryIcon.tsx`,
   `TrickIcon.tsx`, `MilestoneBurst.tsx`, etc.) or by clean text. The

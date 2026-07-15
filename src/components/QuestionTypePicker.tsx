@@ -2,9 +2,16 @@ import { memo, useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { QuestionType, AgeBand } from '../utils/questionTypes';
-import { typesForBand, GROUP_LABELS, type QuestionGroup } from '../utils/questionTypes';
+import { typesForBand, type QuestionGroup } from '../utils/questionTypes';
 import { setFocusTable, getFocusTable } from '../utils/mathGenerator';
 import { CategoryIcon } from './CategoryIcon';
+import { t, type MsgKey } from '../i18n';
+
+/** Localized group/category labels. The catalog data in mathCategories.ts
+ *  keeps English reference labels; display always goes through the i18n
+ *  catalog (`group.*` / `cat.*` keys exist for every id — parity-tested). */
+const groupLabel = (g: QuestionGroup) => t(`group.${g}` as MsgKey);
+const catLabel = (id: QuestionType) => t(`cat.${id}` as MsgKey);
 
 const FOCUS_TABLE_KEY = 'math-swipe-focus-table';
 
@@ -50,7 +57,7 @@ export const QuestionTypePicker = memo(function QuestionTypePicker({ current, on
                 pointerdown. */}
             <button
                 onClick={() => { setOpen(o => !o); setTableChooser(false); }}
-                aria-label={`Switch topic. Current: ${currentEntry?.label ?? 'select'}`}
+                aria-label={t('rail.topicAria', { label: currentEntry ? catLabel(currentEntry.id) : t('picker.topic') })}
                 aria-expanded={open}
                 className="action-icon w-12 flex flex-col items-center justify-center gap-0.5 text-[rgb(var(--color-fg))]/70 active:text-[var(--color-gold)] active:scale-90"
             >
@@ -59,7 +66,7 @@ export const QuestionTypePicker = memo(function QuestionTypePicker({ current, on
                     the label makes this the one self-describing control in the rail,
                     fixing the "what is this icon?" discoverability gap. */}
                 <span className="flex items-center gap-0.5 leading-none">
-                    <span className="text-[8px] ui max-w-[40px] truncate">{currentEntry?.label ?? 'Topic'}</span>
+                    <span className="text-[8px] ui max-w-[40px] truncate">{currentEntry ? catLabel(currentEntry.id) : t('picker.topic')}</span>
                     <svg width="7" height="7" viewBox="0 0 10 10" fill="currentColor" className="shrink-0 opacity-70">
                         <path d="M1 3.5 L5 7.5 L9 3.5 Z" />
                     </svg>
@@ -95,7 +102,7 @@ export const QuestionTypePicker = memo(function QuestionTypePicker({ current, on
                                     // Step 2 of the Tables tile: which table?
                                     <div>
                                         <div className="text-[10px] ui text-[rgb(var(--color-fg))]/30 uppercase tracking-widest mb-2 px-1">
-                                            Which table?
+                                            {t('picker.whichTable')}
                                         </div>
                                         <div className="grid grid-cols-4 gap-2">
                                             {[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(n => (
@@ -116,7 +123,7 @@ export const QuestionTypePicker = memo(function QuestionTypePicker({ current, on
                                             onClick={() => setTableChooser(false)}
                                             className="w-full mt-3 py-2 text-xs ui text-[rgb(var(--color-fg))]/45 hover:text-[rgb(var(--color-fg))]/65 transition-colors"
                                         >
-                                            Back to topics
+                                            {t('picker.backToTopics')}
                                         </button>
                                     </div>
                                 ) : groups.map(group => {
@@ -125,31 +132,33 @@ export const QuestionTypePicker = memo(function QuestionTypePicker({ current, on
                                         <div key={group} className="mb-3 last:mb-0">
                                             {/* Group header */}
                                             <div className="text-[10px] ui text-[rgb(var(--color-fg))]/30 uppercase tracking-widest mb-2 px-1">
-                                                {GROUP_LABELS[group]}
+                                                {groupLabel(group)}
                                             </div>
                                             {/* 3-column grid */}
                                             <div className="grid grid-cols-3 gap-2">
-                                                {items.map(t => (
+                                                {items.map(entry => (
                                                     <motion.button
-                                                        key={t.id}
+                                                        key={entry.id}
                                                         onClick={() => {
                                                             // Tables drills ONE chosen table — route to
                                                             // the chooser instead of selecting directly.
-                                                            if (t.id === 'tables') { setTableChooser(true); return; }
-                                                            onChange(t.id);
+                                                            if (entry.id === 'tables') { setTableChooser(true); return; }
+                                                            onChange(entry.id);
                                                             setOpen(false);
                                                         }}
-                                                        className={`flex flex-col items-center gap-1 py-2 px-1 rounded-xl transition-colors ${t.id === current
+                                                        className={`flex flex-col items-center gap-1 py-2 px-1 rounded-xl transition-colors ${entry.id === current
                                                             ? 'bg-[var(--color-gold)]/15 border border-[var(--color-gold)]/40'
                                                             : 'border border-transparent active:bg-[var(--color-surface)]'
                                                             }`}
                                                         whileTap={{ scale: 0.92 }}
                                                     >
-                                                        <div className={`h-8 flex items-center justify-center ${t.id === current ? 'text-[var(--color-gold)]' : 'text-[rgb(var(--color-fg))]/70'}`}>
-                                                            <CategoryIcon id={t.id} size={28} />
+                                                        <div className={`h-8 flex items-center justify-center ${entry.id === current ? 'text-[var(--color-gold)]' : 'text-[rgb(var(--color-fg))]/70'}`}>
+                                                            <CategoryIcon id={entry.id} size={28} />
                                                         </div>
-                                                        <span className={`text-[10px] ui ${t.id === current ? 'text-[var(--color-gold)]/80' : 'text-[rgb(var(--color-fg))]/40'}`}>
-                                                            {t.id === 'tables' && current === 'tables' ? `${getFocusTable()}s Table` : t.label}
+                                                        <span className={`text-[10px] ui ${entry.id === current ? 'text-[var(--color-gold)]/80' : 'text-[rgb(var(--color-fg))]/40'}`}>
+                                                            {entry.id === 'tables' && current === 'tables'
+                                                                ? t('picker.tablesFocused', { n: getFocusTable() })
+                                                                : catLabel(entry.id)}
                                                         </span>
                                                     </motion.button>
                                                 ))}

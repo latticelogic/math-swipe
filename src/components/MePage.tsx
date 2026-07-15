@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import type { useStats } from '../hooks/useStats';
 import { typesForBand, type AgeBand } from '../utils/questionTypes';
 import { countLabel } from '../utils/formatNumber';
+import { t } from '../i18n';
 import { ACHIEVEMENTS, HARD_MODE_ACHIEVEMENTS, TIMED_MODE_ACHIEVEMENTS, ULTIMATE_ACHIEVEMENTS, EVERY_ACHIEVEMENT } from '../utils/achievements';
 import { AchievementBadge } from './AchievementBadge';
 import { StreakGarden } from './StreakGarden';
@@ -215,9 +216,12 @@ export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked,
                 if (stats.totalXP > 0) bits.push(`${stats.totalXP.toLocaleString()} XP`);
                 if (unlocked.size > 0) bits.push(`${unlocked.size} achievement${unlocked.size === 1 ? '' : 's'}`);
                 const summary = bits.join(' · ');
+                // The composed progress summary ("7-day streak · 230 XP") stays
+                // English-only for now (Tier 2 — dynamic fragment composition
+                // doesn't translate safely without per-language templates).
                 const line = summary
                     ? `Your ${summary} live only on this device.`
-                    : 'Keep your streak and XP safe — and pick up on any device.';
+                    : t('me.signinBody');
                 const appleEnabled = import.meta.env.VITE_ENABLE_APPLE === '1';
                 const btn = 'w-full flex items-center justify-center gap-2 text-sm ui font-semibold rounded-xl py-2.5 border transition-colors';
 
@@ -232,8 +236,8 @@ export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked,
                                     catch (err) { console.warn('Email link failed:', err); }
                                 }}
                             >
-                                <div className="text-sm ui font-semibold text-[rgb(var(--color-fg))]/85 text-center mb-1">Sign in with email</div>
-                                <div className="text-[11px] ui text-[rgb(var(--color-fg))]/45 text-center mb-3">We'll send a magic link — no password.</div>
+                                <div className="text-sm ui font-semibold text-[rgb(var(--color-fg))]/85 text-center mb-1">{t('me.emailTitle')}</div>
+                                <div className="text-[11px] ui text-[rgb(var(--color-fg))]/45 text-center mb-3">{t('me.emailHint')}</div>
                                 <input
                                     type="email"
                                     value={emailInput}
@@ -243,33 +247,33 @@ export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked,
                                     className="w-full text-sm ui bg-[rgb(var(--color-fg))]/5 border border-[rgb(var(--color-fg))]/10 rounded-xl px-3 py-2.5 text-center text-[rgb(var(--color-fg))]/80 placeholder:text-[rgb(var(--color-fg))]/25 outline-none focus:border-[var(--color-gold)]/40 mb-2"
                                 />
                                 <div className="flex gap-2">
-                                    <button type="button" onClick={() => setShowEmailInput(false)} className="flex-1 text-xs ui text-[rgb(var(--color-fg))]/50 rounded-xl py-2 border border-[rgb(var(--color-fg))]/10">Back</button>
-                                    <button type="submit" className="flex-1 text-sm ui font-semibold text-[var(--color-gold)] bg-[var(--color-gold)]/15 border border-[var(--color-gold)]/30 rounded-xl py-2">Send link</button>
+                                    <button type="button" onClick={() => setShowEmailInput(false)} className="flex-1 text-xs ui text-[rgb(var(--color-fg))]/50 rounded-xl py-2 border border-[rgb(var(--color-fg))]/10">{t('me.back')}</button>
+                                    <button type="submit" className="flex-1 text-sm ui font-semibold text-[var(--color-gold)] bg-[var(--color-gold)]/15 border border-[var(--color-gold)]/30 rounded-xl py-2">{t('me.sendLink')}</button>
                                 </div>
                             </form>
                         ) : emailSent ? (
                             <div className="text-center py-2">
-                                <div className="text-sm ui font-semibold text-[var(--color-correct)] mb-1">Check your email</div>
-                                <div className="text-[11px] ui text-[rgb(var(--color-fg))]/45">Tap the magic link we just sent to finish.</div>
+                                <div className="text-sm ui font-semibold text-[var(--color-correct)] mb-1">{t('me.checkEmail')}</div>
+                                <div className="text-[11px] ui text-[rgb(var(--color-fg))]/45">{t('me.checkEmailHint')}</div>
                             </div>
                         ) : (
                             <>
-                                <div className="text-sm ui font-semibold text-[rgb(var(--color-fg))]/85 text-center mb-1">Save your progress</div>
-                                <div className="text-[11px] ui text-[rgb(var(--color-fg))]/50 text-center mb-3.5 leading-relaxed">{line} Sign in to back them up and play anywhere.</div>
+                                <div className="text-sm ui font-semibold text-[rgb(var(--color-fg))]/85 text-center mb-1">{t('me.signinTitle')}</div>
+                                <div className="text-[11px] ui text-[rgb(var(--color-fg))]/50 text-center mb-3.5 leading-relaxed">{line} {t('me.signinCta')}</div>
                                 <div className="flex flex-col gap-2">
                                     <button onClick={onLinkGoogle} className={`${btn} border-[rgb(var(--color-fg))]/20 text-[rgb(var(--color-fg))]/85 hover:border-[rgb(var(--color-fg))]/35`}>
                                         <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" /><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" /><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" /><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" /></svg>
-                                        Continue with Google
+                                        {t('me.google')}
                                     </button>
                                     {appleEnabled && onLinkApple && (
                                         <button onClick={onLinkApple} className={`${btn} border-[rgb(var(--color-fg))]/20 text-[rgb(var(--color-fg))]/85 hover:border-[rgb(var(--color-fg))]/35`}>
                                             <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M16.365 1.43c0 1.14-.42 2.2-1.12 3-.76.9-2 1.6-3.05 1.52-.13-1.1.42-2.27 1.08-3 .74-.83 2.06-1.46 3.09-1.52.02.16.02.32.02.5zM20.5 17.2c-.55 1.27-.82 1.84-1.53 2.96-.99 1.57-2.39 3.52-4.12 3.53-1.54.02-1.93-1-4.02-.99-2.09.01-2.52 1.01-4.06.99-1.73-.02-3.05-1.78-4.04-3.34C-.06 16.1-.4 11.02 1.9 8.3c.9-1.08 2.32-1.76 3.66-1.76 1.36 0 2.22.75 3.35.75 1.09 0 1.76-.75 3.33-.75 1.19 0 2.45.65 3.35 1.77-2.94 1.61-2.46 5.82.91 6.89z" /></svg>
-                                            Continue with Apple
+                                            {t('me.apple')}
                                         </button>
                                     )}
                                     <button onClick={() => setShowEmailInput(true)} className={`${btn} border-[rgb(var(--color-fg))]/20 text-[rgb(var(--color-fg))]/85 hover:border-[rgb(var(--color-fg))]/35`}>
                                         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M3 7l9 6 9-6" /></svg>
-                                        Continue with email
+                                        {t('me.email')}
                                     </button>
                                 </div>
                             </>
@@ -333,25 +337,25 @@ export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked,
                     <div className="text-2xl chalk text-[var(--color-streak-fire)]">
                         {stats.bestStreak}
                     </div>
-                    <div className="text-xs ui text-[rgb(var(--color-fg))]/60">🔥 streak</div>
+                    <div className="text-xs ui text-[rgb(var(--color-fg))]/60">🔥 {t('me.statStreak')}</div>
                 </div>
                 <div className="text-center">
                     <div className="text-2xl chalk text-[var(--color-correct)]">
                         {accuracy}%
                     </div>
-                    <div className="text-xs ui text-[rgb(var(--color-fg))]/40">🎯 accuracy</div>
+                    <div className="text-xs ui text-[rgb(var(--color-fg))]/40">🎯 {t('me.statAccuracy')}</div>
                 </div>
                 <div className="text-center">
                     <div className="text-2xl chalk text-[rgb(var(--color-fg))]/70">
                         {stats.totalSolved}
                     </div>
-                    <div className="text-xs ui text-[rgb(var(--color-fg))]/40">✅ solved</div>
+                    <div className="text-xs ui text-[rgb(var(--color-fg))]/40">✅ {t('me.statSolved')}</div>
                 </div>
                 <div className="text-center">
                     <div className="text-2xl chalk text-[var(--color-gold)]">
                         {dailyAcc !== null ? `${dailyAcc}%` : '-'}
                     </div>
-                    <div className="text-xs ui text-[rgb(var(--color-fg))]/60">📅 daily</div>
+                    <div className="text-xs ui text-[rgb(var(--color-fg))]/60">📅 {t('me.statDaily')}</div>
                 </div>
             </div>
 
@@ -393,10 +397,10 @@ export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked,
             {/* Per question type row */}
             <div className="w-full max-w-sm">
                 <div className="text-xs ui text-[rgb(var(--color-fg))]/50 uppercase tracking-widest text-center mb-1">
-                    by type
+                    {t('me.byType')}
                 </div>
                 <div className="text-[9px] ui text-[rgb(var(--color-fg))]/30 text-center mb-3">
-                    your accuracy on each operation, across every mode
+                    {t('me.byTypeHint')}
                 </div>
                 <div className="grid grid-cols-5 gap-2 justify-items-center">
                     {typesForBand(ageBand).filter(t => !t.id.startsWith('mix-') && t.id !== 'daily' && t.id !== 'challenge').map(t => {

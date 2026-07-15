@@ -27,6 +27,10 @@
 import { motion } from 'framer-motion';
 import { PRICE_USD } from '../utils/entitlement';
 import { LegalFooterRow } from './LegalPages';
+import { t, tCount } from '../i18n';
+
+/** USD product price everywhere in v1 — see docs/i18n.md on currency. */
+const PRICE_LABEL = `$${PRICE_USD.toFixed(2)}`;
 
 interface PaywallProgress {
     /** Total problems solved across the trial. */
@@ -93,28 +97,28 @@ export function Paywall({ progress, onUnlock, busy, mode = 'expired', onClose, p
     if (progress.dayStreak >= 2) {
         heroStats.push({
             key: 'day-streak',
-            label: progress.dayStreak === 1 ? 'day' : 'days in a row',
+            label: tCount('paywall.statDays', progress.dayStreak),
             value: progress.dayStreak.toString(),
         });
     }
     if (progress.bestStreak >= 5) {
         heroStats.push({
             key: 'best-streak',
-            label: 'best streak',
+            label: t('paywall.statBestStreak'),
             value: progress.bestStreak.toString(),
         });
     }
     if (progress.totalSolved > 0) {
         heroStats.push({
             key: 'total-solved',
-            label: progress.totalSolved === 1 ? 'problem' : 'problems',
+            label: tCount('paywall.statProblems', progress.totalSolved),
             value: progress.totalSolved.toLocaleString(),
         });
     }
     if (progress.achievementCount >= 3) {
         heroStats.push({
             key: 'achievements',
-            label: progress.achievementCount === 1 ? 'achievement' : 'achievements',
+            label: tCount('paywall.statAchievements', progress.achievementCount),
             value: progress.achievementCount.toString(),
         });
     }
@@ -173,13 +177,13 @@ export function Paywall({ progress, onUnlock, busy, mode = 'expired', onClose, p
                     // Lead with what unlocking gets them, right now.
                     <>
                         <h1 id="paywall-title" className="text-2xl chalk text-[var(--color-gold)] mb-1">
-                            Unlock everything
+                            {t('paywall.proTitle')}
                         </h1>
                         <p className="text-sm ui text-[rgb(var(--color-fg))]/55 mb-6">
-                            The full game — right now.
+                            {t('paywall.proSub')}
                         </p>
                         <div className="mb-6 flex flex-col gap-2.5 text-left max-w-[260px] mx-auto">
-                            {['Hard, Timed & Ultimate modes', 'All 36 Magic Tricks', 'The exclusive Pro cosmetics pack'].map(f => (
+                            {[t('paywall.feature1'), t('paywall.feature2'), t('paywall.feature3')].map(f => (
                                 <div key={f} className="flex items-center gap-2.5">
                                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--color-gold)] shrink-0" aria-hidden>
                                         <path d="M5 12l4 4 10-10" />
@@ -190,7 +194,7 @@ export function Paywall({ progress, onUnlock, busy, mode = 'expired', onClose, p
                         </div>
                         {!purchaseUnavailable && (
                             <p className="text-sm ui text-[rgb(var(--color-fg))]/65 mb-5 leading-relaxed">
-                                Yours forever for ${PRICE_USD.toFixed(2)}. One time — no subscription.
+                                {t('paywall.proPrice', { price: PRICE_LABEL })}
                             </p>
                         )}
                     </>
@@ -198,10 +202,10 @@ export function Paywall({ progress, onUnlock, busy, mode = 'expired', onClose, p
                 {/* The headline acknowledges the trial ended without naming the
                     price. The price lives at the bottom in the CTA. */}
                 <h1 id="paywall-title" className="text-2xl chalk text-[var(--color-gold)] mb-1">
-                    Two weeks of Math Challenge
+                    {t('paywall.expiredTitle')}
                 </h1>
                 <p className="text-sm ui text-[rgb(var(--color-fg))]/55 mb-6">
-                    Here's what you built.
+                    {t('paywall.expiredSub')}
                 </p>
 
                 {/* Hero stats — the user's own numbers in their own voice.
@@ -231,7 +235,7 @@ export function Paywall({ progress, onUnlock, busy, mode = 'expired', onClose, p
                     // stat block entirely rather than show zeros, which would
                     // undermine the whole "look what you built" framing.
                     <p className="text-sm ui text-[rgb(var(--color-fg))]/45 mb-6 leading-relaxed">
-                        The Daily Challenge stays open if you want to come back.
+                        {t('paywall.barelyPlayed')}
                     </p>
                 )}
 
@@ -239,7 +243,7 @@ export function Paywall({ progress, onUnlock, busy, mode = 'expired', onClose, p
                     "lose your progress" framing. Just an invitation. */}
                 {!purchaseUnavailable && (
                     <p className="text-sm ui text-[rgb(var(--color-fg))]/65 mb-5 leading-relaxed">
-                        Want to keep going? Everything stays unlocked for ${PRICE_USD.toFixed(2)}. One time.
+                        {t('paywall.keepGoing', { price: PRICE_LABEL })}
                     </p>
                 )}
                 </>)}
@@ -250,9 +254,7 @@ export function Paywall({ progress, onUnlock, busy, mode = 'expired', onClose, p
                     // steer to an external purchase — so: a neutral notice, no
                     // price, no link. An unlock made elsewhere still syncs in.
                     <p className="text-sm ui text-[rgb(var(--color-fg))]/55 leading-relaxed">
-                        Purchases aren't available in this version of the app.
-                        If you've already unlocked Math Challenge, sign in and
-                        your unlock comes with you.
+                        {t('paywall.unavailable')}
                     </p>
                 ) : (<>
                 <button
@@ -260,13 +262,13 @@ export function Paywall({ progress, onUnlock, busy, mode = 'expired', onClose, p
                     disabled={busy}
                     className="w-full py-3.5 rounded-2xl bg-[var(--color-gold)] text-[var(--color-board)] text-base ui font-semibold hover:bg-[var(--color-gold)]/90 transition-colors active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                    {busy ? 'Just a sec…' : isPro ? 'Unlock everything' : 'Keep playing'}
+                    {busy ? t('paywall.busy') : isPro ? t('paywall.proTitle') : t('paywall.ctaExpired')}
                 </button>
 
                 {/* Sub-line clarifies what "keep playing" means without baking
                     a possession threat into the headline itself. */}
                 <p className="text-[10px] ui text-[rgb(var(--color-fg))]/35 mt-2">
-                    Lifetime access · No subscription
+                    {t('paywall.lifetime')}
                 </p>
                 </>)}
 
@@ -274,14 +276,14 @@ export function Paywall({ progress, onUnlock, busy, mode = 'expired', onClose, p
                     onClick={maybeLater}
                     className="w-full mt-4 py-2 text-sm ui text-[rgb(var(--color-fg))]/45 hover:text-[rgb(var(--color-fg))]/65 transition-colors"
                 >
-                    Maybe later
+                    {t('paywall.maybeLater')}
                 </button>
 
                 {/* Quiet hint that the Daily Challenge isn't locked. Not
                     promoted (would dilute the CTA) but visible so a user
                     who taps "Maybe later" knows they can still come back. */}
                 <p className="text-[10px] ui text-[rgb(var(--color-fg))]/30 mt-3">
-                    The Daily Challenge is always free.
+                    {t('paywall.dailyFree')}
                 </p>
 
                 {/* Legal links — refund / privacy / terms. Quiet but discoverable

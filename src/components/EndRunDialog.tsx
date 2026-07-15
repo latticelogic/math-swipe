@@ -13,7 +13,7 @@
  */
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { countLabel } from '../utils/formatNumber';
+import { t, tCount } from '../i18n';
 
 interface Props {
     open: boolean;
@@ -51,22 +51,22 @@ export function EndRunDialog({ open, answered, score, onEnd, onKeepPlaying }: Pr
                         transition={{ duration: 0.15 }}
                     >
                         <h2 id="end-run-title" className="text-xl chalk text-[var(--color-gold)] mb-1.5">
-                            End this run?
+                            {t('endRun.title')}
                         </h2>
                         <p className="text-xs ui text-[rgb(var(--color-fg))]/55 mb-5">
-                            {countLabel(answered, 'problem')} · {score} pts so far
+                            {t('endRun.stats', { problems: tCount('count.problem', answered), pts: score })}
                         </p>
                         <button
                             onClick={onEnd}
                             className="w-full py-3 rounded-xl bg-[var(--color-gold)] text-[var(--color-board)] text-sm ui font-semibold active:scale-[0.98] transition-transform"
                         >
-                            End &amp; see results
+                            {t('endRun.end')}
                         </button>
                         <button
                             onClick={onKeepPlaying}
                             className="w-full mt-2.5 py-2 text-sm ui text-[rgb(var(--color-fg))]/50 hover:text-[rgb(var(--color-fg))]/70 transition-colors"
                         >
-                            Keep playing
+                            {t('endRun.keep')}
                         </button>
                     </motion.div>
                 </>

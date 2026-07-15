@@ -19,6 +19,7 @@ import { memo, useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { shareIntentUrl, toWellFormedText, type ShareChannel } from '../utils/shareIntents';
+import { t } from '../i18n';
 
 interface ShareSheetProps {
     open: boolean;
@@ -54,10 +55,10 @@ function buildChannels(): ChannelDef[] {
     // is exactly what `Copy text` already does. A fake Discord button that
     // secretly copies text would mislead users about where it sent.
     return [
-        { id: 'native', label: 'Share…', icon: '📤', available: () => typeof navigator !== 'undefined' && typeof navigator.share === 'function' },
-        { id: 'copy-link', label: 'Copy link', icon: '🔗', available: () => true },
-        { id: 'copy-text', label: 'Copy text', icon: '📋', available: () => true },
-        { id: 'download', label: 'Download', icon: '⬇️', available: () => true },
+        { id: 'native', label: t('share.native'), icon: '📤', available: () => typeof navigator !== 'undefined' && typeof navigator.share === 'function' },
+        { id: 'copy-link', label: t('share.copyLink'), icon: '🔗', available: () => true },
+        { id: 'copy-text', label: t('share.copyText'), icon: '📋', available: () => true },
+        { id: 'download', label: t('share.download'), icon: '⬇️', available: () => true },
         { id: 'twitter', label: 'X', icon: '𝕏', available: () => true },
         { id: 'whatsapp', label: 'WhatsApp', icon: '💬', available: () => true },
         { id: 'telegram', label: 'Telegram', icon: '✈️', available: () => true },
@@ -103,16 +104,16 @@ export const ShareSheet = memo(function ShareSheet({ open, onClose, text, url, i
             switch (channel) {
                 case 'copy-link':
                     await navigator.clipboard.writeText(url);
-                    flashToast('Link copied!');
+                    flashToast(t('share.linkCopied'));
                     onShared?.();
                     return;
                 case 'copy-text':
                     await navigator.clipboard.writeText(text);
-                    flashToast('Text copied!');
+                    flashToast(t('share.textCopied'));
                     onShared?.();
                     return;
                 case 'download':
-                    if (!imageBlob) { flashToast('Generating image…'); return; }
+                    if (!imageBlob) { flashToast(t('share.generatingImage')); return; }
                     {
                         const a = document.createElement('a');
                         a.href = URL.createObjectURL(imageBlob);
@@ -122,7 +123,7 @@ export const ShareSheet = memo(function ShareSheet({ open, onClose, text, url, i
                         a.remove();
                         // Revoke after a tick to let the browser start the download
                         setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-                        flashToast('Saved!');
+                        flashToast(t('share.saved'));
                         onShared?.();
                     }
                     return;
@@ -183,10 +184,10 @@ export const ShareSheet = memo(function ShareSheet({ open, onClose, text, url, i
                         {/* Drag-handle (cosmetic) */}
                         <div className="md:hidden mx-auto mb-3 w-10 h-1 rounded-full bg-[rgb(var(--color-fg))]/15" />
                         <div className="flex items-start justify-between mb-3">
-                            <h3 className="text-lg chalk text-[var(--color-gold)]">Share your run</h3>
+                            <h3 className="text-lg chalk text-[var(--color-gold)]">{t('share.title')}</h3>
                             <button
                                 onClick={onClose}
-                                aria-label="Close share"
+                                aria-label={t('share.closeAria')}
                                 className="text-[rgb(var(--color-fg))]/40 hover:text-[rgb(var(--color-fg))]/70 transition-colors text-xl leading-none px-1"
                             >
                                 ✕
@@ -197,8 +198,8 @@ export const ShareSheet = memo(function ShareSheet({ open, onClose, text, url, i
                         <div className="flex gap-3 mb-4">
                             <div className="w-20 h-32 rounded-lg border border-[rgb(var(--color-fg))]/15 bg-[var(--color-surface)] overflow-hidden flex items-center justify-center text-[10px] ui text-[rgb(var(--color-fg))]/30">
                                 {previewUrl
-                                    ? <img src={previewUrl} alt="Share card preview" className="w-full h-full object-cover" />
-                                    : <span>Generating…</span>}
+                                    ? <img src={previewUrl} alt={t('share.previewAlt')} className="w-full h-full object-cover" />
+                                    : <span>{t('share.generating')}</span>}
                             </div>
                             <div className="flex-1 min-w-0">
                                 <div className="text-[11px] ui text-[rgb(var(--color-fg))]/50 leading-snug whitespace-pre-line max-h-24 overflow-hidden">
