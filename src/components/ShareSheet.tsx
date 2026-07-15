@@ -18,6 +18,7 @@
 import { memo, useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { shareIntentUrl, toWellFormedText, type ShareChannel } from '../utils/shareIntents';
 
 interface ShareSheetProps {
     open: boolean;
@@ -66,19 +67,8 @@ function buildChannels(): ChannelDef[] {
     ];
 }
 
-function urlOpener(channel: Channel, text: string, url: string): string | null {
-    const encText = encodeURIComponent(text);
-    const encUrl = encodeURIComponent(url);
-    switch (channel) {
-        case 'twitter':   return `https://twitter.com/intent/tweet?text=${encText}`;
-        case 'whatsapp':  return `https://wa.me/?text=${encText}`;
-        case 'telegram':  return `https://t.me/share/url?url=${encUrl}&text=${encText}`;
-        case 'reddit':    return `https://www.reddit.com/submit?url=${encUrl}&title=${encodeURIComponent('Beat my Math Challenge streak?')}`;
-        case 'facebook':  return `https://www.facebook.com/sharer/sharer.php?u=${encUrl}`;
-        case 'email':     return `mailto:?subject=${encodeURIComponent('Beat my Math Challenge streak')}&body=${encText}`;
-        default:          return null;
-    }
-}
+// Intent URL construction lives in utils/shareIntents.ts (unit-tested — the
+// WhatsApp wa.me redirect was silently corrupting every emoji in the payload).
 
 export const ShareSheet = memo(function ShareSheet({ open, onClose, text, url, imageBlob, onRegenerate, onShared }: ShareSheetProps) {
     const [toast, setToast] = useState<string | null>(null);
@@ -138,17 +128,21 @@ export const ShareSheet = memo(function ShareSheet({ open, onClose, text, url, i
                     return;
                 case 'native': {
                     // Prefer file-share when supported (richer for IG/Stories/etc.)
+                    // Text goes through the same well-formedness guard as the
+                    // intent URLs — some Android share targets drop the whole
+                    // payload on a lone surrogate.
+                    const safeText = toWellFormedText(text);
                     const file = imageBlob ? new File([imageBlob], 'share.png', { type: 'image/png' }) : null;
                     if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
-                        await navigator.share({ files: [file], text });
+                        await navigator.share({ files: [file], text: safeText });
                     } else if (navigator.share) {
-                        await navigator.share({ text, url });
+                        await navigator.share({ text: safeText, url });
                     }
                     onShared?.();
                     return;
                 }
                 default: {
-                    const target = urlOpener(channel, text, url);
+                    const target = shareIntentUrl(channel as ShareChannel, text, url);
                     if (target) {
                         window.open(target, '_blank', 'noopener,noreferrer');
                         onShared?.();
