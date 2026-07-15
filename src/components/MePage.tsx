@@ -8,6 +8,7 @@ import { StreakGarden } from './StreakGarden';
 import { CHALK_THEMES, type ChalkTheme } from '../utils/chalkThemes';
 import { SWIPE_TRAILS } from '../utils/trails';
 import { nextDailyMilestone } from '../utils/dailyStreak';
+import { buildInviteUrl } from '../utils/referral';
 import { TEACHERS, DEFAULT_TEACHER_ID } from '../domains/math/teachers';
 import { RANKS, getRank, getMastery } from '../domains/math/ranks';
 import { PushOptIn } from './PushOptIn';
@@ -71,6 +72,24 @@ export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked,
     const today = todayKey();
     const dailyDoneToday = stats.lastDailyDate === today && stats.todayDailySolved > 0;
     const dailyAcc = dailyDoneToday ? Math.round((stats.todayDailyCorrect / stats.todayDailySolved) * 100) : null;
+
+    // Invite a friend — the referral loop. Shares a ?r=<uid> link that credits
+    // this player once the friend joins and plays (see utils/referral.ts).
+    const [inviteMsg, setInviteMsg] = useState('');
+    const handleInvite = async () => {
+        if (!uid) return;
+        const url = buildInviteUrl(uid);
+        const text = 'Come do a bit of mental math with me on Math Swipe.';
+        try {
+            if (typeof navigator !== 'undefined' && navigator.share) {
+                await navigator.share({ title: 'Math Swipe', text, url });
+            } else {
+                await navigator.clipboard.writeText(url);
+                setInviteMsg('Invite link copied');
+                setTimeout(() => setInviteMsg(''), 2500);
+            }
+        } catch { /* user dismissed the share sheet — nothing to do */ }
+    };
 
     return (
         <div className="flex-1 flex flex-col items-center overflow-y-auto px-6 pt-4 pb-20">
@@ -325,6 +344,27 @@ export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked,
                     <span className="text-[rgb(var(--color-fg))]/50">Daily streak</span>
                     <span className="chalk text-xl text-[var(--color-streak-fire)] leading-none">{stats.dailyStreak}</span>
                     <span className="text-[rgb(var(--color-fg))]/35">· next reward at day {nextDailyMilestone(stats.dailyStreak)}</span>
+                </div>
+            )}
+
+            {/* Invite a friend — closes the referral loop */}
+            {uid && (
+                <div className="w-full max-w-sm mb-8 flex flex-col items-center">
+                    <button
+                        onClick={handleInvite}
+                        className="px-6 py-2.5 rounded-2xl border border-[var(--color-gold)]/40 bg-[var(--color-gold)]/5 text-[var(--color-gold)] ui text-sm font-semibold active:scale-95 transition-all flex items-center gap-2"
+                        aria-label="Invite a friend"
+                    >
+                        {/* Two chalk figures — matches the referral badge */}
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="9" cy="8" r="3" />
+                            <path d="M4 20c0-3.5 2.2-5.5 5-5.5s5 2 5 5.5" />
+                            <path d="M16 7.5a2.6 2.6 0 0 1 0 5" opacity="0.7" />
+                            <path d="M15 14.7c2.4.2 4 2.1 4 5" opacity="0.7" />
+                        </svg>
+                        Invite a friend
+                    </button>
+                    {inviteMsg && <span className="text-[10px] ui text-[var(--color-correct)] mt-1.5">{inviteMsg}</span>}
                 </div>
             )}
 

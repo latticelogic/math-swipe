@@ -382,6 +382,16 @@ const MasteryStar = ({ size = 48, unlocked }: BadgeProps) => (
     </svg>
 );
 
+/** Two figures — the referral ladder (Brought a Friend → Ambassador) */
+const Friends = ({ size = 48, unlocked }: BadgeProps) => (
+    <svg viewBox="0 0 48 48" width={size} height={size} style={{ color: unlocked ? 'var(--color-gold)' : 'var(--color-locked)' }}>
+        <circle cx="18" cy="17" r="6" {...S} strokeWidth="2.5" />
+        <path d="M8 40c0-7 4-11 10-11s10 4 10 11" {...S} strokeWidth="2.5" />
+        <circle cx="33" cy="20" r="4.5" {...S} strokeWidth="2" opacity="0.8" />
+        <path d="M28 40c0-5 3-9 8-9s8 4 8 9" {...S} strokeWidth="2" opacity="0.8" />
+    </svg>
+);
+
 /** Rosette — generic fallback so no achievement ever renders blank */
 const DefaultBadge = ({ size = 48, unlocked }: BadgeProps) => (
     <svg viewBox="0 0 48 48" width={size} height={size} style={{ color: unlocked ? 'var(--color-gold)' : 'var(--color-locked)' }}>
@@ -438,6 +448,10 @@ const BADGE_MAP: Record<string, React.FC<BadgeProps>> = {
     'mastery-1': MasteryStar,
     'mastery-5': MasteryStar,
     'mastery-10': MasteryStar,
+    // Referrals
+    'brought-a-friend': Friends,
+    'connector': Friends,
+    'ambassador': Friends,
 };
 
 interface Props {

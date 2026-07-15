@@ -53,3 +53,10 @@ export function generateChallenge(challengeId: string): Problem[] {
 export function createChallengeId(): string {
     return Date.now().toString(36);
 }
+
+/** Deterministic challenge seed for a given player — shared by the profile
+ *  "Challenge" button and the League "Ghost Race" so both load the SAME
+ *  problem set for that opponent (previously a random, unrelated seed). */
+export function opponentChallengeSeed(uid: string): string {
+    return `ghost-${uid}`;
+}

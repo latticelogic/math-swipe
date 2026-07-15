@@ -35,6 +35,7 @@ describe('achievements.ts', () => {
         ultimateSessions: 0,
         ultimatePerfects: 0,
         sharesSent: 0,
+        referralCount: 0,
     };
 
     it('awards streak-20 when best streak hits 20', () => {

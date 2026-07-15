@@ -40,6 +40,11 @@ interface Props {
      *  forward the *same* problems instead of minting a fresh, unrelated
      *  seed (which made the old "challenge" link asymmetric in name only). */
     challengeId?: string | null;
+    /** When THIS session was played against a friend's target (arrived via
+     *  ?target=/?targetTime=), the number they set — so we can resolve the
+     *  head-to-head ("You won by 12") at the end instead of dropping the
+     *  comparison silently. */
+    challengeTarget?: { score: number | null; timeMs: number | null } | null;
     /** Called after a share completes successfully (native share resolved
      *  OR clipboard write succeeded OR modal share confirmed). Drives the
      *  "Spread the Word" first-share achievement. */
@@ -105,7 +110,7 @@ function buildSharePayload(
 export const SessionSummary = memo(function SessionSummary({
     solved, bestStreak: streak, accuracy, xpEarned, answerHistory, questionType, visible, onDismiss,
     hardMode, timedMode, speedrunFinalTime, isNewSpeedrunRecord,
-    displayName, uid, claimedHandle, challengeId, onShared,
+    displayName, uid, claimedHandle, challengeId, challengeTarget, onShared,
 }: Props) {
     const [isSharing, setIsSharing] = useState(false);
     const cardRef = useRef<HTMLDivElement>(null);
@@ -470,6 +475,33 @@ export const SessionSummary = memo(function SessionSummary({
                         )}
 
                         <div className="text-lg chalk text-[var(--color-gold)] mb-4 tabular-nums">+{xpDisplay} pts</div>
+
+                        {/* Head-to-head resolution — when this session was played
+                            against a friend's target, settle it out loud instead
+                            of dropping the comparison. Closes the daily/challenge
+                            "you vs them" loop and nudges a rematch. */}
+                        {challengeTarget && (challengeTarget.score != null || (challengeTarget.timeMs != null && !!speedrunFinalTime)) && (() => {
+                            const byScore = challengeTarget.score != null;
+                            const won = byScore
+                                ? xpEarned >= (challengeTarget.score ?? 0)
+                                : !!(speedrunFinalTime && challengeTarget.timeMs != null && speedrunFinalTime <= challengeTarget.timeMs);
+                            const mine = byScore ? `${xpEarned} pts` : (speedrunFinalTime ? formatTime(speedrunFinalTime) : '—');
+                            const theirs = byScore ? `${challengeTarget.score} pts` : formatTime(challengeTarget.timeMs ?? 0);
+                            const diff = byScore
+                                ? Math.abs(xpEarned - (challengeTarget.score ?? 0))
+                                : Math.abs((speedrunFinalTime ?? 0) - (challengeTarget.timeMs ?? 0));
+                            const diffLabel = byScore ? `${diff} pts` : formatTime(diff);
+                            return (
+                                <div className={`w-full rounded-xl border mb-3 px-3 py-2.5 ${won ? 'border-[var(--color-correct)]/40 bg-[var(--color-correct)]/5' : 'border-[var(--color-gold)]/30 bg-[var(--color-gold)]/5'}`}>
+                                    <div className={`text-sm ui font-semibold ${won ? 'text-[var(--color-correct)]' : 'text-[var(--color-gold)]'}`}>
+                                        {won ? `You won by ${diffLabel}` : `Just short by ${diffLabel}`}
+                                    </div>
+                                    <div className="text-[11px] ui text-[rgb(var(--color-fg))]/50 mt-0.5">
+                                        You {mine} · them {theirs}{won ? ' — send it back' : ' — run it again?'}
+                                    </div>
+                                </div>
+                            );
+                        })()}
 
                         {/* Share button */}
                         <motion.button

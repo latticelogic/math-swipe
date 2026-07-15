@@ -21,7 +21,7 @@ import { getTeacher } from '../domains/math/teachers';
 import { getThemeColor } from '../utils/chalkThemes';
 import { AchievementBadge } from './AchievementBadge';
 import { EVERY_ACHIEVEMENT } from '../utils/achievements';
-import { createChallengeId } from '../utils/dailyChallenge';
+import { opponentChallengeSeed } from '../utils/dailyChallenge';
 import { parseProfileSlug } from '../utils/profileSlug';
 import { lookupUidBySlug } from '../utils/username';
 import { formatTime } from '../utils/formatTime';
@@ -66,7 +66,7 @@ function toProfileData(uid: string, fallbackName: string, data: Record<string, u
 
 interface Props {
     slug: string;
-    onChallenge: (challengeId: string) => void;
+    onChallenge: (challengeId: string, targetTimeMs?: number) => void;
     onBackToGame: () => void;
 }
 
@@ -187,9 +187,11 @@ export const ProfilePage = memo(function ProfilePage({ slug, onChallenge, onBack
         .filter(Boolean)
         .slice(0, 8);
 
+    // Real head-to-head: same deterministic set seeded from THIS player, and —
+    // if they've set a speedrun time — that time as the number to beat.
+    const raceTime = profile.bestSpeedrunTime && profile.bestSpeedrunTime > 0 ? profile.bestSpeedrunTime : undefined;
     const handleChallenge = () => {
-        const challengeId = createChallengeId();
-        onChallenge(challengeId);
+        onChallenge(opponentChallengeSeed(profile.uid), raceTime);
     };
 
     return (
@@ -309,15 +311,21 @@ export const ProfilePage = memo(function ProfilePage({ slug, onChallenge, onBack
                 aria-label={`Challenge ${profile.displayName}`}
             >
                 <span>⚔️</span>
-                <span>Challenge {profile.displayName}</span>
+                <span>Challenge {profile.displayName}{raceTime ? ` · beat ${formatTime(raceTime)}` : ''}</span>
             </motion.button>
 
+            {/* Receiver-conversion CTA — the visitor is at peak intent here
+                (they came for someone's brag). Give them a real, value-led way
+                in, not a throwaway text link. */}
             <button
                 onClick={onBackToGame}
-                className="mt-4 text-xs ui text-[rgb(var(--color-fg))]/35 hover:text-[rgb(var(--color-fg))]/60 transition-colors"
+                className="mt-4 px-7 py-2.5 rounded-2xl border border-[var(--color-chalk)]/30 text-[rgb(var(--color-fg))]/75 ui text-sm active:scale-95 transition-all"
             >
-                or play your own game →
+                Start your own — it's free
             </button>
+            <span className="mt-1.5 text-[10px] ui text-[rgb(var(--color-fg))]/35">
+                Same daily set as {profile.displayName}. Your streak saves as you go.
+            </span>
         </div>
     );
 });

@@ -188,6 +188,21 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // ── Referrals (attribution) ──
+    // One doc per INVITEE recording who referred them, plus a per-referrer
+    // running count. Both are written ONLY by the claimReferral Cloud Function
+    // (admin SDK, bypasses rules) so the count can't be forged — the client
+    // reads its own count to drive referral achievements/cosmetics, exactly
+    // like other server-verified inputs. No client write path exists.
+    match /referrals/{inviteeUid} {
+      allow read: if request.auth != null && request.auth.uid == inviteeUid;
+      allow write: if false;
+    }
+    match /referralStats/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+    }
+
     // ── Leaderboards Collection (pre-aggregated cache) ──
     // Two docs maintained by the `rebuildLeaderboardCache` Cloud Function
     // every 60s:

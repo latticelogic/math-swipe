@@ -55,7 +55,12 @@ export const LeaguePage = memo(function LeaguePage({ userXP, userStreak, uid, di
     const handleAction = useCallback(async (action: 'race' | 'ping') => {
         if (!selectedPlayer) return;
         if (action === 'race') {
-            window.location.search = `?c=ghost-${selectedPlayer.uid}`;
+            // Same deterministic set as everyone who races this player, plus
+            // their real best time as the target when they have one — so the
+            // "Ghost Race" is an actual pace to beat, not a bare seed.
+            const t = selectedPlayer.bestSpeedrunTime;
+            const targetParam = t && t > 0 ? `&targetTime=${Math.round(t)}` : '';
+            window.location.search = `?c=ghost-${selectedPlayer.uid}${targetParam}`;
         } else if (action === 'ping') {
             if (pingCooldown) return;
             setPingCooldown(true);

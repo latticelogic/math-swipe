@@ -42,6 +42,10 @@ export { createCheckoutSession, stripeWebhook } from './stripe';
 // the client reads instead of running N live user-doc listeners.
 export { rebuildLeaderboardCache } from './leaderboard';
 
+// Referral attribution callable — records who invited a new player and bumps
+// the referrer's server-verified referral count. See ./referral.ts.
+export { claimReferral } from './referral';
+
 // VAPID credentials live in Secret Manager. Even the public key is a secret
 // here (rather than a plain param) so rotation is one CLI command + a
 // function redeploy, with no code edits.

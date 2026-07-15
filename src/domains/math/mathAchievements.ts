@@ -42,6 +42,8 @@ export interface MathAchievementStats {
     ultimatePerfects: number;
     // Social
     sharesSent: number;
+    /** Players this user has successfully invited (server-verified). */
+    referralCount: number;
 }
 
 // ── Achievement lists ─────────────────────────────────────────────────────────
@@ -158,6 +160,25 @@ const CORE_ACHIEVEMENTS: Achievement<MathAchievementStats>[] = [
         name: 'Spread the Word',
         desc: 'Shared your first score. Nice — pass it on.',
         check: s => s.sharesSent >= 1,
+    },
+    // ── Referrals — a friend actually joined and played ──
+    {
+        id: 'brought-a-friend',
+        name: 'Brought a Friend',
+        desc: 'Someone joined from your invite and started playing. That is the good stuff.',
+        check: s => s.referralCount >= 1,
+    },
+    {
+        id: 'connector',
+        name: 'Connector',
+        desc: 'Three friends in, all playing. You have a following now.',
+        check: s => s.referralCount >= 3,
+    },
+    {
+        id: 'ambassador',
+        name: 'Ambassador',
+        desc: 'Five players owe their streak to you.',
+        check: s => s.referralCount >= 5,
     },
 ];
 

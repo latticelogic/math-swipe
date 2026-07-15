@@ -172,15 +172,44 @@ function escapeHtml(s: string): string {
         .replace(/'/g, '&#39;');
 }
 
+// Rank + mastery label from XP. Kept in sync with src/domains/math/ranks.ts —
+// the worker is a standalone bundle, so it duplicates the thresholds rather
+// than importing. Mastery (post-20k) is the new braggable stat we surface in
+// the unfurl so a maxed player's link reads "Transcendent · Mastery 7", not a
+// flat "20,000 XP".
+const WORKER_RANKS: ReadonlyArray<readonly [string, number]> = [
+    ['Beginner', 0], ['Learner', 100], ['Thinker', 300], ['Problem Solver', 600],
+    ['Calculator', 1000], ['Mathematician', 1800], ['Wizard', 3000], ['Grandmaster', 5000],
+    ['Legend', 8000], ['Mythic', 12000], ['Transcendent', 20000],
+];
+function rankLabel(xp: number): string {
+    let name = WORKER_RANKS[0][0];
+    for (const [n, t] of WORKER_RANKS) if (xp >= t) name = n;
+    if (xp >= 20000) {
+        let remaining = xp - 20000;
+        let lvl = 1;
+        for (;;) {
+            const cost = 25000 + (lvl - 1) * 10000;
+            if (remaining < cost) break;
+            remaining -= cost;
+            lvl++;
+        }
+        return `${name} · Mastery ${lvl}`;
+    }
+    return name;
+}
+
 function buildProfileMeta(p: ProfileData, profileUrl: string, origin: string): string {
-    const title = `${p.displayName} on Math Swipe`;
+    const rank = rankLabel(p.totalXP);
+    const title = `${p.displayName} — ${rank} on Math Swipe`;
     const speedrunSegment = p.bestSpeedrunTime && p.bestSpeedrunTime > 0
         ? ` · ⏱️ ${(p.bestSpeedrunTime / 1000).toFixed(1)}s speedrun`
         : '';
-    const description = `${p.totalXP.toLocaleString()} XP · 🔥 ${p.bestStreak} streak · 🎯 ${p.accuracy}% accuracy${speedrunSegment} — challenge them!`;
-    // OG image strategy: until we have per-profile rendered cards, use the
-    // app icon. The card-image rendering happens client-side in the SessionSummary
-    // download path; baking it into edge would need a font + canvas runtime.
+    const description = `${rank} · ${p.totalXP.toLocaleString()} XP · 🔥 ${p.bestStreak} streak · 🎯 ${p.accuracy}% accuracy${speedrunSegment} — think you can beat them?`;
+    // OG image: still the app icon. A per-profile RASTER card at the edge is a
+    // deliberate follow-up, not shipped here — see docs/og-card-image.md. We do
+    // NOT emit an SVG og:image: most social crawlers won't render SVG, so it
+    // would unfurl broken — strictly worse than the clean icon.
     const image = `${origin}/icon-512.png`;
     return [
         `<title>${escapeHtml(title)}</title>`,

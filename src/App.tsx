@@ -45,6 +45,7 @@ import { useStats } from './hooks/useStats';
 import type { QuestionType } from './utils/questionTypes';
 import { EVERY_ACHIEVEMENT, loadUnlocked, saveUnlocked, checkAchievements, restoreUnlockedFromCloud } from './utils/achievements';
 import { EVERY_MATH_ACHIEVEMENT } from './domains/math/mathAchievements';
+import { capturePendingReferrer, maybeClaimReferral, fetchReferralCount } from './utils/referral';
 import { SessionSummary } from './components/SessionSummary';
 import { WeeklyRecap } from './components/WeeklyRecap';
 import { CHALK_THEMES, applyTheme, type ChalkTheme } from './utils/chalkThemes';
@@ -81,6 +82,11 @@ function generateMathItem(
 ): EngineItem {
   return generateProblem(difficulty, categoryId as QuestionType, hardMode, rng) as EngineItem;
 }
+
+// First-touch referral capture. Runs at module load — before the challenge
+// URL parser below can rewrite the URL — so a ?r=<uid> invite link is never
+// lost. No-op without the param (and in non-browser/test contexts).
+capturePendingReferrer();
 
 /**
  * Math finite-set generator for daily / challenge modes.
@@ -201,7 +207,7 @@ function App() {
     }
     return c;
   });
-  const [challengeTarget] = useState<{ score: number | null; timeMs: number | null } | null>(() => {
+  const [challengeTarget, setChallengeTarget] = useState<{ score: number | null; timeMs: number | null } | null>(() => {
     const params = new URLSearchParams(window.location.search);
     const t = params.get('target');
     const tt = params.get('targetTime');
@@ -233,6 +239,24 @@ function App() {
     });
     return () => { cancelled = true; };
   }, [uid]);
+
+  // ── Referral loop ──
+  // referralCount = how many players THIS user has successfully invited
+  // (server-verified; feeds referral achievements). The redeem effect below
+  // credits the person who invited *us*, once we've played enough to be real.
+  const [referralCount, setReferralCount] = useState(0);
+  useEffect(() => {
+    if (!uid) { setReferralCount(0); return; }
+    let cancelled = false;
+    fetchReferralCount(uid).then(c => { if (!cancelled) setReferralCount(c); });
+    return () => { cancelled = true; };
+  }, [uid]);
+  const referralTriedRef = useRef(false);
+  useEffect(() => {
+    if (referralTriedRef.current || !uid || stats.totalSolved < 10) return;
+    referralTriedRef.current = true;
+    void maybeClaimReferral(uid, stats.totalSolved);
+  }, [uid, stats.totalSolved]);
 
   const {
     problems,
@@ -428,6 +452,7 @@ function App() {
       bestStreak: Math.max(stats.bestStreak, bestStreak),
       totalSolved: stats.totalSolved + totalAnswered,
       totalCorrect: stats.totalCorrect + totalCorrect,
+      referralCount,
     };
     const fresh = checkAchievements(EVERY_MATH_ACHIEVEMENT, snap, unlockedRef.current);
     if (fresh.length > 0) {
@@ -446,7 +471,7 @@ function App() {
         setAchievementQueue(q => [...q, ...items]);
       }
     }
-  }, [stats, bestStreak, totalAnswered, totalCorrect, uid]);
+  }, [stats, bestStreak, totalAnswered, totalCorrect, uid, referralCount]);
 
   // ── Paywall trigger (value-anchored, post-expiry) ──
   // Fires the paywall AFTER the user completes their first problem in a
@@ -607,9 +632,13 @@ function App() {
         <Suspense fallback={<TabSkeleton variant="generic" />}>
           <ProfilePage
             slug={profileSlug}
-            onChallenge={(id) => {
-              // Switch into challenge mode and clear the profile route
+            onChallenge={(id, targetTimeMs) => {
+              // Switch into challenge mode and clear the profile route. When
+              // the profile owner has a real speedrun time we carry it as the
+              // target so the receiver has a genuine number to beat, on the
+              // same deterministically-seeded set.
               setChallengeId(id);
+              setChallengeTarget(targetTimeMs ? { score: null, timeMs: targetTimeMs } : null);
               setQuestionType('challenge' as QuestionType);
               setProfileSlug(null);
               window.history.replaceState({}, '', '/');
@@ -1212,6 +1241,7 @@ function App() {
           uid={uid}
           claimedHandle={claimedHandle}
           challengeId={challengeId}
+          challengeTarget={challengeTarget}
           onShared={recordShare}
         />
 
