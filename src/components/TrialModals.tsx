@@ -99,21 +99,20 @@ export function WelcomeModal({ uid, status, entitlementLoading, inSession }: Wel
                             <path d="M12 3 L 13.5 10.5 L 21 12 L 13.5 13.5 L 12 21 L 10.5 13.5 L 3 12 L 10.5 10.5 Z" />
                         </svg>
 
-                        <h2 id="welcome-modal-title" className="text-2xl chalk text-[var(--color-gold)] mb-2">
-                            Welcome to Math Swipe
+                        <h2 id="welcome-modal-title" className="text-2xl chalk text-[var(--color-gold)] mb-3">
+                            Welcome to Math Swipe!
                         </h2>
 
-                        <p className="text-sm ui text-[rgb(var(--color-fg))]/70 mb-3 leading-relaxed">
-                            Free for <span className="text-[var(--color-gold)]">14 days</span> — every topic, every mode.
+                        <p className="text-sm ui text-[rgb(var(--color-fg))]/70 mb-2 leading-relaxed">
+                            <span className="text-[var(--color-gold)]">14 days</span> free — all topics and modes.
                         </p>
 
-                        <p className="text-xs ui text-[rgb(var(--color-fg))]/50 mb-2 leading-relaxed">
-                            After that, one payment of ${PRICE_USD.toFixed(2)} for lifetime access.<br />
-                            No subscription.
+                        <p className="text-sm ui text-[rgb(var(--color-fg))]/70 mb-4 leading-relaxed">
+                            Then just ${PRICE_USD.toFixed(2)} for lifetime access.
                         </p>
 
                         <p className="text-[10px] ui text-[rgb(var(--color-fg))]/35 mb-5 leading-relaxed">
-                            The Daily Challenge is always free.
+                            Daily Challenge is always free.
                         </p>
 
                         <button
