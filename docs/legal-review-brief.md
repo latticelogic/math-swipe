@@ -9,9 +9,9 @@ context.)
 
 ## The pages (live)
 
-- Refund: https://math-swipe-c7k.pages.dev/refund
-- Privacy: https://math-swipe-c7k.pages.dev/privacy
-- Terms: https://math-swipe-c7k.pages.dev/terms
+- Refund: https://mathchallenge.app/refund
+- Privacy: https://mathchallenge.app/privacy
+- Terms: https://mathchallenge.app/terms
 
 Source of truth: `src/components/LegalPages.tsx` in the repo.
 
@@ -20,7 +20,7 @@ Source of truth: `src/components/LegalPages.tsx` in the repo.
 - **Lattice Logic Pte. Ltd.**, incorporated in the **Republic of Singapore**,
   **UEN 202610912N** (incorporated 11 March 2026; a Live Company).
 - Product: **Math Swipe**, a web-first mental-math game (PWA). One-time **US$3.14
-  lifetime** purchase via Stripe. **No subscription.**
+  lifetime** purchase via Airwallex. **No subscription.**
 - **Target audience: ages 8–14.** This is the crux of the children's-data
   questions below.
 
@@ -36,12 +36,12 @@ Grounded in the codebase, not aspiration:
 | Google account link **(opt-in)** | Only if user signs in | To carry the account across devices. |
 | Email address **(opt-in)** | Only if user uses email sign-in | Magic-link auth. |
 | Push notification token **(opt-in)** | Only if user enables notifications | Soft, rate-limited reminders. |
-| Stripe customer / transaction id | Only on purchase | Payment processing + refunds. |
+| Airwallex customer / transaction id | Only on purchase | Payment processing + refunds. |
 
 **We do NOT:** use ad-tech, tracking, fingerprinting, or third-party analytics
 SDKs; sell or share data with advertisers; collect location, contacts, or any
 data not listed above. Third parties that touch data: **Firebase** (Google —
-auth/db/push), **Cloudflare** (hosting/edge), **Stripe** (payments only).
+auth/db/push), **Cloudflare** (hosting/edge), **Airwallex** (payments only).
 
 ## Decision A — children's data / COPPA stance (product decision made; confirm + finalise)
 

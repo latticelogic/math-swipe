@@ -35,7 +35,7 @@ Firebase console → **App Check** → **Apps** → select the web app → **reC
 Accept the reCAPTCHA terms; Firebase provisions a site key. Copy it.
 
 Add the production origin(s) to the reCAPTCHA allowed domains:
-`math-swipe-c7k.pages.dev` (+ any custom domain, + `localhost` if you want v3
+`mathchallenge.app` (+ any custom domain, + `localhost` if you want v3
 to work locally instead of the debug-token path below).
 
 ## 2. Set the site key

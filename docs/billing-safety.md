@@ -1,5 +1,11 @@
 # Pre-launch billing safety checklist (CLI-first)
 
+> **Payments are Airwallex-only as of 2026-07-15** (Stripe removed). The
+> Stripe-specific steps below (5, 6, the `stripe` CLI) still describe the
+> shape of the work — read them as **"do the Airwallex equivalent"**:
+> KYC/verification in the Airwallex dashboard, sandbox test flow, then set
+> the `AIRWALLEX_*` secrets. See `docs/airwallex.md` for the wiring + QA.
+
 This is the runbook for what has to happen *outside* the codebase
 before any paid user touches the app. None of these are optional —
 they're the downside-mitigation list from the monetization decision
@@ -200,7 +206,7 @@ stripe prices create \
 # Copy the returned price id (price_test_...) into the next secret:
 echo "price_test_..." | firebase functions:secrets:set STRIPE_PRICE_ID --data-file -
 
-echo "https://math-swipe-c7k.pages.dev" | firebase functions:secrets:set PUBLIC_ORIGIN --data-file -
+echo "https://mathchallenge.app" | firebase functions:secrets:set PUBLIC_ORIGIN --data-file -
 
 # (c) Deploy the functions so the new secrets land in the runtime env
 firebase deploy --only functions:createCheckoutSession,functions:stripeWebhook \
