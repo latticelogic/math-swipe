@@ -59,6 +59,31 @@ describe('achievements.ts', () => {
         expect(newlyUnlocked).toHaveLength(0);
     });
 
+    it('awards long-haul volume rungs by totalSolved', () => {
+        const unlocked = checkMathAchievements({ ...baseStats, totalSolved: 5000 }, new Set());
+        expect(unlocked).toEqual(expect.arrayContaining(['kilo', 'iron-mind', 'marathoner']));
+        expect(unlocked).not.toContain('ten-thousand'); // needs 10k
+    });
+
+    it('awards the Daily-Challenge streak ladder by dailyStreak', () => {
+        const unlocked = checkMathAchievements({ ...baseStats, dailyStreak: 30 }, new Set());
+        expect(unlocked).toEqual(expect.arrayContaining(['daily-regular', 'daily-devotee']));
+        expect(unlocked).not.toContain('daily-centurion'); // needs 100
+    });
+
+    it('awards referral rungs off the verified count', () => {
+        const unlocked = checkMathAchievements({ ...baseStats, referralCount: 3 }, new Set());
+        expect(unlocked).toEqual(expect.arrayContaining(['brought-a-friend', 'connector']));
+        expect(unlocked).not.toContain('ambassador'); // needs 5
+    });
+
+    it('awards mastery achievements derived from totalXP past max rank', () => {
+        // 45,000 XP → Mastery level 2 → mastery-1 only.
+        const unlocked = checkMathAchievements({ ...baseStats, totalXP: 45000 }, new Set());
+        expect(unlocked).toContain('mastery-1');
+        expect(unlocked).not.toContain('mastery-5');
+    });
+
     it('awards dedicated badge for 7 days played', () => {
         const stats: MathAchievementStats = { ...baseStats, dayStreak: 7 };
         const unlocked = checkMathAchievements(stats, new Set());

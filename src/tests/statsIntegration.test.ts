@@ -183,3 +183,50 @@ describe('day streak logic', () => {
         expect(shields).toBe(1);
     });
 });
+
+describe('comeback courtesy shield (S4)', () => {
+    // Mirror of the break branch in recordSession: when a real streak breaks
+    // with no shield, hand back one shield as the player restarts.
+    it('grants a shield when a streak of >=7 breaks with none left', () => {
+        const prev = makeStats({ dayStreak: 12, streakShields: 0 });
+        let shields = prev.streakShields;
+        let dayStreak = prev.dayStreak;
+        // break path (missed >1 day, no shield to rescue)
+        if (prev.dayStreak >= 7) shields = Math.min(3, shields + 1);
+        dayStreak = 1;
+        expect(dayStreak).toBe(1);
+        expect(shields).toBe(1);
+    });
+
+    it('grants nothing for a short (<7) broken streak', () => {
+        const prev = makeStats({ dayStreak: 4, streakShields: 0 });
+        let shields = prev.streakShields;
+        if (prev.dayStreak >= 7) shields = Math.min(3, shields + 1);
+        expect(shields).toBe(0);
+    });
+
+    it('never exceeds the shield cap of 3', () => {
+        const prev = makeStats({ dayStreak: 20, streakShields: 3 });
+        let shields = prev.streakShields;
+        if (prev.dayStreak >= 7) shields = Math.min(3, shields + 1);
+        expect(shields).toBe(3);
+    });
+});
+
+describe('daily-challenge streak advance (R2)', () => {
+    // Mirror of the isDaily && !dailySameDay branch: advance only when the
+    // previous Daily was exactly one calendar day earlier, else reset.
+    const advance = (prevLast: string, prevStreak: number, gapDays: number): number => {
+        if (prevLast === '') return 1;
+        return gapDays === 1 ? prevStreak + 1 : 1;
+    };
+    it('increments on a consecutive-day Daily', () => {
+        expect(advance('2026-02-21', 5, 1)).toBe(6);
+    });
+    it('resets when a Daily day was skipped', () => {
+        expect(advance('2026-02-19', 5, 3)).toBe(1);
+    });
+    it('starts at 1 on the first-ever Daily', () => {
+        expect(advance('', 0, 0)).toBe(1);
+    });
+});
