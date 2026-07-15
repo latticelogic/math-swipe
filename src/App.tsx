@@ -520,12 +520,15 @@ function App() {
   const dailyFlourish = useFirstCorrectFlourish(flash);
 
   const handleTabChange = useCallback((tab: Tab) => {
+    // Leaving the game tab mid-play ENDS the current session: bank it once,
+    // then reset the loop so returning starts fresh and a later leave-without-
+    // playing can't re-record (the old double-count) or re-open the summary.
     if (prevTab.current === 'game' && tab !== 'game' && totalAnswered > 0) {
       recordSession(score, totalCorrect, totalAnswered, bestStreak, questionType, hardMode, timedMode);
-      setShowSummary(true);
+      resetSession();
     }
     setActiveTab(tab);
-  }, [score, totalCorrect, totalAnswered, bestStreak, questionType, recordSession, hardMode, timedMode, setShowSummary]);
+  }, [score, totalCorrect, totalAnswered, bestStreak, questionType, recordSession, hardMode, timedMode, resetSession]);
 
   // ── Tab swipe (non-game tabs only) ──
   const handleTabSwipe = useCallback((_: unknown, info: PanInfo) => {
@@ -1225,17 +1228,18 @@ function App() {
           visible={showSummary}
           onDismiss={() => {
             setShowSummary(false);
+            // A summary only appears for a COMPLETED finite set (daily /
+            // challenge / trick / speedrun), and this is the moment that
+            // session is banked. Record once (guarded by totalAnswered so a
+            // tab-leave that already banked it is a no-op), then reset so it
+            // can't double-record or re-open.
+            if (totalAnswered > 0) {
+              recordSession(score, totalCorrect, totalAnswered, bestStreak, questionType, hardMode, timedMode);
+            }
             if (questionType === 'speedrun') {
-              // Record session stats before leaving (can't use handleTabChange — it re-shows summary)
-              if (totalAnswered > 0) {
-                recordSession(score, totalCorrect, totalAnswered, bestStreak, questionType, hardMode, timedMode);
-              }
               setActiveTab('league');
               setQuestionType(defaultTypeForBand(ageBand)); // category change resets the loop
             } else {
-              // Clear the just-recorded session so re-entering the game tab
-              // starts fresh — otherwise the stale counts re-fire the summary
-              // (and re-record XP) on the next tab change out of the game.
               resetSession();
             }
           }}
