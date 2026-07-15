@@ -43,12 +43,17 @@ interface WelcomeModalProps {
      *  (rare in practice on Day 1 since users haven't started yet, but
      *  consistent with the same rule for trial reminders). */
     inSession: boolean;
+    /** Current (auto-generated) display name, so the first-run prompt can
+     *  pre-fill it, and the setter to save a chosen name. */
+    displayName: string;
+    onDisplayNameChange: (name: string) => void | Promise<void>;
 }
 
 /** Day-1 single-button intro. Visible exactly once per uid, only at
  *  session-start (never mid-play). */
-export function WelcomeModal({ uid, status, entitlementLoading, inSession }: WelcomeModalProps) {
+export function WelcomeModal({ uid, status, entitlementLoading, inSession, displayName, onDisplayNameChange }: WelcomeModalProps) {
     const [open, setOpen] = useState(false);
+    const [name, setName] = useState(displayName);
 
     useEffect(() => {
         if (!uid || entitlementLoading) return;
@@ -57,11 +62,14 @@ export function WelcomeModal({ uid, status, entitlementLoading, inSession }: Wel
         if (safeGetItem(WELCOME_KEY(uid))) return;
         // Small delay so the modal lands after the app has rendered, not on
         // top of the initial paint — feels less like an interrupt.
-        const t = setTimeout(() => setOpen(true), 600);
+        const t = setTimeout(() => { setName(displayName); setOpen(true); }, 600);
         return () => clearTimeout(t);
-    }, [uid, status, entitlementLoading, inSession]);
+    }, [uid, status, entitlementLoading, inSession, displayName]);
 
     function dismiss() {
+        // Save a chosen name if they changed the auto-generated one.
+        const trimmed = name.trim();
+        if (trimmed && trimmed !== displayName) void onDisplayNameChange(trimmed);
         if (uid) safeSetItem(WELCOME_KEY(uid), String(Date.now()));
         setOpen(false);
     }
@@ -111,15 +119,32 @@ export function WelcomeModal({ uid, status, entitlementLoading, inSession }: Wel
                             Then just ${PRICE_USD.toFixed(2)} for lifetime access.
                         </p>
 
-                        <p className="text-[10px] ui text-[rgb(var(--color-fg))]/35 mb-5 leading-relaxed">
+                        <p className="text-[10px] ui text-[rgb(var(--color-fg))]/35 mb-4 leading-relaxed">
                             Daily Challenge is always free.
+                        </p>
+
+                        {/* First-run name — pre-filled with the auto-generated
+                            handle, one tap to keep or change. Changeable later in
+                            the Me tab. No email, so it stays privacy-clean. */}
+                        <label className="block text-[10px] ui uppercase tracking-widest text-[rgb(var(--color-fg))]/40 mb-1.5">
+                            Your name
+                        </label>
+                        <input
+                            value={name}
+                            onChange={e => setName(e.target.value)}
+                            maxLength={20}
+                            aria-label="Your display name"
+                            className="w-full mb-1 bg-transparent border border-[var(--color-gold)]/25 rounded-xl px-3 py-2 text-center text-sm ui text-[rgb(var(--color-fg))]/80 outline-none focus:border-[var(--color-gold)]/50 transition-colors"
+                        />
+                        <p className="text-[9px] ui text-[rgb(var(--color-fg))]/30 mb-5">
+                            You can change this anytime in the Me tab.
                         </p>
 
                         <button
                             onClick={dismiss}
                             className="w-full py-2.5 rounded-xl bg-[var(--color-gold)]/15 border border-[var(--color-gold)]/30 text-sm ui font-semibold text-[var(--color-gold)] hover:bg-[var(--color-gold)]/25 transition-colors active:scale-[0.98]"
                         >
-                            Got it
+                            Let's go
                         </button>
                     </motion.div>
                 </>

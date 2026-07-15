@@ -12,7 +12,7 @@
  * of names there's only one match anyway; the suffix dedupes the rest.
  */
 
-import { memo, useState, useEffect } from 'react';
+import { memo, useState, useEffect, type ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import { collection, query, where, limit, getDoc, getDocs, doc } from 'firebase/firestore';
 import { getFirebase } from '../utils/firebase';
@@ -165,7 +165,11 @@ export const ProfilePage = memo(function ProfilePage({ slug, onChallenge, onBack
     if (error || !profile) {
         return (
             <div className="flex-1 flex flex-col items-center justify-center gap-4 px-6 text-center">
-                <div className="text-4xl">🔍</div>
+                {/* Magnifier — hand-drawn, replaces 🔍 emoji */}
+                <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[rgb(var(--color-fg))]/40" aria-hidden>
+                    <circle cx="10" cy="10" r="6" />
+                    <line x1="14.5" y1="14.5" x2="20" y2="20" />
+                </svg>
                 <div className="chalk text-xl text-[var(--color-gold)]">Profile not found</div>
                 <p className="text-sm ui text-[rgb(var(--color-fg))]/50 max-w-xs">{error}</p>
                 <button
@@ -270,11 +274,29 @@ export const ProfilePage = memo(function ProfilePage({ slug, onChallenge, onBack
 
             {/* Core stats */}
             <div className="grid grid-cols-2 gap-x-8 gap-y-4 mt-8 mb-2">
-                <Stat label="✅ solved" value={profile.totalSolved.toLocaleString()} color="rgba(var(--color-fg), 0.85)" />
-                <Stat label="🎯 accuracy" value={`${profile.accuracy}%`} color="var(--color-correct)" />
-                <Stat label="🔥 best streak" value={profile.bestStreak.toString()} color="var(--color-streak-fire)" />
                 <Stat
-                    label={`⏱️ speedrun${profile.speedrunHardMode ? ' 💀' : ''}`}
+                    label={<><StatIcon>{/* check — replaces ✅ */}<path d="M5 12 l4 4 l10 -10" /></StatIcon><span>solved</span></>}
+                    value={profile.totalSolved.toLocaleString()}
+                    color="rgba(var(--color-fg), 0.85)"
+                />
+                <Stat
+                    label={<><StatIcon>{/* target — replaces 🎯 */}<circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="4" /><circle cx="12" cy="12" r="0.5" /></StatIcon><span>accuracy</span></>}
+                    value={`${profile.accuracy}%`}
+                    color="var(--color-correct)"
+                />
+                <Stat
+                    label={<><StatIcon>{/* flame — replaces 🔥 */}<path d="M12 3 C 12 8 7 9 7 14 C 7 18 9 21 12 21 C 15 21 17 18 17 14 C 17 11 14 10 14 7 C 13 8.5 12.5 9 12 3 Z" /></StatIcon><span>best streak</span></>}
+                    value={profile.bestStreak.toString()}
+                    color="var(--color-streak-fire)"
+                />
+                <Stat
+                    label={<>
+                        <StatIcon>{/* stopwatch — replaces ⏱️ */}<circle cx="12" cy="14" r="7" /><line x1="12" y1="14" x2="15" y2="11" /><line x1="10" y1="2" x2="14" y2="2" /><line x1="12" y1="2" x2="12" y2="5" /></StatIcon>
+                        <span>speedrun</span>
+                        {profile.speedrunHardMode && (
+                            <StatIcon>{/* skull — replaces 💀 */}<path d="M20 11 C 20 6.6 16.4 4 12 4 C 7.6 4 4 6.6 4 11 C 4 13.5 5.2 14.8 6 15.5 L 6 18 C 6 19 6.5 19.5 7.5 19.5 L 16.5 19.5 C 17.5 19.5 18 19 18 18 L 18 15.5 C 18.8 14.8 20 13.5 20 11 Z" /><circle cx="9" cy="12" r="1.5" /><circle cx="15" cy="12" r="1.5" /><line x1="10" y1="19.5" x2="10" y2="16.5" /><line x1="12" y1="19.5" x2="12" y2="16.5" /><line x1="14" y1="19.5" x2="14" y2="16.5" /></StatIcon>
+                        )}
+                    </>}
                     value={profile.bestSpeedrunTime && profile.bestSpeedrunTime > 0 ? formatTime(profile.bestSpeedrunTime) : '—'}
                     color="var(--color-speedrun)"
                 />
@@ -310,7 +332,13 @@ export const ProfilePage = memo(function ProfilePage({ slug, onChallenge, onBack
                 transition={{ delay: 0.4 }}
                 aria-label={`Challenge ${profile.displayName}`}
             >
-                <span>⚔️</span>
+                {/* Crossed swords — hand-drawn, replaces ⚔️ emoji */}
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <line x1="4" y1="4" x2="14" y2="14" />
+                    <line x1="20" y1="4" x2="10" y2="14" />
+                    <line x1="11" y1="17" x2="13" y2="19" />
+                    <line x1="13" y1="17" x2="11" y2="19" />
+                </svg>
                 <span>Challenge {profile.displayName}{raceTime ? ` · beat ${formatTime(raceTime)}` : ''}</span>
             </motion.button>
 
@@ -330,11 +358,22 @@ export const ProfilePage = memo(function ProfilePage({ slug, onChallenge, onBack
     );
 });
 
-function Stat({ label, value, color }: { label: string; value: string; color: string }) {
+/** Small inline chalk icon for stat labels — shares the app's SVG conventions
+ *  (24×24 viewBox, currentColor stroke). Children are the path/circle/line
+ *  elements for the specific glyph. */
+function StatIcon({ children }: { children: ReactNode }) {
+    return (
+        <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            {children}
+        </svg>
+    );
+}
+
+function Stat({ label, value, color }: { label: ReactNode; value: string; color: string }) {
     return (
         <div className="text-center">
             <div className="chalk text-3xl tabular-nums" style={{ color }}>{value}</div>
-            <div className="text-[10px] ui text-[rgb(var(--color-fg))]/40 mt-0.5">{label}</div>
+            <div className="text-[10px] ui text-[rgb(var(--color-fg))]/40 mt-0.5 flex items-center justify-center gap-1">{label}</div>
         </div>
     );
 }

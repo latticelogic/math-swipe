@@ -1299,6 +1299,8 @@ function App() {
           status={entitlement.status}
           entitlementLoading={entitlement.loading}
           inSession={activeTab === 'game' && totalAnswered > 0}
+          displayName={user?.displayName ?? ''}
+          onDisplayNameChange={setDisplayName}
         />
         <TrialReminderModal
           uid={uid}

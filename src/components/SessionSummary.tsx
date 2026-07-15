@@ -431,8 +431,27 @@ export const SessionSummary = memo(function SessionSummary({
                                     <line x1="9" y1="16" x2="13" y2="16" />
                                 </svg>
                                 {(hardMode || timedMode) && (
-                                    <div className="text-xs ui text-[rgb(var(--color-fg))]/40 mb-1">
-                                        {hardMode && timedMode ? '💀⏱️ ULTIMATE MODE' : hardMode ? '💀 HARD MODE' : '⏱️ TIMED MODE'}
+                                    <div className="text-xs ui text-[rgb(var(--color-fg))]/40 mb-1 flex items-center justify-center gap-1">
+                                        {/* Skull (hard) + stopwatch (timed) — hand-drawn, replace 💀/⏱️ emoji */}
+                                        {hardMode && (
+                                            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                                                <path d="M20 11 C 20 6.6 16.4 4 12 4 C 7.6 4 4 6.6 4 11 C 4 13.5 5.2 14.8 6 15.5 L 6 18 C 6 19 6.5 19.5 7.5 19.5 L 16.5 19.5 C 17.5 19.5 18 19 18 18 L 18 15.5 C 18.8 14.8 20 13.5 20 11 Z" />
+                                                <circle cx="9" cy="12" r="1.5" />
+                                                <circle cx="15" cy="12" r="1.5" />
+                                                <line x1="10" y1="19.5" x2="10" y2="16.5" />
+                                                <line x1="12" y1="19.5" x2="12" y2="16.5" />
+                                                <line x1="14" y1="19.5" x2="14" y2="16.5" />
+                                            </svg>
+                                        )}
+                                        {timedMode && (
+                                            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                                                <circle cx="12" cy="14" r="7" />
+                                                <line x1="12" y1="14" x2="15" y2="11" />
+                                                <line x1="10" y1="2" x2="14" y2="2" />
+                                                <line x1="12" y1="2" x2="12" y2="5" />
+                                            </svg>
+                                        )}
+                                        <span>{hardMode && timedMode ? 'ULTIMATE MODE' : hardMode ? 'HARD MODE' : 'TIMED MODE'}</span>
                                     </div>
                                 )}
                                 <h3 className="text-xl chalk text-[var(--color-gold)] mb-4">Session Complete</h3>
@@ -458,7 +477,13 @@ export const SessionSummary = memo(function SessionSummary({
                                 )}
                             </div>
                             <div className="text-center">
-                                <div className="text-2xl chalk text-[var(--color-streak-fire)]">{streak}🔥</div>
+                                {/* Number + flame — hand-drawn SVG replaces the 🔥 emoji */}
+                                <div className="text-2xl chalk text-[var(--color-streak-fire)] flex items-center justify-center gap-1">
+                                    <span>{streak}</span>
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                                        <path d="M12 3 C 12 8 7 9 7 14 C 7 18 9 21 12 21 C 15 21 17 18 17 14 C 17 11 14 10 14 7 C 13 8.5 12.5 9 12 3 Z" />
+                                    </svg>
+                                </div>
                                 <div className="text-[9px] ui text-[rgb(var(--color-fg))]/30">best streak</div>
                             </div>
                         </div>
@@ -525,12 +550,24 @@ export const SessionSummary = memo(function SessionSummary({
                         <motion.button
                             onClick={handleShare}
                             disabled={isSharing}
-                            className={`w-full py-2.5 rounded-xl border text-sm ui mb-3 transition-colors ${isSharing ? 'bg-[var(--color-gold)]/10 border-[var(--color-gold)]/10 text-[var(--color-gold)]/50' :
+                            className={`w-full py-2.5 rounded-xl border text-sm ui mb-3 transition-colors flex items-center justify-center gap-1.5 ${isSharing ? 'bg-[var(--color-gold)]/10 border-[var(--color-gold)]/10 text-[var(--color-gold)]/50' :
                                 'bg-[var(--color-gold)]/20 border-[var(--color-gold)]/30 text-[var(--color-gold)] active:bg-[var(--color-gold)]/30'
                                 }`}
                             whileTap={!isSharing ? { scale: 0.95 } : undefined}
                         >
-                            {isSharing ? 'Generating image…' : '📤 Share Result'}
+                            {isSharing ? (
+                                <span>Generating image…</span>
+                            ) : (
+                                <>
+                                    {/* Share glyph — hand-drawn box + up-arrow, replaces 📤 emoji */}
+                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                                        <path d="M12 3 L 12 15" />
+                                        <path d="M8 7 L 12 3 L 16 7" />
+                                        <path d="M5 12 L 5 20 L 19 20 L 19 12" />
+                                    </svg>
+                                    <span>Share Result</span>
+                                </>
+                            )}
                         </motion.button>
 
                         {/* "Challenge a Friend" is only shown when we can build a

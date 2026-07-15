@@ -168,8 +168,11 @@ export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked,
                 const dismissed = localStorage.getItem(DISMISS_KEY);
                 const dismissedAt = dismissed ? parseInt(dismissed, 10) : 0;
                 const sessionsSinceDismiss = stats.sessionsPlayed - dismissedAt;
-                // Only show after 5 sessions, and not within 5 sessions of last dismiss
-                if (stats.sessionsPlayed < 5 || (dismissedAt > 0 && sessionsSinceDismiss < 5)) return null;
+                // Show once there's something worth losing — after the 2nd
+                // session — so a user who plays hard then clears their browser
+                // has been prompted to back up. Still cooldown-gated after a
+                // dismiss so it's never nagging.
+                if (stats.sessionsPlayed < 2 || (dismissedAt > 0 && sessionsSinceDismiss < 5)) return null;
 
                 // Loss-framed, specific: name what actually lives only on this
                 // device, so signing in reads as protecting real progress (and
@@ -210,7 +213,8 @@ export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked,
                                         onClick={() => setShowEmailInput(true)}
                                         className="flex-1 flex items-center justify-center gap-1.5 text-[11px] ui text-[rgb(var(--color-fg))]/50 hover:text-[rgb(var(--color-fg))]/70 transition-colors border border-[rgb(var(--color-fg))]/10 rounded-lg py-1.5"
                                     >
-                                        ✉️ Email
+                                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M3 7l9 6 9-6" /></svg>
+                                        Email
                                     </button>
                                 </div>
                             </div>
@@ -264,7 +268,8 @@ export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked,
                         onClick={onLinkGoogle}
                         className="flex items-center gap-1.5 text-xs ui font-semibold text-[rgb(var(--color-fg))]/70 hover:text-[rgb(var(--color-fg))]/90 border border-[rgb(var(--color-fg))]/20 rounded-lg px-3 py-1.5 transition-colors"
                     >
-                        <span>🔗</span> Sign in with Google
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 15l6-6" /><path d="M11 6l1-1a4 4 0 015.66 5.66l-1 1" /><path d="M13 18l-1 1a4 4 0 01-5.66-5.66l1-1" /></svg>
+                        Sign in with Google
                     </button>
                     <button
                         onClick={() => setShowEmailInput(true)}

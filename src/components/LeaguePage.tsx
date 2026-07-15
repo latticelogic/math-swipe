@@ -80,7 +80,7 @@ export const LeaguePage = memo(function LeaguePage({ userXP, userStreak, uid, di
                 }
                 const name = selectedPlayer.displayName;
                 setSelectedPlayer(null);
-                setPingSuccess(`Pinged ${name}! 👋`);
+                setPingSuccess(`Pinged ${name}!`);
                 pingSuccessTimer.current = setTimeout(() => setPingSuccess(''), 3000);
             } catch {
                 setSelectedPlayer(null);
@@ -240,14 +240,34 @@ export const LeaguePage = memo(function LeaguePage({ userXP, userStreak, uid, di
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                 >
-                    ⏱️ Start Speedrun (10 Questions)
+                    <span className="flex items-center justify-center gap-1.5">
+                        {/* Stopwatch — hand-drawn, replaces ⏱️ emoji */}
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                            <circle cx="12" cy="14" r="7" />
+                            <line x1="12" y1="14" x2="15" y2="11" />
+                            <line x1="10" y1="2" x2="14" y2="2" />
+                            <line x1="12" y1="2" x2="12" y2="5" />
+                        </svg>
+                        <span>Start Speedrun (10 Questions)</span>
+                    </span>
                 </motion.button>
             )}
 
             {/* Your best time badge */}
             {tab === 'speedrun' && bestSpeedrunTime != null && bestSpeedrunTime > 0 && (
-                <div className="text-xs ui text-[rgb(var(--color-fg))]/40 mb-3">
-                    Your best: <span className="text-[var(--color-speedrun)] font-semibold">{formatTime(bestSpeedrunTime)}</span>{speedrunHardMode && <span title="Hard Mode"> 💀</span>}
+                <div className="text-xs ui text-[rgb(var(--color-fg))]/40 mb-3 flex items-center justify-center gap-1">
+                    <span>Your best: <span className="text-[var(--color-speedrun)] font-semibold">{formatTime(bestSpeedrunTime)}</span></span>
+                    {speedrunHardMode && (
+                        // Skull — hand-drawn, replaces 💀 hard-mode emoji
+                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-label="Hard Mode">
+                            <path d="M20 11 C 20 6.6 16.4 4 12 4 C 7.6 4 4 6.6 4 11 C 4 13.5 5.2 14.8 6 15.5 L 6 18 C 6 19 6.5 19.5 7.5 19.5 L 16.5 19.5 C 17.5 19.5 18 19 18 18 L 18 15.5 C 18.8 14.8 20 13.5 20 11 Z" />
+                            <circle cx="9" cy="12" r="1.5" />
+                            <circle cx="15" cy="12" r="1.5" />
+                            <line x1="10" y1="19.5" x2="10" y2="16.5" />
+                            <line x1="12" y1="19.5" x2="12" y2="16.5" />
+                            <line x1="14" y1="19.5" x2="14" y2="16.5" />
+                        </svg>
+                    )}
                 </div>
             )}
 
@@ -266,10 +286,30 @@ export const LeaguePage = memo(function LeaguePage({ userXP, userStreak, uid, di
 
             {/* Empty state */}
             {!isLoading && board.length === 0 && (
-                <div className="text-sm ui text-[rgb(var(--color-fg))]/30 mt-8 text-center">
-                    {tab === 'speedrun'
-                        ? 'No speedrun times yet. Be the first! ⏱️'
-                        : 'No players yet. Be the first! 🎮'}
+                <div className="text-sm ui text-[rgb(var(--color-fg))]/30 mt-8 text-center flex items-center justify-center gap-1.5">
+                    <span>
+                        {tab === 'speedrun'
+                            ? 'No speedrun times yet. Be the first!'
+                            : 'No players yet. Be the first!'}
+                    </span>
+                    {tab === 'speedrun' ? (
+                        // Stopwatch — hand-drawn, replaces ⏱️ emoji
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                            <circle cx="12" cy="14" r="7" />
+                            <line x1="12" y1="14" x2="15" y2="11" />
+                            <line x1="10" y1="2" x2="14" y2="2" />
+                            <line x1="12" y1="2" x2="12" y2="5" />
+                        </svg>
+                    ) : (
+                        // Game controller — hand-drawn, replaces 🎮 emoji
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                            <path d="M7 8 L 17 8 C 20 8 21 11 21 14 C 21 16 20 17 18.5 17 C 17 17 16.5 15 15 15 L 9 15 C 7.5 15 7 17 5.5 17 C 4 17 3 16 3 14 C 3 11 4 8 7 8 Z" />
+                            <line x1="7" y1="11.5" x2="7" y2="13.5" />
+                            <line x1="6" y1="12.5" x2="8" y2="12.5" />
+                            <circle cx="16" cy="12" r="0.5" />
+                            <circle cx="18" cy="13.5" r="0.5" />
+                        </svg>
+                    )}
                 </div>
             )}
 
@@ -404,7 +444,13 @@ export const LeaguePage = memo(function LeaguePage({ userXP, userStreak, uid, di
                                         {COSTUMES[selectedPlayer.activeCostume]}
                                     </svg>
                                 ) : (
-                                    <div className="w-[28px] h-[44px] flex items-center justify-center text-xl">👤</div>
+                                    <div className="w-[28px] h-[44px] flex items-center justify-center text-[rgb(var(--color-fg))]/50">
+                                        {/* Person — hand-drawn head + shoulders, replaces 👤 emoji */}
+                                        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                                            <circle cx="12" cy="8" r="4" />
+                                            <path d="M5 20 C 5 15.5 8 14 12 14 C 16 14 19 15.5 19 20" />
+                                        </svg>
+                                    </div>
                                 )}
                                 <div>
                                     <h3
@@ -422,13 +468,26 @@ export const LeaguePage = memo(function LeaguePage({ userXP, userStreak, uid, di
                                     onClick={() => handleAction('race')}
                                     className="w-full flex items-center justify-center gap-2 py-4 rounded-xl font-bold ui text-[#422006] bg-[var(--color-gold)] active:opacity-80 transition-opacity"
                                 >
-                                    <span>⚔️</span> Ghost Race
+                                    {/* Crossed swords — hand-drawn, replaces ⚔️ emoji */}
+                                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                                        <line x1="4" y1="4" x2="14" y2="14" />
+                                        <line x1="20" y1="4" x2="10" y2="14" />
+                                        <line x1="11" y1="17" x2="13" y2="19" />
+                                        <line x1="13" y1="17" x2="11" y2="19" />
+                                    </svg>
+                                    Ghost Race
                                 </button>
                                 <button
                                     onClick={() => handleAction('ping')}
                                     className="w-full flex items-center justify-center gap-2 py-4 rounded-xl font-bold ui border border-[var(--color-gold)]/30 text-[var(--color-gold)] active:bg-[var(--color-gold)]/10 transition-colors"
                                 >
-                                    <span>👋</span> Ping Player
+                                    {/* Waving hand — hand-drawn bell, replaces 👋 emoji with a ping/notify glyph */}
+                                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                                        <path d="M6 16 C 6 11 7 8 12 8 C 17 8 18 11 18 16 L 19 18 L 5 18 Z" />
+                                        <path d="M10.5 21 C 11 21.5 13 21.5 13.5 21" />
+                                        <line x1="12" y1="5" x2="12" y2="8" />
+                                    </svg>
+                                    Ping Player
                                 </button>
                             </div>
                         </motion.div>
