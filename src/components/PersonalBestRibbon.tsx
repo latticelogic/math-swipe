@@ -38,7 +38,7 @@ export function PersonalBestRibbon({ streak }: { streak: number }) {
                 New personal best
             </div>
             <div className="text-xs ui text-[rgb(var(--color-fg))]/70 whitespace-nowrap">
-                {streak} in a row
+                {streak === 1 ? 'Your best yet' : `${streak} in a row`}
             </div>
         </motion.div>
     );

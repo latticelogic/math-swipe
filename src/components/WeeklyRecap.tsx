@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Stats } from '../hooks/useStats';
+import { countLabel } from '../utils/formatNumber';
 
 interface Props {
     stats: Stats;
@@ -58,7 +59,7 @@ export function WeeklyRecap({ stats, suppress = false }: Props) {
     // chalkboard aesthetic rules in CLAUDE.md). Each line is a single
     // observation, not a cheer.
     const messages: string[] = [];
-    if (stats.totalSolved > 0) messages.push(`${stats.totalSolved.toLocaleString()} problems solved.`);
+    if (stats.totalSolved > 0) messages.push(`${countLabel(stats.totalSolved, 'problem')} solved.`);
     if (acc >= 90) messages.push(`${acc}% accuracy. Sharp.`);
     else if (acc >= 70) messages.push(`${acc}% accuracy — steady.`);
     else if (stats.totalSolved >= 5) messages.push(`${acc}% accuracy — getting your reps in.`);

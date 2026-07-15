@@ -2,6 +2,7 @@ import { memo, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { useStats } from '../hooks/useStats';
 import { typesForBand, type AgeBand } from '../utils/questionTypes';
+import { countLabel } from '../utils/formatNumber';
 import { ACHIEVEMENTS, HARD_MODE_ACHIEVEMENTS, TIMED_MODE_ACHIEVEMENTS, ULTIMATE_ACHIEVEMENTS, EVERY_ACHIEVEMENT } from '../utils/achievements';
 import { AchievementBadge } from './AchievementBadge';
 import { StreakGarden } from './StreakGarden';
@@ -602,7 +603,7 @@ export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked,
                     const prompts = [
                         `You've earned ${stats.totalXP.toLocaleString()} points. Are you sure you want to start fresh?`,
                         `Your ${stats.bestStreak}-streak record will be lost. Reset anyway?`,
-                        `${stats.totalSolved} problems solved. Wipe it all?`,
+                        `${countLabel(stats.totalSolved, 'problem')} solved. Wipe it all?`,
                         'A fresh start. Ready to begin again?',
                         'All progress will be erased. Really reset?',
                         'Even superheroes get a fresh origin story! Reset? 🦸',
