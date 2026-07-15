@@ -235,16 +235,26 @@ export function useFirebaseAuth() {
         }
     }, [user]);
 
-    /** Link the anonymous account to Google (cross-device sync + backup). */
-    const linkGoogle = useCallback(async () => {
+    /** Link the anonymous account to an OAuth provider (Google/Apple) for
+     *  cross-device sync + backup. Both providers share the collision +
+     *  redirect + reconcile handling; only the provider object differs. */
+    const linkWithProvider = useCallback(async (kind: 'google' | 'apple') => {
         const [{ auth, db }, fbAuth, { doc, setDoc, serverTimestamp }] = await Promise.all([
             getFirebase(), import('firebase/auth'), import('firebase/firestore'),
         ]);
-        const { GoogleAuthProvider, signInWithPopup, linkWithPopup, signInWithRedirect, linkWithRedirect } = fbAuth;
+        const { GoogleAuthProvider, OAuthProvider, signInWithPopup, linkWithPopup, signInWithRedirect, linkWithRedirect } = fbAuth;
         const currentUser = auth.currentUser;
         if (!currentUser) return;
 
-        const provider = new GoogleAuthProvider();
+        let provider;
+        if (kind === 'apple') {
+            const apple = new OAuthProvider('apple.com');
+            apple.addScope('email');
+            apple.addScope('name');
+            provider = apple;
+        } else {
+            provider = new GoogleAuthProvider();
+        }
         const wasAnon = currentUser.isAnonymous;
         // Capture the anon token up front so we can merge it into whatever
         // account we end up in — after a collision switch or across a redirect.
@@ -293,12 +303,19 @@ export function useFirebaseAuth() {
                     setAuthMessage('Sign-in is unavailable here. Try a different browser.');
                     console.error('Redirect sign-in failed:', e3);
                 }
+            } else if (code === 'auth/operation-not-allowed') {
+                // Provider not enabled in Firebase (e.g. Apple before setup).
+                setAuthMessage('That sign-in option isn\'t available yet.');
+                console.warn(`${kind} sign-in not enabled:`, err);
             } else {
                 setAuthMessage('Sign-in failed. Please try again.');
-                console.error('Google link failed:', err);
+                console.error(`${kind} link failed:`, err);
             }
         }
     }, [user]);
+
+    const linkGoogle = useCallback(() => linkWithProvider('google'), [linkWithProvider]);
+    const linkApple = useCallback(() => linkWithProvider('apple'), [linkWithProvider]);
 
     /** Send email magic link for sign-in / account linking */
     const sendEmailLink = useCallback(async (email: string) => {
@@ -315,5 +332,5 @@ export function useFirebaseAuth() {
 
     const clearAuthMessage = useCallback(() => setAuthMessage(null), []);
 
-    return { user, loading, setDisplayName, linkGoogle, sendEmailLink, authMessage, clearAuthMessage };
+    return { user, loading, setDisplayName, linkGoogle, linkApple, sendEmailLink, authMessage, clearAuthMessage };
 }

@@ -90,12 +90,9 @@ export function UsernameClaim({ uid, isAnonymous, suggestion, onClaimed }: Props
     }, [slug, editing, uid, currentClaim]);
 
     if (isAnonymous || !uid) {
-        // State 1 — encourage sign-in
-        return (
-            <div className="text-[10px] ui text-[rgb(var(--color-fg))]/40 mt-1 text-center">
-                Sign in above to claim a unique @handle
-            </div>
-        );
+        // Anonymous users: render nothing here. The @handle affordance appears
+        // only after sign-in; the sign-in CTA lives in its own clear block.
+        return null;
     }
 
     if (!editing) {

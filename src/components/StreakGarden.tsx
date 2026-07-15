@@ -32,6 +32,8 @@ export function StreakGarden({
     const todayNum = dayNumber(today);
     const lastNum = dayNumber(lastPlayedDate);
     if (todayNum === null) return null;
+    // Nothing to show for a brand-new user — don't render an empty garden.
+    if (dayStreak <= 0 || lastNum === null) return null;
 
     // A cell's date is "in the streak" when it falls within
     // [lastPlayed - (dayStreak-1), lastPlayed].
@@ -53,9 +55,9 @@ export function StreakGarden({
                 : `${dayStreak} day${dayStreak === 1 ? '' : 's'} going — play today to keep the chain.`;
 
     return (
-        <div>
-            <div className="text-xs ui text-[rgb(var(--color-fg))]/50 mb-2">your practice</div>
-            <div className="grid grid-cols-7 gap-1.5 max-w-[240px]">
+        <div className="flex flex-col items-center">
+            <div className="text-xs ui text-[rgb(var(--color-fg))]/50 mb-2 text-center">your practice</div>
+            <div className="grid grid-cols-7 gap-1.5 w-full max-w-[240px] mx-auto">
                 {cells.map((c, i) => (
                     <div
                         key={i}
@@ -71,7 +73,7 @@ export function StreakGarden({
                     />
                 ))}
             </div>
-            <div className="text-[11px] ui text-[rgb(var(--color-fg))]/55 mt-2 chalk">{caption}</div>
+            <div className="text-[11px] ui text-[rgb(var(--color-fg))]/55 mt-2 chalk text-center">{caption}</div>
         </div>
     );
 }

@@ -37,6 +37,7 @@ interface Props {
     onDisplayNameChange: (name: string) => Promise<void>;
     isAnonymous: boolean;
     onLinkGoogle: () => Promise<void>;
+    onLinkApple?: () => Promise<void>;
     onSendEmailLink: (email: string) => Promise<void>;
     /** Transient outcome of the last sign-in action (success/error), shown as a
      *  small banner and auto-cleared. */
@@ -62,7 +63,7 @@ interface Props {
 // Rank ladder + getRank/getMastery helpers extracted to ../domains/math/ranks
 // so the public profile page and share card can reuse them.
 
-export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked, activeCostume, onCostumeChange, activeTheme, onThemeChange, activeTrailId, onTrailChange, displayName, onDisplayNameChange, isAnonymous, onLinkGoogle, onSendEmailLink, authMessage, onClearAuthMessage, ageBand, activeBadge, onBadgeChange, activeTeacherId, onTeacherChange, uid, entitlementStatus, entitlementDaysLeft, onUnlock }: Props) {
+export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked, activeCostume, onCostumeChange, activeTheme, onThemeChange, activeTrailId, onTrailChange, displayName, onDisplayNameChange, isAnonymous, onLinkGoogle, onLinkApple, onSendEmailLink, authMessage, onClearAuthMessage, ageBand, activeBadge, onBadgeChange, activeTeacherId, onTeacherChange, uid, entitlementStatus, entitlementDaysLeft, onUnlock }: Props) {
     const [showRanks, setShowRanks] = useState(false);
     const [resetConfirm, setResetConfirm] = useState<string | null>(null);
     const [editingName, setEditingName] = useState(false);
@@ -162,123 +163,89 @@ export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked,
                 </div>
             )}
 
-            {/* Contextual save-progress nudge — value-framed, dismissible with cooldown */}
-            {isAnonymous && (() => {
-                const DISMISS_KEY = 'math-swipe-login-dismiss';
-                const dismissed = localStorage.getItem(DISMISS_KEY);
-                const dismissedAt = dismissed ? parseInt(dismissed, 10) : 0;
-                const sessionsSinceDismiss = stats.sessionsPlayed - dismissedAt;
-                // Show once there's something worth losing — after the 2nd
-                // session — so a user who plays hard then clears their browser
-                // has been prompted to back up. Still cooldown-gated after a
-                // dismiss so it's never nagging.
-                if (stats.sessionsPlayed < 2 || (dismissedAt > 0 && sessionsSinceDismiss < 5)) return null;
-
-                // Loss-framed, specific: name what actually lives only on this
-                // device, so signing in reads as protecting real progress (and
-                // clearing/switching devices reads as losing it). Warm, not
-                // pressure-y — just their own numbers.
-                const bits: string[] = [];
-                if (stats.dayStreak >= 2) bits.push(`${stats.dayStreak}-day streak`);
-                bits.push(`${stats.totalXP.toLocaleString()} XP`);
-                if (unlocked.size > 0) bits.push(`${unlocked.size} achievement${unlocked.size === 1 ? '' : 's'}`);
-                const progressSummary = bits.join(' · ');
-
-                return (
-                    <div className="mb-3 relative bg-[rgb(var(--color-fg))]/[0.03] border border-[rgb(var(--color-fg))]/8 rounded-xl overflow-hidden">
-                        {/* Dismiss button */}
-                        <button
-                            onClick={() => localStorage.setItem(DISMISS_KEY, String(stats.sessionsPlayed))}
-                            className="absolute top-2 right-2 z-10 text-[rgb(var(--color-fg))]/20 hover:text-[rgb(var(--color-fg))]/50 text-xs transition-colors"
-                        >✕</button>
-
-                        {!showEmailInput ? (
-                            <div className="p-3">
-                                <div className="text-[11px] ui text-[rgb(var(--color-fg))]/55 mb-2.5 flex items-start gap-1.5">
-                                    {/* Cloud — hand-drawn, replaces ☁️ emoji */}
-                                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="mt-0.5 shrink-0">
-                                        <path d="M7 18 A 5 5 0 1 1 8 8 A 4 4 0 0 1 16 8 A 4 4 0 0 1 17 18 Z" />
-                                    </svg>
-                                    <span>Your {progressSummary} live only on this device. Sign in to keep them safe.</span>
-                                </div>
-                                <div className="flex gap-2">
-                                    <button
-                                        onClick={onLinkGoogle}
-                                        className="flex-1 flex items-center justify-center gap-1.5 text-[11px] ui text-[rgb(var(--color-fg))]/50 hover:text-[rgb(var(--color-fg))]/70 transition-colors border border-[rgb(var(--color-fg))]/10 rounded-lg py-1.5"
-                                    >
-                                        <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" /><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" /><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" /><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" /></svg>
-                                        Google
-                                    </button>
-                                    <button
-                                        onClick={() => setShowEmailInput(true)}
-                                        className="flex-1 flex items-center justify-center gap-1.5 text-[11px] ui text-[rgb(var(--color-fg))]/50 hover:text-[rgb(var(--color-fg))]/70 transition-colors border border-[rgb(var(--color-fg))]/10 rounded-lg py-1.5"
-                                    >
-                                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M3 7l9 6 9-6" /></svg>
-                                        Email
-                                    </button>
-                                </div>
-                            </div>
-                        ) : emailSent ? (
-                            <div className="p-3 text-[10px] ui text-[var(--color-correct)]">
-                                ✓ Check your email for the magic link!
-                            </div>
-                        ) : (
-                            <form
-                                onSubmit={async (e) => {
-                                    e.preventDefault();
-                                    if (!emailInput.includes('@')) return;
-                                    try {
-                                        await onSendEmailLink(emailInput);
-                                        setEmailSent(true);
-                                        setShowEmailInput(false);
-                                    } catch (err) {
-                                        console.warn('Email link failed:', err);
-                                    }
-                                }}
-                                className="flex gap-1.5 p-3"
-                            >
-                                <input
-                                    type="email"
-                                    value={emailInput}
-                                    onChange={(e) => setEmailInput(e.target.value)}
-                                    placeholder="your@email.com"
-                                    autoFocus
-                                    className="flex-1 text-xs ui bg-[rgb(var(--color-fg))]/5 border border-[rgb(var(--color-fg))]/10 rounded-lg px-3 py-1.5 text-[rgb(var(--color-fg))]/80 placeholder:text-[rgb(var(--color-fg))]/20 outline-none focus:border-[var(--color-gold)]/40"
-                                />
-                                <button type="submit" className="text-xs ui font-semibold text-[var(--color-gold)] bg-[var(--color-gold)]/10 px-3 py-1.5 rounded-lg">Send</button>
-                                <button type="button" onClick={() => setShowEmailInput(false)} className="text-xs text-[rgb(var(--color-fg))]/30 px-1">✕</button>
-                            </form>
-                        )}
-                    </div>
-                );
-            })()}
-
             {/* Sign-in outcome banner — success or a human-readable error, so
-                auth failures are no longer silent console.warns. */}
+                auth failures are no longer silent console.warns. Kept outside
+                the card so a success still shows after the user is signed in. */}
             {authMessage && (
                 <div className="mb-4 px-3 py-2 rounded-xl bg-[var(--color-gold)]/10 border border-[var(--color-gold)]/30 text-xs ui text-[var(--color-gold)] text-center max-w-sm">
                     {authMessage}
                 </div>
             )}
 
-            {/* Always-visible sign-in escape hatch */}
-            {isAnonymous && !showEmailInput && (
-                <div className="flex items-center gap-3 mb-4 px-1">
-                    <button
-                        onClick={onLinkGoogle}
-                        className="flex items-center gap-1.5 text-xs ui font-semibold text-[rgb(var(--color-fg))]/70 hover:text-[rgb(var(--color-fg))]/90 border border-[rgb(var(--color-fg))]/20 rounded-lg px-3 py-1.5 transition-colors"
-                    >
-                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 15l6-6" /><path d="M11 6l1-1a4 4 0 015.66 5.66l-1 1" /><path d="M13 18l-1 1a4 4 0 01-5.66-5.66l1-1" /></svg>
-                        Sign in with Google
-                    </button>
-                    <button
-                        onClick={() => setShowEmailInput(true)}
-                        className="text-xs ui text-[rgb(var(--color-fg))]/50 hover:text-[rgb(var(--color-fg))]/70 transition-colors underline underline-offset-2"
-                    >
-                        Email
-                    </button>
-                </div>
-            )}
+            {/* ── Save-progress / sign-in card ── One clear, always-visible block
+                for anonymous users (replaces the old split nudge + escape hatch).
+                Purpose-led CTA + first-class method buttons. */}
+            {isAnonymous && (() => {
+                // Name what actually lives only on this device so signing in
+                // reads as protecting real progress. Falls back to a generic
+                // line for a brand-new player with nothing yet.
+                const bits: string[] = [];
+                if (stats.dayStreak >= 2) bits.push(`${stats.dayStreak}-day streak`);
+                if (stats.totalXP > 0) bits.push(`${stats.totalXP.toLocaleString()} XP`);
+                if (unlocked.size > 0) bits.push(`${unlocked.size} achievement${unlocked.size === 1 ? '' : 's'}`);
+                const summary = bits.join(' · ');
+                const line = summary
+                    ? `Your ${summary} live only on this device.`
+                    : 'Keep your streak and XP safe — and pick up on any device.';
+                const appleEnabled = import.meta.env.VITE_ENABLE_APPLE === '1';
+                const btn = 'w-full flex items-center justify-center gap-2 text-sm ui font-semibold rounded-xl py-2.5 border transition-colors';
+
+                return (
+                    <div className="w-full max-w-sm mb-5 rounded-2xl border border-[rgb(var(--color-fg))]/10 bg-[rgb(var(--color-fg))]/[0.03] p-4">
+                        {showEmailInput ? (
+                            <form
+                                onSubmit={async (e) => {
+                                    e.preventDefault();
+                                    if (!emailInput.includes('@')) return;
+                                    try { await onSendEmailLink(emailInput); setEmailSent(true); setShowEmailInput(false); }
+                                    catch (err) { console.warn('Email link failed:', err); }
+                                }}
+                            >
+                                <div className="text-sm ui font-semibold text-[rgb(var(--color-fg))]/85 text-center mb-1">Sign in with email</div>
+                                <div className="text-[11px] ui text-[rgb(var(--color-fg))]/45 text-center mb-3">We'll send a magic link — no password.</div>
+                                <input
+                                    type="email"
+                                    value={emailInput}
+                                    onChange={(e) => setEmailInput(e.target.value)}
+                                    placeholder="your@email.com"
+                                    autoFocus
+                                    className="w-full text-sm ui bg-[rgb(var(--color-fg))]/5 border border-[rgb(var(--color-fg))]/10 rounded-xl px-3 py-2.5 text-center text-[rgb(var(--color-fg))]/80 placeholder:text-[rgb(var(--color-fg))]/25 outline-none focus:border-[var(--color-gold)]/40 mb-2"
+                                />
+                                <div className="flex gap-2">
+                                    <button type="button" onClick={() => setShowEmailInput(false)} className="flex-1 text-xs ui text-[rgb(var(--color-fg))]/50 rounded-xl py-2 border border-[rgb(var(--color-fg))]/10">Back</button>
+                                    <button type="submit" className="flex-1 text-sm ui font-semibold text-[var(--color-gold)] bg-[var(--color-gold)]/15 border border-[var(--color-gold)]/30 rounded-xl py-2">Send link</button>
+                                </div>
+                            </form>
+                        ) : emailSent ? (
+                            <div className="text-center py-2">
+                                <div className="text-sm ui font-semibold text-[var(--color-correct)] mb-1">Check your email</div>
+                                <div className="text-[11px] ui text-[rgb(var(--color-fg))]/45">Tap the magic link we just sent to finish.</div>
+                            </div>
+                        ) : (
+                            <>
+                                <div className="text-sm ui font-semibold text-[rgb(var(--color-fg))]/85 text-center mb-1">Save your progress</div>
+                                <div className="text-[11px] ui text-[rgb(var(--color-fg))]/50 text-center mb-3.5 leading-relaxed">{line} Sign in to back them up and play anywhere.</div>
+                                <div className="flex flex-col gap-2">
+                                    <button onClick={onLinkGoogle} className={`${btn} border-[rgb(var(--color-fg))]/20 text-[rgb(var(--color-fg))]/85 hover:border-[rgb(var(--color-fg))]/35`}>
+                                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" /><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" /><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" /><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" /></svg>
+                                        Continue with Google
+                                    </button>
+                                    {appleEnabled && onLinkApple && (
+                                        <button onClick={onLinkApple} className={`${btn} border-[rgb(var(--color-fg))]/20 text-[rgb(var(--color-fg))]/85 hover:border-[rgb(var(--color-fg))]/35`}>
+                                            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M16.365 1.43c0 1.14-.42 2.2-1.12 3-.76.9-2 1.6-3.05 1.52-.13-1.1.42-2.27 1.08-3 .74-.83 2.06-1.46 3.09-1.52.02.16.02.32.02.5zM20.5 17.2c-.55 1.27-.82 1.84-1.53 2.96-.99 1.57-2.39 3.52-4.12 3.53-1.54.02-1.93-1-4.02-.99-2.09.01-2.52 1.01-4.06.99-1.73-.02-3.05-1.78-4.04-3.34C-.06 16.1-.4 11.02 1.9 8.3c.9-1.08 2.32-1.76 3.66-1.76 1.36 0 2.22.75 3.35.75 1.09 0 1.76-.75 3.33-.75 1.19 0 2.45.65 3.35 1.77-2.94 1.61-2.46 5.82.91 6.89z" /></svg>
+                                            Continue with Apple
+                                        </button>
+                                    )}
+                                    <button onClick={() => setShowEmailInput(true)} className={`${btn} border-[rgb(var(--color-fg))]/20 text-[rgb(var(--color-fg))]/85 hover:border-[rgb(var(--color-fg))]/35`}>
+                                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M3 7l9 6 9-6" /></svg>
+                                        Continue with email
+                                    </button>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                );
+            })()}
 
             <motion.div
                 className="text-center mb-8"
