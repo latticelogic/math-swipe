@@ -35,7 +35,7 @@ describe('entitlementCache', () => {
     });
 
     it('preserves a paid entitlement through the cache', () => {
-        const paid: Entitlement = { ...EXPIRED, paidAt: 1_700_000_000_000, source: 'stripe', originalTransactionId: 'cs_1' };
+        const paid: Entitlement = { ...EXPIRED, paidAt: 1_700_000_000_000, source: 'airwallex', originalTransactionId: 'cs_1' };
         cacheEntitlement('alice', paid);
         expect(readCachedEntitlement('alice')?.paidAt).toBe(1_700_000_000_000);
     });

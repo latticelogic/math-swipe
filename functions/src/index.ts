@@ -33,9 +33,10 @@ import * as logger from 'firebase-functions/logger';
 admin.initializeApp();
 const db = admin.firestore();
 
-// Re-export Stripe Checkout + webhook functions. Lives in its own module to
+// Re-export Airwallex payment + webhook functions. Lives in its own module to
 // keep the push code self-contained — both are independently deployable.
-export { createCheckoutSession, stripeWebhook } from './stripe';
+// (Payments are Airwallex-only; Stripe was removed 2026-07-15.)
+export { createAirwallexPayment, airwallexWebhook } from './airwallex';
 
 // Leaderboard cache rebuilder — see ./leaderboard.ts for the 60s cron
 // that pre-aggregates the top-20 score and top-10 speedrun cache docs

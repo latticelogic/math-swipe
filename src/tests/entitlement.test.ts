@@ -86,13 +86,13 @@ describe('entitlement helpers', () => {
         });
 
         it('true forever once paidAt is set, even after trial expires', () => {
-            const paid = fresh({ paidAt: T0 + 3 * DAY, source: 'stripe' });
+            const paid = fresh({ paidAt: T0 + 3 * DAY, source: 'airwallex' });
             expect(hasAccess(paid, T0 + 1000 * DAY)).toBe(true);
         });
 
         it('paid status bypasses the expired check', () => {
             // Edge case: payment recorded AFTER trial expired (user paid late)
-            const latePayer = fresh({ paidAt: T0 + 30 * DAY, source: 'stripe' });
+            const latePayer = fresh({ paidAt: T0 + 30 * DAY, source: 'airwallex' });
             expect(hasAccess(latePayer, T0 + 100 * DAY)).toBe(true);
         });
     });
@@ -112,7 +112,7 @@ describe('entitlement helpers', () => {
         });
 
         it('paid takes precedence over trial state', () => {
-            const paid = fresh({ paidAt: T0 + DAY, source: 'stripe' });
+            const paid = fresh({ paidAt: T0 + DAY, source: 'airwallex' });
             expect(entitlementStatus(paid, T0 + 100 * DAY)).toBe('paid');
             expect(entitlementStatus(paid, T0 + 5 * DAY)).toBe('paid');
         });
