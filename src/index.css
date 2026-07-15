@@ -512,7 +512,16 @@ button.action-icon-skull-active:focus:not(:focus-visible) {
 
   #root {
     max-width: 430px;
-    min-height: 100vh;
+    /* HEIGHT, not min-height — the shell must be exactly the visible viewport
+       so the in-flow bottom nav (mt-auto) is always on screen and only the
+       tab content scrolls. min-height let the column grow to content height,
+       pushing the nav below the fold. And 100dvh (with the 100vh fallback for
+       older engines) tracks the ACTUAL visible viewport — plain 100vh
+       overshoots when browser chrome (bookmarks bar, download shelf, zoom)
+       eats into the window, which is exactly the "footer missing in Chrome
+       depending on settings" report. */
+    height: 100vh;
+    height: 100dvh;
     margin: 0 auto;
     position: relative;
     overflow: hidden;
