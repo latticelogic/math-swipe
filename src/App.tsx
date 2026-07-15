@@ -48,7 +48,7 @@ import { EVERY_MATH_ACHIEVEMENT } from './domains/math/mathAchievements';
 import { capturePendingReferrer, maybeClaimReferral, fetchReferralCount } from './utils/referral';
 import { SessionSummary } from './components/SessionSummary';
 import { WeeklyRecap } from './components/WeeklyRecap';
-import { CHALK_THEMES, applyTheme, type ChalkTheme } from './utils/chalkThemes';
+import { CHALK_THEMES, applyTheme, getThemeDisplayColor, type ChalkTheme } from './utils/chalkThemes';
 import { applyMode } from './hooks/useThemeMode';
 import { useLocalState } from './hooks/useLocalState';
 import { useFirebaseAuth } from './hooks/useFirebaseAuth';
@@ -721,7 +721,7 @@ function App() {
         <SwipeTrail
           streak={streak}
           activeTrailId={activeTrailId as string}
-          baseColor={CHALK_THEMES.find(t => t.id === activeThemeId)?.color}
+          baseColor={getThemeDisplayColor(activeThemeId as string)}
         />
 
         {/* ── Top-right controls (band picker + theme toggle) — game tab only ── */}

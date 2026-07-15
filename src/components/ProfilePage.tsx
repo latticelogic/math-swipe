@@ -270,7 +270,7 @@ export const ProfilePage = memo(function ProfilePage({ slug, onChallenge, onBack
 
             {/* Core stats */}
             <div className="grid grid-cols-2 gap-x-8 gap-y-4 mt-8 mb-2">
-                <Stat label="✅ solved" value={profile.totalSolved.toLocaleString()} color="rgb(var(--color-fg))/0.85" />
+                <Stat label="✅ solved" value={profile.totalSolved.toLocaleString()} color="rgba(var(--color-fg), 0.85)" />
                 <Stat label="🎯 accuracy" value={`${profile.accuracy}%`} color="var(--color-correct)" />
                 <Stat label="🔥 best streak" value={profile.bestStreak.toString()} color="var(--color-streak-fire)" />
                 <Stat

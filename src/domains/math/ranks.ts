@@ -17,7 +17,7 @@ export const RANKS: ReadonlyArray<Rank> = [
     { name: 'Learner', emoji: '📚', xp: 100 },
     { name: 'Thinker', emoji: '🧠', xp: 300 },
     { name: 'Problem Solver', emoji: '🔧', xp: 600 },
-    { name: 'Calculator', emoji: '🖩', xp: 1000 },
+    { name: 'Calculator', emoji: '🧮', xp: 1000 },
     { name: 'Mathematician', emoji: '📐', xp: 1800 },
     { name: 'Wizard', emoji: '🧙', xp: 3000 },
     { name: 'Grandmaster', emoji: '♟️', xp: 5000 },

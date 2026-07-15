@@ -220,10 +220,18 @@ export const SwipeTrail = memo(function SwipeTrail({ streak, activeTrailId, base
         };
     }, [getTrailColor]); // Extracted and memoized
 
+    // Blend mode must match the surface: `screen` lifts a colored trail off the
+    // dark chalkboard, but on a light board `screen` of a light color is just
+    // white (invisible). `multiply` is the light-mode dual — a color drawn on
+    // white stays that color. baseColor changes on theme toggle, so this
+    // re-evaluates. (rainbow/fire/lightning draw saturated colors that read in
+    // both modes.)
+    const isLight = typeof document !== 'undefined'
+        && document.documentElement.getAttribute('data-theme') === 'light';
     return (
         <canvas
             ref={canvasRef}
-            className="fixed inset-0 z-[100] pointer-events-none touch-none mix-blend-screen"
+            className={`fixed inset-0 z-[100] pointer-events-none touch-none ${isLight ? 'mix-blend-multiply' : 'mix-blend-screen'}`}
         />
     );
 });
