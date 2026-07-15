@@ -266,7 +266,7 @@ export function Paywall({ progress, onUnlock, busy, mode = 'expired', onClose, o
                     at the moment of payment. The 14-day refund is also a
                     trust signal that reduces purchase hesitation. */}
                 <div className="mt-5 pt-3 border-t border-[rgb(var(--color-fg))]/8">
-                    <LegalFooterRow />
+                    <LegalFooterRow omitRefund />
                 </div>
 
                 {import.meta.env.DEV && onDevReset && (

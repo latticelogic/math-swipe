@@ -21,7 +21,7 @@
  * is null but `originalTransactionId` is non-null — these are users
  * who paid AT LEAST ONCE (a transaction id was recorded) but where
  * the webhook later cleared paidAt to handle a refund. This matches
- * the refund-handling code path in `functions/src/stripe.ts`.
+ * the refund-handling code path in `functions/src/airwallex.ts`.
  */
 
 import { useEffect, useMemo, useState } from 'react';
@@ -359,7 +359,7 @@ export function AdminBilling({ onBackToGame }: Props) {
                 <p className="text-[10px] ui text-[rgb(var(--color-fg))]/30 leading-relaxed">
                     Dashboard reads from <code>entitlements/</code> Firestore collection. Refunds are
                     detected by <code>paidAt === null && originalTransactionId !== null</code> —
-                    the Stripe webhook clears <code>paidAt</code> on a refund event but keeps the
+                    the Airwallex webhook clears <code>paidAt</code> on a refund event but keeps the
                     transaction id for audit. For per-user investigation, use
                     <code className="ml-1">gcloud firestore documents read</code> with the uid above.
                 </p>

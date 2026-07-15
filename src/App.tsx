@@ -118,7 +118,7 @@ function App() {
   // when a locked Pro feature is tapped during the trial.
   const [paywallMode, setPaywallMode] = useState<'expired' | 'pro'>('expired');
 
-  // Stripe Checkout success redirect handler. Stripe sends the user back
+  // Airwallex checkout success redirect handler. Airwallex sends the user back
   // to /?paywall=ok&session_id=... after a successful payment; the webhook
   // has already written paidAt by then, but we still need to nudge the
   // hook to re-read so the paywall closes immediately. Also strips the
@@ -505,7 +505,7 @@ function App() {
     }
   }, [entitlement.status, activeTab, paywallOpen]);
 
-  // Auto-close the paywall the instant the user has paid (Stripe webhook
+  // Auto-close the paywall the instant the user has paid (Airwallex webhook
   // fired and refresh() picked up the new paidAt). Without this, a paid
   // user would still see the paywall overlay until they reloaded.
   useEffect(() => {

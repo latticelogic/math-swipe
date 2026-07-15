@@ -9,11 +9,11 @@
  *
  *   trialStartedAt — set once, on first session per uid. Never reset.
  *   paidAt          — null until lifetime unlock purchase. Set by the
- *                     Stripe webhook (Cloud Function) on successful charge.
+ *                     Airwallex webhook (Cloud Function) on successful charge.
  *                     Once set, hasAccess() returns true forever.
  *
  * Mock helpers (`mockGrantAccess`, `mockResetTrial`) exist for dev testing
- * the paywall UX before Stripe is wired. Guarded by import.meta.env.DEV so
+ * the paywall UX before Airwallex is wired. Guarded by import.meta.env.DEV so
  * they no-op in production builds.
  */
 
@@ -59,7 +59,7 @@ interface UseEntitlementResult {
      *  surfaces. No-ops outside dev builds. */
     mockBackdateTrial: (days: number) => Promise<void>;
     /** Re-read the entitlement doc from Firestore. Called from the App after
-     *  the Stripe Checkout success-redirect so the new `paidAt` shows up
+     *  the Airwallex checkout success-redirect so the new `paidAt` shows up
      *  without waiting for the next session. Safe to call any time. */
     refresh: () => Promise<void>;
 }

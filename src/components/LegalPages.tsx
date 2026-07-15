@@ -93,14 +93,15 @@ function RefundBody() {
                     and we'll refund you. No questions, no forms, no friction.
                 </p>
                 <p className="text-[rgb(var(--color-fg))]/55 text-xs italic">
-                    The refund is processed through Stripe and typically appears on
-                    your statement within 5–10 business days, depending on your bank.
+                    The refund is processed through our payment provider and typically
+                    appears on your statement within 5–10 business days, depending on
+                    your bank.
                 </p>
             </Section>
 
             <Section title="What you'll need">
                 <p>Just the email address you used at checkout. If you can find your
-                    Stripe receipt, paste the transaction id — it speeds things up.
+                    payment receipt, paste the transaction id — it speeds things up.
                 </p>
             </Section>
 
@@ -402,6 +403,9 @@ interface FooterRowProps {
     current?: LegalDocId;
     /** Click handler for navigation. The parent decides routing strategy. */
     onNavigate?: (doc: LegalDocId) => void;
+    /** Hide the Refund link (used on the paywall — the refund policy stays
+     *  discoverable from the Me tab rather than the purchase moment). */
+    omitRefund?: boolean;
 }
 
 /**
@@ -414,12 +418,12 @@ interface FooterRowProps {
  * onNavigate prop for SPA-internal soft-routing if the parent prefers
  * not to hit a full reload.
  */
-export function LegalFooterRow({ current, onNavigate }: FooterRowProps) {
-    const items: { id: LegalDocId; label: string }[] = [
+export function LegalFooterRow({ current, onNavigate, omitRefund }: FooterRowProps) {
+    const items = ([
         { id: 'refund', label: 'Refund' },
         { id: 'privacy', label: 'Privacy' },
         { id: 'terms', label: 'Terms' },
-    ];
+    ] as { id: LegalDocId; label: string }[]).filter(item => !(omitRefund && item.id === 'refund'));
 
     return (
         <div className="flex justify-center gap-3 text-[10px] ui text-[rgb(var(--color-fg))]/35">
