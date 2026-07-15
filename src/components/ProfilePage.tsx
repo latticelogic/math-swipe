@@ -16,7 +16,7 @@ import { memo, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { collection, query, where, limit, getDoc, getDocs, doc } from 'firebase/firestore';
 import { getFirebase } from '../utils/firebase';
-import { getRank } from '../domains/math/ranks';
+import { getRank, getMastery } from '../domains/math/ranks';
 import { getTeacher } from '../domains/math/teachers';
 import { getThemeColor } from '../utils/chalkThemes';
 import { AchievementBadge } from './AchievementBadge';
@@ -179,6 +179,7 @@ export const ProfilePage = memo(function ProfilePage({ slug, onChallenge, onBack
     }
 
     const { rank, nextRank, progress } = getRank(profile.totalXP);
+    const mastery = !nextRank ? getMastery(profile.totalXP) : null;
     const teacher = getTeacher(profile.activeTeacher);
     const themeColor = getThemeColor(profile.activeThemeId) ?? 'var(--color-chalk)';
     const trophies = (profile.achievements ?? [])
@@ -227,10 +228,15 @@ export const ProfilePage = memo(function ProfilePage({ slug, onChallenge, onBack
             >
                 <span className="text-lg">{rank.emoji}</span>
                 <span className="chalk text-[var(--color-gold)]">{rank.name}</span>
+                {mastery && (
+                    <span className="chalk text-[var(--color-skull)] border-l border-[var(--color-gold)]/30 pl-2 ml-1">
+                        Mastery {mastery.level}
+                    </span>
+                )}
             </motion.div>
 
-            {/* Progress bar */}
-            {nextRank && (
+            {/* Progress bar — rank progress, or mastery progress once maxed */}
+            {nextRank ? (
                 <div className="mt-3 w-56">
                     <div className="h-1.5 rounded-full bg-[rgb(var(--color-fg))]/10 overflow-hidden">
                         <motion.div
@@ -242,6 +248,20 @@ export const ProfilePage = memo(function ProfilePage({ slug, onChallenge, onBack
                     </div>
                     <div className="text-[10px] ui text-[rgb(var(--color-fg))]/40 mt-1.5 text-center">
                         {profile.totalXP.toLocaleString()} / {nextRank.xp.toLocaleString()} XP
+                    </div>
+                </div>
+            ) : mastery && (
+                <div className="mt-3 w-56">
+                    <div className="h-1.5 rounded-full bg-[rgb(var(--color-fg))]/10 overflow-hidden">
+                        <motion.div
+                            className="h-full rounded-full bg-[var(--color-skull)]"
+                            initial={{ width: 0 }}
+                            animate={{ width: `${Math.round(mastery.progress * 100)}%` }}
+                            transition={{ duration: 0.8, ease: 'easeOut' }}
+                        />
+                    </div>
+                    <div className="text-[10px] ui text-[rgb(var(--color-fg))]/40 mt-1.5 text-center">
+                        {profile.totalXP.toLocaleString()} XP · Mastery Lv. {mastery.level + 1} at {mastery.xpForNext.toLocaleString()}
                     </div>
                 </div>
             )}

@@ -339,6 +339,58 @@ const UltimatePerfect = ({ size = 48, unlocked }: BadgeProps) => (
     </svg>
 );
 
+/* ── Long-haul ladder badges (volume / day-streak / daily-streak / mastery) ── */
+
+/** Ascending bars — the volume ladder (Kilo → Ten Thousand) */
+const Volume = ({ size = 48, unlocked }: BadgeProps) => (
+    <svg viewBox="0 0 48 48" width={size} height={size} style={{ color: unlocked ? 'var(--color-gold)' : 'var(--color-locked)' }}>
+        <line x1="8" y1="40" x2="40" y2="40" {...S} strokeWidth="2.5" />
+        <rect x="11" y="32" width="6" height="8" rx="1" {...S} strokeWidth="2" />
+        <rect x="19" y="26" width="6" height="14" rx="1" {...S} strokeWidth="2" />
+        <rect x="27" y="19" width="6" height="21" rx="1" {...S} strokeWidth="2" />
+        <path d="M34 14l4-2 0 4" {...S} strokeWidth="2" opacity="0.6" />
+    </svg>
+);
+
+/** Calendar wreathed in a small flame — the long day-streak ladder */
+const DayStreakBig = ({ size = 48, unlocked }: BadgeProps) => (
+    <svg viewBox="0 0 48 48" width={size} height={size} style={{ color: unlocked ? 'var(--color-streak-fire)' : 'var(--color-locked)' }}>
+        <rect x="9" y="16" width="30" height="24" rx="3" {...S} strokeWidth="2.5" />
+        <line x1="9" y1="23" x2="39" y2="23" {...S} strokeWidth="2" />
+        <line x1="17" y1="12" x2="17" y2="19" {...S} strokeWidth="2.5" />
+        <line x1="31" y1="12" x2="31" y2="19" {...S} strokeWidth="2.5" />
+        <path d="M24 6c-2 3-5 5-3 9 .7 1.6 2 2.4 3 2.4s2.3-.8 3-2.4c2-4-1-6-3-9z" {...S} strokeWidth="2" opacity="0.8" />
+        {[15, 20, 25, 30].map(cx => <circle key={cx} cx={cx} cy="31" r="1.4" fill="currentColor" opacity="0.5" />)}
+    </svg>
+);
+
+/** Flame inside a ring — the Daily-Challenge streak ladder */
+const DailyFlame = ({ size = 48, unlocked }: BadgeProps) => (
+    <svg viewBox="0 0 48 48" width={size} height={size} style={{ color: unlocked ? 'var(--color-streak-fire)' : 'var(--color-locked)' }}>
+        <circle cx="24" cy="24" r="17" {...S} strokeWidth="2" opacity="0.7" />
+        <path d="M24 10c-4 7-9 11-6 19 1.2 3 4 4.5 6 4.5s4.8-1.5 6-4.5c3-8-2-12-6-19z" {...S} strokeWidth="2.5" />
+        <path d="M22 30c0-2 2-4 2-6 0 2 2 4 2 6" {...S} strokeWidth="2" opacity="0.5" />
+    </svg>
+);
+
+/** Star climbing on chevrons — the mastery ladder past max rank */
+const MasteryStar = ({ size = 48, unlocked }: BadgeProps) => (
+    <svg viewBox="0 0 48 48" width={size} height={size} style={{ color: unlocked ? 'var(--color-skull)' : 'var(--color-locked)' }}>
+        <path d="M24 4l3.2 7 7.8 1-5.5 5 1.5 7.6-7-3.8-7 3.8 1.5-7.6-5.5-5 7.8-1z" {...S} strokeWidth="2" />
+        <path d="M15 34l9-6 9 6" {...S} strokeWidth="2.5" />
+        <path d="M15 42l9-6 9 6" {...S} strokeWidth="2.5" opacity="0.5" />
+    </svg>
+);
+
+/** Rosette — generic fallback so no achievement ever renders blank */
+const DefaultBadge = ({ size = 48, unlocked }: BadgeProps) => (
+    <svg viewBox="0 0 48 48" width={size} height={size} style={{ color: unlocked ? 'var(--color-gold)' : 'var(--color-locked)' }}>
+        <circle cx="24" cy="20" r="12" {...S} strokeWidth="2.5" />
+        <circle cx="24" cy="20" r="5" {...S} strokeWidth="2" />
+        <path d="M18 30l-3 12 9-5 9 5-3-12" {...S} strokeWidth="2.5" />
+    </svg>
+);
+
 /** Map from achievement ID to SVG component */
 const BADGE_MAP: Record<string, React.FC<BadgeProps>> = {
     'first-steps': FirstSteps,
@@ -372,6 +424,20 @@ const BADGE_MAP: Record<string, React.FC<BadgeProps>> = {
     'ultimate-ascend': UltimateAscend,
     'ultimate-streak': UltimateStreak,
     'ultimate-perfect': UltimatePerfect,
+    // Long-haul ladders (share a family icon; name + desc distinguish the rung)
+    'kilo': Volume,
+    'iron-mind': Volume,
+    'marathoner': Volume,
+    'ten-thousand': Volume,
+    'fortnight': DayStreakBig,
+    'month-of-days': DayStreakBig,
+    'hundred-days': DayStreakBig,
+    'daily-regular': DailyFlame,
+    'daily-devotee': DailyFlame,
+    'daily-centurion': DailyFlame,
+    'mastery-1': MasteryStar,
+    'mastery-5': MasteryStar,
+    'mastery-10': MasteryStar,
 };
 
 interface Props {
@@ -383,8 +449,7 @@ interface Props {
 }
 
 export const AchievementBadge = memo(function AchievementBadge({ achievementId, unlocked, equipped, name, desc }: Props) {
-    const Icon = BADGE_MAP[achievementId];
-    if (!Icon) return null;
+    const Icon = BADGE_MAP[achievementId] ?? DefaultBadge;
 
     return (
         <div className={`flex flex-col items-center gap-1 w-16 ${unlocked ? '' : 'opacity-60'}`}>

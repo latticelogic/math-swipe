@@ -6,6 +6,7 @@
  */
 import type { Achievement } from '../../utils/achievements';
 import type { QuestionType } from './mathCategories';
+import { getMastery } from './ranks';
 
 // ── Stats snapshot ────────────────────────────────────────────────────────────
 
@@ -16,6 +17,9 @@ export interface MathAchievementStats {
     totalCorrect: number;
     bestStreak: number;
     dayStreak: number;
+    /** Consecutive-day Daily Challenge streak (see utils/dailyStreak.ts). */
+    dailyStreak: number;
+    bestDailyStreak: number;
     sessionsPlayed: number;
     byType: Record<QuestionType, { solved: number; correct: number }>;
     // Hard mode
@@ -157,6 +161,32 @@ const CORE_ACHIEVEMENTS: Achievement<MathAchievementStats>[] = [
     },
 ];
 
+// ── Long-haul ladders ──
+// These exist to extend the reward runway for the committed player. The base
+// list front-loads almost everything into the first two weeks; without these,
+// a daily player runs out of things to unlock by ~week 3. Each rung here is
+// reachable only with sustained play (volume, day-streaks, Daily-streaks, or
+// mastery levels past the top rank), so there is always a next thing.
+const LONGHAUL_ACHIEVEMENTS: Achievement<MathAchievementStats>[] = [
+    // Volume — continues quick-fifty(50) / century(100) / math-machine(500)
+    { id: 'kilo', name: 'Kilo Club', desc: 'A thousand problems. Four figures now.', check: s => s.totalSolved >= 1000 },
+    { id: 'iron-mind', name: 'Iron Mind', desc: '2,500 solved. That is discipline, plain and simple.', check: s => s.totalSolved >= 2500 },
+    { id: 'marathoner', name: 'Marathoner', desc: '5,000 problems. Genuinely rare air.', check: s => s.totalSolved >= 5000 },
+    { id: 'ten-thousand', name: 'Ten Thousand', desc: '10,000 solved. Almost nobody gets here. You did.', check: s => s.totalSolved >= 10000 },
+    // Day-streak — continues three-day(3) / dedicated(7)
+    { id: 'fortnight', name: 'Fortnight', desc: 'Fourteen days straight. It is a routine now.', check: s => s.dayStreak >= 14 },
+    { id: 'month-of-days', name: 'A Month of Days', desc: 'Thirty days in a row. This is just who you are.', check: s => s.dayStreak >= 30 },
+    { id: 'hundred-days', name: 'Hundred Days', desc: 'A hundred consecutive days. Remarkable, honestly.', check: s => s.dayStreak >= 100 },
+    // Daily-Challenge streak — the appointment loop, rewarded
+    { id: 'daily-regular', name: 'Daily Regular', desc: 'A week of Daily Challenges, no gaps.', check: s => s.dailyStreak >= 7 },
+    { id: 'daily-devotee', name: 'Daily Devotee', desc: 'Thirty Dailies running. The set is a ritual.', check: s => s.dailyStreak >= 30 },
+    { id: 'daily-centurion', name: 'Daily Centurion', desc: 'A hundred Dailies in a row. The flame does not go out.', check: s => s.dailyStreak >= 100 },
+    // Mastery — the infinite track past max rank
+    { id: 'mastery-1', name: 'Past the Peak', desc: 'You passed the top rank. Mastery begins here.', check: s => (getMastery(s.totalXP)?.level ?? 0) >= 1 },
+    { id: 'mastery-5', name: 'Mastery Five', desc: 'Five mastery levels beyond Transcendent.', check: s => (getMastery(s.totalXP)?.level ?? 0) >= 5 },
+    { id: 'mastery-10', name: 'Mastery Ten', desc: 'Ten levels deep into mastery. The long game.', check: s => (getMastery(s.totalXP)?.level ?? 0) >= 10 },
+];
+
 const HARD_MODE_ACHIEVEMENTS: Achievement<MathAchievementStats>[] = [
     { id: 'skull-initiate', name: 'Skull Initiate', desc: 'You took on hard mode. Welcome to the deep end.', check: s => s.hardModeSessions >= 1 },
     { id: 'skull-warrior', name: 'Skull Warrior', desc: '50 problems in hard mode. Steady hands.', check: s => s.hardModeSolved >= 50 },
@@ -182,6 +212,7 @@ const ULTIMATE_ACHIEVEMENTS: Achievement<MathAchievementStats>[] = [
 /** All math achievements across every tier — single source of truth */
 export const EVERY_MATH_ACHIEVEMENT: Achievement<MathAchievementStats>[] = [
     ...CORE_ACHIEVEMENTS,
+    ...LONGHAUL_ACHIEVEMENTS,
     ...HARD_MODE_ACHIEVEMENTS,
     ...TIMED_MODE_ACHIEVEMENTS,
     ...ULTIMATE_ACHIEVEMENTS,

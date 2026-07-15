@@ -15,6 +15,8 @@ describe('achievements.ts', () => {
         totalXP: 0,
         bestStreak: 0,
         dayStreak: 0,
+        dailyStreak: 0,
+        bestDailyStreak: 0,
         sessionsPlayed: 1,
         byType: {} as Record<string, { solved: number; correct: number }>,
         hardModeSolved: 0,

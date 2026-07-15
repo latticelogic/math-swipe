@@ -7,8 +7,9 @@ import { AchievementBadge } from './AchievementBadge';
 import { StreakGarden } from './StreakGarden';
 import { CHALK_THEMES, type ChalkTheme } from '../utils/chalkThemes';
 import { SWIPE_TRAILS } from '../utils/trails';
+import { nextDailyMilestone } from '../utils/dailyStreak';
 import { TEACHERS, DEFAULT_TEACHER_ID } from '../domains/math/teachers';
-import { RANKS, getRank } from '../domains/math/ranks';
+import { RANKS, getRank, getMastery } from '../domains/math/ranks';
 import { PushOptIn } from './PushOptIn';
 import { UsernameClaim } from './UsernameClaim';
 import { TrialCountdownChip } from './TrialModals';
@@ -53,30 +54,8 @@ interface Props {
     onUnlock?: () => void;
 }
 
-// Rank ladder + getRank helper extracted to ../domains/math/ranks so the
-// public profile page can reuse them.
-
-/** Mastery levels — post-max-rank infinite progression:
- *  ML1→ML2 costs 25k XP, each subsequent level 10k more. */
-const MASTERY_BASE = 25000;
-const MASTERY_SCALE = 10000;
-const MAX_RANK_XP = 20000;
-
-function getMasteryInfo(xp: number) {
-    if (xp < MAX_RANK_XP) return null;
-    let remaining = xp - MAX_RANK_XP;
-    let level = 1;
-    let levelStartXp = MAX_RANK_XP;
-    while (true) {
-        const cost = MASTERY_BASE + (level - 1) * MASTERY_SCALE;
-        if (remaining < cost) {
-            return { level, progress: remaining / cost, xpForNext: levelStartXp + cost };
-        }
-        remaining -= cost;
-        levelStartXp += cost;
-        level++;
-    }
-}
+// Rank ladder + getRank/getMastery helpers extracted to ../domains/math/ranks
+// so the public profile page and share card can reuse them.
 
 export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked, activeCostume, onCostumeChange, activeTheme, onThemeChange, activeTrailId, onTrailChange, displayName, onDisplayNameChange, isAnonymous, onLinkGoogle, onSendEmailLink, ageBand, activeBadge, onBadgeChange, activeTeacherId, onTeacherChange, uid, entitlementStatus, entitlementDaysLeft, onUnlock }: Props) {
     const [showRanks, setShowRanks] = useState(false);
@@ -87,7 +66,7 @@ export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked,
     const [emailInput, setEmailInput] = useState('');
     const [emailSent, setEmailSent] = useState(false);
     const { rank, nextRank, progress } = getRank(stats.totalXP);
-    const mastery = !nextRank ? getMasteryInfo(stats.totalXP) : null;
+    const mastery = !nextRank ? getMastery(stats.totalXP) : null;
 
     const today = todayKey();
     const dailyDoneToday = stats.lastDailyDate === today && stats.todayDailySolved > 0;
@@ -336,9 +315,18 @@ export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked,
             </div>
 
             {/* Streak garden — the day-streak, drawn */}
-            <div className="w-full max-w-sm mb-8">
+            <div className="w-full max-w-sm mb-3">
                 <StreakGarden dayStreak={stats.dayStreak} lastPlayedDate={stats.lastPlayedDate} today={today} />
             </div>
+
+            {/* Daily-Challenge streak — the appointment loop, now rewarded */}
+            {stats.dailyStreak >= 1 && (
+                <div className="w-full max-w-sm mb-8 flex items-center justify-center gap-2 text-xs ui">
+                    <span className="text-[rgb(var(--color-fg))]/50">Daily streak</span>
+                    <span className="chalk text-xl text-[var(--color-streak-fire)] leading-none">{stats.dailyStreak}</span>
+                    <span className="text-[rgb(var(--color-fg))]/35">· next reward at day {nextDailyMilestone(stats.dailyStreak)}</span>
+                </div>
+            )}
 
             {/* Per question type row */}
             <div className="w-full max-w-sm">
@@ -509,9 +497,10 @@ export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked,
                         const hardOk = !t.hardModeOnly || (stats.hardModeSolved >= (t.hardModeMin ?? 0));
                         const timedOk = !t.timedModeOnly || (stats.timedModeSolved >= (t.timedModeMin ?? 0));
                         const ultimateOk = !t.ultimateOnly || (stats.ultimateSolved >= (t.ultimateMin ?? 0));
-                        const isAvailable = rankOk && hardOk && timedOk && ultimateOk;
+                        const masteryOk = !t.masteryMin || ((mastery?.level ?? 0) >= t.masteryMin);
+                        const isAvailable = rankOk && hardOk && timedOk && ultimateOk && masteryOk;
                         const isActive = activeTheme === t.id;
-                        const modeIcon = t.ultimateOnly ? '💀⏱️' : t.hardModeOnly ? '💀' : t.timedModeOnly ? '⏱️' : '';
+                        const modeIcon = t.ultimateOnly ? '💀⏱️' : t.hardModeOnly ? '💀' : t.timedModeOnly ? '⏱️' : t.masteryMin ? '✨' : '';
                         const isLight = document.documentElement.getAttribute('data-theme') === 'light';
                         const swatchColor = isLight ? t.lightColor : t.color;
                         return (

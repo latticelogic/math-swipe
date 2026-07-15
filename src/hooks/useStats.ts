@@ -4,6 +4,7 @@ import { STORAGE_KEYS, FIRESTORE } from '../config';
 import { QUESTION_TYPES } from '../domains/math/mathCategories';
 import { safeGetItem, safeSetItem } from '../utils/safeStorage';
 import { todayKey } from '../utils/dateKey';
+import { dailyStreakBonus } from '../utils/dailyStreak';
 
 interface TypeStat {
     solved: number;
@@ -21,6 +22,11 @@ export interface Stats {
     sessionsPlayed: number;
     dayStreak: number;
     streakShields: number;
+    /** Consecutive calendar days the Daily Challenge was completed. Distinct
+     *  from dayStreak (which counts any session). Drives the daily-streak XP
+     *  ladder in utils/dailyStreak.ts. */
+    dailyStreak: number;
+    bestDailyStreak: number;
     lastPlayedDate: string; // YYYY-MM-DD
     byType: Record<string, TypeStat>;
     // Hard mode tracking
@@ -86,6 +92,8 @@ const EMPTY_STATS: Stats = {
     sessionsPlayed: 0,
     dayStreak: 0,
     streakShields: 0,
+    dailyStreak: 0,
+    bestDailyStreak: 0,
     lastPlayedDate: '',
     byType: buildEmptyByType(),
     hardModeSolved: 0,
@@ -224,6 +232,8 @@ function mergeStats(local: Stats, cloud: Stats): Stats {
         sessionsPlayed: Math.max(local.sessionsPlayed, cloud.sessionsPlayed),
         dayStreak: Math.max(local.dayStreak, cloud.dayStreak),
         streakShields: Math.max(local.streakShields, cloud.streakShields),
+        dailyStreak: Math.max(local.dailyStreak ?? 0, cloud.dailyStreak ?? 0),
+        bestDailyStreak: Math.max(local.bestDailyStreak ?? 0, cloud.bestDailyStreak ?? 0),
         lastPlayedDate: local.lastPlayedDate > cloud.lastPlayedDate ? local.lastPlayedDate : cloud.lastPlayedDate,
         byType: mergedByType,
         hardModeSolved: Math.max(local.hardModeSolved, cloud.hardModeSolved),
@@ -380,6 +390,27 @@ export function useStats(uid: string | null) {
             const todayDailyCorrect = isDaily ? (dailySameDay ? prev.todayDailyCorrect : 0) + correct : prev.todayDailyCorrect;
             const lastDailyDate = isDaily ? todayStr : prev.lastDailyDate;
 
+            // Daily-Challenge streak: consecutive calendar days the Daily was
+            // completed. Only advances on the first Daily of a fresh day; a gap
+            // of more than one day resets it. Reaching a milestone pays a
+            // one-time XP bonus (see utils/dailyStreak.ts).
+            let dailyStreak = prev.dailyStreak || 0;
+            let bestDailyStreak = prev.bestDailyStreak || 0;
+            let dailyBonusXp = 0;
+            if (isDaily && !dailySameDay) {
+                if (prev.lastDailyDate === '') {
+                    dailyStreak = 1;
+                } else {
+                    const lp = prev.lastDailyDate.split('-').map(Number);
+                    const lastDailyUTC = Date.UTC(lp[0], lp[1] - 1, lp[2]);
+                    const todayUTC = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+                    const gap = Math.round((todayUTC - lastDailyUTC) / 86400000);
+                    dailyStreak = gap === 1 ? (prev.dailyStreak || 0) + 1 : 1;
+                }
+                bestDailyStreak = Math.max(bestDailyStreak, dailyStreak);
+                dailyBonusXp = dailyStreakBonus(dailyStreak);
+            }
+
             const isPerfect = answered > 0 && correct === answered;
             const isUltimate = hardMode && timedMode;
             return {
@@ -387,13 +418,15 @@ export function useStats(uid: string | null) {
                 lastDailyDate,
                 todayDailySolved,
                 todayDailyCorrect,
-                totalXP: prev.totalXP + score,
+                totalXP: prev.totalXP + score + dailyBonusXp,
                 totalSolved: prev.totalSolved + answered,
                 totalCorrect: prev.totalCorrect + correct,
                 bestStreak: Math.max(prev.bestStreak, bestStreak),
                 sessionsPlayed: prev.sessionsPlayed + 1,
                 dayStreak,
                 streakShields,
+                dailyStreak,
+                bestDailyStreak,
                 lastPlayedDate: todayStr,
                 byType: {
                     ...prev.byType,

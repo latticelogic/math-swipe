@@ -46,3 +46,42 @@ export function getRank(xp: number): RankInfo {
     const progress = nextRank ? (xp - rank.xp) / (nextRank.xp - rank.xp) : 1;
     return { rank, nextRank, progress };
 }
+
+// ── Mastery: post-max-rank infinite progression ───────────────────────────────
+// Once a player passes the top rank (Transcendent) the XP counter would
+// otherwise stop meaning anything. Mastery turns that tail into an endless,
+// legibly-growing number: ML1→ML2 costs 25k XP, and each level after costs
+// 10k more than the last (25k, 35k, 45k, …). It is the app's only INFINITE
+// reward track, so it lives here (canonical) and every surface — Me, profile,
+// share card — reads it, not just the Me tab.
+
+/** XP at which the top named rank is reached; mastery begins here. */
+export const MAX_RANK_XP = RANKS[RANKS.length - 1].xp;
+const MASTERY_BASE = 25000;
+const MASTERY_SCALE = 10000;
+
+export interface MasteryInfo {
+    /** 1-indexed mastery level (ML1 is the first level past max rank). */
+    level: number;
+    /** 0..1 progress toward the next mastery level. */
+    progress: number;
+    /** Total XP at which the next mastery level is reached. */
+    xpForNext: number;
+}
+
+/** Mastery info for a given XP total, or null if the player hasn't hit max rank. */
+export function getMastery(xp: number): MasteryInfo | null {
+    if (xp < MAX_RANK_XP) return null;
+    let remaining = xp - MAX_RANK_XP;
+    let level = 1;
+    let levelStartXp = MAX_RANK_XP;
+    for (;;) {
+        const cost = MASTERY_BASE + (level - 1) * MASTERY_SCALE;
+        if (remaining < cost) {
+            return { level, progress: remaining / cost, xpForNext: levelStartXp + cost };
+        }
+        remaining -= cost;
+        levelStartXp += cost;
+        level++;
+    }
+}

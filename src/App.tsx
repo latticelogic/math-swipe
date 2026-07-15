@@ -394,7 +394,6 @@ function App() {
   // Pull the next queued unlock onto the display when the current one clears.
   useEffect(() => {
     if (currentToast || achievementQueue.length === 0) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setCurrentToast(achievementQueue[0]);
     setAchievementQueue(q => q.slice(1));
   }, [currentToast, achievementQueue]);

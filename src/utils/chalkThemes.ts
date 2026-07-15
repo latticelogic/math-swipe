@@ -5,13 +5,14 @@ export interface ChalkTheme {
     name: string;
     color: string;          // CSS color value for dark-mode chalk
     lightColor: string;     // Saturated dark CSS equivalent for light mode backgrounds
-    minLevel: number;       // Level required to unlock (1-5)
+    minLevel: number;       // Rank index required to unlock (1-based against RANKS)
     hardModeOnly?: boolean; // Exclusive to hard mode players
     hardModeMin?: number;   // Hard mode solves required to unlock
     timedModeOnly?: boolean;
     timedModeMin?: number;
     ultimateOnly?: boolean;
     ultimateMin?: number;
+    masteryMin?: number;    // Mastery level required (post-max-rank drip; see ranks.ts)
 }
 
 export const CHALK_THEMES: ChalkTheme[] = [
@@ -31,6 +32,13 @@ export const CHALK_THEMES: ChalkTheme[] = [
     // 💀⏱️ Ultimate exclusive
     { id: 'void-black', name: 'Void', color: 'rgba(180, 160, 200, 0.95)', lightColor: '#312e81', minLevel: 1, ultimateOnly: true, ultimateMin: 10 },
     { id: 'prismatic', name: 'Prismatic', color: 'rgba(255, 180, 255, 0.95)', lightColor: '#86198f', minLevel: 1, ultimateOnly: true, ultimateMin: 50 },
+    // ✨ Mastery drip — the only cosmetics that keep arriving past max rank, so
+    // a maxed-out player always has a next thing to chalk toward. Gated on
+    // mastery level (see getMastery in ranks.ts), spaced to last months.
+    { id: 'aurora', name: 'Aurora', color: 'rgba(45, 212, 191, 0.95)', lightColor: '#0f766e', minLevel: 1, masteryMin: 1 },
+    { id: 'spring-lime', name: 'Spring Lime', color: 'rgba(190, 255, 90, 0.95)', lightColor: '#4d7c0f', minLevel: 1, masteryMin: 3 },
+    { id: 'coral-reef', name: 'Coral Reef', color: 'rgba(255, 120, 110, 0.95)', lightColor: '#be123c', minLevel: 1, masteryMin: 6 },
+    { id: 'celestial', name: 'Celestial', color: 'rgba(200, 210, 255, 0.95)', lightColor: '#3730a3', minLevel: 1, masteryMin: 10 },
 ];
 
 /**
