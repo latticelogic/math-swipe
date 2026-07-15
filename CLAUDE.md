@@ -73,8 +73,8 @@ production should be owned by the company account, not Tim's personal.**
 | GitHub | `latticelogic` org | Repo at `github.com/latticelogic/math-swipe`. Owner admin: `njytim-cyber` (renamed legacy account). Transferred 2026-05-11. |
 | Cloudflare Pages | `tim@latticelogic.app`, account id `00e07444cae65d675a140f8560429fad` | Project `math-swipe`, production URL `https://mathchallenge.app`. Production branch `master`. Env vars `FIREBASE_PROJECT_ID`, `PUBLIC_ORIGIN`, `NODE_VERSION` set on both production + preview configs. Custom domain not yet attached (pending product name decision). |
 | Stripe | code wired, account verification pending | Cloud Functions in `functions/src/stripe.ts` ready to deploy. Secrets needed: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID`, `PUBLIC_ORIGIN` — set via `firebase functions:secrets:set`. Webhook endpoint to register: `https://us-central1-math-swipe-prod.cloudfunctions.net/stripeWebhook` listening for `checkout.session.completed`. |
-| Apple Developer | not yet enrolled | Must enroll as Lattice Logic with company DUNS, $99/yr. 1-3 week verification window |
-| Google Play Console | not yet enrolled | Must enroll as Lattice Logic, $25 one-time |
+| Apple Developer | not yet enrolled | Must enroll as Lattice Logic with company DUNS, $99/yr. 1-3 week verification window. Deliberately LAST of the three channels. |
+| Google Play Console | **enrolled (org), verified** 2026-07-15 | Lattice Logic organization account — company + representative verified (org accounts skip the 20-tester gate). Package `app.mathchallenge.twa`. Code complete (#74): TWA via Bubblewrap, CI `.aab` build (`android-build.yml`), Play Billing (Digital Goods API) + `verifyPlayPurchase`/`playRtdn` functions. Remaining: Console clickwork per `docs/google-play-launch.md`. |
 
 ### Firebase CLI
 
@@ -350,7 +350,8 @@ What's **blocking commercial launch** (operational, not code):
 - **Governing law clause** — state of incorporation + dispute-resolution language for Terms.
 - **Pre-launch billing safety steps** — see status table at top of `docs/billing-safety.md`. Firebase Blaze is done; remaining items are budget alerts, quota caps, App Check, refund policy email, beta testing.
 - **Custom domain** (gated on product-name decision — not strictly blocking, `math-swipe-c7k.pages.dev` works).
-- App Store / Play Store enrollment — defer per the hybrid-distribution rule until web has 60+ days of clean data.
+- **Google Play release** — owner enrolled a verified org account 2026-07-15 (supersedes the old "defer until 60 days" rule for Play; Apple remains deferred/last). Code is done (#74); what's left is Play Console clickwork + internal-track QA — the full runbook with checkboxes is `docs/google-play-launch.md`.
+- App Store enrollment — defer per the hybrid-distribution rule (Apple is last).
 
 What's **deferred** (not blocking):
 - Sound effects (intentional v1 decision — see Conventions)
