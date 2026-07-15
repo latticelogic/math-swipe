@@ -46,6 +46,12 @@ export { rebuildLeaderboardCache } from './leaderboard';
 // the referrer's server-verified referral count. See ./referral.ts.
 export { claimReferral } from './referral';
 
+// Account reconciliation callable — merges an anonymous account's entitlement
+// (paid + earliest trial) + stats into the account it signs into, proven by the
+// source ID token. Closes the sign-in paywall-bypass / data-loss hole. See
+// ./reconcile.ts.
+export { reconcileAccount } from './reconcile';
+
 // VAPID credentials live in Secret Manager. Even the public key is a secret
 // here (rather than a plain param) so rotation is one CLI command + a
 // function redeploy, with no code edits.

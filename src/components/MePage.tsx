@@ -1,4 +1,4 @@
-import { memo, useState } from 'react';
+import { memo, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { useStats } from '../hooks/useStats';
 import { typesForBand, type AgeBand } from '../utils/questionTypes';
@@ -38,6 +38,10 @@ interface Props {
     isAnonymous: boolean;
     onLinkGoogle: () => Promise<void>;
     onSendEmailLink: (email: string) => Promise<void>;
+    /** Transient outcome of the last sign-in action (success/error), shown as a
+     *  small banner and auto-cleared. */
+    authMessage?: string | null;
+    onClearAuthMessage?: () => void;
     ageBand: AgeBand;
     activeBadge: string;
     onBadgeChange: (id: string) => void;
@@ -58,7 +62,7 @@ interface Props {
 // Rank ladder + getRank/getMastery helpers extracted to ../domains/math/ranks
 // so the public profile page and share card can reuse them.
 
-export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked, activeCostume, onCostumeChange, activeTheme, onThemeChange, activeTrailId, onTrailChange, displayName, onDisplayNameChange, isAnonymous, onLinkGoogle, onSendEmailLink, ageBand, activeBadge, onBadgeChange, activeTeacherId, onTeacherChange, uid, entitlementStatus, entitlementDaysLeft, onUnlock }: Props) {
+export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked, activeCostume, onCostumeChange, activeTheme, onThemeChange, activeTrailId, onTrailChange, displayName, onDisplayNameChange, isAnonymous, onLinkGoogle, onSendEmailLink, authMessage, onClearAuthMessage, ageBand, activeBadge, onBadgeChange, activeTeacherId, onTeacherChange, uid, entitlementStatus, entitlementDaysLeft, onUnlock }: Props) {
     const [showRanks, setShowRanks] = useState(false);
     const [resetConfirm, setResetConfirm] = useState<string | null>(null);
     const [editingName, setEditingName] = useState(false);
@@ -72,6 +76,13 @@ export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked,
     const today = todayKey();
     const dailyDoneToday = stats.lastDailyDate === today && stats.todayDailySolved > 0;
     const dailyAcc = dailyDoneToday ? Math.round((stats.todayDailyCorrect / stats.todayDailySolved) * 100) : null;
+
+    // Auto-clear the sign-in outcome banner after a few seconds.
+    useEffect(() => {
+        if (!authMessage) return;
+        const t = setTimeout(() => onClearAuthMessage?.(), 4500);
+        return () => clearTimeout(t);
+    }, [authMessage, onClearAuthMessage]);
 
     // Invite a friend — the referral loop. Shares a ?r=<uid> link that credits
     // this player once the friend joins and plays (see utils/referral.ts).
@@ -237,6 +248,14 @@ export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked,
                     </div>
                 );
             })()}
+
+            {/* Sign-in outcome banner — success or a human-readable error, so
+                auth failures are no longer silent console.warns. */}
+            {authMessage && (
+                <div className="mb-4 px-3 py-2 rounded-xl bg-[var(--color-gold)]/10 border border-[var(--color-gold)]/30 text-xs ui text-[var(--color-gold)] text-center max-w-sm">
+                    {authMessage}
+                </div>
+            )}
 
             {/* Always-visible sign-in escape hatch */}
             {isAnonymous && !showEmailInput && (

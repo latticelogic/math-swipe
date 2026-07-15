@@ -127,7 +127,7 @@ function AgeBandIcon({ band }: { band: AgeBand }) {
 
 
 function App() {
-  const { user, setDisplayName, linkGoogle, sendEmailLink } = useFirebaseAuth();
+  const { user, setDisplayName, linkGoogle, sendEmailLink, authMessage, clearAuthMessage } = useFirebaseAuth();
   const uid = user?.uid ?? null;
 
   // 14-day trial → $3.14 lifetime gate. See utils/entitlement.ts +
@@ -1215,6 +1215,8 @@ function App() {
               isAnonymous={user?.isAnonymous ?? true}
               onLinkGoogle={linkGoogle}
               onSendEmailLink={sendEmailLink}
+              authMessage={authMessage}
+              onClearAuthMessage={clearAuthMessage}
               ageBand={ageBand}
               activeBadge={stats.activeBadgeId || ''}
               onBadgeChange={updateBadge}
