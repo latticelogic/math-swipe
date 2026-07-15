@@ -45,8 +45,11 @@ export const claimReferral = onCall(
         }
 
         const referrerUid = String(request.data?.referrerUid ?? '').trim();
-        if (!referrerUid || referrerUid.length > 128) {
-            throw new HttpsError('invalid-argument', 'Missing referrer.');
+        // Hard-validate the shape: Firebase Auth UIDs are alphanumeric (plus
+        // - and _). Rejecting anything else stops a crafted value with '/' from
+        // being interpolated into an unintended Firestore document path.
+        if (!/^[A-Za-z0-9_-]{1,128}$/.test(referrerUid)) {
+            throw new HttpsError('invalid-argument', 'Bad referrer.');
         }
         if (referrerUid === inviteeUid) {
             // Self-referral — silently succeed as a no-op so the client just

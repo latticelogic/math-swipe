@@ -322,7 +322,10 @@ service cloud.firestore {
                    && request.resource.data.keys().hasOnly([
                         'endpoint', 'keys', 'userAgent',
                         'dailyEnabled', 'pingsEnabled', 'timezone', 'updatedAt'
-                      ]);
+                      ])
+                   && (!('timezone' in request.resource.data)
+                       || (request.resource.data.timezone is string
+                           && request.resource.data.timezone.size() <= 64));
     }
 
     // ── Web Vitals (performance monitoring) ──
