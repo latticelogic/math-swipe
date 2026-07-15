@@ -1,17 +1,13 @@
 import { memo, useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence, useSpring, useMotionValueEvent } from 'framer-motion';
-import { createChallengeId } from '../utils/dailyChallenge';
 import { getRank } from '../domains/math/ranks';
 import { ShareSheet } from './ShareSheet';
 import { buildProfileSlug } from '../utils/profileSlug';
 import { IosSessionEndPrompt } from './InstallPrompt';
-
-/** Short, human-readable date stamp for the daily-challenge share card.
- *  "May 12" — used as a Wordle-style conversation hook so the artifact
- *  signals *which* daily was solved. */
-function shortDateStamp(): string {
-    return new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-}
+// Share text/URL composition is shared with the game-rail share button —
+// single source of truth in utils/sharePayload.ts.
+import { buildSharePayload, formatTime, shortDateStamp } from '../utils/sharePayload';
+import { createChallengeId } from '../utils/dailyChallenge';
 
 interface Props {
     solved: number;
@@ -53,62 +49,6 @@ interface Props {
      *  OR clipboard write succeeded OR modal share confirmed). Drives the
      *  "Spread the Word" first-share achievement. */
     onShared?: () => void;
-}
-
-function formatTime(ms: number): string {
-    const totalSeconds = ms / 1000;
-    if (totalSeconds < 60) return `${totalSeconds.toFixed(2)}s`;
-    const m = Math.floor(totalSeconds / 60);
-    const s = Math.floor(totalSeconds % 60);
-    return `${m}m ${s}s`;
-}
-
-/** Compose the share payload + URL together so callers don't fork on URL
- *  generation. Returning both lets the modal show the URL separately (one-tap
- *  copy) while the text remains the full social-friendly caption.
- *
- *  When `profileUrl` is provided we use the profile page; otherwise we fall
- *  back to a one-shot challenge URL. The profile route is the better hook —
- *  visitors see the brag *before* the math screen, so click-through to play
- *  is higher. */
-function buildSharePayload(
-    xp: number, streak: number, accuracy: number,
-    history: boolean[], questionType: string,
-    hardMode?: boolean, timedMode?: boolean,
-    speedrunTime?: number | null,
-    profileUrl?: string | null,
-): { text: string; url: string } {
-    const emojis = history.map(ok => ok ? '🟩' : '🟥');
-    const emojiRows: string[] = [];
-    for (let i = 0; i < emojis.length; i += 10) {
-        emojiRows.push(emojis.slice(i, i + 10).join(''));
-    }
-
-    const typeLabel = questionType.startsWith('mix-') ? 'Mix' : questionType.charAt(0).toUpperCase() + questionType.slice(1);
-    const modeTag = hardMode && timedMode ? ' 💀⏱️ ULTIMATE' : hardMode ? ' 💀 HARD' : timedMode ? ' ⏱️ TIMED' : '';
-    // Punchier headlines — first line is what platforms show as preview, so make
-    // it count. Leads with the score/streak/time, brand fades to second line.
-    // The daily case gets a date stamp so the artifact carries social context
-    // ("got the May 12") — same trick Wordle uses to make shares conversational.
-    const headline = questionType === 'daily'
-        ? `Math Challenge Daily · ${shortDateStamp()} — ${xp} pts, ${accuracy}% ${streak > 1 ? `, ${streak}🔥` : ''}`
-        : questionType === 'speedrun' && speedrunTime
-            ? `⏱️ Cleared 10 in ${formatTime(speedrunTime)} on Math Challenge`
-            : accuracy === 100
-                ? `💯 ${xp} pts, ${streak}🔥 — perfect run on Math Challenge${modeTag}`
-                : `${xp} pts · ${streak}🔥 streak · ${accuracy}% — Math Challenge ${typeLabel}${modeTag}`;
-
-    const url = profileUrl ?? `${window.location.origin}?c=${createChallengeId()}`;
-
-    const text = [
-        headline,
-        '',
-        ...emojiRows,
-        '',
-        `Can you beat me? 👉 ${url}`,
-    ].join('\n');
-
-    return { text, url };
 }
 
 export const SessionSummary = memo(function SessionSummary({

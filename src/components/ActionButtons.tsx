@@ -69,6 +69,12 @@ interface Props {
      *  show a lock and tap opens the upsell instead of toggling. */
     hasPro?: boolean;
     onProLocked?: () => void;
+    /** The player's real result to share — the live run when one is in
+     *  progress, else their last banked session (App composes it). Null only
+     *  for a player with nothing played yet, which falls back to the generic
+     *  app plug. Tester report: the rail share used to ALWAYS send the
+     *  generic text, even mid-run with a score on the board. */
+    sharePayload?: { text: string; url: string } | null;
 }
 
 /** Circular countdown ring drawn as an SVG arc */
@@ -128,7 +134,7 @@ function TimerRing({ active, durationMs }: { active: boolean; durationMs: number
 export const ActionButtons = memo(function ActionButtons({
     questionType, onTypeChange, hardMode, onHardModeToggle,
     timedMode, onTimedModeToggle, timedDurationMs, problemKey,
-    ageBand, hasPro = true, onProLocked,
+    ageBand, hasPro = true, onProLocked, sharePayload,
 }: Props) {
     // Hard/Timed don't apply to the fixed daily/challenge sets, so hide the
     // toggles there (App also neutralizes the flags for those types).
@@ -153,18 +159,20 @@ export const ActionButtons = memo(function ActionButtons({
     };
 
     const handleShare = async () => {
-        const shareData = {
-            title: 'Math Challenge',
-            text: 'Try this mental-math game.',
-            url: window.location.href,
-        };
+        // Share the player's REAL numbers when we have them (live run or last
+        // banked session); the generic plug is only for a fresh player.
+        const text = sharePayload?.text ?? 'Try this mental-math game.';
+        const url = sharePayload?.url ?? window.location.href;
+        // The clipboard fallback carries the full text (grid + link), not just
+        // the bare URL — that's the artifact worth pasting somewhere.
+        const clipboardText = sharePayload ? text : url;
         try {
             if (navigator.share) {
-                await navigator.share(shareData);
+                await navigator.share({ title: 'Math Challenge', text, url });
                 // navigator.share succeeded — no toast needed, the OS UI handled it
             } else if (navigator.clipboard?.writeText) {
-                await navigator.clipboard.writeText(window.location.href);
-                flashToast('Link copied!');
+                await navigator.clipboard.writeText(clipboardText);
+                flashToast(sharePayload ? 'Result copied!' : 'Link copied!');
             } else {
                 flashToast('Sharing not supported');
             }
@@ -173,8 +181,8 @@ export const ActionButtons = memo(function ActionButtons({
             if (err instanceof Error && err.name === 'AbortError') return;
             // Real failure — try clipboard fallback and toast
             try {
-                await navigator.clipboard.writeText(window.location.href);
-                flashToast('Link copied!');
+                await navigator.clipboard.writeText(clipboardText);
+                flashToast(sharePayload ? 'Result copied!' : 'Link copied!');
             } catch {
                 flashToast("Couldn't share — try again");
             }
