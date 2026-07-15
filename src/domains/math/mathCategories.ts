@@ -15,6 +15,7 @@ export type QuestionType =
     | 'shapes' | 'evenodd' | 'tens'
     | 'round' | 'orderops'
     | 'exponent' | 'negatives' | 'gcflcm' | 'ratio'
+    | 'tables' | 'missing' | 'primes' | 'estimate' | 'money' | 'sequence' | 'time'
     | 'mix-basic' | 'mix-all'
     | 'daily' | 'challenge' | 'speedrun' | 'ghost';
 
@@ -62,14 +63,19 @@ export const QUESTION_TYPES: ReadonlyArray<CategoryEntry<QuestionType>> = [
     { id: 'shapes', icon: '🔺', label: 'Shapes', group: 'young' },
     { id: 'evenodd', icon: '½', label: 'Even/Odd', group: 'young' },
     { id: 'tens', icon: '10', label: '10 More', group: 'young' },
-    // Whole
+    // The Basics
     { id: 'add', icon: '+', label: 'Add', group: 'whole' },
     { id: 'subtract', icon: '−', label: 'Subtract', group: 'whole' },
     { id: 'multiply', icon: '×', label: 'Multiply', group: 'whole' },
     { id: 'divide', icon: '÷', label: 'Divide', group: 'whole' },
-    // Core (Ages 8–10)
+    { id: 'tables', icon: '7×', label: 'Tables', group: 'whole' },
+    { id: 'missing', icon: '?', label: 'Missing', group: 'whole' },
+    // Number Sense
     { id: 'round', icon: '≈', label: 'Rounding', group: 'core' },
     { id: 'orderops', icon: '🔢', label: 'PEMDAS', group: 'core' },
+    { id: 'estimate', icon: '≈?', label: 'Estimate', group: 'core' },
+    { id: 'sequence', icon: '1,2,…', label: 'Sequences', group: 'core' },
+    { id: 'time', icon: '3:15', label: 'Time', group: 'core' },
     // Powers & Roots (was the front half of the grab-bag 'advanced' group —
     // split so each section is small enough to scan and honestly named)
     { id: 'square', icon: 'x²', label: 'Square', group: 'powers' },
@@ -80,10 +86,12 @@ export const QUESTION_TYPES: ReadonlyArray<CategoryEntry<QuestionType>> = [
     { id: 'linear', icon: 'x=', label: 'Linear', group: 'prealgebra' },
     { id: 'gcflcm', icon: 'GCF', label: 'GCF/LCM', group: 'prealgebra' },
     { id: 'ratio', icon: 'a:b', label: 'Ratios', group: 'prealgebra' },
-    // Parts
+    { id: 'primes', icon: 'p', label: 'Primes', group: 'prealgebra' },
+    // Parts of a Whole
     { id: 'fraction', icon: '⅓', label: 'Fractions', group: 'parts' },
     { id: 'decimal', icon: '.5', label: 'Decimals', group: 'parts' },
     { id: 'percent', icon: '%', label: 'Percent', group: 'parts' },
+    { id: 'money', icon: '$', label: 'Money', group: 'parts' },
     // Mixed
     { id: 'mix-basic', icon: '+-\n×÷', label: 'Basic Mix', group: 'mixed' },
     { id: 'mix-all', icon: '🌀', label: 'All Mix', group: 'mixed' },

@@ -23,6 +23,13 @@ const TOPIC_SUCCESS: Partial<Record<QuestionType, string[]>> = {
     decimal: ['Point well taken.', 'Decimal locked.'],
     percent: ['Hundred percent.', 'Percent on point.'],
     linear: ['Solved for x.', 'X revealed.'],
+    tables: ['That table is yours.', 'Chart? You are the chart.'],
+    missing: ['Found the blank.', 'Worked it backwards.'],
+    primes: ['Saw through the disguise.', 'Indivisible instinct.'],
+    estimate: ['Right ballpark.', 'Close enough is exactly right.'],
+    money: ['Change counted.', 'To the cent.'],
+    sequence: ['Cracked the pattern.', 'Saw where it was going.'],
+    time: ['Clock read clean.', 'Right on time.'],
     'mix-basic': ['Mix master.', 'Jack of all four.'],
     'mix-all': ['Every topic, every time.', 'All-rounder.'],
 };
@@ -38,6 +45,13 @@ const TOPIC_FAIL: Partial<Record<QuestionType, string[]>> = {
     decimal: ['Decimals can be sneaky.', 'Watch your points.'],
     percent: ['Percentages are tricky.', 'Almost nailed it.'],
     linear: ['Algebra takes patience.', 'X will reveal itself.'],
+    tables: ['That row takes a few more reps.', 'The table fights back.'],
+    missing: ['Work it from the other side.', 'The blank hides well.'],
+    primes: ['Composites wear good disguises.', '91 fools almost everyone.'],
+    estimate: ['Round first, then multiply.', 'Think in zeros.'],
+    money: ['Count up from the price.', 'Change is subtraction in disguise.'],
+    sequence: ['Check the gap between terms.', 'Patterns hide in differences.'],
+    time: ['An hour is only 60.', 'Minutes, not hundredths.'],
 };
 
 // ── Math-specific Easter eggs ─────────────────────────────────────────────────

@@ -83,6 +83,7 @@ describe('mathGenerator.ts', () => {
         'shapes', 'evenodd', 'tens',
         'round', 'orderops',
         'exponent', 'negatives', 'gcflcm', 'ratio',
+        'tables', 'missing', 'primes', 'estimate', 'money', 'sequence', 'time',
         'mix-basic', 'mix-all', 'daily', 'challenge',
     ];
 
@@ -277,6 +278,23 @@ describe('mathGenerator.ts', () => {
                 const ops = opCount(p.expression);
                 return Math.abs(p.answer) * (1 + ops * 1.5);
             },
+            // 2026-07-16 topics
+            tables: (p) => Math.abs(p.answer),
+            missing: (p) => maxNum(p.expression),
+            // primes: the prompt is a question ("Which is prime?") — the
+            // difficulty lives in the candidate numbers, i.e. the options.
+            primes: (p) => Math.max(...(p.options as number[])),
+            estimate: (p) => Math.abs(p.answer),
+            money: (p) => Math.abs(p.answer),
+            sequence: (p) => maxNum(p.expression),
+            // time: the add-minutes shape encodes its answer as a clock time
+            // (minutes since midnight — magnitude ≠ difficulty). The real
+            // signal is the minute DELTA being added; elapsed-time problems
+            // already answer in minutes.
+            time: (p) => {
+                const add = p.expression.match(/\+ (\d+) min/);
+                return add ? Number(add[1]) : Math.abs(p.answer);
+            },
         };
 
         function meanSignal(type: QuestionType, d: number, hard: boolean): number {
@@ -301,6 +319,7 @@ describe('mathGenerator.ts', () => {
             'shapes', 'evenodd', 'tens',
             'round', 'orderops',
             'exponent', 'negatives', 'gcflcm', 'ratio',
+            'tables', 'missing', 'primes', 'estimate', 'money', 'sequence', 'time',
         ];
 
         for (const type of TOPICS_TO_AUDIT) {
@@ -335,6 +354,10 @@ describe('Variety & anti-repetition (the "10 ÷ 5 on repeat" class)', () => {
         compare: 15, skip: 8, shapes: 5, evenodd: 6,
         round: 12, orderops: 15, negatives: 15, gcflcm: 8,
         ratio: 8, fraction: 6, decimal: 12, percent: 8,
+        // 2026-07-16 topics. 'primes' is deliberately absent: its prompt is a
+        // constant question and the variety lives in the OPTIONS — covered by
+        // a dedicated test in newTopics.test.ts.
+        tables: 8, missing: 25, estimate: 20, money: 20, sequence: 15, time: 25,
     };
     for (const [type, min] of Object.entries(MIN_DISTINCT_AT_D2)) {
         it(`${type}: >= ${min} distinct problems in 500 draws at d=2`, () => {
@@ -356,6 +379,7 @@ describe('Distractor sign quality (the "10 ÷ 5 → -1 option" class)', () => {
         'add', 'subtract', 'multiply', 'divide', 'square', 'sqrt', 'exponent',
         'percent', 'round', 'orderops', 'gcflcm',
         'add1', 'sub1', 'bonds', 'doubles', 'tens', 'skip', 'shapes', 'compare',
+        'tables', 'missing', 'primes', 'estimate', 'money', 'sequence', 'time',
     ];
     for (const type of NON_NEGATIVE_TOPICS) {
         it(`${type}: no negative option when the answer is >= 0`, () => {

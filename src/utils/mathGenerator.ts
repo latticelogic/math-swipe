@@ -27,6 +27,9 @@ const CORE_TYPES: QuestionType[] = ['round', 'orderops'];
 const ALL_INDIVIDUAL: QuestionType[] = [
     ...BASIC_TYPES, 'square', 'sqrt', 'exponent', 'negatives', 'linear', 'gcflcm', 'ratio',
     'fraction', 'decimal', 'percent', ...YOUNG_TYPES, ...CORE_TYPES,
+    // 2026-07-16 batch. 'tables' is deliberately NOT here — it's a focused
+    // drill of one chosen table (duplicates multiply in mixed play).
+    'missing', 'primes', 'estimate', 'money', 'sequence', 'time',
 ];
 
 /** Optional RNG function — defaults to Math.random */
@@ -92,6 +95,14 @@ function _generateProblem(difficulty: number, type: QuestionType, hardMode: bool
         case 'negatives': return genNegatives(difficulty, hardMode);
         case 'gcflcm': return genGcfLcm(difficulty, hardMode);
         case 'ratio': return genRatio(difficulty, hardMode);
+
+        case 'tables': return genTables(difficulty, hardMode);
+        case 'missing': return genMissing(difficulty, hardMode);
+        case 'primes': return genPrimes(difficulty, hardMode);
+        case 'estimate': return genEstimate(difficulty, hardMode);
+        case 'money': return genMoney(difficulty, hardMode);
+        case 'sequence': return genSequence(difficulty, hardMode);
+        case 'time': return genTime(difficulty, hardMode);
         default: return genAdd(difficulty, hardMode); // Exhaustive fallback
     }
 }
@@ -1012,6 +1023,315 @@ function mulRange(d: number): [number, number, number, number] {
     if (d <= 3) return [2, 15, 2, 12];
     if (d <= 4) return [10, 25, 2, 9];
     return [10, 25, 6, 15];
+}
+
+// ── 2026-07-16 topics: tables · missing · primes · estimate · money · sequence · time ──
+
+/** Times-table focus: which table the player is drilling (2–12). Module-level
+ *  like `_rng` — the generator signature is fixed by the engine, and the
+ *  picker's table chooser sets this + persists it (see QuestionTypePicker). */
+let _focusTable = 7;
+export function setFocusTable(n: number): void {
+    if (Number.isFinite(n)) _focusTable = Math.min(12, Math.max(2, Math.round(n)));
+}
+export function getFocusTable(): number {
+    return _focusTable;
+}
+
+/** One chosen table, drilled. The multiplicand range grows with difficulty,
+ *  escaping the memorized chart at d>=4; hardMode goes properly big (7 × 46). */
+function genTables(d: number, hard: boolean): Problem {
+    const t = _focusTable;
+    const [lo, hi] = hard ? [13, 99]
+        : d <= 1 ? [1, 5] : d <= 2 ? [1, 9] : d <= 3 ? [1, 12] : d <= 4 ? [2, 19] : [2, 25];
+    const m = randInt(lo, hi);
+    const flip = _rng() > 0.5;
+    const expr = flip ? `${m} × ${t}` : `${t} × ${m}`;
+    const latex = flip ? `${m} \\times ${t}` : `${t} \\times ${m}`;
+    return pack(expr, t * m, (ans) => mulDistractors(t, m, ans), latex);
+}
+
+/** Missing number: "23 + ? = 41" — inverse-operation thinking across the four
+ *  ops. Constructed forward (a ∘ b = c) then one operand blanked, so the
+ *  answer is always clean. */
+function genMissing(d: number, hard: boolean): Problem {
+    const ops: ('+' | '−' | '×' | '÷')[] = d <= 1 ? ['+', '−'] : d <= 2 ? ['+', '−', '×'] : ['+', '−', '×', '÷'];
+    const op = pickRandom(ops);
+    if (op === '+' || op === '−') {
+        const [lo, hi] = hard ? [100, 999] : d <= 1 ? [1, 10] : d <= 2 ? [5, 30] : d <= 3 ? [10, 99] : [20, 300];
+        let a = randInt(lo, hi), b = randInt(lo, hi);
+        if (op === '−' && a < b) [a, b] = [b, a];
+        const c = op === '+' ? a + b : a - b;
+        // Blank the second operand: "a + ? = c" / "a − ? = c"
+        return pack(`${a} ${op} ? = ${c}`, op === '+' ? b : a - c, nearDistractors);
+    }
+    const [minA, maxA, minB, maxB] = hard ? [13, 99, 13, 99] : mulRange(Math.min(d, 3));
+    const a = randInt(minA, maxA), b = randInt(minB, maxB);
+    if (op === '×') {
+        // "? × b = c" — answer a
+        return pack(`? × ${b} = ${a * b}`, a, nearDistractors);
+    }
+    // "c ÷ ? = a" — answer b
+    return pack(`${a * b} ÷ ? = ${a}`, b, nearDistractors);
+}
+
+// Curated pools: composites chosen because they LOOK prime (odd, non-obvious
+// factors) — the whole game of this topic is seeing through them.
+const PRIMES_SMALL = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29];
+const PRIMES_MID = [31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97];
+const PRIMES_BIG = [101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179, 181, 191, 193, 197, 199];
+const TRICKY_SMALL = [9, 15, 21, 25, 27, 33, 35, 39, 49];
+const TRICKY_MID = [51, 57, 63, 69, 77, 87, 91, 93, 99];
+const TRICKY_BIG = [119, 121, 133, 143, 161, 169, 187, 203, 209, 217, 221];
+
+/** Primes & factors. Two shapes: "Which is prime?" (options: one prime + two
+ *  composites that look prime) and, from d3, "Which divides N?" (N a
+ *  semiprime; options: its factor + two innocent primes). */
+function genPrimes(d: number, hard: boolean): Problem {
+    const whichPrime = (primes: number[], tricky: number[]): Problem => {
+        const answer = pickRandom(primes);
+        return pack('Which is prime?', answer, () => {
+            const c1 = pickRandom(tricky);
+            let c2 = pickRandom(tricky);
+            let safety = 0;
+            while (c2 === c1 && safety++ < 10) c2 = pickRandom(tricky);
+            return [c1, c2];
+        });
+    };
+    if (hard) return whichPrime(PRIMES_BIG, TRICKY_BIG);
+    if (d <= 2) return whichPrime(PRIMES_SMALL, TRICKY_SMALL);
+    if (d >= 3 && _rng() < 0.4) {
+        // "Which divides 91?" — spot the factor of a semiprime.
+        const pool = d >= 5 ? [7, 11, 13, 17, 19, 23] : [3, 7, 11, 13];
+        const p = pickRandom(pool);
+        let q = pickRandom(pool);
+        let safety = 0;
+        while (q === p && safety++ < 10) q = pickRandom(pool);
+        const n = p * q;
+        return pack(`Which divides ${n}?`, p, () => {
+            const innocents = PRIMES_SMALL.filter(x => x !== p && x !== q && n % x !== 0);
+            const i1 = pickRandom(innocents);
+            let i2 = pickRandom(innocents);
+            let s = 0;
+            while (i2 === i1 && s++ < 10) i2 = pickRandom(innocents);
+            return [i1, i2];
+        });
+    }
+    return d >= 5
+        ? whichPrime(PRIMES_BIG, TRICKY_BIG)
+        : whichPrime(PRIMES_MID, TRICKY_MID);
+}
+
+/** Round to a "nice" 1.5-significant-figure number (152 → 150, 779 → 800) —
+ *  what a human estimate actually sounds like. */
+function roundToNice(v: number): number {
+    if (v <= 0) return 0;
+    const mag = Math.pow(10, Math.floor(Math.log10(v)));
+    return Math.round((v / mag) * 2) / 2 * mag;
+}
+
+/** Estimation: "≈ 41 × 19?" — options are magnitude-spread (the skill is
+ *  ballpark, not arithmetic). The correct option is the nice number nearest
+ *  the true product; distractors sit >=2× away so there's one honest answer. */
+function genEstimate(d: number, hard: boolean): Problem {
+    let a: number, b: number, op: '×' | '+';
+    if (hard) { a = randInt(120, 980); b = randInt(110, 970); op = '×'; }
+    else if (d <= 1) { a = randInt(180, 950); b = randInt(180, 950); op = '+'; }
+    else if (d <= 2) { a = randInt(21, 98); b = randInt(3, 9); op = '×'; }
+    else if (d <= 3) { a = randInt(21, 98); b = randInt(11, 49); op = '×'; }
+    else { a = randInt(110, 980); b = randInt(11, 98); op = '×'; }
+    const trueVal = op === '×' ? a * b : a + b;
+    const answer = roundToNice(trueVal);
+    return pack(`≈  ${a} ${op} ${b}`, answer, (ans) => {
+        // Magnitude-offset distractors anchored on the TRUE value (the nice-
+        // rounded answer can drift ~20% from it, so anchoring on the answer
+        // let a ×0.5 distractor land ambiguously close). Guarantee each
+        // distractor is <=0.5× or >=2× of true — one honest ballpark answer.
+        const mk = (k: number): number => {
+            let v = roundToNice(trueVal * k);
+            let s = 0;
+            while ((v === ans || v <= 0 || (v / trueVal > 0.5 && v / trueVal < 2)) && s++ < 6) {
+                k = k < 1 ? k * 0.7 : k * 1.6;
+                v = roundToNice(trueVal * k);
+            }
+            return v;
+        };
+        return [mk(pickRandom([0.25, 0.4])), mk(pickRandom([2.5, 4, 10]))];
+    }, `\\approx ${a} ${op === '×' ? '\\times' : '+'} ${b}`);
+}
+
+/** Format cents as "$3.20". */
+function moneyLabel(cents: number): string {
+    return `$${(cents / 100).toFixed(2)}`;
+}
+
+/** Money: change-making and totals, in cents internally (no float drift).
+ *  Answers are dollars (number); options carry $-formatted labels. */
+function genMoney(d: number, hard: boolean): Problem {
+    let expr: string;
+    let answerCents: number;
+    if (hard) {
+        // Change from a big note for a multi-item purchase.
+        const items = randInt(2, 4);
+        const each = randInt(180, 1495);
+        const note = pickRandom([5000, 10000]);
+        const cost = items * each;
+        answerCents = note - cost;
+        if (answerCents <= 0) return genMoney(d, false); // rare; re-roll simple
+        expr = `Pay ${moneyLabel(note)} for ${items} × ${moneyLabel(each)} — change?`;
+    } else if (d <= 2 && _rng() < 0.5) {
+        // Totals: "3 × $1.25?"
+        const n = randInt(2, d <= 1 ? 3 : 5);
+        const each = d <= 1 ? pickRandom([25, 50, 75, 100, 150, 200]) : randInt(4, 39) * 5;
+        answerCents = n * each;
+        expr = `${n} × ${moneyLabel(each)} = ?`;
+    } else {
+        // Change: pay a note for a price.
+        const price = d <= 1 ? randInt(1, 15) * 25
+            : d <= 2 ? randInt(5, 45) * 10
+                : d <= 3 ? randInt(101, 899)
+                    : randInt(101, 1899);
+        const note = price <= 400 ? 500 : price <= 900 ? 1000 : 2000;
+        answerCents = note - price;
+        expr = `Pay ${moneyLabel(note)} for ${moneyLabel(price)} — change?`;
+    }
+    // Distractors: classic miscounts — off by a dime/quarter/dollar.
+    const used = new Set<number>([answerCents]);
+    const offsets = [10, 25, 100, -10, -25, -100, 5, -5];
+    const ds: number[] = [];
+    let safety = 0;
+    while (ds.length < 2 && safety++ < 30) {
+        const cand = answerCents + pickRandom(offsets);
+        if (cand > 0 && !used.has(cand)) { used.add(cand); ds.push(cand); }
+    }
+    while (ds.length < 2) ds.push(answerCents + 100 * (ds.length + 1));
+    const centOptions = [ds[0], ds[1]];
+    const correctIndex = randInt(0, 2);
+    centOptions.splice(correctIndex, 0, answerCents);
+    return {
+        id: uid(),
+        expression: expr,
+        answer: answerCents / 100,
+        options: centOptions.map(c => c / 100),
+        optionLabels: centOptions.map(moneyLabel),
+        correctIndex,
+    };
+}
+
+/** Sequences: "2, 6, 18, ?" — continue the pattern. The best distractor is
+ *  the WRONG rule applied correctly (arith continuation of a geometric
+ *  sequence), so mistakes read as real thinking. */
+function genSequence(d: number, hard: boolean): Problem {
+    type Rule = { terms: [number, number, number]; answer: number };
+    const arith = (start: number, step: number): Rule =>
+        ({ terms: [start, start + step, start + 2 * step], answer: start + 3 * step });
+    const geo = (start: number, r: number): Rule =>
+        ({ terms: [start, start * r, start * r * r], answer: start * r * r * r });
+
+    let rule: Rule;
+    if (hard) {
+        if (_rng() < 0.5) {
+            // Two-step rule: ×2 then +c, seeded high enough that the terms
+            // (and mental load) clearly outgrow the d5 pools.
+            const c = randInt(3, 9);
+            const t1 = randInt(5, 12);
+            const t2 = t1 * 2 + c, t3 = t2 * 2 + c;
+            rule = { terms: [t1, t2, t3], answer: t3 * 2 + c };
+        } else {
+            // Fibonacci-style with big seeds — real column addition per step.
+            const a = randInt(15, 30), b = randInt(a + 5, 45);
+            rule = { terms: [a, b, a + b], answer: b + (a + b) };
+        }
+    } else if (d <= 1) {
+        rule = arith(randInt(1, 10), pickRandom([2, 5, 10]));
+    } else if (d <= 2) {
+        rule = _rng() < 0.7 ? arith(randInt(2, 20), pickRandom([3, 4, 6, 9])) : geo(randInt(1, 5), 2);
+    } else if (d <= 3) {
+        rule = _rng() < 0.5 ? arith(randInt(5, 40), pickRandom([7, 8, 11, 12])) : geo(randInt(2, 6), pickRandom([2, 3]));
+    } else if (d <= 4) {
+        if (_rng() < 0.5) {
+            const n = randInt(1, 7);
+            rule = { terms: [n * n, (n + 1) * (n + 1), (n + 2) * (n + 2)], answer: (n + 3) * (n + 3) };
+        } else {
+            rule = geo(randInt(2, 7), pickRandom([2, 3]));
+        }
+    } else {
+        if (_rng() < 0.5) {
+            const a = randInt(1, 9), b = randInt(a + 1, 12);
+            rule = { terms: [a, b, a + b], answer: b + (a + b) };
+        } else {
+            rule = geo(randInt(2, 8), 3);
+        }
+    }
+    const [t1, t2, t3] = rule.terms;
+    return pack(`${t1}, ${t2}, ${t3}, ?`, rule.answer, (ans) => {
+        // Wrong-rule continuation: extend the last DIFFERENCE linearly (the
+        // classic error on geometric/two-step sequences). For pure arithmetic
+        // ones this equals the answer, so fall back to a step-off miss.
+        const wrongRule = t3 + (t3 - t2);
+        const stepOff = ans + Math.max(2, Math.round(Math.abs(t2 - t1) / 2));
+        const d1 = wrongRule !== ans ? wrongRule : ans - Math.max(2, t2 - t1);
+        return [d1 > 0 ? d1 : stepOff + 3, stepOff];
+    });
+}
+
+/** "3:15"-style label for minutes-since-midnight (12-hour, no am/pm). */
+function clockLabel(totalMin: number): string {
+    const h = Math.floor(totalMin / 60);
+    const m = totalMin % 60;
+    const displayH = ((h + 11) % 12) + 1;
+    return `${displayH}:${String(m).padStart(2, '0')}`;
+}
+
+/** Time (text-only, no clock face): add-minutes at low difficulty ("2:45 +
+ *  30 min = ?", clock-labelled options) and elapsed-time from d4 ("3:40 →
+ *  4:15 = ? min", plain minutes). hardMode: multi-hour elapsed. */
+function genTime(d: number, hard: boolean): Problem {
+    if (hard || d >= 4) {
+        // Elapsed: answer is minutes between two clock times.
+        const startH = randInt(1, hard ? 5 : 8);
+        const startM = d >= 5 || hard ? randInt(0, 59) : pickRandom([0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55]);
+        const gap = hard ? randInt(120, 420) : d >= 5 ? randInt(60, 180) : randInt(20, 90);
+        const start = startH * 60 + startM;
+        const end = start + gap;
+        return pack(`${clockLabel(start)} → ${clockLabel(end)} = ? min`, gap, (ans) => {
+            // The classic 60-based miscount: off by ±10/±20, or the "digit
+            // subtraction" error (treating 1h as 100 min → ±40).
+            const offs = [10, -10, 20, -20, 40, -40];
+            let d1 = ans + pickRandom(offs);
+            let d2 = ans + pickRandom(offs);
+            let s = 0;
+            while ((d1 <= 0 || d1 === ans) && s++ < 10) d1 = ans + pickRandom(offs);
+            s = 0;
+            while ((d2 <= 0 || d2 === ans || d2 === d1) && s++ < 10) d2 = ans + 15;
+            return [d1, d2];
+        });
+    }
+    // Add-minutes: answer is a clock time (labelled options).
+    const startH = randInt(1, 9);
+    const startM = d <= 1 ? pickRandom([0, 15, 30, 45]) : d <= 2 ? randInt(0, 11) * 5 : randInt(0, 59);
+    const delta = d <= 1 ? pickRandom([15, 30, 45]) : d <= 2 ? randInt(2, 11) * 5 : randInt(20, 115);
+    const start = startH * 60 + startM;
+    const answer = start + delta;
+    const used = new Set<number>([answer]);
+    const ds: number[] = [];
+    let safety = 0;
+    while (ds.length < 2 && safety++ < 30) {
+        const cand = answer + pickRandom([5, -5, 10, -10, 15, -15, 60, -60]);
+        if (cand > start && !used.has(cand)) { used.add(cand); ds.push(cand); }
+    }
+    while (ds.length < 2) ds.push(answer + 20 * (ds.length + 1));
+    const options = [ds[0], ds[1]];
+    const correctIndex = randInt(0, 2);
+    options.splice(correctIndex, 0, answer);
+    return {
+        id: uid(),
+        expression: `${clockLabel(start)} + ${delta} min = ?`,
+        answer,
+        options,
+        optionLabels: options.map(clockLabel),
+        correctIndex,
+    };
 }
 
 // ── Distractor strategies ───────────────────────────────
