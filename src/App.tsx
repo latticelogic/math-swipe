@@ -1333,7 +1333,7 @@ function App() {
               className="fixed top-3 right-3 z-[60] flex items-center gap-2.5 bg-[var(--color-overlay)] border border-[var(--color-gold)]/40 rounded-xl pl-2 pr-3.5 py-1.5 shadow-[0_6px_22px_rgba(0,0,0,0.4)] max-w-[78vw]"
             >
               <div className="w-9 h-9 flex items-center justify-center shrink-0">
-                <AchievementBadge achievementId={currentToast.id} unlocked={true} name="" desc="" />
+                <AchievementBadge achievementId={currentToast.id} unlocked={true} name="" desc="" iconOnly iconSize={30} />
               </div>
               <div className="min-w-0">
                 <div className="text-[9px] ui uppercase tracking-widest text-[var(--color-gold)]/70 leading-tight">Achievement Unlocked</div>
