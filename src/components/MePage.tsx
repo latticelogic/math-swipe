@@ -392,8 +392,11 @@ export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked,
 
             {/* Per question type row */}
             <div className="w-full max-w-sm">
-                <div className="text-xs ui text-[rgb(var(--color-fg))]/50 uppercase tracking-widest text-center mb-3">
+                <div className="text-xs ui text-[rgb(var(--color-fg))]/50 uppercase tracking-widest text-center mb-1">
                     by type
+                </div>
+                <div className="text-[9px] ui text-[rgb(var(--color-fg))]/30 text-center mb-3">
+                    your accuracy on each operation, across every mode
                 </div>
                 <div className="grid grid-cols-5 gap-2 justify-items-center">
                     {typesForBand(ageBand).filter(t => !t.id.startsWith('mix-') && t.id !== 'daily' && t.id !== 'challenge').map(t => {

@@ -272,6 +272,7 @@ function App() {
     speedBonus,
     handleSwipe,
     resetSession,
+    getTypeTally,
     timedDurationMs,
     dailyComplete,
     speedrunFinalTime,
@@ -536,11 +537,13 @@ function App() {
     // then reset the loop so returning starts fresh and a later leave-without-
     // playing can't re-record (the old double-count) or re-open the summary.
     if (prevTab.current === 'game' && tab !== 'game' && totalAnswered > 0) {
-      recordSession(score, totalCorrect, totalAnswered, bestStreak, questionType, effectiveHard, effectiveTimed);
+      // Read the per-operation tally BEFORE resetSession clears it (getTypeTally
+      // returns a snapshot copy, so the value is safe once captured here).
+      recordSession(score, totalCorrect, totalAnswered, bestStreak, questionType, effectiveHard, effectiveTimed, getTypeTally());
       resetSession();
     }
     setActiveTab(tab);
-  }, [score, totalCorrect, totalAnswered, bestStreak, questionType, recordSession, effectiveHard, effectiveTimed, resetSession]);
+  }, [score, totalCorrect, totalAnswered, bestStreak, questionType, recordSession, effectiveHard, effectiveTimed, resetSession, getTypeTally]);
 
   // ── Tab swipe (non-game tabs only) ──
   const handleTabSwipe = useCallback((_: unknown, info: PanInfo) => {
@@ -1233,7 +1236,8 @@ function App() {
             // tab-leave that already banked it is a no-op), then reset so it
             // can't double-record or re-open.
             if (totalAnswered > 0) {
-              recordSession(score, totalCorrect, totalAnswered, bestStreak, questionType, effectiveHard, effectiveTimed);
+              // Snapshot the per-operation tally before the reset below clears it.
+              recordSession(score, totalCorrect, totalAnswered, bestStreak, questionType, effectiveHard, effectiveTimed, getTypeTally());
             }
             if (questionType === 'speedrun') {
               setActiveTab('league');

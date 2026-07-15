@@ -341,10 +341,28 @@ export function useStats(uid: string | null) {
 
     const recordSession = useCallback((
         score: number, correct: number, answered: number,
-        bestStreak: number, questionType: string, hardMode = false, timedMode = false
+        bestStreak: number, questionType: string, hardMode = false, timedMode = false,
+        /**
+         * Per-operation breakdown of this session — { multiply: {solved, correct}, … }.
+         * When provided (and non-empty) it is merged into `byType` so daily/mixed
+         * sessions attribute each answer to its real operation. When omitted, the
+         * whole session falls back to a single `byType[questionType]` bucket (the
+         * old behaviour), keeping existing callers/tests valid.
+         */
+        byTypeDelta?: Record<string, { solved: number; correct: number }>,
     ) => {
         setStats(prev => {
             const prevType = prev.byType[questionType] || { ...EMPTY_TYPE };
+            // Merge the per-operation delta when supplied; otherwise bucket the
+            // whole session under questionType (legacy path).
+            const deltaEntries = byTypeDelta ? Object.entries(byTypeDelta) : [];
+            const nextByType = deltaEntries.length > 0
+                ? deltaEntries.reduce((acc, [key, d]) => {
+                    const base = acc[key] || { ...EMPTY_TYPE };
+                    acc[key] = { solved: base.solved + d.solved, correct: base.correct + d.correct };
+                    return acc;
+                }, { ...prev.byType })
+                : { ...prev.byType, [questionType]: { solved: prevType.solved + answered, correct: prevType.correct + correct } };
             const today = new Date();
             const todayStr = todayKey(today);
             let dayStreak = prev.dayStreak;
@@ -441,13 +459,7 @@ export function useStats(uid: string | null) {
                 dailyStreak,
                 bestDailyStreak,
                 lastPlayedDate: todayStr,
-                byType: {
-                    ...prev.byType,
-                    [questionType]: {
-                        solved: prevType.solved + answered,
-                        correct: prevType.correct + correct,
-                    },
-                },
+                byType: nextByType,
                 hardModeSolved: prev.hardModeSolved + (hardMode ? answered : 0),
                 hardModeCorrect: prev.hardModeCorrect + (hardMode ? correct : 0),
                 hardModeBestStreak: hardMode ? Math.max(prev.hardModeBestStreak, bestStreak) : prev.hardModeBestStreak,
