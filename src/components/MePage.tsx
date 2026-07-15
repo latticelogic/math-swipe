@@ -2,7 +2,6 @@ import { memo, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { useStats } from '../hooks/useStats';
 import { typesForBand, type AgeBand } from '../utils/questionTypes';
-import { countLabel } from '../utils/formatNumber';
 import { t } from '../i18n';
 import { ACHIEVEMENTS, HARD_MODE_ACHIEVEMENTS, TIMED_MODE_ACHIEVEMENTS, ULTIMATE_ACHIEVEMENTS, EVERY_ACHIEVEMENT } from '../utils/achievements';
 import { AchievementBadge } from './AchievementBadge';
@@ -10,14 +9,10 @@ import { StreakGarden } from './StreakGarden';
 import { CHALK_THEMES, type ChalkTheme } from '../utils/chalkThemes';
 import { SWIPE_TRAILS } from '../utils/trails';
 import { nextDailyMilestone } from '../utils/dailyStreak';
-import { buildInviteUrl } from '../utils/referral';
 import { TEACHERS, DEFAULT_TEACHER_ID } from '../domains/math/teachers';
 import { RANKS, getRank, getMastery } from '../domains/math/ranks';
-import { PushOptIn } from './PushOptIn';
-import { UsernameClaim } from './UsernameClaim';
 import { TrialCountdownChip } from './TrialModals';
-import { LegalFooterRow } from './LegalPages';
-import { RecaptchaNotice } from './RecaptchaNotice';
+import { SettingsSheet } from './SettingsSheet';
 import { InstallPill } from './InstallPrompt';
 import { CategoryIcon } from './CategoryIcon';
 import { todayKey } from '../utils/dateKey';
@@ -46,8 +41,6 @@ interface Props {
     authMessage?: string | null;
     onClearAuthMessage?: () => void;
     ageBand: AgeBand;
-    activeBadge: string;
-    onBadgeChange: (id: string) => void;
     activeTeacherId: string;
     onTeacherChange: (id: string) => void;
     uid: string | null;
@@ -70,34 +63,27 @@ interface Props {
 // so the public profile page and share card can reuse them.
 
 /** A grid of badges for one mode's achievement set (Hard / Timed / Ultimate).
- *  Each is badge-only: tapping an unlocked one equips/unequips it on the
- *  leaderboard. The main ACHIEVEMENTS grid stays inline because it carries the
- *  extra costume-equip branch these mode sets don't have. */
-function ModeAchievementGrid({ achievements, cols, unlocked, activeBadge, onBadgeChange }: {
+ *  Pure display — the leaderboard badge-equip interaction was removed
+ *  2026-07-16 (owner call). */
+function ModeAchievementGrid({ achievements, cols, unlocked }: {
     achievements: readonly { id: string; name: string; desc: string }[];
     cols: string;
     unlocked: Set<string>;
-    activeBadge: string;
-    onBadgeChange: (id: string) => void;
 }) {
     return (
         <div className={`grid ${cols} gap-3 justify-items-center`}>
-            {achievements.map(a => {
-                const isUnlocked = unlocked.has(a.id);
-                const isBadge = activeBadge === a.id;
-                return (
-                    <div key={a.id} onClick={() => isUnlocked && onBadgeChange(isBadge ? '' : a.id)} className={isUnlocked ? 'cursor-pointer' : ''}>
-                        <AchievementBadge achievementId={a.id} unlocked={isUnlocked} equipped={isBadge} name={a.name} desc={isBadge ? '🏷️ badge' : a.desc} />
-                    </div>
-                );
-            })}
+            {achievements.map(a => (
+                <div key={a.id}>
+                    <AchievementBadge achievementId={a.id} unlocked={unlocked.has(a.id)} name={a.name} desc={a.desc} />
+                </div>
+            ))}
         </div>
     );
 }
 
-export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked, activeCostume, onCostumeChange, activeTheme, onThemeChange, activeTrailId, onTrailChange, displayName, onDisplayNameChange, isAnonymous, onLinkGoogle, onLinkApple, onSendEmailLink, authMessage, onClearAuthMessage, ageBand, activeBadge, onBadgeChange, activeTeacherId, onTeacherChange, uid, entitlementStatus, entitlementDaysLeft, onUnlock, hasPro = true, onRequestPro }: Props) {
+export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked, activeCostume, onCostumeChange, activeTheme, onThemeChange, activeTrailId, onTrailChange, displayName, onDisplayNameChange, isAnonymous, onLinkGoogle, onLinkApple, onSendEmailLink, authMessage, onClearAuthMessage, ageBand, activeTeacherId, onTeacherChange, uid, entitlementStatus, entitlementDaysLeft, onUnlock, hasPro = true, onRequestPro }: Props) {
     const [showRanks, setShowRanks] = useState(false);
-    const [resetConfirm, setResetConfirm] = useState<string | null>(null);
+    const [settingsOpen, setSettingsOpen] = useState(false);
     const [editingName, setEditingName] = useState(false);
     const [nameInput, setNameInput] = useState(displayName);
     const [showEmailInput, setShowEmailInput] = useState(false);
@@ -117,26 +103,25 @@ export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked,
         return () => clearTimeout(t);
     }, [authMessage, onClearAuthMessage]);
 
-    // Invite a friend — the referral loop. Shares a ?r=<uid> link that credits
-    // this player once the friend joins and plays (see utils/referral.ts).
-    const [inviteMsg, setInviteMsg] = useState('');
-    const handleInvite = async () => {
-        if (!uid) return;
-        const url = buildInviteUrl(uid);
-        const text = 'Come do a bit of mental math with me on Math Challenge.';
-        try {
-            if (typeof navigator !== 'undefined' && navigator.share) {
-                await navigator.share({ title: 'Math Challenge', text, url });
-            } else {
-                await navigator.clipboard.writeText(url);
-                setInviteMsg('Invite link copied');
-                setTimeout(() => setInviteMsg(''), 2500);
-            }
-        } catch { /* user dismissed the share sheet — nothing to do */ }
-    };
-
     return (
-        <div className="flex-1 flex flex-col items-center overflow-y-auto px-6 pt-4 pb-20">
+        <div className="flex-1 flex flex-col items-center overflow-y-auto px-6 pt-4 pb-20 relative">
+            {/* Settings gear — top-right of Me (owner call: maintenance lives
+                in the sheet, the page itself is identity + progress) */}
+            <button
+                onClick={() => setSettingsOpen(true)}
+                aria-label={t('settings.gearAria')}
+                className="absolute top-3 right-4 z-10 w-10 h-10 flex items-center justify-center text-[rgb(var(--color-fg))]/40 hover:text-[rgb(var(--color-fg))]/70 transition-colors"
+            >
+                {/* Hand-drawn gear */}
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="3.2" />
+                    {[0, 45, 90, 135, 180, 225, 270, 315].map(a => {
+                        const r = (a * Math.PI) / 180;
+                        return <line key={a} x1={12 + 6.2 * Math.cos(r)} y1={12 + 6.2 * Math.sin(r)} x2={12 + 9 * Math.cos(r)} y2={12 + 9 * Math.sin(r)} />;
+                    })}
+                </svg>
+            </button>
+
             {/* Display name + edit */}
             <div className="flex items-center gap-2 mb-2">
                 {editingName ? (
@@ -160,14 +145,17 @@ export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked,
                     </form>
                 ) : (
                     <>
-                        <span className="text-sm ui text-[rgb(var(--color-fg))]/60">{displayName}</span>
+                        {/* The name is the page's identity anchor — big chalk type;
+                            the pencil alone signals editability (owner call: the
+                            old "Claim a @username" line below was noise). */}
+                        <span className="text-2xl chalk text-[rgb(var(--color-fg))]/85">{displayName}</span>
                         <button
                             onClick={() => { setNameInput(displayName); setEditingName(true); }}
                             aria-label="Edit name"
-                            className="text-[rgb(var(--color-fg))]/20 hover:text-[rgb(var(--color-fg))]/40 transition-colors"
+                            className="text-[rgb(var(--color-fg))]/25 hover:text-[rgb(var(--color-fg))]/45 transition-colors"
                         >
                             {/* Pencil — hand-drawn, matches the chalk aesthetic */}
-                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M3 21 L 9 19 L 19 9 L 15 5 L 5 15 Z" />
                                 <line x1="14" y1="6" x2="18" y2="10" />
                             </svg>
@@ -176,12 +164,6 @@ export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked,
                 )}
             </div>
 
-            {/* Unique @username claim — atomic via Firestore transaction */}
-            <UsernameClaim
-                uid={uid}
-                isAnonymous={isAnonymous}
-                suggestion={displayName}
-            />
 
             {/* Trial countdown chip — only renders during the 14-day window.
                 Tappable to open the unlock flow directly. */}
@@ -305,8 +287,10 @@ export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked,
                                 transition={{ duration: 0.8, ease: 'easeOut' }}
                             />
                         </div>
+                        {/* Next rank's NAME stays hidden (owner call) — the
+                            reveal is part of the reward. */}
                         <div className="text-xs ui text-[rgb(var(--color-fg))]/50 mt-1.5">
-                            {stats.totalXP.toLocaleString()} / {nextRank.xp.toLocaleString()} → {nextRank.name}
+                            {stats.totalXP.toLocaleString()} / {nextRank.xp.toLocaleString()}
                         </div>
                     </div>
                 )}
@@ -373,26 +357,8 @@ export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked,
                 </div>
             )}
 
-            {/* Invite a friend — closes the referral loop */}
-            {uid && (
-                <div className="w-full max-w-sm mb-8 flex flex-col items-center">
-                    <button
-                        onClick={handleInvite}
-                        className="px-6 py-2.5 rounded-2xl border border-[var(--color-gold)]/40 bg-[var(--color-gold)]/5 text-[var(--color-gold)] ui text-sm font-semibold active:scale-95 transition-all flex items-center gap-2"
-                        aria-label="Invite a friend"
-                    >
-                        {/* Two chalk figures — matches the referral badge */}
-                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <circle cx="9" cy="8" r="3" />
-                            <path d="M4 20c0-3.5 2.2-5.5 5-5.5s5 2 5 5.5" />
-                            <path d="M16 7.5a2.6 2.6 0 0 1 0 5" opacity="0.7" />
-                            <path d="M15 14.7c2.4.2 4 2.1 4 5" opacity="0.7" />
-                        </svg>
-                        Invite a friend
-                    </button>
-                    {inviteMsg && <span className="text-[10px] ui text-[var(--color-correct)] mt-1.5">{inviteMsg}</span>}
-                </div>
-            )}
+            {/* ("Invite a friend" button removed 2026-07-16 — owner call. The
+                referral loop lives on through shared results/challenge links.) */}
 
             {/* Per question type row */}
             <div className="w-full max-w-sm">
@@ -429,58 +395,51 @@ export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked,
                 <div className="text-sm ui text-[rgb(var(--color-fg))]/50 uppercase tracking-widest text-center mb-1">
                     achievements · {[...unlocked].length}/{EVERY_ACHIEVEMENT.length}
                 </div>
-                {activeBadge && (
-                    <div className="text-[10px] ui text-[var(--color-gold)]/60 text-center mb-3">
-                        🏷️ Badge: <span className="font-semibold">{EVERY_ACHIEVEMENT.find(a => a.id === activeBadge)?.name || activeBadge}</span>
-                        <button onClick={() => onBadgeChange('')} className="ml-1 text-[rgb(var(--color-fg))]/30 hover:text-[rgb(var(--color-fg))]/60">✕</button>
-                    </div>
-                )}
-                <div className="text-[9px] ui text-[rgb(var(--color-fg))]/25 text-center mb-3">tap unlocked badge to equip on leaderboard</div>
+                {/* (Badge-equip on the leaderboard was removed 2026-07-16 —
+                    owner call. Achievements are trophies; costumes still equip.) */}
                 <div className="grid grid-cols-4 gap-3 justify-items-center">
                     {ACHIEVEMENTS.map(a => {
                         const isUnlocked = unlocked.has(a.id);
                         const hasCostume = ['streak-5', 'streak-20', 'sharpshooter', 'math-machine', 'century'].includes(a.id);
                         const isActive = activeCostume === a.id;
-                        const isBadgeEquipped = activeBadge === a.id;
                         return (
                             <div
                                 key={a.id}
                                 onClick={() => {
-                                    if (!isUnlocked) return;
-                                    if (hasCostume) onCostumeChange(isActive ? '' : a.id);
-                                    onBadgeChange(isBadgeEquipped ? '' : a.id);
+                                    if (!isUnlocked || !hasCostume) return;
+                                    onCostumeChange(isActive ? '' : a.id);
                                 }}
-                                className={isUnlocked ? 'cursor-pointer' : ''}
+                                className={isUnlocked && hasCostume ? 'cursor-pointer' : ''}
                             >
                                 <AchievementBadge
                                     achievementId={a.id}
                                     unlocked={isUnlocked}
-                                    equipped={isActive || isBadgeEquipped}
+                                    equipped={isActive}
                                     name={a.name}
-                                    desc={isBadgeEquipped ? '🏷️ badge' : isActive ? '✅ costume' : a.desc}
+                                    desc={isActive ? 'costume on' : a.desc}
                                 />
                             </div>
                         );
                     })}
                 </div>
 
-                {/* 💀 Hard Mode */}
+                {/* Hard Mode */}
                 <div className="mt-5 text-xs ui text-[var(--color-skull)] uppercase tracking-widest text-center mb-2">
-                    💀 hard mode
+                    hard mode
                 </div>
-                <ModeAchievementGrid achievements={HARD_MODE_ACHIEVEMENTS} cols="grid-cols-3" unlocked={unlocked} activeBadge={activeBadge} onBadgeChange={onBadgeChange} />
+                <ModeAchievementGrid achievements={HARD_MODE_ACHIEVEMENTS} cols="grid-cols-3" unlocked={unlocked} />
 
-                {/* ⏱️ Timed Mode */}
+                {/* Timed Mode */}
                 <div className="mt-5 text-xs ui text-[var(--color-timed)] uppercase tracking-widest text-center mb-2">
-                    ⏱️ timed mode
+                    timed mode
                 </div>
-                <ModeAchievementGrid achievements={TIMED_MODE_ACHIEVEMENTS} cols="grid-cols-4" unlocked={unlocked} activeBadge={activeBadge} onBadgeChange={onBadgeChange} />
+                <ModeAchievementGrid achievements={TIMED_MODE_ACHIEVEMENTS} cols="grid-cols-4" unlocked={unlocked} />
 
-                {/* 💀⏱️ Ultimate Mode */}
+                {/* Ultimate Mode */}
                 <div className="mt-5 text-xs ui text-[var(--color-ultimate)] uppercase tracking-widest text-center mb-2">
-                    💀⏱️ ultimate
+                    ultimate
                 </div>
-                <ModeAchievementGrid achievements={ULTIMATE_ACHIEVEMENTS} cols="grid-cols-3" unlocked={unlocked} activeBadge={activeBadge} onBadgeChange={onBadgeChange} />
+                <ModeAchievementGrid achievements={ULTIMATE_ACHIEVEMENTS} cols="grid-cols-3" unlocked={unlocked} />
             </div>
 
             {/* Teacher (companion) picker — drives the in-game character + voice */}
@@ -601,26 +560,8 @@ export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked,
                 </div>
             </div>
 
-            {/* Push notification opt-in (renders gracefully when push is
-                unconfigured — see VITE_VAPID_PUBLIC_KEY in .env.example) */}
-            <PushOptIn uid={uid} />
-
-            <button
-                onClick={() => {
-                    const prompts = [
-                        `You've earned ${stats.totalXP.toLocaleString()} points. Are you sure you want to start fresh?`,
-                        `Your ${stats.bestStreak}-streak record will be lost. Reset anyway?`,
-                        `${countLabel(stats.totalSolved, 'problem')} solved. Wipe it all?`,
-                        'A fresh start. Ready to begin again?',
-                        'All progress will be erased. Really reset?',
-                        'Even superheroes get a fresh origin story! Reset? 🦸',
-                    ];
-                    setResetConfirm(prompts[Math.floor(Math.random() * prompts.length)]);
-                }}
-                className="text-sm ui text-[rgb(var(--color-fg))]/35 mt-12 hover:text-[rgb(var(--color-fg))]/50 transition-colors uppercase tracking-widest"
-            >
-                RESET STATS
-            </button>
+            {/* Notifications / reset / version / legal moved into SettingsSheet
+                (gear, top-right) — owner call 2026-07-16. */}
 
             {/* Rank list modal */}
             <AnimatePresence>
@@ -683,94 +624,19 @@ export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked,
                 )}
             </AnimatePresence>
 
-            {/* Reset confirmation modal */}
-            <AnimatePresence>
-                {resetConfirm && (
-                    <>
-                        <motion.div
-                            className="fixed inset-0 bg-[var(--color-overlay-dim)] z-50"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            onClick={() => setResetConfirm(null)}
-                        />
-                        <motion.div
-                            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-[var(--color-overlay)] border border-[rgb(var(--color-fg))]/15 rounded-2xl px-6 py-6 w-[280px] text-center"
-                            initial={{ opacity: 0, scale: 0.85 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.85 }}
-                            transition={{ duration: 0.15 }}
-                        >
-                            <div className="text-4xl mb-3">🧹</div>
-                            <p className="chalk text-[rgb(var(--color-fg))]/80 text-base leading-relaxed mb-6">
-                                {resetConfirm}
-                            </p>
-                            <div className="flex gap-3">
-                                <button
-                                    onClick={() => setResetConfirm(null)}
-                                    className="flex-1 py-2.5 rounded-xl border border-[rgb(var(--color-fg))]/15 text-sm ui text-[rgb(var(--color-fg))]/50 hover:text-[rgb(var(--color-fg))]/70 hover:border-[rgb(var(--color-fg))]/30 transition-colors"
-                                >
-                                    cancel
-                                </button>
-                                <button
-                                    onClick={() => { onReset(); setResetConfirm(null); }}
-                                    className="flex-1 py-2.5 rounded-xl border border-[var(--color-streak-fire)]/40 bg-[var(--color-streak-fire)]/10 text-sm ui text-[var(--color-streak-fire)] hover:bg-[var(--color-streak-fire)]/20 transition-colors"
-                                >
-                                    reset
-                                </button>
-                            </div>
-                        </motion.div>
-                    </>
-                )}
-            </AnimatePresence>
-
-            {/* Version — tappable as a "force update" escape hatch.
-                Useful for users whose service worker is stuck on an old
-                cached build and never showed the update prompt. */}
-            <button
-                onClick={async () => {
-                    try {
-                        if ('serviceWorker' in navigator) {
-                            const regs = await navigator.serviceWorker.getRegistrations();
-                            for (const r of regs) {
-                                await r.update();
-                                if (r.waiting) r.waiting.postMessage({ type: 'SKIP_WAITING' });
-                            }
-                        }
-                    } catch (err) {
-                        console.warn('[force-update] SW update failed:', err);
-                    } finally {
-                        // Force reload regardless — even without a new SW,
-                        // this clears any HTTP-cached JS the user might be
-                        // running. The 'true' arg bypasses the HTTP cache
-                        // (deprecated but widely supported).
-                        window.location.reload();
-                    }
-                }}
-                className="text-[10px] ui text-[rgb(var(--color-fg))]/15 mt-8 tracking-widest active:text-[rgb(var(--color-fg))]/40 transition-colors"
-                aria-label="Tap to check for updates"
-            >
-                v{__APP_VERSION__} · tap to update
-            </button>
-
+            {/* Settings sheet — language, notifications, reset, version, legal */}
+            <SettingsSheet
+                open={settingsOpen}
+                onClose={() => setSettingsOpen(false)}
+                uid={uid}
+                stats={{ totalXP: stats.totalXP, bestStreak: stats.bestStreak, totalSolved: stats.totalSolved }}
+                onReset={onReset}
+            />
             {/* "Install app" pill — only renders when the browser supports
                 install AND the app isn't already running standalone AND
                 the user hasn't permanently dismissed. iOS Safari gets a
                 tap-to-show-instructions modal since iOS has no install API. */}
             <InstallPill />
-
-            {/* Legal links — always discoverable in the profile area,
-                regardless of trial / paid / expired state. Same row also
-                renders in the Paywall footer. */}
-            <div className="mt-4 mb-2">
-                <LegalFooterRow />
-            </div>
-
-            {/* Google-required reCAPTCHA attribution (renders only when App
-                Check is configured; badge is hidden via index.css). */}
-            <div className="mt-2 mb-2 text-center max-w-xs">
-                <RecaptchaNotice />
-            </div>
         </div>
     );
 });

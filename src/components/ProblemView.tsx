@@ -279,13 +279,8 @@ export const ProblemView = memo(function ProblemView({ problem, frozen, highligh
                 <SwipeCoach correctIndex={p.correctIndex} />
             )}
 
-            {/* Skip hint */}
-            {showHints && (
-                <div className="mt-8 flex flex-col items-center text-[rgb(var(--color-fg))]/60">
-                    <div className="text-xl font-bold tracking-wider ui">^</div>
-                    <span className="text-xs ui mt-1 tracking-wider">skip</span>
-                </div>
-            )}
+            {/* (Skip was removed 2026-07-16 — owner call. Swipe-up is now inert;
+                three answers are the whole interaction.) */}
         </motion.div>
     );
 });

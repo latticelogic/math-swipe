@@ -89,7 +89,7 @@ export const es: Record<MsgKey, string> = {
     'count.day.other': '{count} días',
 
     'endRun.title': '¿Terminar esta ronda?',
-    'endRun.stats': '{problems} · {pts} pts por ahora',
+    'endRun.stats': '{problems} · {pts} puntos por ahora',
     'endRun.end': 'Terminar y ver resultados',
     'endRun.keep': 'Seguir jugando',
 
@@ -147,6 +147,14 @@ export const es: Record<MsgKey, string> = {
     'share.textCopied': '¡Texto copiado!',
     'share.saved': '¡Guardado!',
     'share.previewAlt': 'Vista previa de la tarjeta',
+
+    'settings.title': 'Ajustes',
+    'settings.gearAria': 'Abrir ajustes',
+    'settings.done': 'Listo',
+    'settings.reset': 'Borrar estadísticas',
+    'settings.neverMind': 'mejor no',
+    'settings.resetCta': 'borrar',
+    'settings.versionTap': 'v{v} · toca para actualizar',
 
     'me.language': 'Idioma',
     'me.signinTitle': 'Guarda tu progreso',

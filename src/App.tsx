@@ -11,7 +11,7 @@ import { BottomNav } from './components/BottomNav';
 import { ActionButtons } from './components/ActionButtons';
 import { SwipeTrail } from './components/SwipeTrail';
 import type { AgeBand } from './utils/questionTypes';
-import { defaultTypeForBand, typesForBand } from './utils/questionTypes';
+import { defaultTypeForBand } from './utils/questionTypes';
 import { useAutoSummary, usePersonalBest } from './hooks/useSessionUI';
 import { OfflineBanner } from './components/OfflineBanner';
 import { ReloadPrompt } from './components/ReloadPrompt';
@@ -246,7 +246,7 @@ function App() {
     setChallengeTarget(null);
   }, [questionType]);
 
-  const { stats, accuracy, recordSession, resetStats, updateCosmetics, updateBestSpeedrunTime, updateBadge, consumeShield, recordShare } = useStats(uid);
+  const { stats, accuracy, recordSession, resetStats, updateCosmetics, updateBestSpeedrunTime, consumeShield, recordShare } = useStats(uid);
 
   // ── Last banked session (for the rail share button) ──
   // Snapshot taken whenever a session is recorded (tab-leave bank or summary
@@ -733,18 +733,6 @@ function App() {
   // untouched and a band could return later without a big refactor.
   const ageBand: AgeBand = 'full';
 
-  // ── Practice focus: find lowest-accuracy topic ──
-  const levelUpSuggestion = useMemo(() => {
-    const available = typesForBand(ageBand).filter(t => t.id !== 'speedrun' && t.id !== 'challenge');
-    let worst: { type: QuestionType; acc: number; label: string } | null = null;
-    for (const t of available) {
-      const s = stats.byType[t.id];
-      if (!s || s.solved < 5) continue;
-      const acc = s.correct / s.solved;
-      if (!worst || acc < worst.acc) worst = { type: t.id as QuestionType, acc, label: t.label };
-    }
-    return worst && worst.acc < 0.8 ? worst : null;
-  }, [stats.byType]);
 
   // NOTE: we intentionally do NOT block first paint on Firebase auth. The
   // game (problem generation, difficulty, local stats) is fully local, so we
@@ -1090,36 +1078,9 @@ function App() {
                 </div>
               )}
 
-              {/* Speedrun discoverability — only surfaces once the player has shown
-                  competence (5+ streak this session) and isn't already in a special mode.
-                  Tapping switches to speedrun which auto-starts the 10-question timer. */}
-              {streak >= 5 && questionType !== 'speedrun' && questionType !== 'challenge' && questionType !== 'daily' && (
-                <motion.button
-                  key="speedrun-cta"
-                  initial={{ opacity: 0, y: -4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  className="mt-1 text-[10px] ui text-[var(--color-speedrun)]/80 hover:text-[var(--color-speedrun)] transition-colors flex items-center gap-1"
-                  onClick={() => switchType('speedrun' as QuestionType)}
-                  aria-label="Try speedrun mode"
-                >
-                  <span>⚡</span>
-                  <span>You're hot — try speedrun?</span>
-                </motion.button>
-              )}
-              {/* Level Up suggestion — only visible when idle, never in hard/timed/daily/challenge contexts */}
-              {isFirstQuestion && !hardMode && !timedMode && levelUpSuggestion && questionType !== 'speedrun' && questionType !== 'challenge' && questionType !== 'daily' && (
-                <motion.button
-                  initial={{ opacity: 0, y: -5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="mt-2 flex items-center gap-2 text-[10px] ui text-[var(--color-gold)]/70 hover:text-[var(--color-gold)] transition-colors"
-                  onClick={() => switchType(levelUpSuggestion.type)}
-                >
-                  <span>🚀</span>
-                  <span>Level up your {levelUpSuggestion.label}!</span>
-                  <span className="text-[rgb(var(--color-fg))]/20">({Math.round(levelUpSuggestion.acc * 100)}%)</span>
-                </motion.button>
-              )}
+              {/* Banner prompts (speedrun CTA, level-up nudge) were removed
+                  2026-07-16 — feature discovery now belongs to the TEACHER's
+                  speech bubble (owner call: quieter board, stronger bond). */}
               {/* Daily challenge callout. Three states:
                     - not started today      → "📅 Daily challenge available"
                     - started but unfinished → "📅 Daily: 3/10 — finish it"
@@ -1316,8 +1277,6 @@ function App() {
               authMessage={authMessage}
               onClearAuthMessage={clearAuthMessage}
               ageBand={ageBand}
-              activeBadge={stats.activeBadgeId || ''}
-              onBadgeChange={updateBadge}
               activeTeacherId={savedTeacherId as string}
               onTeacherChange={setSavedTeacherId}
               uid={uid}
