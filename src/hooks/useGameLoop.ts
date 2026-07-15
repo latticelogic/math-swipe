@@ -190,6 +190,19 @@ export function useGameLoop(
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [categoryId, hardMode, buildInitialSet]);
 
+    // ── Reset the current session (same category) ─────────────────────────────
+    // Zeroes the counters + rebuilds the buffer WITHOUT a category change. The
+    // caller uses this once a session has been recorded + summarized, so
+    // re-entering the game tab starts clean and navigating away again can't
+    // re-record / re-summarize the stale counts (which also double-counted XP).
+    const resetSession = useCallback(() => {
+        const fresh = buildInitialSet(categoryId, hardMode);
+        if (fresh[0]) fresh[0].startTime = Date.now();
+        correctCountRef.current = 0;
+        setItems(fresh);
+        setGs(INITIAL_STATE);
+    }, [categoryId, hardMode, buildInitialSet]);
+
     // ── Keep infinite buffer full ─────────────────────────────────────────────
     useEffect(() => {
         if (isSpeedrun(categoryId) || isFiniteSet(categoryId)) return;
@@ -455,6 +468,7 @@ export function useGameLoop(
         ...gs,
         level,
         handleSwipe,
+        resetSession,
         timedDurationMs: config.timedModeMs,
         dailyComplete,
         speedrunFinalTime,

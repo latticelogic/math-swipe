@@ -272,6 +272,7 @@ function App() {
     milestone,
     speedBonus,
     handleSwipe,
+    resetSession,
     timedDurationMs,
     dailyComplete,
     speedrunFinalTime,
@@ -1230,7 +1231,12 @@ function App() {
                 recordSession(score, totalCorrect, totalAnswered, bestStreak, questionType, hardMode, timedMode);
               }
               setActiveTab('league');
-              setQuestionType(defaultTypeForBand(ageBand));
+              setQuestionType(defaultTypeForBand(ageBand)); // category change resets the loop
+            } else {
+              // Clear the just-recorded session so re-entering the game tab
+              // starts fresh — otherwise the stale counts re-fire the summary
+              // (and re-record XP) on the next tab change out of the game.
+              resetSession();
             }
           }}
           hardMode={hardMode}
