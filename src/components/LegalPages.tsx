@@ -6,16 +6,17 @@
  *   /privacy   — privacy policy
  *   /terms     — terms of service
  *
- * All three are clearly marked as DRAFTS with a yellow banner at the
- * top. The drafts are based on what the codebase actually does today
- * (anonymous Firebase auth, optional Google/email sign-in, stats blob,
- * optional push tokens, optional Stripe purchase) — so they're closer
- * to accurate than generic templates, but they're NOT a substitute for
- * lawyer review. Final copy must be replaced before live keys ship.
+ * These are the live consumer terms for Lattice Logic Pte. Ltd. (Singapore).
+ * They're written against what the codebase actually does (anonymous Firebase
+ * auth, optional Google/email sign-in, stats blob, optional push tokens,
+ * optional Stripe purchase) and follow the Singapore-PDPA-first / mixed-audience
+ * COPPA structure recorded in docs/legal-review-brief.md. Governing law is
+ * Singapore; a class-action waiver and a Singapore-courts dispute clause apply.
  *
- * Why these live together: they share layout chrome + the draft banner,
- * and they all change together when legal review lands. One file, one
- * PR for updates.
+ * NOTE: these are boilerplate-style docs shipped without a bespoke legal review
+ * (a business decision by the owner). A one-off Singapore-counsel confirmation
+ * remains advisable given the kids-plus-payments context — the brief above is
+ * built to make that a cheap, fixed-fee check.
  */
 
 import { useEffect } from 'react';
@@ -34,7 +35,7 @@ const TITLES: Record<LegalDocId, string> = {
     terms: 'Terms of Service',
 };
 
-const LAST_UPDATED = '2026-07-14';
+const LAST_UPDATED = '2026-07-15';
 
 export function LegalPage({ doc, onBack }: Props) {
     // Scroll to top on mount — these are full pages, not modals
@@ -62,16 +63,6 @@ export function LegalPage({ doc, onBack }: Props) {
                 <p className="text-[11px] ui text-[rgb(var(--color-fg))]/35 mb-4">
                     Last updated: {LAST_UPDATED}
                 </p>
-
-                {/* Draft banner — large, unmissable. Removed only when final
-                    legal-reviewed copy is in place. */}
-                <div className="mb-6 px-4 py-3 rounded-2xl border border-[var(--color-gold)]/40 bg-[var(--color-gold)]/8 text-xs ui text-[var(--color-gold)]/90 leading-relaxed">
-                    <strong className="font-semibold">DRAFT.</strong>{' '}
-                    This document has not been reviewed by a lawyer. It describes
-                    the app's current data practices as accurately as the
-                    authors can, but it's a sample — not legal advice. Replace
-                    with reviewed copy before launching to paid users.
-                </div>
 
                 <div className="text-sm ui leading-relaxed space-y-4 text-[rgb(var(--color-fg))]/80">
                     {doc === 'refund' && <RefundBody />}
@@ -129,6 +120,16 @@ function RefundBody() {
                     back, you can purchase again at the regular price.
                 </p>
             </Section>
+
+            <Section title="Your statutory rights">
+                <p>
+                    This policy is in addition to your rights under Singapore's
+                    Consumer Protection (Fair Trading) Act. Math Swipe is a digital
+                    product delivered instantly on purchase; refunds are processed
+                    exclusively through Stripe once the transaction is verified
+                    against our records.
+                </p>
+            </Section>
         </>
     );
 }
@@ -177,31 +178,30 @@ function PrivacyBody() {
             </Section>
 
             <Section title="Children">
-                <p>Math Swipe is designed for ages 8–14. We do <em>not</em>
-                    require email, phone, or any personal information to play.
-                    Parents who want to enable purchase or cross-device sync may
-                    opt the child in via Google or email sign-in; otherwise the
-                    app works fully on the anonymous account.</p>
-                <p className="text-[rgb(var(--color-fg))]/55 text-xs italic">
-                    DRAFT NOTE — stance chosen (counsel to finalise wording):
-                    mixed-audience model on the "support for internal operations"
-                    basis (no ad-tech, no third-party analytics, no data sale),
-                    NOT a full verifiable-parental-consent flow; opt-in features
-                    (email / Google link / push) gated for under-13 where
-                    required. Market sequencing: launch under Singapore PDPA
-                    first (no personal data required to play), and add a neutral
-                    US age-screen + parental notice only on US market entry,
-                    since COPPA is triggered by serving US under-13s regardless
-                    of where the operator sits. See the legal-review brief.
-                </p>
+                <p><strong>For players:</strong> You don't need to give us your
+                    name, email, or phone number to play — your account is just a
+                    random id and your scores. If you're under 13, please ask a
+                    parent before you turn on sign-in, email, or notifications.</p>
+                <p><strong>For parents:</strong> Math Swipe is designed for ages
+                    8–14 and needs no personal information for core play — only an
+                    anonymous identifier and gameplay stats, used solely to run
+                    the game (no advertising, no profiling, no third-party
+                    analytics, no data sale). The optional features — Google or
+                    email sign-in and push notifications — do collect an
+                    identifier or address; for children under 13 these are gated
+                    and require a parent or guardian to enable them. Under
+                    Singapore's Personal Data Protection Act, users aged 13–17 may
+                    consent directly to clearly-explained terms, while under-13
+                    users require verifiable parental consent for anything beyond
+                    anonymous play.</p>
             </Section>
 
             <Section title="Sharing">
                 <p>We don't sell or share your data with advertisers. The only
                     third parties that touch any of it are:</p>
-                <Bullet><strong>Firebase</strong> (Google) — auth, database, push delivery</Bullet>
-                <Bullet><strong>Cloudflare</strong> — hosting and edge delivery</Bullet>
-                <Bullet><strong>Stripe</strong> — payment processing (purchases only)</Bullet>
+                <Bullet><strong>Firebase</strong> (Google) — authentication and structured database hosting; push delivery</Bullet>
+                <Bullet><strong>Cloudflare</strong> — global edge routing, hosting, and DDoS mitigation</Bullet>
+                <Bullet><strong>Stripe</strong> — secure tokenised payment processing (purchases only)</Bullet>
             </Section>
 
             <Section title="Your rights">
@@ -302,19 +302,55 @@ function TermsBody() {
                     $3.14, that's the cap.</p>
             </Section>
 
-            <Section title="Governing law">
+            <Section title="Where Math Swipe is offered">
+                <p>Math Swipe is built to comply with the regulatory standards of
+                    Singapore and is offered from Singapore. It is not
+                    intentionally directed at, or optimised for, users in the
+                    European Union, the United Kingdom, or the United States. We
+                    add the market-specific protections required — for example, a
+                    neutral age-screen and parental controls for the United States
+                    — before actively offering the app in those markets.</p>
+            </Section>
+
+            <Section title="Display names">
+                <p>Your display name is shown publicly on the leaderboard. We may
+                    moderate, hide, or automatically randomise any display name
+                    that contains profanity, offensive language, or personal
+                    information.</p>
+            </Section>
+
+            <Section title="Governing law and dispute resolution">
                 <p>
-                    Math Swipe is operated by Lattice Logic Pte. Ltd., a company
-                    incorporated in the Republic of Singapore (UEN 202610912N).
-                    These terms are governed by the laws of Singapore, and any
-                    dispute will be resolved under the mechanism specified below.
+                    Math Swipe is operated by Lattice Logic Pte. Ltd.
+                    (UEN 202610912N), incorporated in the Republic of Singapore.
+                    These Terms are governed by, and construed in accordance
+                    with, the laws of the Republic of Singapore, without regard
+                    to its conflict-of-law principles.
                 </p>
-                <p className="text-[rgb(var(--color-fg))]/55 text-xs italic">
-                    DRAFT NOTE: governing law set to Singapore (the operator's
-                    jurisdiction). Counsel to finalise the dispute-resolution
-                    mechanism — Singapore courts vs SIAC arbitration, and any
-                    class-action waiver — and scope obligations per launch market
-                    (see the Children section + the legal-review brief).
+                <p>
+                    Any dispute, controversy, or claim arising out of or relating
+                    to these Terms — including their validity, breach, or
+                    termination — shall be referred to and finally resolved by the
+                    exclusive jurisdiction of the courts of the Republic of
+                    Singapore. (Singapore courts are chosen over arbitration
+                    deliberately: for a one-time $3.14 purchase, arbitration fees
+                    would be disproportionate.)
+                </p>
+            </Section>
+
+            <Section title="Class action waiver">
+                <p className="uppercase text-[rgb(var(--color-fg))]/75 tracking-wide text-xs leading-relaxed">
+                    To the fullest extent permitted by applicable law, you and
+                    Lattice Logic Pte. Ltd. agree that each party may bring claims
+                    against the other only in an individual capacity, and not as a
+                    plaintiff or class member in any purported class, collective,
+                    or representative proceeding. No court shall consolidate more
+                    than one person's claims or preside over any representative or
+                    class proceeding.
+                </p>
+                <p>
+                    If you are a minor under the laws of your country of residence,
+                    this waiver must be agreed to by a parent or legal guardian.
                 </p>
             </Section>
 

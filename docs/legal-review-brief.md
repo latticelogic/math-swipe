@@ -1,14 +1,13 @@
 # Legal review brief — Math Swipe
 
-A scoping packet for counsel reviewing the Refund / Privacy / Terms drafts. The
-goal is a tight, cheap engagement: the drafts are already written against the
-app's *actual* data practices, and the two open decisions are pre-decided at the
-product level — we need counsel to confirm and finalise the wording, not start
-from scratch.
+A scoping packet for a **fixed-fee confirmation review** of the live Refund /
+Privacy / Terms pages. The docs are already written against the app's *actual*
+data practices and follow the structure below, so this is a "confirm-or-correct"
+engagement, not drafting from scratch. (The docs are shipped as live consumer
+terms; a one-off Singapore-counsel check is prudent given the kids-plus-payments
+context.)
 
-## The drafts
-
-Live (behind a "DRAFT — not legal advice" banner) at:
+## The pages (live)
 
 - Refund: https://math-swipe-c7k.pages.dev/refund
 - Privacy: https://math-swipe-c7k.pages.dev/privacy
@@ -82,6 +81,8 @@ serving US under-13s regardless of where the operator is incorporated.
 
 ## Deliverable requested
 
-Reviewed final copy for all three pages (Refund / Privacy / Terms) reflecting the
-above, after which we remove the DRAFT banner. Flag anything in the current
-drafts that misstates our practices.
+Confirm-or-correct the three live pages (Refund / Privacy / Terms) against the
+structure above. Flag anything that misstates our practices or is legally
+insufficient for a Singapore-based, PDPA-first launch to an 8–14 audience —
+especially the children's-data section, the class-action waiver, and the
+dispute-resolution clause.
