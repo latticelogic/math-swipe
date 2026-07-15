@@ -321,3 +321,54 @@ describe('mathGenerator.ts', () => {
         }
     });
 });
+
+describe('Variety & anti-repetition (the "10 ÷ 5 on repeat" class)', () => {
+    // Minimum DISTINCT problems each topic must produce at the STARTING
+    // difficulty (d=2 — where useDifficulty begins, and drops to d=1 on slow
+    // answers). Floors sit just below each topic's current pool, so a future
+    // range narrowing (the divide-was-16, square-was-4 bug class) regresses the
+    // test. Inherently small topics (square/sqrt/shapes) get honest low floors.
+    const MIN_DISTINCT_AT_D2: Record<string, number> = {
+        add: 30, subtract: 20, multiply: 30, divide: 30,
+        square: 7, sqrt: 7, exponent: 8,
+        add1: 10, sub1: 6, bonds: 8, doubles: 10, tens: 12,
+        compare: 15, skip: 8, shapes: 5, evenodd: 6,
+        round: 12, orderops: 15, negatives: 15, gcflcm: 8,
+        ratio: 8, fraction: 6, decimal: 12, percent: 8,
+    };
+    for (const [type, min] of Object.entries(MIN_DISTINCT_AT_D2)) {
+        it(`${type}: >= ${min} distinct problems in 500 draws at d=2`, () => {
+            const seen = new Set<string>();
+            for (let i = 0; i < 500; i++) {
+                seen.add(generateProblem(2, type as QuestionType, false).expression);
+            }
+            expect(seen.size).toBeGreaterThanOrEqual(min);
+        });
+    }
+});
+
+describe('Distractor sign quality (the "10 ÷ 5 → -1 option" class)', () => {
+    // Topics whose answers are always integers >= 0. A negative option next to a
+    // non-negative answer is an implausible giveaway; nearDistractors/smallDistractors/
+    // mulDistractors all clamp for these. (Excludes negatives/linear/ratio/
+    // fraction/decimal, which are legitimately signed or non-integer.)
+    const NON_NEGATIVE_TOPICS: QuestionType[] = [
+        'add', 'subtract', 'multiply', 'divide', 'square', 'sqrt', 'exponent',
+        'percent', 'round', 'orderops', 'gcflcm',
+        'add1', 'sub1', 'bonds', 'doubles', 'tens', 'skip', 'shapes', 'compare',
+    ];
+    for (const type of NON_NEGATIVE_TOPICS) {
+        it(`${type}: no negative option when the answer is >= 0`, () => {
+            for (let d = 1; d <= 5; d++) {
+                for (let i = 0; i < 60; i++) {
+                    const p = generateProblem(d, type, false);
+                    if (p.answer >= 0) {
+                        for (const opt of p.options) {
+                            expect(opt).toBeGreaterThanOrEqual(0);
+                        }
+                    }
+                }
+            }
+        });
+    }
+});

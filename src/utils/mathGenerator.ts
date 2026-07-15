@@ -170,7 +170,8 @@ function genSquare(d: number, hard: boolean): Problem {
         }
         return pack(`${n}²`, n * n, nearDistractors, `${n}^2`);
     }
-    const max = d <= 1 ? 3 : d <= 2 ? 5 : d <= 3 ? 9 : d <= 4 ? 12 : 15;
+    // Widened: d=1 was 2-3 (only two squares). Now 2-6 at d=1 up to 2-20.
+    const max = d <= 1 ? 6 : d <= 2 ? 9 : d <= 3 ? 12 : d <= 4 ? 15 : 20;
     const n = randInt(2, max);
     return pack(`${n}²`, n * n, nearDistractors, `${n}^2`);
 }
@@ -192,7 +193,8 @@ function genSqrt(d: number, hard: boolean): Problem {
             : randInt(20, 50);
         return pack(`√${n * n}`, n, nearDistractors, `\\sqrt{${n * n}}`);
     }
-    const max = d <= 1 ? 3 : d <= 2 ? 5 : d <= 3 ? 9 : d <= 4 ? 12 : 15;
+    // Widened to match the squares pool: d=1 was 2-3 (two roots). Now 2-6 → 2-20.
+    const max = d <= 1 ? 6 : d <= 2 ? 9 : d <= 3 ? 12 : d <= 4 ? 15 : 20;
     const n = randInt(2, max);
     return pack(`√${n * n}`, n, nearDistractors, `\\sqrt{${n * n}}`);
 }
@@ -248,7 +250,7 @@ function genBonds(d: number, hard: boolean): Problem {
     //   Hard (d=4-5): total ∈ {10, 20}
     //   hardMode:     total ∈ {20, 50, 100}
     const targets = hard ? [20, 50, 100]
-        : d <= 1 ? [5]
+        : d <= 1 ? [5, 10]   // widened from [5] only (4 problems) to include 10
             : d <= 3 ? [5, 10]
                 : [10, 20];
     const total = pickRandom(targets);
@@ -264,7 +266,7 @@ function genDoubles(d: number, hard: boolean): Problem {
     //   Med  (d=2-3): 1-10 doubled (current)
     //   Hard (d=4-5): 1-20 doubled (strategy: 14+14, 17+17)
     //   hardMode:     1-50 doubled (real mental work: 37+37)
-    const max = hard ? 50 : d <= 1 ? 5 : d <= 3 ? 10 : 20;
+    const max = hard ? 50 : d <= 1 ? 8 : d <= 3 ? 12 : 20;   // widened low tiers
     const n = randInt(1, max);
     return pack(`${n} + ${n}`, n * 2, smallDistractors, `${n} + ${n}`);
 }
@@ -330,9 +332,9 @@ function genSkip(d: number, hard: boolean): Problem {
         stepsPool = [6, 8, 9, 11, 12, 25];
         allowBackward = true;
     } else if (d <= 1) {
-        stepsPool = [2, 10];
+        stepsPool = [2, 5, 10];   // widened from [2, 10]
     } else if (d <= 3) {
-        stepsPool = [2, 5, 10];
+        stepsPool = [2, 3, 5, 10];
     } else {
         stepsPool = [3, 4, 5, 7];
     }
@@ -347,7 +349,7 @@ function genSkip(d: number, hard: boolean): Problem {
             return [ans + steps, ans - steps];
         });
     }
-    const start = randInt(0, 5) * steps;
+    const start = randInt(0, 9) * steps;   // widened from 0-5 for more distinct sequences
     const seq = [start, start + steps, start + 2 * steps];
     const answer = start + 3 * steps;
     return pack(`${seq.join(', ')}, ?`, answer, (ans) => {
@@ -373,7 +375,9 @@ function genShapes(d: number, hard: boolean): Problem {
         { emoji: '🔺', name: 'triangle', sides: 3 },
         { emoji: '🟦', name: 'square', sides: 4 },
         { emoji: '◆', name: 'diamond', sides: 4 },
-        { emoji: '⭐', name: 'star', sides: 5 },
+        // Was '⭐ star, sides: 5' — a 5-point star has 10 edges, not 5. Use a
+        // real pentagon so the side count is correct.
+        { emoji: '⬠', name: 'pentagon', sides: 5 },
         { emoji: '⬢', name: 'hexagon', sides: 6 },
         { emoji: '⬣', name: 'heptagon', sides: 7 },
         { emoji: '🛑', name: 'octagon', sides: 8 },
@@ -382,7 +386,7 @@ function genShapes(d: number, hard: boolean): Problem {
         { emoji: '🌟', name: 'hendecagon', sides: 11 },
         { emoji: '⏰', name: 'dodecagon', sides: 12 },
     ];
-    const maxSides = hard ? 12 : d <= 1 ? 4 : d <= 3 ? 6 : 10;
+    const maxSides = hard ? 12 : d <= 3 ? 6 : 10;   // d=1 widened 4→6 (kept d<=3 at 6 so hardMode still discriminates)
     const pool = ALL.filter(s => s.sides <= maxSides);
     const shape = pickRandom(pool);
     const answer = shape.sides;
@@ -579,8 +583,8 @@ function genExponent(d: number, hard: boolean): Problem {
     //                  (deferred to a follow-up PR — needs a new question
     //                  shape; for now hardMode uses the widest numeric range)
     const [baseMin, baseMax, expMin, expMax] = hard ? [2, 12, 2, 6]
-        : d <= 1 ? [2, 3, 2, 3]
-            : d <= 3 ? [2, 5, 2, 4]
+        : d <= 1 ? [2, 5, 2, 3]   // widened from 2-3^2-3 (only 4 powers)
+            : d <= 3 ? [2, 6, 2, 4]
                 : [2, 10, 2, 5];
     const base = randInt(baseMin, baseMax);
     const exp = randInt(expMin, expMax);
@@ -677,9 +681,8 @@ function genGcfLcm(d: number, hard: boolean): Problem {
 
     // d=1: GCF only, small. d=2-3: either, medium. d=4-5: LCM emphasis, large.
     const useGcf = d <= 1 ? true : d <= 3 ? _rng() > 0.5 : _rng() > 0.7;
-    const [factorMin, factorMax, multMax] = d <= 1 ? [2, 4, 4]
-        : d <= 3 ? [2, 6, 6]
-            : [3, 8, 9];
+    const [factorMin, factorMax, multMax] = d <= 3 ? [2, 6, 6]   // d=1 widened from [2,4,4] (kept d<=3 so hardMode still discriminates)
+        : [3, 8, 9];
     const factor = randInt(factorMin, factorMax);
     const m1 = randInt(2, multMax);
     let m2 = randInt(2, multMax);
@@ -1002,9 +1005,11 @@ function mulRange(d: number): [number, number, number, number] {
     //   d=3 — full standard times table (2-12 × 2-12)
     //   d=4 — one factor escapes the table (10-25 × 2-9)
     //   d=5 — both factors escape (10-25 × 6-15)
-    if (d <= 1) return [2, 5, 2, 5];
-    if (d <= 2) return [2, 9, 2, 9];
-    if (d <= 3) return [2, 12, 2, 12];
+    // d=1 widened from 2-5×2-5 (only 16 problems — the "10 ÷ 5 again" report,
+    // since divide shares this range) to the full small table for real variety.
+    if (d <= 1) return [2, 9, 2, 9];
+    if (d <= 2) return [2, 12, 2, 12];
+    if (d <= 3) return [2, 15, 2, 12];
     if (d <= 4) return [10, 25, 2, 9];
     return [10, 25, 6, 15];
 }
@@ -1014,12 +1019,18 @@ function mulRange(d: number): [number, number, number, number] {
 function nearDistractors(answer: number): [number, number] {
     const used = new Set<number>([answer]);
     const result: number[] = [];
+    // A negative option next to a non-negative answer is implausible and quietly
+    // tips off the answer (e.g. "10 ÷ 5" showing a -1). When the answer is >= 0,
+    // reflect any below-zero distractor back to the positive side. Topics with
+    // genuinely negative answers (answer < 0) keep the full spread.
+    const nonNeg = answer >= 0;
     let safety = 0;
     while (result.length < 2 && safety < 100) {
         safety++;
         const offset = Math.max(1, randInt(1, Math.max(3, Math.floor(Math.abs(answer) * 0.15))));
-        const d = answer + (_rng() > 0.5 ? offset : -offset);
-        if (!used.has(d)) { used.add(d); result.push(d); }
+        let d = answer + (_rng() > 0.5 ? offset : -offset);
+        if (nonNeg && d < 0) d = answer + offset;
+        if (d !== answer && !used.has(d)) { used.add(d); result.push(d); }
     }
     // Deep fallback
     let fallback = answer + 1;
