@@ -28,11 +28,20 @@ export const QuestionTypePicker = memo(function QuestionTypePicker({ current, on
                 pointerdown. */}
             <button
                 onClick={() => setOpen(o => !o)}
-                aria-label={`Question type: ${currentEntry?.label ?? 'select'}`}
+                aria-label={`Switch topic. Current: ${currentEntry?.label ?? 'select'}`}
                 aria-expanded={open}
-                className="action-icon w-11 h-11 flex items-center justify-center text-[rgb(var(--color-fg))]/50 active:text-[var(--color-gold)] active:scale-90"
+                className="action-icon w-12 flex flex-col items-center justify-center gap-0.5 text-[rgb(var(--color-fg))]/70 active:text-[var(--color-gold)] active:scale-90"
             >
-                <CategoryIcon id={current} size={26} />
+                <CategoryIcon id={current} size={24} />
+                {/* Label + caret — the caret is the "opens a menu" affordance and
+                    the label makes this the one self-describing control in the rail,
+                    fixing the "what is this icon?" discoverability gap. */}
+                <span className="flex items-center gap-0.5 leading-none">
+                    <span className="text-[8px] ui max-w-[40px] truncate">{currentEntry?.label ?? 'Topic'}</span>
+                    <svg width="7" height="7" viewBox="0 0 10 10" fill="currentColor" className="shrink-0 opacity-70">
+                        <path d="M1 3.5 L5 7.5 L9 3.5 Z" />
+                    </svg>
+                </span>
             </button>
 
             {/* Full-screen overlay picker — portaled to body to escape #root's position:fixed */}

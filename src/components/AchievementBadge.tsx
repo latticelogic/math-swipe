@@ -460,10 +460,19 @@ interface Props {
     equipped?: boolean;
     name: string;
     desc: string;
+    /** Render only the glyph (no bordered box, no name/desc) — for the compact
+     *  unlock toast, which supplies its own container. */
+    iconOnly?: boolean;
+    /** Glyph size in px when iconOnly. Ignored by the full grid layout. */
+    iconSize?: number;
 }
 
-export const AchievementBadge = memo(function AchievementBadge({ achievementId, unlocked, equipped, name, desc }: Props) {
+export const AchievementBadge = memo(function AchievementBadge({ achievementId, unlocked, equipped, name, desc, iconOnly, iconSize = 30 }: Props) {
     const Icon = BADGE_MAP[achievementId] ?? DefaultBadge;
+
+    if (iconOnly) {
+        return <Icon size={iconSize} unlocked={unlocked} />;
+    }
 
     return (
         <div className={`flex flex-col items-center gap-1 w-16 ${unlocked ? '' : 'opacity-60'}`}>
