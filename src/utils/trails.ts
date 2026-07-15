@@ -7,6 +7,7 @@ export interface TrailConfig {
     hardModeOnly?: boolean;
     timedModeOnly?: boolean;
     ultimateOnly?: boolean;
+    pro?: boolean;      // Pro-pack exclusive — unlocked by paying, never earnable
 }
 
 export const SWIPE_TRAILS: TrailConfig[] = [
@@ -33,5 +34,11 @@ export const SWIPE_TRAILS: TrailConfig[] = [
         name: 'Static Shock',
         emoji: '⚡',
         timedModeOnly: true,
+    },
+    {
+        id: 'pro-comet',
+        name: 'Comet',
+        emoji: '☄️',
+        pro: true,
     },
 ];

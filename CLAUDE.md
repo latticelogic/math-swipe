@@ -136,10 +136,28 @@ instead of enjoying play. The price is a positioning statement, not a
 revenue-optimisation knob — don't relitigate it without explicit
 permission.
 
-### The 14-day demo
+### The 14-day demo + the Pro set (updated 2026-07-15)
 
-Every new install gets full access to everything for 14 days from first
-session. The trial clock is keyed on Firebase Auth uid (anonymous works),
+**Two gates, not one.** Every new install gets free access to the CORE for
+14 days from first session — all 28 topics, the Daily, adaptive difficulty,
+streaks, base achievements, and the *earned* cosmetics. A small **Pro set is
+pay-gated from day 1, even during the trial**, so eager users have a reason to
+convert early (testers confirmed there was previously zero incentive to pay
+before the day-14 wall). The Pro set:
+- **Advanced modes** — Hard / Timed / Ultimate (`isPaid` gate in ActionButtons)
+- **Magic Tricks** — free starter set (`isFreeTrick`, the 6 easiest by
+  difficulty); the rest of the 36-trick library is Pro
+- **Pro cosmetics pack** — the `pro:true` chalk themes (Obsidian, Molten) +
+  the Comet trail (a Pro costume is a noted fast-follow)
+
+Access logic: core uses `hasAccess()` (trial-or-paid); the Pro set uses
+`isPaid()` (paid only). Tapping a locked Pro thing opens the Paywall in its
+dismissible `mode='pro'` (aspirational "Unlock everything"); post-trial it's
+the hard `mode='expired'` gate. The Daily is never gated by either. This did
+NOT touch the firm decisions ($3.14, no subscription, Daily free) — only the
+trial *structure*.
+
+The trial clock is keyed on Firebase Auth uid (anonymous works),
 stored in `entitlements/{uid}` Firestore doc (separate collection from
 world-readable `users/{uid}` — payment state is private). On day 15+
 without purchase, the paywall blocks every paid surface; the Daily
@@ -291,10 +309,13 @@ is in place" instruction.
   volume." is a teacher noticing the player. When adding achievements,
   write the desc as if congratulating the player at the moment of
   unlock, not labeling the unlock criteria.
-- **Monetization is settled, don't relitigate.** $3.14 lifetime, 14-day
-  demo, NO subscription, NO free tier other than the always-free Daily
-  Challenge. These are firm decisions backed by recorded rationale (see
-  the Monetization section above + `memory/monetization_model.md`).
+- **Monetization is settled, don't relitigate.** $3.14 lifetime, NO
+  subscription, Daily Challenge always free. These three are firm. The
+  trial *structure* was tuned 2026-07-15 to a two-gate model (14-day free
+  CORE + a Pro set pay-gated from day 1 — see "The 14-day demo + the Pro
+  set" above); that was an owner-directed change, not a relitigation of
+  price/subscription. Backed by recorded rationale (Monetization section +
+  `memory/monetization_model.md`).
   When extending, *follow* the model; don't propose alternative pricing,
   subscription tiers, freemium variants, or "Pro" features. The lever
   for raising revenue is conversion-rate UX (trial polish, paywall copy,

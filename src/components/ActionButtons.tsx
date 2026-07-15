@@ -65,6 +65,10 @@ interface Props {
     timedDurationMs: number;        // full-ring duration for the current level
     problemKey: string | number | null; // changes per problem → restarts the ring
     ageBand: AgeBand;
+    /** Advanced modes (Hard/Timed/Ultimate) are Pro. When false, the toggles
+     *  show a lock and tap opens the upsell instead of toggling. */
+    hasPro?: boolean;
+    onProLocked?: () => void;
 }
 
 /** Circular countdown ring drawn as an SVG arc */
@@ -124,11 +128,19 @@ function TimerRing({ active, durationMs }: { active: boolean; durationMs: number
 export const ActionButtons = memo(function ActionButtons({
     questionType, onTypeChange, hardMode, onHardModeToggle,
     timedMode, onTimedModeToggle, timedDurationMs, problemKey,
-    ageBand,
+    ageBand, hasPro = true, onProLocked,
 }: Props) {
     // Hard/Timed don't apply to the fixed daily/challenge sets, so hide the
     // toggles there (App also neutralizes the flags for those types).
     const hideModeToggles = questionType === 'daily' || questionType === 'challenge';
+    // Advanced modes are Pro: locked → tap opens the upsell, and a small lock
+    // badge sits on the control.
+    const locked = !hasPro;
+    const proLock = (
+        <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[var(--color-board)] border border-[var(--color-gold)]/50 flex items-center justify-center" aria-hidden>
+            <svg viewBox="0 0 24 24" width="9" height="9" fill="none" stroke="var(--color-gold)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 018 0v4" /></svg>
+        </span>
+    );
     // Transient feedback toast for the share button. Without this, share
     // appears to do nothing on platforms where navigator.share is missing
     // or rejects (tester report).
@@ -220,8 +232,8 @@ export const ActionButtons = memo(function ActionButtons({
             {/* Stopwatch / timed mode */}
             <ActionTooltip label={timedMode ? 'Timed: ON' : 'Timed mode'}>
                 <motion.button
-                    onClick={onTimedModeToggle}
-                    aria-label={timedMode ? 'Disable timed mode' : 'Enable timed mode'}
+                    onClick={locked ? onProLocked : onTimedModeToggle}
+                    aria-label={locked ? 'Timed mode (Pro — unlock)' : timedMode ? 'Disable timed mode' : 'Enable timed mode'}
                     className={`action-icon w-11 h-11 relative flex items-center justify-center ${timedMode
                         ? 'text-[var(--color-gold)]'
                         : 'text-[rgb(var(--color-fg))]/70'
@@ -250,16 +262,17 @@ export const ActionButtons = memo(function ActionButtons({
                         <line x1="9" y1="3" x2="15" y2="3" />
                         <line x1="12" y1="14" x2="12" y2="10" />
                     </motion.svg>
+                    {locked && proLock}
                 </motion.button>
             </ActionTooltip>
 
             {/* Hard mode skull */}
             <ActionTooltip label={hardMode ? 'Hard: ON · bigger numbers' : 'Hard mode · bigger numbers'}>
                 <motion.button
-                    onClick={onHardModeToggle}
-                    aria-label={hardMode ? 'Disable hard mode' : 'Enable hard mode'}
+                    onClick={locked ? onProLocked : onHardModeToggle}
+                    aria-label={locked ? 'Hard mode (Pro — unlock)' : hardMode ? 'Disable hard mode' : 'Enable hard mode'}
                     aria-pressed={hardMode}
-                    className={`action-icon w-11 h-11 flex items-center justify-center ${hardMode
+                    className={`action-icon w-11 h-11 relative flex items-center justify-center ${hardMode
                         ? 'text-[var(--color-gold)]'
                         : 'text-[rgb(var(--color-fg))]/70'
                         }`}
@@ -284,6 +297,7 @@ export const ActionButtons = memo(function ActionButtons({
                         <path d="M12 14 L 10.9 16 L 13.1 16 Z" fill="currentColor" stroke="none" />
                         <path d="M10 19.3 L 10 17.5 M12 19.3 L 12 17.5 M14 19.3 L 14 17.5" />
                     </svg>
+                    {locked && proLock}
                 </motion.button>
             </ActionTooltip>
             </>)}

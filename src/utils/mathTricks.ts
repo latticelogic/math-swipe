@@ -1114,3 +1114,15 @@ export function getRecommendedTrick(mastered: Set<string>): MagicTrick | null {
     return sorted.find(t => !mastered.has(t.id)) ?? null;
 }
 
+/** The Magic Tricks that stay FREE during the trial — the easiest starter set,
+ *  as a taste. The rest of the library is Pro (locked from day 1). Keyed by
+ *  difficulty so the free tricks are the most approachable ones; kept here so
+ *  the gate + any tests share one source of truth. */
+export const FREE_TRICK_COUNT = 6;
+const FREE_TRICK_IDS = new Set(
+    [...MAGIC_TRICKS].sort((a, b) => a.difficulty - b.difficulty).slice(0, FREE_TRICK_COUNT).map(t => t.id),
+);
+export function isFreeTrick(trickId: string): boolean {
+    return FREE_TRICK_IDS.has(trickId);
+}
+

@@ -55,6 +55,10 @@ interface Props {
      *  expired: the paywall is already taking over the surface). */
     entitlementStatus?: import('../utils/entitlement').EntitlementStatus;
     entitlementDaysLeft?: number;
+    /** Pro-pack gating: the pro-tagged cosmetics unlock only when paid; tapping
+     *  a locked one opens the upsell. */
+    hasPro?: boolean;
+    onRequestPro?: () => void;
     /** Called when the user taps the countdown chip → triggers unlock
      *  flow (mock in dev, Stripe Checkout in Phase 4). */
     onUnlock?: () => void;
@@ -63,7 +67,7 @@ interface Props {
 // Rank ladder + getRank/getMastery helpers extracted to ../domains/math/ranks
 // so the public profile page and share card can reuse them.
 
-export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked, activeCostume, onCostumeChange, activeTheme, onThemeChange, activeTrailId, onTrailChange, displayName, onDisplayNameChange, isAnonymous, onLinkGoogle, onLinkApple, onSendEmailLink, authMessage, onClearAuthMessage, ageBand, activeBadge, onBadgeChange, activeTeacherId, onTeacherChange, uid, entitlementStatus, entitlementDaysLeft, onUnlock }: Props) {
+export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked, activeCostume, onCostumeChange, activeTheme, onThemeChange, activeTrailId, onTrailChange, displayName, onDisplayNameChange, isAnonymous, onLinkGoogle, onLinkApple, onSendEmailLink, authMessage, onClearAuthMessage, ageBand, activeBadge, onBadgeChange, activeTeacherId, onTeacherChange, uid, entitlementStatus, entitlementDaysLeft, onUnlock, hasPro = true, onRequestPro }: Props) {
     const [showRanks, setShowRanks] = useState(false);
     const [resetConfirm, setResetConfirm] = useState<string | null>(null);
     const [editingName, setEditingName] = useState(false);
@@ -529,15 +533,16 @@ export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked,
                         const timedOk = !t.timedModeOnly || (stats.timedModeSolved >= (t.timedModeMin ?? 0));
                         const ultimateOk = !t.ultimateOnly || (stats.ultimateSolved >= (t.ultimateMin ?? 0));
                         const masteryOk = !t.masteryMin || ((mastery?.level ?? 0) >= t.masteryMin);
-                        const isAvailable = rankOk && hardOk && timedOk && ultimateOk && masteryOk;
+                        const proOk = !t.pro || hasPro;
+                        const isAvailable = rankOk && hardOk && timedOk && ultimateOk && masteryOk && proOk;
                         const isActive = activeTheme === t.id;
-                        const modeIcon = t.ultimateOnly ? '💀⏱️' : t.hardModeOnly ? '💀' : t.timedModeOnly ? '⏱️' : t.masteryMin ? '✨' : '';
+                        const modeIcon = t.ultimateOnly ? '💀⏱️' : t.hardModeOnly ? '💀' : t.timedModeOnly ? '⏱️' : t.masteryMin ? '✨' : t.pro ? '✦' : '';
                         const isLight = document.documentElement.getAttribute('data-theme') === 'light';
                         const swatchColor = isLight ? t.lightColor : t.color;
                         return (
                             <button
                                 key={t.id}
-                                onClick={() => isAvailable && onThemeChange(t)}
+                                onClick={() => { if (isAvailable) onThemeChange(t); else if (t.pro && !hasPro) onRequestPro?.(); }}
                                 title={`${t.name}${modeIcon ? ` ${modeIcon}` : ''}${!isAvailable ? ' (locked)' : ''}`}
                                 className={`w-8 h-8 rounded-full border-2 transition-all relative ${isActive ? 'border-[var(--color-gold)] scale-110' :
                                     isAvailable ? 'border-[rgb(var(--color-fg))]/20 hover:border-[rgb(var(--color-fg))]/40' :
@@ -563,6 +568,7 @@ export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked,
                     {SWIPE_TRAILS.map(t => {
                         const rankIdx = RANKS.findIndex(r => r.name === rank.name);
                         const isUnlocked =
+                            (!t.pro || hasPro) &&
                             (!t.minLevel || rankIdx >= t.minLevel - 1) &&
                             (!t.minStreak || stats.bestStreak >= t.minStreak) &&
                             (!t.hardModeOnly || stats.hardModeSessions > 0) &&
@@ -574,7 +580,7 @@ export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked,
                         return (
                             <button
                                 key={t.id}
-                                onClick={() => isUnlocked && onTrailChange(t.id)}
+                                onClick={() => { if (isUnlocked) onTrailChange(t.id); else if (t.pro && !hasPro) onRequestPro?.(); }}
                                 title={`${t.name}${!isUnlocked ? ' (Locked)' : ''}`}
                                 className={`w-12 h-12 flex items-center justify-center rounded-xl border-2 transition-all 
                                     ${isActive ? 'border-[var(--color-gold)] bg-[var(--color-gold)]/10 scale-105' :

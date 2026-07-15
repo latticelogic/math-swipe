@@ -387,11 +387,8 @@ export const LeaguePage = memo(function LeaguePage({ userXP, userStreak, uid, di
                                 {/* Score or Time */}
                                 {tab === 'score' ? (
                                     <>
-                                        <div className="text-right">
-                                            <div className={`text-sm ui font-semibold ${entry.isYou ? 'text-[var(--color-gold)]' : 'text-[rgb(var(--color-fg))]/50'}`}>
-                                                {entry.totalXP.toLocaleString()}
-                                            </div>
-                                            <div className="text-[9px] ui text-[rgb(var(--color-fg))]/20">XP</div>
+                                        <div className={`text-right text-sm ui font-semibold whitespace-nowrap ${entry.isYou ? 'text-[var(--color-gold)]' : 'text-[rgb(var(--color-fg))]/50'}`}>
+                                            {entry.totalXP.toLocaleString()} <span className="text-[9px] text-[rgb(var(--color-fg))]/30">XP</span>
                                         </div>
                                         <div className="text-right w-10">
                                             <div className="text-xs ui font-semibold text-[var(--color-streak-fire)] flex items-center justify-end gap-0.5">

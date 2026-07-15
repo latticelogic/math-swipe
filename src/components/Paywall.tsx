@@ -50,15 +50,26 @@ interface PaywallProps {
     /** Whether the unlock action is in flight. Disables the button +
      *  shows a quiet "..." state. */
     busy?: boolean;
+    /** 'expired' (default) = the post-trial hard gate (blocks the app,
+     *  "Maybe later" closes it). 'pro' = an EARLY upsell shown when a user
+     *  taps a locked Pro feature during the trial — aspirational, and
+     *  dismissible via onClose (they're not blocked, just declining). */
+    mode?: 'expired' | 'pro';
+    /** Dismiss handler for 'pro' mode. When present, "Maybe later" calls this
+     *  instead of closing the app. */
+    onClose?: () => void;
     /** Optional dev-only "reset trial" button — hidden in production. */
     onDevReset?: () => void;
 }
 
-export function Paywall({ progress, onUnlock, busy, onDevReset }: PaywallProps) {
+export function Paywall({ progress, onUnlock, busy, mode = 'expired', onClose, onDevReset }: PaywallProps) {
+    const isPro = mode === 'pro';
     function maybeLater() {
-        // Close the app per the monetization model rules. window.close()
-        // works for tabs the script opened; for everything else we navigate
-        // the page away so the paywall doesn't snap back on re-render.
+        // Pro upsell: just dismiss — the user isn't blocked, they declined.
+        if (onClose) { onClose(); return; }
+        // Post-trial gate: close the app per the monetization model rules.
+        // window.close() works for tabs the script opened; otherwise navigate
+        // away so the paywall doesn't snap back on re-render.
         try { window.close(); } catch { /* fallthrough */ }
         window.location.href = 'about:blank';
     }
@@ -151,6 +162,31 @@ export function Paywall({ progress, onUnlock, busy, onDevReset }: PaywallProps) 
                     <path d="M32 22 L 34 30 L 42 32 L 34 34 L 32 42 L 30 34 L 22 32 L 30 30 Z" />
                 </motion.svg>
 
+                {isPro ? (
+                    // Pro upsell (during trial): aspirational, not loss-framed.
+                    // Lead with what unlocking gets them, right now.
+                    <>
+                        <h1 id="paywall-title" className="text-2xl chalk text-[var(--color-gold)] mb-1">
+                            Unlock everything
+                        </h1>
+                        <p className="text-sm ui text-[rgb(var(--color-fg))]/55 mb-6">
+                            The full game — right now.
+                        </p>
+                        <div className="mb-6 flex flex-col gap-2.5 text-left max-w-[260px] mx-auto">
+                            {['Hard, Timed & Ultimate modes', 'All 36 Magic Tricks', 'The exclusive Pro cosmetics pack'].map(f => (
+                                <div key={f} className="flex items-center gap-2.5">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--color-gold)] shrink-0" aria-hidden>
+                                        <path d="M5 12l4 4 10-10" />
+                                    </svg>
+                                    <span className="text-sm ui text-[rgb(var(--color-fg))]/75">{f}</span>
+                                </div>
+                            ))}
+                        </div>
+                        <p className="text-sm ui text-[rgb(var(--color-fg))]/65 mb-5 leading-relaxed">
+                            Yours forever for ${PRICE_USD.toFixed(2)}. One time — no subscription.
+                        </p>
+                    </>
+                ) : (<>
                 {/* The headline acknowledges the trial ended without naming the
                     price. The price lives at the bottom in the CTA. */}
                 <h1 id="paywall-title" className="text-2xl chalk text-[var(--color-gold)] mb-1">
@@ -196,13 +232,14 @@ export function Paywall({ progress, onUnlock, busy, onDevReset }: PaywallProps) 
                 <p className="text-sm ui text-[rgb(var(--color-fg))]/65 mb-5 leading-relaxed">
                     Want to keep going? Everything stays unlocked for ${PRICE_USD.toFixed(2)}. One time.
                 </p>
+                </>)}
 
                 <button
                     onClick={onUnlock}
                     disabled={busy}
                     className="w-full py-3.5 rounded-2xl bg-[var(--color-gold)] text-[var(--color-board)] text-base ui font-semibold hover:bg-[var(--color-gold)]/90 transition-colors active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                    {busy ? 'Just a sec…' : 'Keep playing'}
+                    {busy ? 'Just a sec…' : isPro ? 'Unlock everything' : 'Keep playing'}
                 </button>
 
                 {/* Sub-line clarifies what "keep playing" means without baking

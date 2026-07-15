@@ -27,6 +27,7 @@ export const SwipeTrail = memo(function SwipeTrail({ streak, activeTrailId, base
         if (activeTrailId === 'rainbow') return 'rainbow';
         if (activeTrailId === 'fire') return 'fire';
         if (activeTrailId === 'lightning') return 'lightning';
+        if (activeTrailId === 'pro-comet') return '#ffe9a8'; // Pro pack — pale-gold comet
 
         // Default: react to streak
         if (streak >= 10) return '#FF00FF';

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MAGIC_TRICKS, TRICK_CATEGORIES, getRecommendedTrick, type MagicTrick } from '../utils/mathTricks';
+import { MAGIC_TRICKS, TRICK_CATEGORIES, getRecommendedTrick, isFreeTrick, type MagicTrick } from '../utils/mathTricks';
 import { TrickLesson } from './TrickLesson';
 import { loadMastered } from './TrickPractice';
 import { MathExpr } from './MathExpr';
@@ -8,9 +8,13 @@ import { TrickIcon } from './TrickIcon';
 
 interface Props {
     onLessonActive: (active: boolean) => void;
+    /** Most of the Magic Tricks library is Pro. When false, only the free
+     *  starter set opens; the rest show a lock and route to the upsell. */
+    hasPro?: boolean;
+    onProLocked?: () => void;
 }
 
-export function TricksPage({ onLessonActive }: Props) {
+export function TricksPage({ onLessonActive, hasPro = true, onProLocked }: Props) {
     const [selectedTrick, setSelectedTrick] = useState<MagicTrick | null>(null);
     const [mastered, setMastered] = useState(() => loadMastered());
     const [previewTrick, setPreviewTrick] = useState<MagicTrick | null>(null);
@@ -44,6 +48,14 @@ export function TricksPage({ onLessonActive }: Props) {
 
     const recommended = useMemo(() => getRecommendedTrick(mastered), [mastered]);
 
+    // Open a trick — but if it's a Pro (non-free) trick and the user hasn't
+    // paid, route to the upsell instead of the lesson.
+    const trickLocked = useCallback((trick: MagicTrick) => !hasPro && !isFreeTrick(trick.id), [hasPro]);
+    const openTrick = useCallback((trick: MagicTrick) => {
+        if (trickLocked(trick)) { onProLocked?.(); return; }
+        setSelectedTrick(trick);
+    }, [trickLocked, onProLocked]);
+
     if (selectedTrick) {
         return (
             <AnimatePresence mode="wait">
@@ -73,7 +85,7 @@ export function TricksPage({ onLessonActive }: Props) {
                 <motion.button
                     initial={{ opacity: 0, y: -5 }}
                     animate={{ opacity: 1, y: 0 }}
-                    onClick={() => setSelectedTrick(recommended)}
+                    onClick={() => openTrick(recommended)}
                     className="max-w-sm mx-auto w-full mb-5 bg-[var(--color-gold)]/8 border border-[var(--color-gold)]/20 rounded-2xl p-4 flex items-center gap-4 text-left group hover:bg-[var(--color-gold)]/12 transition-colors"
                 >
                     <div className="w-14 h-14 rounded-full bg-[var(--color-gold)]/15 flex items-center justify-center text-[var(--color-gold)] shrink-0">
@@ -149,13 +161,14 @@ export function TricksPage({ onLessonActive }: Props) {
                                         <div className="space-y-1.5 px-3 pb-3">
                                             {tricks.map(trick => {
                                                 const isMastered = mastered.has(trick.id);
+                                                const locked = trickLocked(trick);
                                                 return (
                                                     <div key={trick.id} className="relative">
                                                         <motion.button
                                                             whileTap={{ scale: 0.98 }}
                                                             onClick={() => {
                                                                 if (previewTrick) { setPreviewTrick(null); return; }
-                                                                setSelectedTrick(trick);
+                                                                openTrick(trick);
                                                             }}
                                                             onPointerDown={() => startLongPress(trick)}
                                                             onPointerUp={cancelLongPress}
@@ -175,7 +188,9 @@ export function TricksPage({ onLessonActive }: Props) {
                                                                     {trick.description}
                                                                 </p>
                                                             </div>
-                                                            {isMastered ? (
+                                                            {locked ? (
+                                                                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="var(--color-gold)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="opacity-70 shrink-0" aria-label="Pro — unlock"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 018 0v4" /></svg>
+                                                            ) : isMastered ? (
                                                                 <div className="text-[var(--color-gold)] text-base" title="Mastered">✓</div>
                                                             ) : (
                                                                 <div className="ui text-[9px] font-semibold px-1.5 py-0.5 rounded bg-[var(--color-gold)]/10 text-[var(--color-gold)]/70">

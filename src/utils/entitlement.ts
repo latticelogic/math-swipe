@@ -77,6 +77,15 @@ export function hasAccess(e: Entitlement | null, now: number = Date.now()): bool
     return isTrialActive(e.trialStartedAt, now);
 }
 
+/** True only once the user has PAID (lifetime unlock). This is the gate for
+ *  the "Pro" set — advanced modes, the full Magic Tricks library, and the Pro
+ *  cosmetics — which are locked from day 1 even during the trial, so eager
+ *  users have a reason to convert early. Core content stays on hasAccess()
+ *  (trial-or-paid); the always-free Daily is never gated by either. */
+export function isPaid(e: Entitlement | null): boolean {
+    return !!(e && e.paidAt && e.paidAt > 0);
+}
+
 /** Granular status for UI branching. Order of precedence: paid → trial → expired. */
 export type EntitlementStatus = 'paid' | 'trial' | 'expired' | 'unknown';
 

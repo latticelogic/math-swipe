@@ -139,6 +139,9 @@ function App() {
   const entitlement = useEntitlement(uid);
   const [paywallBusy, setPaywallBusy] = useState(false);
   const [paywallOpen, setPaywallOpen] = useState(false);
+  // 'expired' = post-trial hard gate; 'pro' = dismissible early upsell shown
+  // when a locked Pro feature is tapped during the trial.
+  const [paywallMode, setPaywallMode] = useState<'expired' | 'pro'>('expired');
 
   // Stripe Checkout success redirect handler. Stripe sends the user back
   // to /?paywall=ok&session_id=... after a successful payment; the webhook
@@ -510,6 +513,7 @@ function App() {
       totalAnswered,
       paywallOpen,
     })) {
+      setPaywallMode('expired');
       setPaywallOpen(true);
     }
   }, [entitlement.status, questionType, totalAnswered, paywallOpen]);
@@ -521,6 +525,7 @@ function App() {
   // is paid" and a gate that previously only fired on the game surface.
   useEffect(() => {
     if (entitlement.status === 'expired' && activeTab === 'magic' && !paywallOpen) {
+      setPaywallMode('expired');
       setPaywallOpen(true);
     }
   }, [entitlement.status, activeTab, paywallOpen]);
@@ -531,6 +536,15 @@ function App() {
   useEffect(() => {
     if (entitlement.status === 'paid' && paywallOpen) setPaywallOpen(false);
   }, [entitlement.status, paywallOpen]);
+
+  // Pro gate: paid unlocks the Pro set (advanced modes, full Magic Tricks, Pro
+  // cosmetics) even during the trial. Tapping a locked Pro thing opens the
+  // upsell — dismissible during the trial, the hard gate once expired.
+  const hasPro = entitlement.isPaid;
+  const requestPro = useCallback(() => {
+    setPaywallMode(entitlement.status === 'expired' ? 'expired' : 'pro');
+    setPaywallOpen(true);
+  }, [entitlement.status]);
 
   // ── Personal best detection ──
   const showPB = usePersonalBest(bestStreak, stats.bestStreak);
@@ -1125,7 +1139,8 @@ function App() {
               timedDurationMs={timedDurationMs}
               problemKey={currentProblem?.id ?? null}
               ageBand={ageBand}
-
+              hasPro={hasPro}
+              onProLocked={requestPro}
             />
 
             {/* ── Mr. Chalk PiP ── */}
@@ -1227,13 +1242,15 @@ function App() {
               entitlementStatus={entitlement.status}
               entitlementDaysLeft={entitlement.daysLeft}
               onUnlock={() => setPaywallOpen(true)}
+              hasPro={hasPro}
+              onRequestPro={requestPro}
             /></Suspense>
           </motion.div>
         )}
 
         {activeTab === 'magic' && (
           <motion.div className="flex-1 flex flex-col min-h-0" onPanEnd={!isMagicLessonActive ? handleTabSwipe : undefined}>
-            <Suspense fallback={<TabSkeleton variant="tricks" />}><TricksPage onLessonActive={setIsMagicLessonActive} /></Suspense>
+            <Suspense fallback={<TabSkeleton variant="tricks" />}><TricksPage onLessonActive={setIsMagicLessonActive} hasPro={hasPro} onProLocked={requestPro} /></Suspense>
           </motion.div>
         )}
 
@@ -1327,6 +1344,8 @@ function App() {
               dayStreak: stats.dayStreak,
             }}
             busy={paywallBusy}
+            mode={paywallMode}
+            onClose={paywallMode === 'pro' ? () => setPaywallOpen(false) : undefined}
             onUnlock={async () => {
               setPaywallBusy(true);
               try {

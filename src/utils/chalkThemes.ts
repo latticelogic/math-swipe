@@ -13,6 +13,7 @@ export interface ChalkTheme {
     ultimateOnly?: boolean;
     ultimateMin?: number;
     masteryMin?: number;    // Mastery level required (post-max-rank drip; see ranks.ts)
+    pro?: boolean;          // Pro-pack exclusive — unlocked by paying, never earnable
 }
 
 export const CHALK_THEMES: ChalkTheme[] = [
@@ -35,6 +36,9 @@ export const CHALK_THEMES: ChalkTheme[] = [
     // ✨ Mastery drip — the only cosmetics that keep arriving past max rank, so
     // a maxed-out player always has a next thing to chalk toward. Gated on
     // mastery level (see getMastery in ranks.ts), spaced to last months.
+    // ✦ Pro pack — exclusive to paid users, never earnable via play.
+    { id: 'pro-obsidian', name: 'Obsidian', color: 'rgba(175, 185, 255, 0.95)', lightColor: '#1e1b4b', minLevel: 1, pro: true },
+    { id: 'pro-molten', name: 'Molten', color: 'rgba(255, 160, 90, 0.95)', lightColor: '#7c2d12', minLevel: 1, pro: true },
     { id: 'aurora', name: 'Aurora', color: 'rgba(45, 212, 191, 0.95)', lightColor: '#0f766e', minLevel: 1, masteryMin: 1 },
     { id: 'spring-lime', name: 'Spring Lime', color: 'rgba(190, 255, 90, 0.95)', lightColor: '#4d7c0f', minLevel: 1, masteryMin: 3 },
     { id: 'coral-reef', name: 'Coral Reef', color: 'rgba(255, 120, 110, 0.95)', lightColor: '#be123c', minLevel: 1, masteryMin: 6 },

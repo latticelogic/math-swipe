@@ -21,7 +21,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { getFirebase } from '../utils/firebase';
 import { FIRESTORE } from '../config';
 import {
-    blankEntitlement, hasAccess, entitlementStatus, trialDaysLeft,
+    blankEntitlement, hasAccess, isPaid, entitlementStatus, trialDaysLeft,
     type Entitlement, type EntitlementStatus,
 } from '../utils/entitlement';
 import { cacheEntitlement, readCachedEntitlement } from '../utils/entitlementCache';
@@ -47,6 +47,9 @@ interface UseEntitlementResult {
     /** True iff trial is active OR user has paid. Use this for the actual
      *  access decision; everything else is for UI nuance. */
     hasAccess: boolean;
+    /** True only once PAID. Gate for the Pro set (advanced modes, full Magic
+     *  Tricks, Pro cosmetics) — locked from day 1, even during the trial. */
+    isPaid: boolean;
     /** Raw record (or null until loaded). Tests/admin views may want this. */
     entitlement: Entitlement | null;
     /** DEV-ONLY: grant the user lifetime access locally for paywall-flow
@@ -226,6 +229,7 @@ export function useEntitlement(uid: string | null): UseEntitlementResult {
         daysLeft: entitlement ? trialDaysLeft(entitlement.trialStartedAt, now) : 0,
         loading,
         hasAccess: hasAccess(entitlement, now),
+        isPaid: isPaid(entitlement),
         entitlement,
         mockGrantAccess,
         mockBackdateTrial,
