@@ -18,7 +18,7 @@ export type QuestionType =
     | 'mix-basic' | 'mix-all'
     | 'daily' | 'challenge' | 'speedrun' | 'ghost';
 
-export type QuestionGroup = 'daily' | 'young' | 'whole' | 'core' | 'advanced' | 'parts' | 'mixed';
+export type QuestionGroup = 'daily' | 'young' | 'whole' | 'core' | 'powers' | 'prealgebra' | 'parts' | 'mixed';
 
 /** Two-band system. "starter" is recognition + single-digit drills (the old k2
  *  band content); "full" is the complete arithmetic-and-beyond catalog (old
@@ -31,13 +31,18 @@ export type QuestionTypeEntry = CategoryEntry<QuestionType>;
 
 // ── Group labels ──────────────────────────────────────────────────────────────
 
+/** Picker section headers. Plain language a kid or parent can predict the
+ *  contents from — the old taxonomy-speak ("Whole"? "Core"? "Parts"?) told
+ *  you nothing until you opened it. Text only: emoji in headers broke the
+ *  no-emoji rule (grid items render hand-drawn SVGs keyed by id). */
 export const GROUP_LABELS: Record<QuestionGroup, string> = {
-    daily: '🗓️ Daily',
-    young: '🐣 Young',
-    whole: 'Whole',
-    core: '🧱 Core',
-    advanced: 'Advanced',
-    parts: 'Parts',
+    daily: 'Daily',
+    young: 'First Numbers',
+    whole: 'The Basics',
+    core: 'Number Sense',
+    powers: 'Powers & Roots',
+    prealgebra: 'Pre-Algebra',
+    parts: 'Parts of a Whole',
     mixed: 'Mixed',
 };
 
@@ -65,14 +70,16 @@ export const QUESTION_TYPES: ReadonlyArray<CategoryEntry<QuestionType>> = [
     // Core (Ages 8–10)
     { id: 'round', icon: '≈', label: 'Rounding', group: 'core' },
     { id: 'orderops', icon: '🔢', label: 'PEMDAS', group: 'core' },
-    // Advanced
-    { id: 'square', icon: 'x²', label: 'Square', group: 'advanced' },
-    { id: 'sqrt', icon: '√', label: 'Root', group: 'advanced' },
-    { id: 'exponent', icon: 'xⁿ', label: 'Exponent', group: 'advanced' },
-    { id: 'negatives', icon: '±', label: 'Negatives', group: 'advanced' },
-    { id: 'linear', icon: 'x=', label: 'Linear', group: 'advanced' },
-    { id: 'gcflcm', icon: 'GCF', label: 'GCF/LCM', group: 'advanced' },
-    { id: 'ratio', icon: 'a:b', label: 'Ratios', group: 'advanced' },
+    // Powers & Roots (was the front half of the grab-bag 'advanced' group —
+    // split so each section is small enough to scan and honestly named)
+    { id: 'square', icon: 'x²', label: 'Square', group: 'powers' },
+    { id: 'sqrt', icon: '√', label: 'Root', group: 'powers' },
+    { id: 'exponent', icon: 'xⁿ', label: 'Exponent', group: 'powers' },
+    // Pre-Algebra (the back half — the term parents/teachers actually use)
+    { id: 'negatives', icon: '±', label: 'Negatives', group: 'prealgebra' },
+    { id: 'linear', icon: 'x=', label: 'Linear', group: 'prealgebra' },
+    { id: 'gcflcm', icon: 'GCF', label: 'GCF/LCM', group: 'prealgebra' },
+    { id: 'ratio', icon: 'a:b', label: 'Ratios', group: 'prealgebra' },
     // Parts
     { id: 'fraction', icon: '⅓', label: 'Fractions', group: 'parts' },
     { id: 'decimal', icon: '.5', label: 'Decimals', group: 'parts' },
@@ -120,7 +127,7 @@ export const MATH_BANDS: ReadonlyArray<BandEntry<AgeBand>> = [
         emoji: '🚀',
         // The default band — chosen for the majority audience (older kids + adults).
         label: 'Full',
-        groups: new Set(['daily', 'whole', 'core', 'advanced', 'parts', 'mixed']),
+        groups: new Set(['daily', 'whole', 'core', 'powers', 'prealgebra', 'parts', 'mixed']),
         defaultCategoryId: 'multiply',
     },
 ];

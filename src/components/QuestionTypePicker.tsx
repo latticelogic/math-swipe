@@ -11,7 +11,10 @@ interface Props {
     ageBand: AgeBand;
 }
 
-const ALL_GROUPS: QuestionGroup[] = ['daily', 'young', 'whole', 'core', 'parts', 'advanced', 'mixed'];
+// Section order: everyday stuff first (Daily, the four operations), then the
+// school-progression ramp (number sense → parts → powers → pre-algebra),
+// Mixed last as the graduation. Labels live in GROUP_LABELS.
+const ALL_GROUPS: QuestionGroup[] = ['daily', 'young', 'whole', 'core', 'parts', 'powers', 'prealgebra', 'mixed'];
 
 export const QuestionTypePicker = memo(function QuestionTypePicker({ current, onChange, ageBand }: Props) {
     const [open, setOpen] = useState(false);
