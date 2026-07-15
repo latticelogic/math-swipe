@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { QuestionTypePicker } from './QuestionTypePicker';
 import type { QuestionType } from '../utils/mathGenerator';
 import type { AgeBand } from '../utils/questionTypes';
+import { t } from '../i18n';
 
 /**
  * Long-press tooltip wrapper. Shows a small label to the LEFT of the button
@@ -172,9 +173,9 @@ export const ActionButtons = memo(function ActionButtons({
                 // navigator.share succeeded — no toast needed, the OS UI handled it
             } else if (navigator.clipboard?.writeText) {
                 await navigator.clipboard.writeText(clipboardText);
-                flashToast(sharePayload ? 'Result copied!' : 'Link copied!');
+                flashToast(sharePayload ? t('rail.resultCopied') : t('rail.linkCopied'));
             } else {
-                flashToast('Sharing not supported');
+                flashToast(t('rail.shareUnsupported'));
             }
         } catch (err) {
             // AbortError = user cancelled the native share sheet (normal, no toast)
@@ -182,9 +183,9 @@ export const ActionButtons = memo(function ActionButtons({
             // Real failure — try clipboard fallback and toast
             try {
                 await navigator.clipboard.writeText(clipboardText);
-                flashToast(sharePayload ? 'Result copied!' : 'Link copied!');
+                flashToast(sharePayload ? t('rail.resultCopied') : t('rail.linkCopied'));
             } catch {
-                flashToast("Couldn't share — try again");
+                flashToast(t('rail.shareFailed'));
             }
         }
     };
@@ -196,11 +197,11 @@ export const ActionButtons = memo(function ActionButtons({
     return (
         <div className="absolute right-3 top-[25%] -translate-y-1/2 flex flex-col gap-4 z-40">
             {/* Share */}
-            <ActionTooltip label="Share">
+            <ActionTooltip label={t('rail.share')}>
                 <div className="relative">
                     <motion.button
                         onClick={handleShare}
-                        aria-label="Share"
+                        aria-label={t('rail.share')}
                         className="action-icon w-11 h-11 flex items-center justify-center text-[rgb(var(--color-fg))]/70 active:text-[var(--color-gold)]"
                         whileTap={{ scale: 0.88 }}
                     >
@@ -232,16 +233,16 @@ export const ActionButtons = memo(function ActionButtons({
             </ActionTooltip>
 
             {/* Question type */}
-            <ActionTooltip label="Switch topic">
+            <ActionTooltip label={t('rail.switchTopic')}>
                 <QuestionTypePicker current={questionType} onChange={onTypeChange} ageBand={ageBand} />
             </ActionTooltip>
 
             {!hideModeToggles && (<>
             {/* Stopwatch / timed mode */}
-            <ActionTooltip label={timedMode ? 'Timed: ON' : 'Timed mode'}>
+            <ActionTooltip label={timedMode ? t('rail.timedOn') : t('rail.timed')}>
                 <motion.button
                     onClick={locked ? onProLocked : onTimedModeToggle}
-                    aria-label={locked ? 'Timed mode (Pro — unlock)' : timedMode ? 'Disable timed mode' : 'Enable timed mode'}
+                    aria-label={locked ? t('rail.timedLocked') : timedMode ? t('rail.timedDisable') : t('rail.timedEnable')}
                     className={`action-icon w-11 h-11 relative flex items-center justify-center ${timedMode
                         ? 'text-[var(--color-gold)]'
                         : 'text-[rgb(var(--color-fg))]/70'
@@ -275,10 +276,10 @@ export const ActionButtons = memo(function ActionButtons({
             </ActionTooltip>
 
             {/* Hard mode skull */}
-            <ActionTooltip label={hardMode ? 'Hard: ON · bigger numbers' : 'Hard mode · bigger numbers'}>
+            <ActionTooltip label={hardMode ? t('rail.hardOn') : t('rail.hard')}>
                 <motion.button
                     onClick={locked ? onProLocked : onHardModeToggle}
-                    aria-label={locked ? 'Hard mode (Pro — unlock)' : hardMode ? 'Disable hard mode' : 'Enable hard mode'}
+                    aria-label={locked ? t('rail.hardLocked') : hardMode ? t('rail.hardDisable') : t('rail.hardEnable')}
                     aria-pressed={hardMode}
                     className={`action-icon w-11 h-11 relative flex items-center justify-center ${hardMode
                         ? 'text-[var(--color-gold)]'

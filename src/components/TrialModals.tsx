@@ -24,6 +24,11 @@ import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PRICE_USD, type EntitlementStatus } from '../utils/entitlement';
 import { safeGetItem, safeSetItem } from '../utils/safeStorage';
+import { t, tCount } from '../i18n';
+
+/** "$3.14" — the product price is USD everywhere in v1 (Airwallex + Play both
+ *  charge USD; see docs/i18n.md on currency). */
+const PRICE_LABEL = `$${PRICE_USD.toFixed(2)}`;
 
 // ── Acknowledgement keys (per uid) ────────────────────────────────────────────
 
@@ -108,43 +113,43 @@ export function WelcomeModal({ uid, status, entitlementLoading, inSession, displ
                         </svg>
 
                         <h2 id="welcome-modal-title" className="text-2xl chalk text-[var(--color-gold)] mb-3">
-                            Welcome to Math Challenge!
+                            {t('welcome.title')}
                         </h2>
 
                         <p className="text-sm ui text-[rgb(var(--color-fg))]/70 mb-2 leading-relaxed">
-                            <span className="text-[var(--color-gold)]">14 days</span> free — all topics and modes.
+                            {t('welcome.free', { days: 14 })}
                         </p>
 
                         <p className="text-sm ui text-[rgb(var(--color-fg))]/70 mb-4 leading-relaxed">
-                            Then just ${PRICE_USD.toFixed(2)} for lifetime access.
+                            {t('welcome.price', { price: PRICE_LABEL })}
                         </p>
 
                         <p className="text-[10px] ui text-[rgb(var(--color-fg))]/35 mb-4 leading-relaxed">
-                            Daily Challenge is always free.
+                            {t('welcome.dailyFree')}
                         </p>
 
                         {/* First-run name — pre-filled with the auto-generated
                             handle, one tap to keep or change. Changeable later in
                             the Me tab. No email, so it stays privacy-clean. */}
                         <label className="block text-[10px] ui uppercase tracking-widest text-[rgb(var(--color-fg))]/40 mb-1.5">
-                            Your name
+                            {t('welcome.nameLabel')}
                         </label>
                         <input
                             value={name}
                             onChange={e => setName(e.target.value)}
                             maxLength={20}
-                            aria-label="Your display name"
+                            aria-label={t('welcome.nameAria')}
                             className="w-full mb-1 bg-transparent border border-[var(--color-gold)]/25 rounded-xl px-3 py-2 text-center text-sm ui text-[rgb(var(--color-fg))]/80 outline-none focus:border-[var(--color-gold)]/50 transition-colors"
                         />
                         <p className="text-[9px] ui text-[rgb(var(--color-fg))]/30 mb-5">
-                            You can change this anytime in the Me tab.
+                            {t('welcome.nameHint')}
                         </p>
 
                         <button
                             onClick={dismiss}
                             className="w-full py-2.5 rounded-xl bg-[var(--color-gold)]/15 border border-[var(--color-gold)]/30 text-sm ui font-semibold text-[var(--color-gold)] hover:bg-[var(--color-gold)]/25 transition-colors active:scale-[0.98]"
                         >
-                            Let's go
+                            {t('welcome.cta')}
                         </button>
                     </motion.div>
                 </>
@@ -264,10 +269,10 @@ export function TrialReminderModal({ uid, status, daysLeft, entitlementLoading, 
 
                         <h2 className="text-xl chalk text-[var(--color-gold)] mb-2">
                             {isUrgent
-                                ? (daysLeft === 0 ? 'Trial ends today' : '1 day left in your trial')
+                                ? (daysLeft === 0 ? t('trial.endsToday') : t('trial.oneDayLeft'))
                                 : isMidpoint
-                                    ? "You're a week in"
-                                    : `${daysLeft} days left in your trial`}
+                                    ? t('trial.weekIn')
+                                    : t('trial.daysLeft', { days: tCount('count.day', daysLeft) })}
                         </h2>
 
                         {/* Body copy adapts to the threshold. Day 7 is a soft
@@ -279,21 +284,21 @@ export function TrialReminderModal({ uid, status, daysLeft, entitlementLoading, 
                             {isMidpoint
                                 ? `Halfway through your trial. If you like it, ${PRICE_USD.toFixed(2)} keeps it.`
                                 : isUrgent
-                                    ? 'After today the rest locks. The Daily Challenge stays free.'
-                                    : 'A few days to decide. The Daily Challenge stays free either way.'}
+                                    ? t('trial.urgentBody')
+                                    : t('trial.calmBody')}
                         </p>
 
                         <button
                             onClick={unlock}
                             className="w-full py-2.5 rounded-xl bg-[var(--color-gold)]/20 border border-[var(--color-gold)]/40 text-sm ui font-semibold text-[var(--color-gold)] hover:bg-[var(--color-gold)]/30 transition-colors active:scale-[0.98] mb-2"
                         >
-                            Unlock for ${PRICE_USD.toFixed(2)}
+                            {t('trial.unlockFor', { price: PRICE_LABEL })}
                         </button>
                         <button
                             onClick={dismiss}
                             className="w-full py-2 text-xs ui text-[rgb(var(--color-fg))]/40 hover:text-[rgb(var(--color-fg))]/60 transition-colors"
                         >
-                            Keep playing
+                            {t('endRun.keep')}
                         </button>
                     </motion.div>
                 </>
@@ -315,7 +320,7 @@ interface TrialCountdownChipProps {
 export function TrialCountdownChip({ status, daysLeft, onClick }: TrialCountdownChipProps) {
     if (status !== 'trial') return null;
 
-    const dayLabel = daysLeft === 1 ? '1 day' : `${daysLeft} days`;
+    const dayLabel = tCount('count.day', daysLeft);
     const urgent = daysLeft <= 3;
 
     return (
@@ -332,7 +337,7 @@ export function TrialCountdownChip({ status, daysLeft, onClick }: TrialCountdown
                 <path d="M7 3 C 7 8 12 10 12 12 C 12 14 7 16 7 21" />
                 <path d="M17 3 C 17 8 12 10 12 12 C 12 14 17 16 17 21" />
             </svg>
-            <span>{dayLabel} left in trial · ${PRICE_USD.toFixed(2)} to keep</span>
+            <span>{t('trial.chip', { days: dayLabel, price: PRICE_LABEL })}</span>
         </button>
     );
 }

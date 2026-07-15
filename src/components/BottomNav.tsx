@@ -1,6 +1,7 @@
 import { type ReactNode, memo } from 'react';
 import { motion } from 'framer-motion';
 import { NAV_TABS, type AppTab } from '../config';
+import { t, type MsgKey } from '../i18n';
 
 type Tab = AppTab;
 
@@ -43,10 +44,21 @@ const DEFAULT_ICONS: Record<Tab, ReactNode> = {
     ),
 };
 
+/** Localized label/aria per tab — NAV_TABS in config keeps ids + English
+ *  reference labels; display strings come from the i18n catalog. */
+const NAV_KEYS: Record<Tab, { label: MsgKey; aria: MsgKey }> = {
+    game: { label: 'nav.play', aria: 'nav.play.aria' },
+    league: { label: 'nav.league', aria: 'nav.league.aria' },
+    magic: { label: 'nav.magic', aria: 'nav.magic.aria' },
+    me: { label: 'nav.me', aria: 'nav.me.aria' },
+};
+
 export const BottomNav = memo(function BottomNav({ active, onChange, tabs: tabsProp }: Props) {
-    const resolvedTabs: TabDef[] = (tabsProp ?? NAV_TABS).map(t => ({
-        ...t,
-        icon: DEFAULT_ICONS[t.id as Tab],
+    const resolvedTabs: TabDef[] = (tabsProp ?? NAV_TABS).map(tab => ({
+        ...tab,
+        label: t(NAV_KEYS[tab.id as Tab].label),
+        ariaLabel: t(NAV_KEYS[tab.id as Tab].aria),
+        icon: DEFAULT_ICONS[tab.id as Tab],
     }));
     return (
         <nav className="landscape-nav mt-auto flex items-center justify-around px-2 pb-[env(safe-area-inset-bottom,4px)] pt-1 z-40 relative">
