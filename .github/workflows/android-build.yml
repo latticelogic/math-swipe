@@ -1,0 +1,173 @@
+# Builds the Google Play package (.aab) for Math Challenge — the PWA at
+# mathchallenge.app wrapped in a Trusted Web Activity via Bubblewrap.
+#
+# Runs in CI on purpose: ubuntu runners ship the JDK + Android SDK, while the
+# dev machine (win-arm64) can't run the Android toolchain reliably.
+#
+# Two modes, keyed on whether the ANDROID_KEYSTORE_B64 secret exists:
+#
+#   BOOTSTRAP (first run, no secret): generates an upload keystore with a
+#     random password, uploads it as a workflow artifact, and prints setup
+#     instructions + the SHA-256 fingerprint in the run summary. Download the
+#     artifact, then save the three secrets it tells you to. Delete the
+#     artifact afterwards.
+#
+#   BUILD (secrets present): decodes the keystore, builds the signed .aab
+#     (+ .apk for local device testing), uploads them as artifacts, and prints
+#     the assetlinks.json fingerprint block in the run summary.
+#
+# Required secrets for BUILD mode:
+#   ANDROID_KEYSTORE_B64       — base64 of the upload keystore
+#   ANDROID_KEYSTORE_PASSWORD  — keystore password
+#   ANDROID_KEY_PASSWORD       — key password (alias "android")
+
+name: android-build
+
+on:
+  workflow_dispatch:
+    inputs:
+      versionCode:
+        description: "Android versionCode (integer, must increase every Play upload)"
+        required: false
+        default: ""
+      versionName:
+        description: "Human-readable version, e.g. 1.0.0"
+        required: false
+        default: ""
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: android
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Detect mode
+        id: mode
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+        run: |
+          if [ -z "$KEYSTORE_B64" ]; then
+            echo "mode=bootstrap" >> "$GITHUB_OUTPUT"
+          else
+            echo "mode=build" >> "$GITHUB_OUTPUT"
+          fi
+
+      # ── BOOTSTRAP: generate the upload keystore once ─────────────────────
+      - name: Generate upload keystore (bootstrap)
+        if: steps.mode.outputs.mode == 'bootstrap'
+        run: |
+          PASS="$(openssl rand -base64 24 | tr -d '/+=' | cut -c1-24)"
+          keytool -genkeypair -v \
+            -keystore android.keystore -alias android \
+            -keyalg RSA -keysize 4096 -validity 10000 \
+            -storepass "$PASS" -keypass "$PASS" \
+            -dname "CN=Lattice Logic Pte. Ltd., OU=Math Challenge, O=Lattice Logic, C=SG"
+          echo "$PASS" > keystore-password.txt
+          keytool -list -v -keystore android.keystore -alias android -storepass "$PASS" \
+            | grep "SHA256:" | sed 's/^\s*//' > upload-key-fingerprint.txt
+          {
+            echo "## Upload keystore generated (BOOTSTRAP mode)"
+            echo ""
+            echo "1. Download the **upload-keystore** artifact from this run."
+            echo "2. Save these repo secrets:"
+            echo '   - `ANDROID_KEYSTORE_B64` = `base64 -w0 android.keystore`'
+            echo '   - `ANDROID_KEYSTORE_PASSWORD` = contents of keystore-password.txt'
+            echo '   - `ANDROID_KEY_PASSWORD` = same value'
+            echo "3. Store the keystore + password in the company password manager."
+            echo "4. DELETE the artifact from this run, then re-run the workflow to build."
+            echo ""
+            echo "Upload key fingerprint (for assetlinks.json until Play App Signing takes over):"
+            echo '```'
+            cat upload-key-fingerprint.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload keystore artifact (bootstrap)
+        if: steps.mode.outputs.mode == 'bootstrap'
+        uses: actions/upload-artifact@v4
+        with:
+          name: upload-keystore
+          path: |
+            android/android.keystore
+            android/keystore-password.txt
+            android/upload-key-fingerprint.txt
+          retention-days: 3
+
+      # ── BUILD: decode keystore and produce the signed bundle ─────────────
+      - name: Decode keystore
+        if: steps.mode.outputs.mode == 'build'
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+        run: echo "$KEYSTORE_B64" | base64 -d > android.keystore
+
+      - name: Bump version (optional inputs)
+        if: steps.mode.outputs.mode == 'build'
+        run: |
+          if [ -n "${{ github.event.inputs.versionCode }}" ]; then
+            node -e "const f='twa-manifest.json',m=require('./'+f);m.appVersionCode=parseInt('${{ github.event.inputs.versionCode }}',10);require('fs').writeFileSync(f,JSON.stringify(m,null,2)+'\n')"
+          fi
+          if [ -n "${{ github.event.inputs.versionName }}" ]; then
+            node -e "const f='twa-manifest.json',m=require('./'+f);m.appVersionName='${{ github.event.inputs.versionName }}';require('fs').writeFileSync(f,JSON.stringify(m,null,2)+'\n')"
+          fi
+
+      - name: Point Bubblewrap at the runner's JDK + Android SDK
+        if: steps.mode.outputs.mode == 'build'
+        run: |
+          mkdir -p ~/.bubblewrap
+          cat > ~/.bubblewrap/config.json <<EOF
+          { "jdkPath": "$JAVA_HOME", "androidSdkPath": "$ANDROID_HOME" }
+          EOF
+
+      - name: Build .aab + .apk with Bubblewrap
+        if: steps.mode.outputs.mode == 'build'
+        env:
+          BUBBLEWRAP_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          BUBBLEWRAP_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          npm install -g @bubblewrap/cli
+          bubblewrap build --skipPwaValidation
+
+      - name: Print assetlinks fingerprint block
+        if: steps.mode.outputs.mode == 'build'
+        env:
+          STOREPASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          FP=$(keytool -list -v -keystore android.keystore -alias android -storepass "$STOREPASS" \
+            | grep "SHA256:" | head -1 | sed 's/.*SHA256: //')
+          {
+            echo "## Build complete"
+            echo ""
+            echo "Artifacts: \`app-release-bundle.aab\` (upload to Play Console) + \`app-release-signed.apk\` (sideload testing)."
+            echo ""
+            echo "**Upload-key** SHA-256 (second entry in public/.well-known/assetlinks.json):"
+            echo '```'
+            echo "$FP"
+            echo '```'
+            echo ""
+            echo "After the first Play upload, ALSO copy the **Play App Signing** SHA-256 from"
+            echo "Play Console → Test and release → Setup → App integrity into assetlinks.json"
+            echo "(first entry) — Play re-signs the app, so that key is what devices actually see."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload build artifacts
+        if: steps.mode.outputs.mode == 'build'
+        uses: actions/upload-artifact@v4
+        with:
+          name: math-challenge-android
+          path: |
+            android/app-release-bundle.aab
+            android/app-release-signed.apk
+          retention-days: 14

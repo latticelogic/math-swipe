@@ -1,0 +1,21 @@
+# Signing material must NEVER be committed — the upload keystore lives in the
+# ANDROID_KEYSTORE_B64 GitHub secret and is decoded at CI build time.
+android.keystore
+*.keystore
+*.jks
+
+# Bubblewrap build outputs (built in CI; artifacts are the delivery channel)
+app-release-*.aab
+app-release-*.apk
+*.idsig
+build/
+app/
+gradle/
+gradlew
+gradlew.bat
+*.gradle
+settings.gradle
+gradle.properties
+local.properties
+store_icon.png
+manifest-checksum.txt

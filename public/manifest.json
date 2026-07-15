@@ -1,18 +1,39 @@
 {
+  "id": "/",
   "name": "Math Challenge",
   "short_name": "Math Challenge",
-  "description": "Swipe your way to mental math mastery. Fast, fun, addictive.",
+  "description": "A fast, warm mental-math game. Swipe to answer, build streaks, and learn the tricks behind the math.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#1b1b1b",
   "theme_color": "#1b1b1b",
+  "categories": ["education", "games", "kids"],
   "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
     {
       "src": "/icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ]
 }

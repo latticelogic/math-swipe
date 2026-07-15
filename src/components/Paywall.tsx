@@ -58,11 +58,17 @@ interface PaywallProps {
     /** Dismiss handler for 'pro' mode. When present, "Maybe later" calls this
      *  instead of closing the app. */
     onClose?: () => void;
+    /** True when this session has NO legal purchase path — the Google Play
+     *  (TWA) app without Play Billing available. Play policy (and the Families
+     *  program) forbids selling or steering to an external purchase there, so
+     *  the price and CTA are replaced by a neutral notice. The web app never
+     *  sets this. */
+    purchaseUnavailable?: boolean;
     /** Optional dev-only "reset trial" button — hidden in production. */
     onDevReset?: () => void;
 }
 
-export function Paywall({ progress, onUnlock, busy, mode = 'expired', onClose, onDevReset }: PaywallProps) {
+export function Paywall({ progress, onUnlock, busy, mode = 'expired', onClose, purchaseUnavailable, onDevReset }: PaywallProps) {
     const isPro = mode === 'pro';
     function maybeLater() {
         // Pro upsell: just dismiss — the user isn't blocked, they declined.
@@ -182,9 +188,11 @@ export function Paywall({ progress, onUnlock, busy, mode = 'expired', onClose, o
                                 </div>
                             ))}
                         </div>
-                        <p className="text-sm ui text-[rgb(var(--color-fg))]/65 mb-5 leading-relaxed">
-                            Yours forever for ${PRICE_USD.toFixed(2)}. One time — no subscription.
-                        </p>
+                        {!purchaseUnavailable && (
+                            <p className="text-sm ui text-[rgb(var(--color-fg))]/65 mb-5 leading-relaxed">
+                                Yours forever for ${PRICE_USD.toFixed(2)}. One time — no subscription.
+                            </p>
+                        )}
                     </>
                 ) : (<>
                 {/* The headline acknowledges the trial ended without naming the
@@ -229,11 +237,24 @@ export function Paywall({ progress, onUnlock, busy, mode = 'expired', onClose, o
 
                 {/* Quiet transition into the CTA — no possession threats, no
                     "lose your progress" framing. Just an invitation. */}
-                <p className="text-sm ui text-[rgb(var(--color-fg))]/65 mb-5 leading-relaxed">
-                    Want to keep going? Everything stays unlocked for ${PRICE_USD.toFixed(2)}. One time.
-                </p>
+                {!purchaseUnavailable && (
+                    <p className="text-sm ui text-[rgb(var(--color-fg))]/65 mb-5 leading-relaxed">
+                        Want to keep going? Everything stays unlocked for ${PRICE_USD.toFixed(2)}. One time.
+                    </p>
+                )}
                 </>)}
 
+                {purchaseUnavailable ? (
+                    // No legal purchase path in this session (Android app without
+                    // Play Billing). Per Google Play policy we can't sell here OR
+                    // steer to an external purchase — so: a neutral notice, no
+                    // price, no link. An unlock made elsewhere still syncs in.
+                    <p className="text-sm ui text-[rgb(var(--color-fg))]/55 leading-relaxed">
+                        Purchases aren't available in this version of the app.
+                        If you've already unlocked Math Challenge, sign in and
+                        your unlock comes with you.
+                    </p>
+                ) : (<>
                 <button
                     onClick={onUnlock}
                     disabled={busy}
@@ -247,6 +268,7 @@ export function Paywall({ progress, onUnlock, busy, mode = 'expired', onClose, o
                 <p className="text-[10px] ui text-[rgb(var(--color-fg))]/35 mt-2">
                     Lifetime access · No subscription
                 </p>
+                </>)}
 
                 <button
                     onClick={maybeLater}
