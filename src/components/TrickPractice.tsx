@@ -33,6 +33,7 @@ function trickToProblem(trick: MagicTrick): Problem {
         latex: p.latex,
         answer: p.answer,
         options: p.options,
+        optionLabels: p.optionLabels,
         correctIndex: p.correctIndex,
     };
 }

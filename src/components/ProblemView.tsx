@@ -3,6 +3,7 @@ import { motion, useMotionValue, useTransform, useMotionTemplate, animate, type 
 import type { PanInfo } from 'framer-motion';
 import type { Problem } from '../utils/mathGenerator';
 import type { EngineItem } from '../engine/domain';
+import { formatOptionValue } from '../utils/formatNumber';
 import { MathExpr } from './MathExpr';
 
 /** Arrow-key → swipe direction map for desktop play */
@@ -117,7 +118,7 @@ const AnswerOption = memo(function AnswerOption({
                 animate={correctFlash ? correctFlashAnim : highlighted ? glowAnim : {}}
                 transition={correctFlash ? { duration: 0.35 } : highlighted ? glowTransition : {}}
             >
-                {label ?? value}
+                {label ?? formatOptionValue(value)}
             </motion.div>
         </motion.button>
     );

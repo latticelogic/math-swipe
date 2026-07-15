@@ -172,6 +172,17 @@ export const airwallexWebhook = onRequest(
             return;
         }
 
+        // Anti-replay: the timestamp is covered by the signature, so a replayed
+        // delivery carries an old (still-valid) one. Reject anything more than
+        // 5 minutes from now. TODO(airwallex): confirm x-timestamp is seconds
+        // (not ms) for your account; divide accordingly.
+        const tsNum = Number(ts);
+        if (!Number.isFinite(tsNum) || Math.abs(Date.now() / 1000 - tsNum) > 300) {
+            logger.warn('[airwallexWebhook] stale/invalid timestamp');
+            res.status(400).send('Stale timestamp');
+            return;
+        }
+
         let event: AirwallexEvent;
         try {
             event = JSON.parse(req.rawBody.toString('utf8')) as AirwallexEvent;
@@ -249,6 +260,13 @@ async function revoke(uid: string | null, res: WebhookResponse) {
         const snap = await ref.get();
         if (!snap.exists || snap.data()?.paidAt == null) {
             res.status(200).send('nothing to revoke');
+            return;
+        }
+        // Only revoke access that Airwallex granted — an Airwallex refund must
+        // never clear a paidAt written by another source (apple/google/promo).
+        if (snap.data()?.source !== 'airwallex') {
+            logger.warn(`[airwallexWebhook] refund for ${uid} but source=${snap.data()?.source}; skipping`);
+            res.status(200).send('not airwallex source');
             return;
         }
         // Clear paidAt; keep source + originalTransactionId for the admin

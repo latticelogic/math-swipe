@@ -19,6 +19,10 @@ export interface MagicTrick {
         latex?: string;
         answer: number;
         options: number[];
+        /** Optional display strings, index-aligned with `options`. Used when the
+         *  raw number would render badly (fractions like "17/18", "φ (1.618)").
+         *  MUST stay in sync with `options` through any shuffle. */
+        optionLabels?: string[];
         correctIndex: number;
     };
 }
@@ -779,13 +783,21 @@ export const MAGIC_TRICKS: MagicTrick[] = [
         },
         generatePractice: () => {
             const n = Math.floor(Math.random() * 15) + 5; // 5-19
+            const answer = n / (n + 1);
+            // Shuffle value + label together so the fraction labels stay aligned
+            // with the options (and never render as long decimals).
+            const pairs = [
+                { v: answer, l: `${n}/${n + 1}` },
+                { v: (n - 1) / n, l: `${n - 1}/${n}` },
+                { v: (n + 1) / (n + 2), l: `${n + 1}/${n + 2}` },
+            ].sort(() => Math.random() - 0.5);
             return {
                 expression: `Telescoping sum to 1/(${n}×${n + 1})`,
                 latex: `\\sum_{k=1}^{${n}} \\frac{1}{k(k+1)}`,
-                answer: n / (n + 1),
-                options: [n / (n + 1), (n - 1) / n, (n + 1) / (n + 2)].sort(() => Math.random() - 0.5),
-                optionLabels: [`${n}/${n + 1}`, `${n - 1}/${n}`, `${n + 1}/${n + 2}`], // We need formatted fractions
-                correctIndex: NaN // Computed later based on shuffle
+                answer,
+                options: pairs.map(p => p.v),
+                optionLabels: pairs.map(p => p.l),
+                correctIndex: pairs.findIndex(p => p.v === answer),
             };
         }
     },
@@ -812,13 +824,18 @@ export const MAGIC_TRICKS: MagicTrick[] = [
             const ans = 1 - Math.pow(0.5, n);
             const den = Math.pow(2, n);
             const num = den - 1;
+            const pairs = [
+                { v: ans, l: `${num}/${den}` },
+                { v: 1 - Math.pow(0.5, n - 1), l: `${den / 2 - 1}/${den / 2}` },
+                { v: 1 - Math.pow(0.5, n + 1), l: `${den * 2 - 1}/${den * 2}` },
+            ].sort(() => Math.random() - 0.5);
             return {
                 expression: `Sum 1/2^k from k=1 to ${n}`,
                 latex: `\\sum_{k=1}^{${n}} \\frac{1}{2^k}`,
                 answer: ans,
-                options: [ans, 1 - Math.pow(0.5, n - 1), 1 - Math.pow(0.5, n + 1)].sort(() => Math.random() - 0.5),
-                optionLabels: [`${num}/${den}`, `${den / 2 - 1}/${den / 2}`, `${den * 2 - 1}/${den * 2}`],
-                correctIndex: NaN
+                options: pairs.map(p => p.v),
+                optionLabels: pairs.map(p => p.l),
+                correctIndex: pairs.findIndex(p => p.v === ans),
             };
         }
     },
