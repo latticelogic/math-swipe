@@ -62,3 +62,17 @@ const THEME_MAP = new Map(CHALK_THEMES.map(t => [t.id, t]));
 export function getThemeColor(id?: string): string | undefined {
     return id ? THEME_MAP.get(id)?.color : undefined;
 }
+
+/** Theme color resolved for the CURRENT light/dark mode. The raw `.color` is
+ *  tuned for the dark chalkboard (e.g. Classic is near-white); on a light
+ *  surface that reads as invisible/faded, so we swap to the theme's darker
+ *  `.lightColor`. Use this anywhere a theme color paints text on a surface
+ *  that follows the app theme (leaderboard rows, profile name, …). */
+export function getThemeDisplayColor(id?: string): string | undefined {
+    if (!id) return undefined;
+    const t = THEME_MAP.get(id);
+    if (!t) return undefined;
+    const isLight = typeof document !== 'undefined'
+        && document.documentElement.getAttribute('data-theme') === 'light';
+    return isLight ? t.lightColor : t.color;
+}

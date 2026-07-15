@@ -18,7 +18,7 @@ import { collection, query, where, limit, getDoc, getDocs, doc } from 'firebase/
 import { getFirebase } from '../utils/firebase';
 import { getRank, getMastery } from '../domains/math/ranks';
 import { getTeacher } from '../domains/math/teachers';
-import { getThemeColor } from '../utils/chalkThemes';
+import { getThemeDisplayColor } from '../utils/chalkThemes';
 import { AchievementBadge } from './AchievementBadge';
 import { EVERY_ACHIEVEMENT } from '../utils/achievements';
 import { opponentChallengeSeed } from '../utils/dailyChallenge';
@@ -181,7 +181,7 @@ export const ProfilePage = memo(function ProfilePage({ slug, onChallenge, onBack
     const { rank, nextRank, progress } = getRank(profile.totalXP);
     const mastery = !nextRank ? getMastery(profile.totalXP) : null;
     const teacher = getTeacher(profile.activeTeacher);
-    const themeColor = getThemeColor(profile.activeThemeId) ?? 'var(--color-chalk)';
+    const themeColor = getThemeDisplayColor(profile.activeThemeId) ?? 'var(--color-chalk)';
     const trophies = (profile.achievements ?? [])
         .map(id => EVERY_ACHIEVEMENT.find(a => a.id === id))
         .filter(Boolean)

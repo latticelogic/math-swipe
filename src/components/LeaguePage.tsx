@@ -2,7 +2,7 @@ import { memo, useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { collection, onSnapshot, addDoc, serverTimestamp, doc, setDoc } from 'firebase/firestore';
 import { getFirebase } from '../utils/firebase';
-import { getThemeColor } from '../utils/chalkThemes';
+import { getThemeDisplayColor } from '../utils/chalkThemes';
 import { COSTUMES } from '../utils/costumes';
 import { formatTime } from '../utils/formatTime';
 import { AchievementBadge } from './AchievementBadge';
@@ -332,13 +332,13 @@ export const LeaguePage = memo(function LeaguePage({ userXP, userStreak, uid, di
                                     )}
                                     <div
                                         className={`text-sm ui font-semibold truncate ${entry.isYou ? '' : 'text-[rgb(var(--color-fg))]/70'}`}
-                                        style={entry.activeThemeId ? { color: getThemeColor(entry.activeThemeId) } : undefined}
+                                        style={entry.activeThemeId ? { color: getThemeDisplayColor(entry.activeThemeId) } : undefined}
                                     >
                                         {entry.displayName}
                                         {entry.isYou && <span className="ml-1 text-xs opacity-50" style={{ color: 'rgb(var(--color-fg))' }}>(you)</span>}
                                     </div>
                                     {entry.activeCostume && COSTUMES[entry.activeCostume] && (
-                                        <svg viewBox="0 0 100 160" className="w-[14px] h-[22px] flex-shrink-0" style={{ color: getThemeColor(entry.activeThemeId) || 'var(--color-chalk)' }}>
+                                        <svg viewBox="0 0 100 160" className="w-[14px] h-[22px] flex-shrink-0" style={{ color: getThemeDisplayColor(entry.activeThemeId) || 'var(--color-chalk)' }}>
                                             {COSTUMES[entry.activeCostume]}
                                         </svg>
                                     )}
@@ -400,7 +400,7 @@ export const LeaguePage = memo(function LeaguePage({ userXP, userStreak, uid, di
                         >
                             <div className="flex items-center gap-3 mb-6">
                                 {selectedPlayer.activeCostume && COSTUMES[selectedPlayer.activeCostume] ? (
-                                    <svg viewBox="0 0 100 160" className="w-[28px] h-[44px]" style={{ color: getThemeColor(selectedPlayer.activeThemeId) || 'var(--color-chalk)' }}>
+                                    <svg viewBox="0 0 100 160" className="w-[28px] h-[44px]" style={{ color: getThemeDisplayColor(selectedPlayer.activeThemeId) || 'var(--color-chalk)' }}>
                                         {COSTUMES[selectedPlayer.activeCostume]}
                                     </svg>
                                 ) : (
@@ -409,7 +409,7 @@ export const LeaguePage = memo(function LeaguePage({ userXP, userStreak, uid, di
                                 <div>
                                     <h3
                                         className="text-lg ui font-bold"
-                                        style={{ color: getThemeColor(selectedPlayer.activeThemeId) || 'rgb(var(--color-fg))' }}
+                                        style={{ color: getThemeDisplayColor(selectedPlayer.activeThemeId) || 'rgb(var(--color-fg))' }}
                                     >
                                         {selectedPlayer.displayName}
                                     </h3>
