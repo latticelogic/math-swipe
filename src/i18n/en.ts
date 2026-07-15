@@ -171,6 +171,8 @@ export const en = {
     'settings.neverMind': 'never mind',
     'settings.resetCta': 'reset',
     'settings.versionTap': 'v{v} · tap to update',
+    'settings.upToDate': 'v{v} · up to date',
+    'settings.updateAvailable': 'v{v} · tap to get v{n}',
 
     // ── Me tab (Tier-1 subset: language, sign-in card, stat labels) ──
     'me.language': 'Language',

@@ -11,12 +11,11 @@
  *   - Legal links + reCAPTCHA attribution
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PushOptIn } from './PushOptIn';
 import { LegalFooterRow } from './LegalPages';
 import { RecaptchaNotice } from './RecaptchaNotice';
-import { countLabel } from '../utils/formatNumber';
 import { t, getLocale, setLocale, SHIPPED_LOCALES } from '../i18n';
 
 declare const __APP_VERSION__: string;
@@ -25,14 +24,30 @@ interface Props {
     open: boolean;
     onClose: () => void;
     uid: string | null;
-    /** For the reset-confirm prompts (specific numbers > generic warnings). */
-    stats: { totalXP: number; bestStreak: number; totalSolved: number };
-    onReset: () => void;
 }
 
-export function SettingsSheet({ open, onClose, uid, stats, onReset }: Props) {
-    const [resetConfirm, setResetConfirm] = useState<string | null>(null);
+export function SettingsSheet({ open, onClose, uid }: Props) {
     const locale = getLocale();
+
+    // Latest deployed version — /version.json is emitted at build time, so
+    // comparing it to the baked-in __APP_VERSION__ says whether THIS running
+    // bundle is current ("up to date") or stale ("tap to get vX"). null =
+    // check unavailable (offline) → fall back to the neutral label.
+    const [latest, setLatest] = useState<string | null>(null);
+    useEffect(() => {
+        if (!open) return;
+        let cancelled = false;
+        fetch('/version.json', { cache: 'no-store' })
+            .then(r => r.json())
+            .then((j: { version?: string }) => { if (!cancelled && j.version) setLatest(j.version); })
+            .catch(() => { /* offline — keep neutral label */ });
+        return () => { cancelled = true; };
+    }, [open]);
+    const versionLabel = latest === null
+        ? t('settings.versionTap', { v: __APP_VERSION__ })
+        : latest === __APP_VERSION__
+            ? t('settings.upToDate', { v: __APP_VERSION__ })
+            : t('settings.updateAvailable', { v: __APP_VERSION__, n: latest });
 
     return (
         <AnimatePresence>
@@ -92,22 +107,7 @@ export function SettingsSheet({ open, onClose, uid, stats, onReset }: Props) {
                             <PushOptIn uid={uid} />
                         </div>
 
-                        {/* ── Reset stats ── */}
-                        <button
-                            onClick={() => {
-                                const prompts = [
-                                    `You've earned ${stats.totalXP.toLocaleString()} points. Are you sure you want to start fresh?`,
-                                    `Your ${stats.bestStreak}-streak record will be lost. Reset anyway?`,
-                                    `${countLabel(stats.totalSolved, 'problem')} solved. Wipe it all?`,
-                                    'A fresh start. Ready to begin again?',
-                                    'All progress will be erased. Really reset?',
-                                ];
-                                setResetConfirm(prompts[Math.floor(Math.random() * prompts.length)]);
-                            }}
-                            className="w-full text-left px-4 py-2.5 rounded-xl text-sm ui border border-[var(--color-streak-fire)]/25 text-[var(--color-streak-fire)]/80 hover:bg-[var(--color-streak-fire)]/10 transition-colors mb-6"
-                        >
-                            {t('settings.reset')}
-                        </button>
+                        {/* (Reset stats removed 2026-07-16 — owner call.) */}
 
                         {/* ── Version / force update ── */}
                         <button
@@ -126,54 +126,17 @@ export function SettingsSheet({ open, onClose, uid, stats, onReset }: Props) {
                                     window.location.reload();
                                 }
                             }}
-                            className="w-full text-center text-[10px] ui text-[rgb(var(--color-fg))]/25 tracking-widest active:text-[rgb(var(--color-fg))]/50 transition-colors mb-3"
-                            aria-label={t('settings.versionTap', { v: __APP_VERSION__ })}
+                            className={`w-full text-center text-[10px] ui tracking-widest transition-colors mb-3 ${latest !== null && latest !== __APP_VERSION__
+                                ? 'text-[var(--color-gold)]/70 active:text-[var(--color-gold)]'
+                                : 'text-[rgb(var(--color-fg))]/25 active:text-[rgb(var(--color-fg))]/50'}`}
+                            aria-label={versionLabel}
                         >
-                            {t('settings.versionTap', { v: __APP_VERSION__ })}
+                            {versionLabel}
                         </button>
 
                         {/* ── Legal ── */}
                         <LegalFooterRow />
                         <RecaptchaNotice />
-
-                        {/* Reset confirm — inside the sheet so it stacks above it */}
-                        <AnimatePresence>
-                            {resetConfirm && (
-                                <>
-                                    <motion.div
-                                        className="fixed inset-0 bg-[var(--color-overlay-dim)] z-[120]"
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        exit={{ opacity: 0 }}
-                                        onClick={() => setResetConfirm(null)}
-                                    />
-                                    <motion.div
-                                        role="alertdialog"
-                                        aria-modal="true"
-                                        className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[121] w-[300px] bg-[var(--color-overlay)] border border-[rgb(var(--color-fg))]/15 rounded-2xl px-6 py-6 text-center"
-                                        initial={{ opacity: 0, scale: 0.95 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        exit={{ opacity: 0, scale: 0.95 }}
-                                    >
-                                        <p className="text-sm ui text-[rgb(var(--color-fg))]/75 mb-5 leading-relaxed">{resetConfirm}</p>
-                                        <div className="flex gap-2">
-                                            <button
-                                                onClick={() => setResetConfirm(null)}
-                                                className="flex-1 py-2.5 rounded-xl border border-[rgb(var(--color-fg))]/15 text-sm ui text-[rgb(var(--color-fg))]/60 hover:bg-[rgb(var(--color-fg))]/5 transition-colors"
-                                            >
-                                                {t('settings.neverMind')}
-                                            </button>
-                                            <button
-                                                onClick={() => { onReset(); setResetConfirm(null); onClose(); }}
-                                                className="flex-1 py-2.5 rounded-xl border border-[var(--color-streak-fire)]/40 bg-[var(--color-streak-fire)]/10 text-sm ui text-[var(--color-streak-fire)] hover:bg-[var(--color-streak-fire)]/20 transition-colors"
-                                            >
-                                                {t('settings.resetCta')}
-                                            </button>
-                                        </div>
-                                    </motion.div>
-                                </>
-                            )}
-                        </AnimatePresence>
                     </motion.div>
                 </>
             )}

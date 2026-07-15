@@ -22,7 +22,6 @@ interface Props {
     accuracy: number;
     sessionScore: number;
     sessionStreak: number;
-    onReset: () => void;
     unlocked: Set<string>;
     activeCostume: string;
     onCostumeChange: (id: string) => void;
@@ -81,7 +80,7 @@ function ModeAchievementGrid({ achievements, cols, unlocked }: {
     );
 }
 
-export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked, activeCostume, onCostumeChange, activeTheme, onThemeChange, activeTrailId, onTrailChange, displayName, onDisplayNameChange, isAnonymous, onLinkGoogle, onLinkApple, onSendEmailLink, authMessage, onClearAuthMessage, ageBand, activeTeacherId, onTeacherChange, uid, entitlementStatus, entitlementDaysLeft, onUnlock, hasPro = true, onRequestPro }: Props) {
+export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCostume, onCostumeChange, activeTheme, onThemeChange, activeTrailId, onTrailChange, displayName, onDisplayNameChange, isAnonymous, onLinkGoogle, onLinkApple, onSendEmailLink, authMessage, onClearAuthMessage, ageBand, activeTeacherId, onTeacherChange, uid, entitlementStatus, entitlementDaysLeft, onUnlock, hasPro = true, onRequestPro }: Props) {
     const [showRanks, setShowRanks] = useState(false);
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [editingName, setEditingName] = useState(false);
@@ -624,13 +623,11 @@ export const MePage = memo(function MePage({ stats, accuracy, onReset, unlocked,
                 )}
             </AnimatePresence>
 
-            {/* Settings sheet — language, notifications, reset, version, legal */}
+            {/* Settings sheet — language, notifications, version, legal */}
             <SettingsSheet
                 open={settingsOpen}
                 onClose={() => setSettingsOpen(false)}
                 uid={uid}
-                stats={{ totalXP: stats.totalXP, bestStreak: stats.bestStreak, totalSolved: stats.totalSolved }}
-                onReset={onReset}
             />
             {/* "Install app" pill — only renders when the browser supports
                 install AND the app isn't already running standalone AND

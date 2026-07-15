@@ -154,6 +154,8 @@ export const ptBR: Record<MsgKey, string> = {
     'settings.neverMind': 'deixa pra lá',
     'settings.resetCta': 'apagar',
     'settings.versionTap': 'v{v} · toque para atualizar',
+    'settings.upToDate': 'v{v} · atualizado',
+    'settings.updateAvailable': 'v{v} · toque para v{n}',
 
     'me.language': 'Idioma',
     'me.signinTitle': 'Guarde seu progresso',

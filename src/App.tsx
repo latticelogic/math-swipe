@@ -59,6 +59,7 @@ import { detectChannel, isAndroidApp } from './utils/channel';
 import { buildSharePayloadFromArgs, type SharePayloadArgs } from './utils/sharePayload';
 import { buildProfileSlug } from './utils/profileSlug';
 import { EndRunDialog } from './components/EndRunDialog';
+import { nextTeacherTip, markTipSeen } from './utils/teacherTips';
 import { Paywall } from './components/Paywall';
 import { WelcomeModal, TrialReminderModal } from './components/TrialModals';
 import { LegalPage, type LegalDocId } from './components/LegalPages';
@@ -246,7 +247,7 @@ function App() {
     setChallengeTarget(null);
   }, [questionType]);
 
-  const { stats, accuracy, recordSession, resetStats, updateCosmetics, updateBestSpeedrunTime, consumeShield, recordShare } = useStats(uid);
+  const { stats, accuracy, recordSession, updateCosmetics, updateBestSpeedrunTime, consumeShield, recordShare } = useStats(uid);
 
   // ── Last banked session (for the rail share button) ──
   // Snapshot taken whenever a session is recorded (tab-leave bank or summary
@@ -406,6 +407,27 @@ function App() {
 
   // ── Ping Listener (Async Taunts) ──
   const [pingMessage, setPingMessage] = useState<string | null>(null);
+
+  // ── Teacher tips — feature discovery in the teacher's voice ──
+  // Replaces the old floating banner prompts. At most one tip per session,
+  // each shown once ever, delivered through the teacher's speech bubble
+  // (the pingMessage channel), never through new chrome.
+  const tipShownThisSession = useRef(false);
+  useEffect(() => {
+    if (tipShownThisSession.current) return;
+    if (activeTab !== 'game' || pingMessage !== null) return;
+    if (totalAnswered < 3) return; // let the session settle first
+    const tip = nextTeacherTip({
+      streak, totalAnswered, totalSolved: stats.totalSolved, questionType,
+    });
+    if (!tip) return;
+    tipShownThisSession.current = true;
+    markTipSeen(tip.id);
+    setPingMessage(tip.text);
+    const t = setTimeout(() => setPingMessage(null), 6000);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, totalAnswered, streak, questionType]);
   useEffect(() => {
     if (!uid) return;
     let clearTimer: ReturnType<typeof setTimeout> | undefined;
@@ -1260,7 +1282,6 @@ function App() {
               accuracy={accuracy}
               sessionScore={score}
               sessionStreak={bestStreak}
-              onReset={resetStats}
               unlocked={unlocked}
               activeCostume={activeCostume}
               onCostumeChange={handleCostumeChange}
