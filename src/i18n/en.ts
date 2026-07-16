@@ -149,20 +149,6 @@ export const en = {
     'paywall.maybeLater': 'Maybe later',
     'paywall.dailyFree': 'The Daily Challenge is always free.',
 
-    // ── Share sheet ──
-    'share.title': 'Share your run',
-    'share.closeAria': 'Close share',
-    'share.generating': 'Generating…',
-    'share.generatingImage': 'Generating image…',
-    'share.native': 'Share…',
-    'share.copyLink': 'Copy link',
-    'share.copyText': 'Copy text',
-    'share.download': 'Download',
-    'share.linkCopied': 'Link copied!',
-    'share.textCopied': 'Text copied!',
-    'share.saved': 'Saved!',
-    'share.previewAlt': 'Share card preview',
-
     // ── Settings sheet ──
     'settings.title': 'Settings',
     'settings.gearAria': 'Open settings',

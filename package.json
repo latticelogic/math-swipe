@@ -19,7 +19,6 @@
     "@types/katex": "^0.16.8",
     "firebase": "^12.9.0",
     "framer-motion": "^12.34.2",
-    "html-to-image": "^1.11.13",
     "katex": "^0.16.28",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",

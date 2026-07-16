@@ -66,7 +66,6 @@ describe('length budgets (per UI slot)', () => {
         [/^(endRun|paywall|welcome|trial)\.(end|keep|cta|ctaExpired|proTitle|maybeLater|unlockFor)$/, 28, 'primary button'],
         [/^trial\.chip$/, 48, 'trial chip'],
         [/^me\.stat/, 12, 'stat label'],
-        [/^share\.(native|copyLink|copyText|download)$/, 16, 'share tile'],
     ];
     for (const [name, catalog] of CATALOGS) {
         it(`${name} fits every slot budget`, () => {
