@@ -346,7 +346,7 @@ export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCo
 
             {/* Streak garden — the day-streak, drawn */}
             <div className="w-full max-w-sm mb-3">
-                <StreakGarden dayStreak={stats.dayStreak} lastPlayedDate={stats.lastPlayedDate} today={today} />
+                <StreakGarden dayStreak={stats.dayStreak} lastPlayedDate={stats.lastPlayedDate} today={today} dayLog={stats.dayLog} />
             </div>
 
             {/* (Daily-streak chip removed 2026-07-16 — owner call. The streak

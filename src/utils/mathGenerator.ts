@@ -1,4 +1,8 @@
 import type { QuestionType } from './questionTypes';
+// Locale-specific FUNCTION NAMES inside expressions (gcd/lcm differ per
+// school system: en GCF/LCM, es MCD/mcm, pt MDC/MMC…). Numerals and
+// operators stay locale-invariant — see docs/i18n.md.
+import { t } from '../i18n';
 export type { QuestionType } from './questionTypes';
 
 export interface Problem {
@@ -683,11 +687,11 @@ function genGcfLcm(d: number, hard: boolean): Problem {
         const useGcf = _rng() > 0.5;
         if (useGcf) {
             const answer = gcd(gcd(a, b), c);
-            return pack(`GCF(${a}, ${b}, ${c})`, answer, nearDistractors, `\\gcd(${a}, ${b}, ${c})`);
+            return pack(`${t('math.gcd')}(${a}, ${b}, ${c})`, answer, nearDistractors, `\\text{${t('math.gcd')}}(${a}, ${b}, ${c})`);
         }
         const lcm2 = (a * b) / gcd(a, b);
         const answer = (lcm2 * c) / gcd(lcm2, c);
-        return pack(`LCM(${a}, ${b}, ${c})`, answer, nearDistractors, `\\text{lcm}(${a}, ${b}, ${c})`);
+        return pack(`${t('math.lcm')}(${a}, ${b}, ${c})`, answer, nearDistractors, `\\text{${t('math.lcm')}}(${a}, ${b}, ${c})`);
     }
 
     // d=1: GCF only, small. d=2-3: either, medium. d=4-5: LCM emphasis, large.
@@ -701,10 +705,10 @@ function genGcfLcm(d: number, hard: boolean): Problem {
     const a = factor * m1, b = factor * m2;
     if (useGcf) {
         const answer = gcd(a, b);
-        return pack(`GCF(${a}, ${b})`, answer, nearDistractors, `\\gcd(${a}, ${b})`);
+        return pack(`${t('math.gcd')}(${a}, ${b})`, answer, nearDistractors, `\\text{${t('math.gcd')}}(${a}, ${b})`);
     }
     const answer = (a * b) / gcd(a, b);
-    return pack(`LCM(${a}, ${b})`, answer, nearDistractors, `\\text{lcm}(${a}, ${b})`);
+    return pack(`${t('math.lcm')}(${a}, ${b})`, answer, nearDistractors, `\\text{${t('math.lcm')}}(${a}, ${b})`);
 }
 
 function genRatio(d: number, hard: boolean): Problem {

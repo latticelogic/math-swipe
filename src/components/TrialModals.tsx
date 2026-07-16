@@ -22,7 +22,7 @@
 
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { PRICE_USD, type EntitlementStatus } from '../utils/entitlement';
+import { PRICE_USD, TRIAL_DAYS, type EntitlementStatus } from '../utils/entitlement';
 import { safeGetItem, safeSetItem } from '../utils/safeStorage';
 import { t, tCount } from '../i18n';
 
@@ -33,7 +33,7 @@ const PRICE_LABEL = `$${PRICE_USD.toFixed(2)}`;
 // ── Acknowledgement keys (per uid) ────────────────────────────────────────────
 
 const WELCOME_KEY = (uid: string) => `math-swipe-welcome-seen:${uid}`;
-const REMINDER_KEY = (uid: string, day: 7 | 10 | 13) => `math-swipe-reminder-seen:${day}:${uid}`;
+const REMINDER_KEY = (uid: string, day: 4 | 6) => `math-swipe-reminder-seen:${day}:${uid}`;
 
 // ── Welcome modal ─────────────────────────────────────────────────────────────
 
@@ -117,7 +117,7 @@ export function WelcomeModal({ uid, status, entitlementLoading, inSession, displ
                         </h2>
 
                         <p className="text-sm ui text-[rgb(var(--color-fg))]/70 mb-2 leading-relaxed">
-                            {t('welcome.free', { days: 14 })}
+                            {t('welcome.free', { days: TRIAL_DAYS })}
                         </p>
 
                         <p className="text-sm ui text-[rgb(var(--color-fg))]/70 mb-4 leading-relaxed">
@@ -191,7 +191,7 @@ interface TrialReminderModalProps {
  *  they navigate to a non-game tab. The ack-key still ensures a single
  *  fire per threshold per uid. */
 export function TrialReminderModal({ uid, status, daysLeft, entitlementLoading, inSession, onUnlock }: TrialReminderModalProps) {
-    const [open, setOpen] = useState<7 | 10 | 13 | null>(null);
+    const [open, setOpen] = useState<4 | 6 | null>(null);
 
     useEffect(() => {
         if (!uid || entitlementLoading) return;
@@ -201,17 +201,14 @@ export function TrialReminderModal({ uid, status, daysLeft, entitlementLoading, 
         // app open), at which point we'll catch up on whatever threshold
         // is current.
         if (inSession) return;
-        // Targets:
-        //   Day 7 mark   → daysLeft <= 7 (first opens after Day 7 hit)
-        //   Day 10 mark  → daysLeft <= 4
-        //   Day 13 mark  → daysLeft <= 1
-        // Use strictly-incrementing thresholds so the user always sees
-        // the most relevant reminder for their current day — Day 7's
-        // ack-key prevents it from re-firing once they're at Day 10.
-        const target: 7 | 10 | 13 | null =
-            daysLeft <= 1 ? 13 :
-            daysLeft <= 4 ? 10 :
-            daysLeft <= 7 ? 7 :
+        // 7-day trial (was 14): two touchpoints instead of three —
+        //   Day 4 mark (midpoint) → daysLeft <= 3
+        //   Day 6 mark (1 left)   → daysLeft <= 1
+        // Strictly-incrementing thresholds + per-threshold ack keys, so the
+        // user always sees the most relevant reminder exactly once.
+        const target: 4 | 6 | null =
+            daysLeft <= 1 ? 6 :
+            daysLeft <= 3 ? 4 :
             null;
         if (!target) return;
         if (safeGetItem(REMINDER_KEY(uid, target))) return;
@@ -229,8 +226,8 @@ export function TrialReminderModal({ uid, status, daysLeft, entitlementLoading, 
         onUnlock?.();
     }
 
-    const isMidpoint = open === 7;
-    const isUrgent = open === 13;
+    const isMidpoint = open === 4;
+    const isUrgent = open === 6;
 
     return (
         <AnimatePresence>

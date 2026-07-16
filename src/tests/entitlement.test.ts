@@ -40,14 +40,14 @@ describe('entitlement helpers', () => {
             expect(trialDaysLeft(T0, T0)).toBe(TRIAL_DAYS);
         });
 
-        it('counts down by whole days', () => {
-            expect(trialDaysLeft(T0, T0 + DAY)).toBe(13);
-            expect(trialDaysLeft(T0, T0 + 7 * DAY)).toBe(7);
-            expect(trialDaysLeft(T0, T0 + 13 * DAY)).toBe(1);
+        it('counts down by whole days (derived from TRIAL_DAYS)', () => {
+            expect(trialDaysLeft(T0, T0 + DAY)).toBe(TRIAL_DAYS - 1);
+            expect(trialDaysLeft(T0, T0 + 3 * DAY)).toBe(TRIAL_DAYS - 3);
+            expect(trialDaysLeft(T0, T0 + (TRIAL_DAYS - 1) * DAY)).toBe(1);
         });
 
         it('clamps to 0 once trial is over (never negative)', () => {
-            expect(trialDaysLeft(T0, T0 + 14 * DAY)).toBe(0);
+            expect(trialDaysLeft(T0, T0 + TRIAL_DAYS * DAY)).toBe(0);
             expect(trialDaysLeft(T0, T0 + 100 * DAY)).toBe(0);
         });
     });
@@ -57,13 +57,13 @@ describe('entitlement helpers', () => {
             expect(isTrialActive(0, T0)).toBe(false);
         });
 
-        it('true through day 14 (last full free day)', () => {
+        it('true through the last full free day (derived from TRIAL_DAYS)', () => {
             expect(isTrialActive(T0, T0)).toBe(true);
-            expect(isTrialActive(T0, T0 + 13 * DAY + DAY - 1)).toBe(true);
+            expect(isTrialActive(T0, T0 + TRIAL_DAYS * DAY - 1)).toBe(true);
         });
 
-        it('false at day 15 (paywall threshold)', () => {
-            expect(isTrialActive(T0, T0 + 14 * DAY)).toBe(false);
+        it('false once TRIAL_DAYS elapse (paywall threshold)', () => {
+            expect(isTrialActive(T0, T0 + TRIAL_DAYS * DAY)).toBe(false);
             expect(isTrialActive(T0, T0 + 100 * DAY)).toBe(false);
         });
     });

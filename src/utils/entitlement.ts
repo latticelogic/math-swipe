@@ -1,7 +1,7 @@
 /**
  * utils/entitlement.ts
  *
- * Pure helpers for the 14-day demo → $3.14 lifetime gating model.
+ * Pure helpers for the 7-day demo → $3.14 lifetime gating model.
  *
  * No Firestore, no React — this file is the single source of truth for
  * trial-length math and access decisions. Hooks and Cloud Functions both
@@ -14,8 +14,10 @@
  *   - After purchase: paidAt set, hasAccess() returns true forever
  */
 
-/** Length of the free-access window before paywall. 14 days, lifetime $3.14. */
-export const TRIAL_DAYS = 14;
+/** Length of the free-access window before paywall. 7 days (owner call
+ *  2026-07-16 — two weeks was too long for a game this quick; was 14),
+ *  lifetime $3.14. Users mid-trial past day 7 expire at their next check. */
+export const TRIAL_DAYS = 7;
 
 /** Lifetime unlock price (USD). */
 export const PRICE_USD = 3.14;

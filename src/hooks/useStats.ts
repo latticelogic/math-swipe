@@ -29,6 +29,9 @@ export interface Stats {
     bestDailyStreak: number;
     lastPlayedDate: string; // YYYY-MM-DD
     byType: Record<string, TypeStat>;
+    /** Per-calendar-day ledger (last ~35 days), accumulated at session bank.
+     *  Drives the StreakGarden per-day detail popover. Keyed YYYY-MM-DD. */
+    dayLog?: Record<string, { solved: number; correct: number; xp: number }>;
     // Hard mode tracking
     hardModeSolved: number;
     hardModeCorrect: number;
@@ -96,6 +99,7 @@ const EMPTY_STATS: Stats = {
     bestDailyStreak: 0,
     lastPlayedDate: '',
     byType: buildEmptyByType(),
+    dayLog: {},
     hardModeSolved: 0,
     hardModeCorrect: 0,
     hardModeBestStreak: 0,
@@ -152,6 +156,17 @@ function saveStatsLocal(s: Stats) {
 }
 
 /** Save to Firestore (async, background — includes leaderboard fields at top level) */
+/** Keep only the newest N per-day ledger entries. YYYY-MM-DD keys sort
+ *  lexicographically = chronologically, so a plain sort works. */
+const DAY_LOG_MAX = 35;
+function trimDayLog(log: NonNullable<Stats['dayLog']>): NonNullable<Stats['dayLog']> {
+    const keys = Object.keys(log).sort();
+    if (keys.length <= DAY_LOG_MAX) return log;
+    const out: NonNullable<Stats['dayLog']> = {};
+    for (const k of keys.slice(-DAY_LOG_MAX)) out[k] = log[k];
+    return out;
+}
+
 async function saveStatsCloud(uid: string, s: Stats) {
     try {
         const accuracy = s.totalSolved > 0 ? Math.round((s.totalCorrect / s.totalSolved) * 100) : 0;
@@ -240,6 +255,15 @@ function mergeStats(local: Stats, cloud: Stats): Stats {
         bestDailyStreak: Math.max(local.bestDailyStreak ?? 0, cloud.bestDailyStreak ?? 0),
         lastPlayedDate: local.lastPlayedDate > cloud.lastPlayedDate ? local.lastPlayedDate : cloud.lastPlayedDate,
         byType: mergedByType,
+        // Per-day ledger: union, taking whichever side saw more play that day.
+        dayLog: trimDayLog((() => {
+            const out: NonNullable<Stats['dayLog']> = { ...(cloud.dayLog ?? {}) };
+            for (const [k, v] of Object.entries(local.dayLog ?? {})) {
+                const c = out[k];
+                out[k] = !c || v.solved >= c.solved ? v : c;
+            }
+            return out;
+        })()),
         hardModeSolved: Math.max(local.hardModeSolved, cloud.hardModeSolved),
         hardModeCorrect: Math.max(local.hardModeCorrect, cloud.hardModeCorrect),
         hardModeBestStreak: Math.max(local.hardModeBestStreak, cloud.hardModeBestStreak),
@@ -460,6 +484,15 @@ export function useStats(uid: string | null) {
                 bestDailyStreak,
                 lastPlayedDate: todayStr,
                 byType: nextByType,
+                // Per-day ledger for the StreakGarden detail popover.
+                dayLog: trimDayLog({
+                    ...(prev.dayLog ?? {}),
+                    [todayStr]: {
+                        solved: (prev.dayLog?.[todayStr]?.solved ?? 0) + answered,
+                        correct: (prev.dayLog?.[todayStr]?.correct ?? 0) + correct,
+                        xp: (prev.dayLog?.[todayStr]?.xp ?? 0) + score,
+                    },
+                }),
                 hardModeSolved: prev.hardModeSolved + (hardMode ? answered : 0),
                 hardModeCorrect: prev.hardModeCorrect + (hardMode ? correct : 0),
                 hardModeBestStreak: hardMode ? Math.max(prev.hardModeBestStreak, bestStreak) : prev.hardModeBestStreak,

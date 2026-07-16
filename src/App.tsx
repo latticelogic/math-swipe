@@ -116,7 +116,7 @@ function App() {
   const { user, setDisplayName, linkGoogle, linkApple, sendEmailLink, authMessage, clearAuthMessage } = useFirebaseAuth();
   const uid = user?.uid ?? null;
 
-  // 14-day trial → $3.14 lifetime gate. See utils/entitlement.ts +
+  // 7-day trial → $3.14 lifetime gate. See utils/entitlement.ts +
   // memory/monetization_model.md. The paywall is now a value-anchored
   // OVERLAY, not an app-blocking early return — it fires AFTER the user
   // completes a problem in a non-daily session, so they get the dopamine
@@ -1421,10 +1421,10 @@ function App() {
         {/* ── Weekly recap (first open of the week, only when idle on game tab) ── */}
         <WeeklyRecap stats={stats} suppress={activeTab !== 'game' || isMagicLessonActive} />
 
-        {/* ── 14-day-trial touchpoints ──
+        {/* ── 7-day-trial touchpoints ──
             Four pieces (see TrialModals.tsx):
               - WelcomeModal: once on Day 1, at session-start
-              - TrialReminderModal: Day 7 / 10 / 13, all at session-start only
+              - TrialReminderModal: Day 4 (midpoint) / Day 6 (1 left), session-start only
               - TrialCountdownChip: rendered inline inside MePage (passed
                 via props below) so it lives where the user already looks
                 for account-level info, not as floating chrome.

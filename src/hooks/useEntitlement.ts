@@ -1,7 +1,7 @@
 /**
  * hooks/useEntitlement.ts
  *
- * The 14-day demo → $3.14 lifetime gate, exposed as a React hook.
+ * The 7-day demo → $3.14 lifetime gate, exposed as a React hook.
  *
  * Reads `entitlements/{uid}` from Firestore. On the user's first session
  * (no doc exists), creates one with `trialStartedAt = now()` so the clock

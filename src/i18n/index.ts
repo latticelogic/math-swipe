@@ -89,9 +89,27 @@ function interpolate(template: string, vars?: Record<string, string | number>): 
         Object.prototype.hasOwnProperty.call(vars, name) ? String(vars[name]) : m);
 }
 
+/** Regional overrides WITHIN a locale — currently just Commonwealth English,
+ *  where gcd is called HCF (UK/India/Singapore/AU/NZ/IE/ZA/MY/HK schools)
+ *  while the US says GCF. One word doesn't justify a full en-GB catalog;
+ *  resolved once at load from the browser's region tags. */
+const REGIONAL_OVERRIDES: Partial<Record<MsgKey, string>> = (() => {
+    if (current !== 'en') return {};
+    try {
+        for (const tag of navigator.languages ?? [navigator.language]) {
+            const lower = tag.toLowerCase();
+            if (/^en-(gb|in|sg|au|nz|ie|za|my|hk)\b/.test(lower)) {
+                return { 'math.gcd': 'HCF' };
+            }
+            if (lower === 'en-us' || lower === 'en') break; // explicit US/plain → GCF
+        }
+    } catch { /* navigator unavailable (tests) → US default */ }
+    return {};
+})();
+
 /** Translate a key. Missing key/catalog falls back to English. */
 export function t(key: MsgKey, vars?: Record<string, string | number>): string {
-    const template = CATALOGS[current]?.[key] ?? en[key];
+    const template = REGIONAL_OVERRIDES[key] ?? CATALOGS[current]?.[key] ?? en[key];
     return interpolate(template, vars);
 }
 

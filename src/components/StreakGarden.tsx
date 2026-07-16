@@ -5,13 +5,16 @@
  * chain they're building and the gap if they miss a day. "Don't break the
  * chain", drawn instead of stated.
  *
- * Derived purely from dayStreak + lastPlayedDate — no extra stored history,
- * so nothing new to sync or gate in the rules.
- *
- * Tone/aesthetic: hand-drawn, no emoji, warm + specific caption.
+ * Tap (or hover) a day to see its detail — problems, accuracy, points —
+ * from the per-day ledger (stats.dayLog, owner request 2026-07-16).
  */
 
+import { useState } from 'react';
+import { shortDateLabel } from '../i18n';
+
 const CELLS = 21; // 3 weeks
+
+type DayEntry = { solved: number; correct: number; xp: number };
 
 /** Whole-day number (local) for a YYYY-MM-DD string, or null if unparseable. */
 function dayNumber(dateStr: string): number | null {
@@ -20,15 +23,26 @@ function dayNumber(dateStr: string): number | null {
     return Number.isNaN(t) ? null : Math.floor(t / 86_400_000);
 }
 
+/** YYYY-MM-DD key for `today` shifted back by `daysAgo`. */
+function dateKeyAgo(today: string, daysAgo: number): string {
+    const d = new Date(`${today}T12:00:00`);
+    d.setDate(d.getDate() - daysAgo);
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
 export function StreakGarden({
     dayStreak,
     lastPlayedDate,
     today,
+    dayLog,
 }: {
     dayStreak: number;
     lastPlayedDate: string;
     today: string;
+    dayLog?: Record<string, DayEntry>;
 }) {
+    const [selected, setSelected] = useState<number | null>(null);
     const todayNum = dayNumber(today);
     const lastNum = dayNumber(lastPlayedDate);
     if (todayNum === null) return null;
@@ -37,25 +51,38 @@ export function StreakGarden({
 
     // A cell's date is "in the streak" when it falls within
     // [lastPlayed - (dayStreak-1), lastPlayed].
-    const streakStart = lastNum !== null && dayStreak > 0 ? lastNum - (dayStreak - 1) : null;
+    const streakStart = lastNum - (dayStreak - 1);
 
     const cells = Array.from({ length: CELLS }, (_, i) => {
-        const cellNum = todayNum - (CELLS - 1 - i); // oldest → today
-        const filled = streakStart !== null && lastNum !== null && cellNum >= streakStart && cellNum <= lastNum;
+        const daysAgo = CELLS - 1 - i; // oldest → today
+        const cellNum = todayNum - daysAgo;
+        const key = dateKeyAgo(today, daysAgo);
+        const entry = dayLog?.[key];
+        const filled = (cellNum >= streakStart && cellNum <= lastNum) || (entry?.solved ?? 0) > 0;
         const isToday = cellNum === todayNum;
-        return { filled, isToday };
+        return { filled, isToday, key, entry };
     });
 
-    // Header + caption removed 2026-07-16 (owner calls: "your practice" was
-    // self-explanatory; "N days in a row. Sketched in." was noise). The grid
-    // speaks for itself.
+    const sel = selected !== null ? cells[selected] : null;
+    const selLabel = sel
+        ? (() => {
+            const dateLabel = shortDateLabel(new Date(`${sel.key}T12:00:00`));
+            if (!sel.entry || sel.entry.solved === 0) return `${dateLabel} — no play`;
+            const acc = Math.round((sel.entry.correct / sel.entry.solved) * 100);
+            return `${dateLabel} — ${sel.entry.solved} solved · ${acc}% · +${sel.entry.xp} points`;
+        })()
+        : null;
+
     return (
         <div className="flex flex-col items-center">
             <div className="grid grid-cols-7 gap-1.5 w-full max-w-[240px] mx-auto">
                 {cells.map((c, i) => (
-                    <div
-                        key={i}
-                        aria-hidden
+                    <button
+                        key={c.key}
+                        aria-label={c.key}
+                        onClick={() => setSelected(prev => (prev === i ? null : i))}
+                        onMouseEnter={() => setSelected(i)}
+                        onMouseLeave={() => setSelected(prev => (prev === i ? null : prev))}
                         className={[
                             'aspect-square rounded-[5px] transition-colors',
                             c.filled
@@ -63,9 +90,15 @@ export function StreakGarden({
                                 : 'border border-dashed border-[rgb(var(--color-fg))]/15',
                             c.isToday && !c.filled ? 'border-solid border-[var(--color-gold)]/60' : '',
                             c.isToday && c.filled ? 'ring-1 ring-[rgb(var(--color-fg))]/40' : '',
+                            selected === i ? 'ring-2 ring-[rgb(var(--color-fg))]/50' : '',
                         ].join(' ')}
                     />
                 ))}
+            </div>
+            {/* Per-day detail — a quiet line under the grid (no floating
+                tooltip: it must work identically for touch and mouse). */}
+            <div className="h-5 mt-2 text-[11px] ui text-[rgb(var(--color-fg))]/55" aria-live="polite">
+                {selLabel ?? ''}
             </div>
         </div>
     );
