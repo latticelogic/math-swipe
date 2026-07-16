@@ -99,6 +99,14 @@ export async function claimUsername(
             const userSnap = await tx.get(userRef);
             const previousSlug = userSnap.exists() ? userSnap.data().username : undefined;
 
+            // Re-claiming the handle you already own is a no-op — return before
+            // writing. A tx.set on the existing usernames/{slug} doc is an
+            // UPDATE op, which `allow update: if false` rejects, failing the
+            // whole transaction and returning a spurious 'taken'.
+            if (previousSlug === slug) {
+                return { ok: true as const, slug };
+            }
+
             // Release the old slug if it differs
             if (typeof previousSlug === 'string' && previousSlug !== slug) {
                 tx.delete(doc(db, 'usernames', previousSlug));

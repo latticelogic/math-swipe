@@ -317,12 +317,23 @@ service cloud.firestore {
     // additionally enforce a strict allow-list of fields.
     match /pushSubscriptions/{uid} {
       allow read, delete: if request.auth != null && request.auth.uid == uid;
+      // Check only the CLIENT-CHANGED fields, not the whole post-merge doc —
+      // otherwise a server-owned field the function stamps here (lastBeatenPingAt,
+      // written by notifyBeaten) would land in the doc and make every later
+      // client merge fail hasOnly(...) → the user could no longer toggle
+      // notification prefs. On create there is no prior doc, so all keys are
+      // the client's. Mirrors the users/{uid} rule's diff() approach.
       allow write: if request.auth != null
                    && request.auth.uid == uid
-                   && request.resource.data.keys().hasOnly([
-                        'endpoint', 'keys', 'userAgent',
-                        'dailyEnabled', 'pingsEnabled', 'timezone', 'updatedAt'
-                      ])
+                   && (resource == null
+                       ? request.resource.data.keys().hasOnly([
+                            'endpoint', 'keys', 'userAgent',
+                            'dailyEnabled', 'pingsEnabled', 'timezone', 'updatedAt'
+                         ])
+                       : request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+                            'endpoint', 'keys', 'userAgent',
+                            'dailyEnabled', 'pingsEnabled', 'timezone', 'updatedAt'
+                         ]))
                    && (!('timezone' in request.resource.data)
                        || (request.resource.data.timezone is string
                            && request.resource.data.timezone.size() <= 64));

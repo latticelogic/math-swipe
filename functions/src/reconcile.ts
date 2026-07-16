@@ -95,6 +95,23 @@ export const reconcileAccount = onCall(
             }
         }
 
+        // ── Referral credit: carry the source's VERIFIED referral count so a
+        // user who invited friends while anonymous keeps their count (and the
+        // cosmetics/achievements derived from it) after the sign-in switch —
+        // otherwise referralStats/{toUid} reads 0 and the reward vanishes.
+        // Additive + zero-the-source in one transaction → idempotent on re-run.
+        await db.runTransaction(async (tx) => {
+            const fromRefRef = db.doc(`referralStats/${fromUid}`);
+            const snap = await tx.get(fromRefRef);
+            const count = Number(snap.get('count') ?? 0);
+            if (!Number.isFinite(count) || count <= 0) return;
+            tx.set(db.doc(`referralStats/${toUid}`), {
+                count: admin.firestore.FieldValue.increment(count),
+                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            }, { merge: true });
+            tx.set(fromRefRef, { count: 0 }, { merge: true });
+        });
+
         logger.info('account reconciled', { fromUid, toUid, paid: !!(fromEnt?.paidAt || toEnt?.paidAt) });
         return { merged: true };
     },

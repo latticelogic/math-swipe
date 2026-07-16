@@ -57,8 +57,12 @@ export function parseProfileSlug(slug: string): ParsedSlug | null {
         // every share link for a capitalized-uid user resolve to "Invalid
         // profile link" — the whole viral loop, silently broken.
         if (/^[a-zA-Z0-9]{3,8}$/.test(tail)) {
-            const name = decodeURIComponent(slug.slice(0, i));
-            return { kind: 'legacy', name, uidPrefix: tail.toLowerCase() };
+            try {
+                const name = decodeURIComponent(slug.slice(0, i));
+                return { kind: 'legacy', name, uidPrefix: tail.toLowerCase() };
+            } catch {
+                return null; // malformed %-escape → treat as invalid (matches contract)
+            }
         }
     }
     // Pure-handle form. Mirror normalizeSlug's allow-list so what URL-routes
