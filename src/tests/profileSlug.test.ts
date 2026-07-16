@@ -41,6 +41,11 @@ describe('parseProfileSlug', () => {
     it('returns null for a genuinely malformed slug', () => {
         expect(parseProfileSlug('!!')).toBeNull();
     });
+
+    it('returns null (never throws) for a malformed %-escape in a legacy slug', () => {
+        expect(() => parseProfileSlug('%zz-ab12')).not.toThrow();
+        expect(parseProfileSlug('%zz-ab12')).toBeNull();
+    });
 });
 
 describe('profileNameCandidates (spaced-name lookup)', () => {

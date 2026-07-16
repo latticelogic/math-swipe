@@ -206,14 +206,9 @@ function App() {
     const m = window.location.pathname.match(/^\/(refund|privacy|terms)\/?$/);
     return m ? (m[1] as LegalDocId) : null;
   });
-  const [challengeId, setChallengeId] = useState<string | null>(() => {
-    const params = new URLSearchParams(window.location.search);
-    const c = params.get('c');
-    if (c || params.get('daily') === '1' || params.get('target') || params.get('targetTime')) {
-      window.history.replaceState({}, '', window.location.pathname);
-    }
-    return c;
-  });
+  const [challengeId, setChallengeId] = useState<string | null>(() =>
+    new URLSearchParams(window.location.search).get('c'),
+  );
   const [challengeTarget, setChallengeTarget] = useState<{ score: number | null; timeMs: number | null } | null>(() => {
     const params = new URLSearchParams(window.location.search);
     const t = params.get('target');
@@ -224,6 +219,16 @@ function App() {
       timeMs: tt ? Number.parseInt(tt, 10) || null : null,
     };
   });
+  // Strip the consumed challenge params AFTER all initializers have read them.
+  // (Bug: the old code stripped the URL inside the `challengeId` initializer,
+  // which runs BEFORE the `challengeTarget` initializer — so every shared
+  // ghost-race / "Beat X" link lost its target silently. Do it once on mount.)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('c') || params.get('daily') === '1' || params.get('target') || params.get('targetTime')) {
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
   const [questionType, setQuestionType] = useState<QuestionType>(
     challengeId ? 'challenge' : bootDailyRequested ? 'daily' : 'multiply'
   );
@@ -1288,7 +1293,7 @@ function App() {
         {/* Non-game tabs (no wrapper — each page scrolls independently) */}
         {activeTab === 'league' && (
           <motion.div className="flex-1 flex flex-col min-h-0" onPanEnd={handleTabSwipe}>
-            <Suspense fallback={<TabSkeleton variant="league" />}><LeaguePage userXP={stats.totalXP} userStreak={stats.bestStreak} uid={uid} displayName={user?.displayName ?? t('common.you')} activeThemeId={activeThemeId as string} activeCostume={activeCostume as string} bestSpeedrunTime={stats.bestSpeedrunTime} speedrunHardMode={stats.speedrunHardMode} onStartSpeedrun={() => { setQuestionType('speedrun'); setActiveTab('game'); }} /></Suspense>
+            <Suspense fallback={<TabSkeleton variant="league" />}><LeaguePage userXP={stats.totalXP} userStreak={Math.max(stats.bestStreak, stats.hardModeBestStreak, stats.timedModeBestStreak, stats.ultimateBestStreak)} uid={uid} displayName={user?.displayName ?? t('common.you')} activeThemeId={activeThemeId as string} activeCostume={activeCostume as string} bestSpeedrunTime={stats.bestSpeedrunTime} speedrunHardMode={stats.speedrunHardMode} onStartSpeedrun={() => { setQuestionType('speedrun'); setActiveTab('game'); }} /></Suspense>
           </motion.div>
         )}
 

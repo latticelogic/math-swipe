@@ -68,8 +68,12 @@ function parseSlug(slug: string): ParsedSlug | null {
         // src/utils/profileSlug.ts (case-insensitive; uid compared lowercased
         // at line ~158). A lowercase-only test broke per-profile OG cards.
         if (/^[a-zA-Z0-9]{3,8}$/.test(tail)) {
-            const name = decodeURIComponent(slug.slice(0, i));
-            return { kind: 'legacy', name, uidPrefix: tail.toLowerCase() };
+            try {
+                const name = decodeURIComponent(slug.slice(0, i));
+                return { kind: 'legacy', name, uidPrefix: tail.toLowerCase() };
+            } catch {
+                return null; // malformed %-escape → invalid
+            }
         }
     }
     const handle = slug.toLowerCase();
