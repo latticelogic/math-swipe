@@ -5,8 +5,8 @@
  *
  *   - Language picker (shipped locales; switching persists + reloads —
  *     see src/i18n design decision 1)
+ *   - Sound effects toggle (opt-in, default off)
  *   - Notifications opt-in (PushOptIn)
- *   - Reset stats (with the randomized confirm prompt)
  *   - Version / force-update escape hatch
  *   - Legal links + reCAPTCHA attribution
  */
@@ -17,6 +17,7 @@ import { PushOptIn } from './PushOptIn';
 import { LegalFooterRow } from './LegalPages';
 import { RecaptchaNotice } from './RecaptchaNotice';
 import { t, getLocale, setLocale, SHIPPED_LOCALES } from '../i18n';
+import { isSoundOn, setSoundOn, soundCorrect } from '../utils/sound';
 
 declare const __APP_VERSION__: string;
 
@@ -28,6 +29,7 @@ interface Props {
 
 export function SettingsSheet({ open, onClose, uid }: Props) {
     const locale = getLocale();
+    const [soundOn, setSoundOnState] = useState(isSoundOn());
 
     // Latest deployed version — /version.json is emitted at build time, so
     // comparing it to the baked-in __APP_VERSION__ says whether THIS running
@@ -101,6 +103,25 @@ export function SettingsSheet({ open, onClose, uid }: Props) {
                                 ))}
                             </div>
                         </div>
+
+                        {/* ── Sound ── (opt-in; a tap plays a sample so the
+                            user hears what they're enabling) */}
+                        <button
+                            onClick={() => {
+                                const next = !soundOn;
+                                setSoundOn(next);       // persists + warms the AudioContext on this gesture
+                                setSoundOnState(next);
+                                if (next) soundCorrect(); // preview the "correct" tone
+                            }}
+                            role="switch"
+                            aria-checked={soundOn}
+                            className="w-full flex items-center justify-between px-4 py-3 rounded-xl border border-[rgb(var(--color-fg))]/10 mb-4 hover:border-[rgb(var(--color-fg))]/25 transition-colors"
+                        >
+                            <span className="text-sm ui text-[rgb(var(--color-fg))]/80">{t('settings.sound')}</span>
+                            <span className={`relative w-10 h-6 rounded-full transition-colors ${soundOn ? 'bg-[var(--color-gold)]/70' : 'bg-[rgb(var(--color-fg))]/15'}`}>
+                                <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-[var(--color-board)] transition-all ${soundOn ? 'left-[18px]' : 'left-0.5'}`} />
+                            </span>
+                        </button>
 
                         {/* ── Notifications ── */}
                         <div className="mb-6">
