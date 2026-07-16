@@ -238,7 +238,7 @@ export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCo
                                     type="email"
                                     value={emailInput}
                                     onChange={(e) => setEmailInput(e.target.value)}
-                                    placeholder="your@email.com"
+                                    placeholder={t('me.emailPlaceholder')}
                                     autoFocus
                                     className="w-full text-sm ui bg-[rgb(var(--color-fg))]/5 border border-[rgb(var(--color-fg))]/10 rounded-xl px-3 py-2.5 text-center text-[rgb(var(--color-fg))]/80 placeholder:text-[rgb(var(--color-fg))]/25 outline-none focus:border-[var(--color-gold)]/40 mb-2"
                                 />

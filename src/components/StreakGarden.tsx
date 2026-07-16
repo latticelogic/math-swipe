@@ -79,7 +79,7 @@ export function StreakGarden({
                 {cells.map((c, i) => (
                     <button
                         key={c.key}
-                        aria-label={c.key}
+                        aria-label={shortDateLabel(new Date(c.key))}
                         onClick={() => setSelected(prev => (prev === i ? null : i))}
                         onMouseEnter={() => setSelected(i)}
                         onMouseLeave={() => setSelected(prev => (prev === i ? null : prev))}

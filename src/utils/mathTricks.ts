@@ -752,11 +752,11 @@ export const MAGIC_TRICKS: MagicTrick[] = [
             const base = Math.floor(Math.random() * 900) + 100;
             const n = isDiv ? base * 11 : base * 11 + (Math.floor(Math.random() * 9) + 1);
             return {
-                expression: `${n} div by 11?`,
+                expression: t('gen.divBy11', { n }),
                 answer: isDiv ? 1 : 0,
                 // Represent Yes as 1, No as 0 in options
                 options: [1, 0],
-                optionLabels: ['Yes', 'No'],
+                optionLabels: [t('gen.yes'), t('gen.no')],
                 correctIndex: isDiv ? 0 : 1
             };
         }
@@ -935,8 +935,8 @@ export const MAGIC_TRICKS: MagicTrick[] = [
             while (d2 === d1 || d2 === ans) d2 = (d2 + 1) % 10;
             const opts = [ans, d1, d2].sort(() => Math.random() - 0.5);
             return {
-                expression: `Last digit: ${base}^${exp}`,
-                latex: `\\text{Last digit of } ${base}^{${exp}}`,
+                expression: t('gen.lastDigit', { expr: `${base}^${exp}` }),
+                latex: `\\text{${t('gen.lastDigitOf')} } ${base}^{${exp}}`,
                 answer: ans,
                 options: opts,
                 correctIndex: opts.indexOf(ans)
@@ -971,7 +971,7 @@ export const MAGIC_TRICKS: MagicTrick[] = [
             if (d2 === ans) d2 = (d2 + 1) % 10;
             const opts = [ans, d1, d2].sort(() => Math.random() - 0.5);
             return {
-                expression: `Last digit: ${a} × ${b}`,
+                expression: t('gen.lastDigit', { expr: `${a} × ${b}` }),
                 answer: ans,
                 options: opts,
                 correctIndex: opts.indexOf(ans)
@@ -1068,8 +1068,8 @@ export const MAGIC_TRICKS: MagicTrick[] = [
             if (d2 === d1) d2 = (d2 + 1) % 10;
             const opts = [ans, d1, d2].sort(() => Math.random() - 0.5);
             return {
-                expression: `Last digit: ${base}^${exp}`,
-                latex: `\\text{Last digit of } ${base}^{${exp}}`,
+                expression: t('gen.lastDigit', { expr: `${base}^${exp}` }),
+                latex: `\\text{${t('gen.lastDigitOf')} } ${base}^{${exp}}`,
                 answer: ans,
                 options: opts,
                 correctIndex: opts.indexOf(ans)

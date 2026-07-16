@@ -17,6 +17,7 @@
  */
 
 import { safeGetItem, safeSetItem } from './safeStorage';
+import { t, type MsgKey } from '../i18n';
 
 const SEEN_KEY = 'math-swipe-teacher-tips-seen';
 
@@ -32,7 +33,8 @@ export interface TeacherTipCtx {
 
 interface TeacherTip {
     id: string;
-    text: string;
+    /** Catalog key resolved at read time so the tip localizes per locale. */
+    textKey: MsgKey;
     when: (ctx: TeacherTipCtx) => boolean;
 }
 
@@ -42,27 +44,27 @@ const SPECIAL = new Set(['daily', 'challenge', 'speedrun']);
 const TIPS: TeacherTip[] = [
     {
         id: 'speedrun',
-        text: "You're quick today. There's a speedrun in the League tab, if you're curious.",
+        textKey: 'tip.speedrun',
         when: c => c.streak >= 5 && !SPECIAL.has(c.questionType),
     },
     {
         id: 'tables',
-        text: 'Want to drill just one times-table? Tap the topic button and pick Tables.',
+        textKey: 'tip.tables',
         when: c => c.questionType === 'multiply' && c.totalAnswered >= 12,
     },
     {
         id: 'theme',
-        text: 'Too bright? The moon button up top turns the board dark.',
+        textKey: 'tip.theme',
         when: c => c.totalAnswered >= 8,
     },
     {
         id: 'trail',
-        text: 'Your finger can leave a trail on the board. Pick one in the Me tab.',
+        textKey: 'tip.trail',
         when: c => c.totalSolved >= 30 && c.totalAnswered >= 5,
     },
     {
         id: 'chalk',
-        text: 'There are other chalk colors in Me. A few unlock as you go.',
+        textKey: 'tip.chalk',
         when: c => c.totalSolved >= 60 && c.totalAnswered >= 5,
     },
 ];
@@ -80,7 +82,7 @@ function seenSet(): Set<string> {
 export function nextTeacherTip(ctx: TeacherTipCtx): { id: string; text: string } | null {
     const seen = seenSet();
     for (const tip of TIPS) {
-        if (!seen.has(tip.id) && tip.when(ctx)) return { id: tip.id, text: tip.text };
+        if (!seen.has(tip.id) && tip.when(ctx)) return { id: tip.id, text: t(tip.textKey) };
     }
     return null;
 }
