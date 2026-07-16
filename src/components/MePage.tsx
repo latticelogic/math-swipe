@@ -60,6 +60,21 @@ interface Props {
     onUnlock?: () => void;
 }
 
+// A proper toothed cog for the settings gear, computed once. 8 trapezoidal
+// teeth (rise from valley radius r to tip radius R over ±w), closed into one
+// path; the SVG adds the hub hole. Replaces the old 8-spoke shape that read
+// as a sun.
+const GEAR_PATH = (() => {
+    const cx = 12, cy = 12, R = 9, r = 6.2, w = (13 * Math.PI) / 180;
+    const p = (a: number, rad: number) => `${(cx + rad * Math.cos(a)).toFixed(2)} ${(cy + rad * Math.sin(a)).toFixed(2)}`;
+    let d = '';
+    for (let i = 0; i < 8; i++) {
+        const c = (i * 45 * Math.PI) / 180;
+        d += `${i === 0 ? 'M' : 'L'}${p(c - w, r)}L${p(c - w, R)}L${p(c + w, R)}L${p(c + w, r)}`;
+    }
+    return `${d}Z`;
+})();
+
 // Rank ladder + getRank/getMastery helpers extracted to ../domains/math/ranks
 // so the public profile page and share card can reuse them.
 
@@ -113,13 +128,12 @@ export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCo
                 aria-label={t('settings.gearAria')}
                 className="absolute top-3 right-4 z-10 w-10 h-10 flex items-center justify-center text-[rgb(var(--color-fg))]/40 hover:text-[rgb(var(--color-fg))]/70 transition-colors"
             >
-                {/* Hand-drawn gear */}
-                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="3.2" />
-                    {[0, 45, 90, 135, 180, 225, 270, 315].map(a => {
-                        const r = (a * Math.PI) / 180;
-                        return <line key={a} x1={12 + 6.2 * Math.cos(r)} y1={12 + 6.2 * Math.sin(r)} x2={12 + 9 * Math.cos(r)} y2={12 + 9 * Math.sin(r)} />;
-                    })}
+                {/* Hand-drawn gear (a toothed cog — not the old radial-spoke
+                    shape, which read as a sun). Body is a closed 8-tooth path;
+                    the inner circle is the hub hole. */}
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <path d={GEAR_PATH} />
+                    <circle cx="12" cy="12" r="2.6" />
                 </svg>
             </button>
 
