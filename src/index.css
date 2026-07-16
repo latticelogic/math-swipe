@@ -528,6 +528,22 @@ button.action-icon-skull-active:focus:not(:focus-visible) {
   }
 }
 
+/* ── Tablet: scale the single column up so it doesn't read as a tiny phone
+   stranded in a sea of board. We keep ONE column (the whole design + the
+   thumb-swipe answer ergonomics assume it) and instead bump the root
+   font-size — every rem/Tailwind size scales proportionally — plus widen the
+   column for breathing room. Gated on both dimensions so landscape phones and
+   the desktop-column case don't get caught. A true side-panel tablet layout
+   is a separate design project; this is the low-risk comfort pass. ── */
+@media (min-width: 834px) and (min-height: 700px) {
+  :root { font-size: 18px; }
+  #root { max-width: 500px; }
+}
+@media (min-width: 1112px) and (min-height: 834px) {
+  :root { font-size: 19px; }
+  #root { max-width: 540px; }
+}
+
 /* ── Landscape mobile overrides ── */
 @media (orientation: landscape) and (max-height: 500px) {
 
