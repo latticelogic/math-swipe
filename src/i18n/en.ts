@@ -179,7 +179,6 @@ export const en = {
     'me.statSolved': 'solved',
     'me.statDaily': 'daily',
     'me.byType': 'by type',
-    'me.byTypeHint': 'your accuracy on each operation, across every mode',
 } as const;
 
 export type MsgKey = keyof typeof en;

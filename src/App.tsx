@@ -708,10 +708,13 @@ function App() {
   const unlockedTeacherIds = useMemo(() => {
     const set = new Set<string>([DEFAULT_TEACHER_ID]);
     for (const t of TEACHERS) {
-      if (t.isDefault || (t.unlock && t.unlock.check(stats))) set.add(t.id);
+      // Free tier = the default teacher only (owner call 2026-07-16); paid
+      // users still EARN the rest via the unlock checks. Also gates the
+      // mode-based auto-swaps in resolveActiveTeacher.
+      if (t.isDefault || (hasPro && t.unlock && t.unlock.check(stats))) set.add(t.id);
     }
     return set;
-  }, [stats]);
+  }, [stats, hasPro]);
   const isMagicLessonForTeacher = activeTab === 'magic' && isMagicLessonActive;
   const activeTeacher = useMemo(() => resolveActiveTeacher(savedTeacherId, {
     isHardMode: effectiveHard,

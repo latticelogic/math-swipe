@@ -8,7 +8,6 @@ import { AchievementBadge } from './AchievementBadge';
 import { StreakGarden } from './StreakGarden';
 import { CHALK_THEMES, type ChalkTheme } from '../utils/chalkThemes';
 import { SWIPE_TRAILS } from '../utils/trails';
-import { nextDailyMilestone } from '../utils/dailyStreak';
 import { TEACHERS, DEFAULT_TEACHER_ID } from '../domains/math/teachers';
 import { RANKS, getRank, getMastery } from '../domains/math/ranks';
 import { TrialCountdownChip } from './TrialModals';
@@ -347,25 +346,16 @@ export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCo
                 <StreakGarden dayStreak={stats.dayStreak} lastPlayedDate={stats.lastPlayedDate} today={today} />
             </div>
 
-            {/* Daily-Challenge streak — the appointment loop, now rewarded */}
-            {stats.dailyStreak >= 1 && (
-                <div className="w-full max-w-sm mb-8 flex items-center justify-center gap-2 text-xs ui">
-                    <span className="text-[rgb(var(--color-fg))]/50">Daily streak</span>
-                    <span className="chalk text-xl text-[var(--color-streak-fire)] leading-none">{stats.dailyStreak}</span>
-                    <span className="text-[rgb(var(--color-fg))]/35">· next reward at day {nextDailyMilestone(stats.dailyStreak)}</span>
-                </div>
-            )}
+            {/* (Daily-streak chip removed 2026-07-16 — owner call. The streak
+                still accrues + rewards; the grid above already shows the habit.) */}
 
             {/* ("Invite a friend" button removed 2026-07-16 — owner call. The
                 referral loop lives on through shared results/challenge links.) */}
 
             {/* Per question type row */}
             <div className="w-full max-w-sm">
-                <div className="text-xs ui text-[rgb(var(--color-fg))]/50 uppercase tracking-widest text-center mb-1">
+                <div className="text-xs ui text-[rgb(var(--color-fg))]/50 uppercase tracking-widest text-center mb-3">
                     {t('me.byType')}
-                </div>
-                <div className="text-[9px] ui text-[rgb(var(--color-fg))]/30 text-center mb-3">
-                    {t('me.byTypeHint')}
                 </div>
                 <div className="grid grid-cols-5 gap-2 justify-items-center">
                     {typesForBand(ageBand).filter(t => !t.id.startsWith('mix-') && t.id !== 'daily' && t.id !== 'challenge').map(t => {
@@ -389,7 +379,137 @@ export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCo
                 </div>
             </div>
 
-            {/* Achievements */}
+            {/* Teacher (companion) picker — drives the in-game character + voice.
+                Customizations (teacher / chalk / trail) sit ABOVE the long
+                achievements list — owner call 2026-07-16. */}
+            <div className="w-full max-w-sm mt-8">
+                <div className="text-sm ui text-[rgb(var(--color-fg))]/50 uppercase tracking-widest text-center mb-1">
+                    TEACHER
+                </div>
+                <div className="text-[10px] ui text-[rgb(var(--color-fg))]/30 text-center mb-3">
+                    Each one has their own voice. Some auto-swap when you change modes.
+                </div>
+                <div className="grid grid-cols-4 gap-3 justify-items-center">
+                    {TEACHERS.map(t => {
+                        // Free tier = the default teacher only (owner call
+                        // 2026-07-16); paid users still EARN the rest via the
+                        // existing unlock checks.
+                        const isUnlocked = t.isDefault || (hasPro && (t.unlock?.check(stats) ?? false));
+                        const isActive = (activeTeacherId || DEFAULT_TEACHER_ID) === t.id;
+                        return (
+                            <button
+                                key={t.id}
+                                onClick={() => isUnlocked && onTeacherChange(t.id)}
+                                disabled={!isUnlocked}
+                                title={isUnlocked ? `${t.name} — ${t.tagline}` : `🔒 ${t.unlock?.reason ?? 'Locked'}`}
+                                aria-label={isUnlocked ? `Pick ${t.name}` : `Locked: ${t.name}`}
+                                className={`relative w-16 h-20 rounded-xl border flex flex-col items-center justify-end px-1 pb-1 transition-all ${isActive
+                                    ? 'border-[var(--color-gold)] bg-[var(--color-gold)]/8'
+                                    : isUnlocked
+                                        ? 'border-[rgb(var(--color-fg))]/15 hover:border-[rgb(var(--color-fg))]/35 active:scale-95'
+                                        : 'border-[rgb(var(--color-fg))]/8 opacity-40 cursor-not-allowed'}`}
+                            >
+                                <svg viewBox="0 0 100 130" className="w-12 h-14" style={{ color: 'var(--color-chalk)' }}>
+                                    <t.Portrait state="idle" streak={0} />
+                                </svg>
+                                <span className={`text-[9px] ui leading-tight text-center mt-0.5 ${isActive ? 'text-[var(--color-gold)]' : 'text-[rgb(var(--color-fg))]/55'}`}>
+                                    {t.name.replace(/^(Mr\.?|Ms\.?|Dr\.?|Coach) /, '')}
+                                </span>
+                                {!isUnlocked && (
+                                    <span className="absolute top-1 right-1 text-[9px]">🔒</span>
+                                )}
+                            </button>
+                        );
+                    })}
+                </div>
+            </div>
+
+            {/* Chalk Themes — locked ones faded like achievements */}
+            <div className="w-full max-w-sm mt-6">
+                <div className="text-sm ui text-[rgb(var(--color-fg))]/50 uppercase tracking-widest text-center mb-3">
+                    CHALK COLOR
+                </div>
+                <div className="grid grid-cols-6 gap-2.5 justify-items-center max-w-[300px] mx-auto">
+                    {CHALK_THEMES.map(t => {
+                        const rankIdx = RANKS.findIndex(r => r.name === rank.name);
+                        const rankOk = rankIdx >= (t.minLevel - 1);
+                        // Mode-exclusive unlock checks
+                        const hardOk = !t.hardModeOnly || (stats.hardModeSolved >= (t.hardModeMin ?? 0));
+                        const timedOk = !t.timedModeOnly || (stats.timedModeSolved >= (t.timedModeMin ?? 0));
+                        const ultimateOk = !t.ultimateOnly || (stats.ultimateSolved >= (t.ultimateMin ?? 0));
+                        const masteryOk = !t.masteryMin || ((mastery?.level ?? 0) >= t.masteryMin);
+                        // Free tier = classic + sky only (owner call 2026-07-16);
+                        // everything beyond is part of the Pro set. Paid users
+                        // still earn the rank/mode-gated colors by playing.
+                        const freeTier = t.id === 'classic' || t.id === 'sky';
+                        const proOk = hasPro || freeTier;
+                        const isAvailable = rankOk && hardOk && timedOk && ultimateOk && masteryOk && proOk;
+                        const isActive = activeTheme === t.id;
+                        const modeIcon = t.ultimateOnly ? '💀⏱️' : t.hardModeOnly ? '💀' : t.timedModeOnly ? '⏱️' : t.masteryMin ? '✨' : !freeTier ? '✦' : '';
+                        const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+                        const swatchColor = isLight ? t.lightColor : t.color;
+                        return (
+                            <button
+                                key={t.id}
+                                onClick={() => { if (isAvailable) onThemeChange(t); else if (!proOk) onRequestPro?.(); }}
+                                title={`${t.name}${modeIcon ? ` ${modeIcon}` : ''}${!isAvailable ? ' (locked)' : ''}`}
+                                className={`w-8 h-8 rounded-full border-2 transition-all relative ${isActive ? 'border-[var(--color-gold)] scale-110' :
+                                    isAvailable ? 'border-[rgb(var(--color-fg))]/20 hover:border-[rgb(var(--color-fg))]/40' :
+                                        'border-[rgb(var(--color-fg))]/8 opacity-40 cursor-not-allowed'
+                                    }`}
+                                style={{ backgroundColor: swatchColor }}
+                            >
+                                {modeIcon && !isAvailable && (
+                                    <span className="absolute -top-1 -right-1 text-[8px]">{modeIcon}</span>
+                                )}
+                            </button>
+                        );
+                    })}
+                </div>
+            </div>
+
+            {/* Swipe Trails */}
+            <div className="w-full max-w-sm mt-6">
+                <div className="text-sm ui text-[rgb(var(--color-fg))]/50 uppercase tracking-widest text-center mb-3">
+                    SWIPE TRAIL
+                </div>
+                <div className="flex justify-center gap-2.5 flex-wrap">
+                    {SWIPE_TRAILS.map(t => {
+                        const rankIdx = RANKS.findIndex(r => r.name === rank.name);
+                        // Free tier = the default chalk-dust trail only (owner
+                        // call 2026-07-16); the rest is Pro, with progression
+                        // gates still applying for paid users.
+                        const isUnlocked =
+                            (hasPro || t.id === 'chalk-dust') &&
+                            (!t.minLevel || rankIdx >= t.minLevel - 1) &&
+                            (!t.minStreak || stats.bestStreak >= t.minStreak) &&
+                            (!t.hardModeOnly || stats.hardModeSessions > 0) &&
+                            (!t.timedModeOnly || stats.timedModeSessions > 0) &&
+                            (!t.ultimateOnly || stats.ultimateSessions > 0);
+
+                        const isActive = (activeTrailId || 'chalk-dust') === t.id;
+
+                        return (
+                            <button
+                                key={t.id}
+                                onClick={() => { if (isUnlocked) onTrailChange(t.id); else if (!hasPro && t.id !== 'chalk-dust') onRequestPro?.(); }}
+                                title={`${t.name}${!isUnlocked ? ' (Locked)' : ''}`}
+                                className={`w-12 h-12 flex items-center justify-center rounded-xl border-2 transition-all 
+                                    ${isActive ? 'border-[var(--color-gold)] bg-[var(--color-gold)]/10 scale-105' :
+                                        isUnlocked ? 'border-[rgb(var(--color-fg))]/20 hover:border-[rgb(var(--color-fg))]/40' :
+                                            'border-[rgb(var(--color-fg))]/5 opacity-30 cursor-not-allowed bg-[var(--color-surface)]'
+                                    }`}
+                            >
+                                <span className={`text-2xl ${isActive ? 'drop-shadow-[0_0_8px_rgba(251,191,36,0.6)]' : ''}`}>
+                                    {t.emoji}
+                                </span>
+                            </button>
+                        );
+                    })}
+                </div>
+            </div>
+
+            {/* Achievements — after the customizations (owner call) */}
             <div className="w-full max-w-sm mt-8">
                 <div className="text-sm ui text-[rgb(var(--color-fg))]/50 uppercase tracking-widest text-center mb-1">
                     achievements · {[...unlocked].length}/{EVERY_ACHIEVEMENT.length}
@@ -440,127 +560,6 @@ export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCo
                 </div>
                 <ModeAchievementGrid achievements={ULTIMATE_ACHIEVEMENTS} cols="grid-cols-3" unlocked={unlocked} />
             </div>
-
-            {/* Teacher (companion) picker — drives the in-game character + voice */}
-            <div className="w-full max-w-sm mt-8">
-                <div className="text-sm ui text-[rgb(var(--color-fg))]/50 uppercase tracking-widest text-center mb-1">
-                    TEACHER
-                </div>
-                <div className="text-[10px] ui text-[rgb(var(--color-fg))]/30 text-center mb-3">
-                    Each one has their own voice. Some auto-swap when you change modes.
-                </div>
-                <div className="grid grid-cols-4 gap-3 justify-items-center">
-                    {TEACHERS.map(t => {
-                        const isUnlocked = t.isDefault || (t.unlock?.check(stats) ?? false);
-                        const isActive = (activeTeacherId || DEFAULT_TEACHER_ID) === t.id;
-                        return (
-                            <button
-                                key={t.id}
-                                onClick={() => isUnlocked && onTeacherChange(t.id)}
-                                disabled={!isUnlocked}
-                                title={isUnlocked ? `${t.name} — ${t.tagline}` : `🔒 ${t.unlock?.reason ?? 'Locked'}`}
-                                aria-label={isUnlocked ? `Pick ${t.name}` : `Locked: ${t.name}`}
-                                className={`relative w-16 h-20 rounded-xl border flex flex-col items-center justify-end px-1 pb-1 transition-all ${isActive
-                                    ? 'border-[var(--color-gold)] bg-[var(--color-gold)]/8'
-                                    : isUnlocked
-                                        ? 'border-[rgb(var(--color-fg))]/15 hover:border-[rgb(var(--color-fg))]/35 active:scale-95'
-                                        : 'border-[rgb(var(--color-fg))]/8 opacity-40 cursor-not-allowed'}`}
-                            >
-                                <svg viewBox="0 0 100 130" className="w-12 h-14" style={{ color: 'var(--color-chalk)' }}>
-                                    <t.Portrait state="idle" streak={0} />
-                                </svg>
-                                <span className={`text-[9px] ui leading-tight text-center mt-0.5 ${isActive ? 'text-[var(--color-gold)]' : 'text-[rgb(var(--color-fg))]/55'}`}>
-                                    {t.name.replace(/^(Mr\.?|Ms\.?|Dr\.?|Coach) /, '')}
-                                </span>
-                                {!isUnlocked && (
-                                    <span className="absolute top-1 right-1 text-[9px]">🔒</span>
-                                )}
-                            </button>
-                        );
-                    })}
-                </div>
-            </div>
-
-            {/* Chalk Themes — locked ones faded like achievements */}
-            <div className="w-full max-w-sm mt-6">
-                <div className="text-sm ui text-[rgb(var(--color-fg))]/50 uppercase tracking-widest text-center mb-3">
-                    CHALK COLOR
-                </div>
-                <div className="grid grid-cols-6 gap-2.5 justify-items-center max-w-[300px] mx-auto">
-                    {CHALK_THEMES.map(t => {
-                        const rankIdx = RANKS.findIndex(r => r.name === rank.name);
-                        const rankOk = rankIdx >= (t.minLevel - 1);
-                        // Mode-exclusive unlock checks
-                        const hardOk = !t.hardModeOnly || (stats.hardModeSolved >= (t.hardModeMin ?? 0));
-                        const timedOk = !t.timedModeOnly || (stats.timedModeSolved >= (t.timedModeMin ?? 0));
-                        const ultimateOk = !t.ultimateOnly || (stats.ultimateSolved >= (t.ultimateMin ?? 0));
-                        const masteryOk = !t.masteryMin || ((mastery?.level ?? 0) >= t.masteryMin);
-                        const proOk = !t.pro || hasPro;
-                        const isAvailable = rankOk && hardOk && timedOk && ultimateOk && masteryOk && proOk;
-                        const isActive = activeTheme === t.id;
-                        const modeIcon = t.ultimateOnly ? '💀⏱️' : t.hardModeOnly ? '💀' : t.timedModeOnly ? '⏱️' : t.masteryMin ? '✨' : t.pro ? '✦' : '';
-                        const isLight = document.documentElement.getAttribute('data-theme') === 'light';
-                        const swatchColor = isLight ? t.lightColor : t.color;
-                        return (
-                            <button
-                                key={t.id}
-                                onClick={() => { if (isAvailable) onThemeChange(t); else if (t.pro && !hasPro) onRequestPro?.(); }}
-                                title={`${t.name}${modeIcon ? ` ${modeIcon}` : ''}${!isAvailable ? ' (locked)' : ''}`}
-                                className={`w-8 h-8 rounded-full border-2 transition-all relative ${isActive ? 'border-[var(--color-gold)] scale-110' :
-                                    isAvailable ? 'border-[rgb(var(--color-fg))]/20 hover:border-[rgb(var(--color-fg))]/40' :
-                                        'border-[rgb(var(--color-fg))]/8 opacity-40 cursor-not-allowed'
-                                    }`}
-                                style={{ backgroundColor: swatchColor }}
-                            >
-                                {modeIcon && !isAvailable && (
-                                    <span className="absolute -top-1 -right-1 text-[8px]">{modeIcon}</span>
-                                )}
-                            </button>
-                        );
-                    })}
-                </div>
-            </div>
-
-            {/* Swipe Trails */}
-            <div className="w-full max-w-sm mt-6">
-                <div className="text-sm ui text-[rgb(var(--color-fg))]/50 uppercase tracking-widest text-center mb-3">
-                    SWIPE TRAIL
-                </div>
-                <div className="flex justify-center gap-2.5 flex-wrap">
-                    {SWIPE_TRAILS.map(t => {
-                        const rankIdx = RANKS.findIndex(r => r.name === rank.name);
-                        const isUnlocked =
-                            (!t.pro || hasPro) &&
-                            (!t.minLevel || rankIdx >= t.minLevel - 1) &&
-                            (!t.minStreak || stats.bestStreak >= t.minStreak) &&
-                            (!t.hardModeOnly || stats.hardModeSessions > 0) &&
-                            (!t.timedModeOnly || stats.timedModeSessions > 0) &&
-                            (!t.ultimateOnly || stats.ultimateSessions > 0);
-
-                        const isActive = (activeTrailId || 'chalk-dust') === t.id;
-
-                        return (
-                            <button
-                                key={t.id}
-                                onClick={() => { if (isUnlocked) onTrailChange(t.id); else if (t.pro && !hasPro) onRequestPro?.(); }}
-                                title={`${t.name}${!isUnlocked ? ' (Locked)' : ''}`}
-                                className={`w-12 h-12 flex items-center justify-center rounded-xl border-2 transition-all 
-                                    ${isActive ? 'border-[var(--color-gold)] bg-[var(--color-gold)]/10 scale-105' :
-                                        isUnlocked ? 'border-[rgb(var(--color-fg))]/20 hover:border-[rgb(var(--color-fg))]/40' :
-                                            'border-[rgb(var(--color-fg))]/5 opacity-30 cursor-not-allowed bg-[var(--color-surface)]'
-                                    }`}
-                            >
-                                <span className={`text-2xl ${isActive ? 'drop-shadow-[0_0_8px_rgba(251,191,36,0.6)]' : ''}`}>
-                                    {t.emoji}
-                                </span>
-                            </button>
-                        );
-                    })}
-                </div>
-            </div>
-
-            {/* Notifications / reset / version / legal moved into SettingsSheet
-                (gear, top-right) — owner call 2026-07-16. */}
 
             {/* Rank list modal */}
             <AnimatePresence>
