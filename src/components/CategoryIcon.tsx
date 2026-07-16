@@ -110,10 +110,14 @@ export function CategoryIcon({ id, size = 24, className }: Props) {
                 </svg>
             );
         case 'mix-all':
-            // Spiral — preserves the "all mixed up" feeling
+            // Shuffle arrows — the universal "mixed up" glyph (the old spiral
+            // read as nothing at rail size — tester report 2026-07-16)
             return (
                 <svg {...svgProps}>
-                    <path d="M12 12 m -1 0 a 1 1 0 1 1 2 0 a 3 3 0 1 1 -3 -3 a 5 5 0 1 1 5 5 a 7 7 0 1 1 -7 -7 a 9 9 0 1 1 9 9" />
+                    <path d="M3 7 L 7 7 L 15.5 17 L 19 17" />
+                    <path d="M3 17 L 7 17 L 15.5 7 L 19 7" />
+                    <path d="M17 4.8 L 19.5 7 L 17 9.2" />
+                    <path d="M17 14.8 L 19.5 17 L 17 19.2" />
                 </svg>
             );
         case 'tables':

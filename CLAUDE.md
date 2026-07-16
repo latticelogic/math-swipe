@@ -27,7 +27,7 @@ generic ("Sharp." > "AMAZING! 🎉").
 | Difficulty levels | 5 | Auto-adjusted by `useDifficulty.ts` based on response time |
 | Magic tricks | 36 | `src/utils/mathTricks.ts` (lessons + practice generators) |
 | Achievements | 28 math + share + early-trial ladder | `src/utils/achievements.ts` (base engine) + `src/domains/math/mathAchievements.ts` (math-specific list, includes the 6-rung early-trial ladder + `spread-the-word` share achievement) |
-| Paywall + trial UX | 14-day demo → \$3.14 lifetime | `src/components/Paywall.tsx`, `src/components/TrialModals.tsx`, `src/hooks/useEntitlement.ts`, `src/utils/entitlement.ts` (incl. `shouldFirePaywall` rule) |
+| Paywall + trial UX | 7-day demo → \$3.14 lifetime | `src/components/Paywall.tsx`, `src/components/TrialModals.tsx`, `src/hooks/useEntitlement.ts`, `src/utils/entitlement.ts` (incl. `shouldFirePaywall` rule) |
 | Stripe Checkout integration | callable + webhook | `functions/src/stripe.ts` (Cloud Functions) + `src/utils/checkout.ts` (client wrapper) |
 | Legal pages | 3 drafts | `src/components/LegalPages.tsx` — Refund / Privacy / Terms with "DRAFT" banner; routed at `/refund`, `/privacy`, `/terms` |
 | Billing safety runbook | CLI-first | `docs/billing-safety.md` (gcloud / firebase / stripe commands for budget alerts, quota caps, App Check) |
@@ -136,10 +136,10 @@ instead of enjoying play. The price is a positioning statement, not a
 revenue-optimisation knob — don't relitigate it without explicit
 permission.
 
-### The 14-day demo + the Pro set (updated 2026-07-15)
+### The 7-day demo + the Pro set (updated 2026-07-16: trial shortened 14→7 days, owner call — two weeks was too long for a game this quick)
 
 **Two gates, not one.** Every new install gets free access to the CORE for
-14 days from first session — all 28 topics, the Daily, adaptive difficulty,
+7 days from first session — all topics, the Daily, adaptive difficulty,
 streaks, base achievements, and the *earned* cosmetics. A small **Pro set is
 pay-gated from day 1, even during the trial**, so eager users have a reason to
 convert early (testers confirmed there was previously zero incentive to pay
@@ -159,16 +159,15 @@ trial *structure*.
 
 The trial clock is keyed on Firebase Auth uid (anonymous works),
 stored in `entitlements/{uid}` Firestore doc (separate collection from
-world-readable `users/{uid}` — payment state is private). On day 15+
+world-readable `users/{uid}` — payment state is private). On day 8+
 without purchase, the paywall blocks every paid surface; the Daily
 Challenge stays free forever.
 
 | Touchpoint | Trigger | File |
 |---|---|---|
 | Welcome modal | First session per uid | `WelcomeModal` in `TrialModals.tsx` |
-| Day 7 midpoint reminder | Trial midpoint, session-start only | `TrialReminderModal` (day=7 branch) |
-| Day 10 reminder | 4 days left, session-start only | same component (day=10 branch) |
-| Day 13 reminder | 1 day left, session-start only | same component (day=13 branch) |
+| Day 4 midpoint reminder | Trial midpoint, session-start only | `TrialReminderModal` (day=4 branch) |
+| Day 6 reminder | 1 day left, session-start only | same component (day=6 branch) |
 | Trial countdown chip | Always-visible in Me tab during trial | `TrialCountdownChip` |
 | Paywall (value-anchored) | First non-daily problem completed AFTER trial expiry | `Paywall.tsx`, trigger in `App.tsx` |
 
@@ -319,8 +318,8 @@ is in place" instruction.
   unlock, not labeling the unlock criteria.
 - **Monetization is settled, don't relitigate.** $3.14 lifetime, NO
   subscription, Daily Challenge always free. These three are firm. The
-  trial *structure* was tuned 2026-07-15 to a two-gate model (14-day free
-  CORE + a Pro set pay-gated from day 1 — see "The 14-day demo + the Pro
+  trial *structure* was tuned 2026-07-15 to a two-gate model (now 7-day free
+  CORE + a Pro set pay-gated from day 1 — see "The 7-day demo + the Pro
   set" above); that was an owner-directed change, not a relitigation of
   price/subscription. Backed by recorded rationale (Monetization section +
   `memory/monetization_model.md`).
@@ -340,8 +339,8 @@ What's **done in code** (no further blockers to launch from the codebase side):
 - Theatrical achievement unlock toast with badge SVG + sparkles
 - 8 teacher voices, each with documented persona; full content audit + polish
 - Hand-drawn SVG icons throughout (no emoji in user-facing copy except share-card decorative emoji-rain)
-- **Monetization model**: 14-day demo + $3.14 lifetime paywall, value-anchored trigger, Stripe Checkout callable + webhook, mock helpers for dev testing
-- **Trial UX**: WelcomeModal + Day 7 / 10 / 13 reminders + countdown chip, all session-start-gated, all rendering nothing for paid users
+- **Monetization model**: 7-day demo + $3.14 lifetime paywall, value-anchored trigger, Stripe Checkout callable + webhook, mock helpers for dev testing
+- **Trial UX**: WelcomeModal + Day 4 / 6 reminders + countdown chip, all session-start-gated, all rendering nothing for paid users
 - **Daily-Challenge-free-forever** carve-out (`shouldFirePaywall` exempts `questionType === 'daily'`)
 - **6 early-trial achievements** to fill the dopamine gap (streak-3, daily-1, topic-explorer, three-day, accuracy-early, quick-fifty)
 - **Legal pages** at /refund, /privacy, /terms (DRAFT banners, awaiting lawyer review)

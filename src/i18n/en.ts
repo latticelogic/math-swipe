@@ -73,7 +73,7 @@ export const en = {
     'cat.tables': 'Tables',
     'cat.missing': 'Missing',
     'cat.round': 'Rounding',
-    'cat.orderops': 'PEMDAS',
+    'cat.orderops': 'Order',
     'cat.estimate': 'Estimate',
     'cat.sequence': 'Sequences',
     'cat.time': 'Time',
@@ -82,7 +82,7 @@ export const en = {
     'cat.exponent': 'Exponent',
     'cat.negatives': 'Negatives',
     'cat.linear': 'Linear',
-    'cat.gcflcm': 'GCF/LCM',
+    'cat.gcflcm': 'Factors',
     'cat.ratio': 'Ratios',
     'cat.primes': 'Primes',
     'cat.fraction': 'Fractions',
@@ -91,6 +91,13 @@ export const en = {
     'cat.money': 'Money',
     'cat.mix-basic': 'Basic Mix',
     'cat.mix-all': 'All Mix',
+
+    // ── Math function labels (locale-specific NAMES inside problem
+    //    expressions — the numerals/notation stay invariant, but gcd/lcm are
+    //    called different things per school system: es MCD/mcm, pt MDC/MMC,
+    //    fr pgcd/ppcm, de ggT/kgV) ──
+    'math.gcd': 'GCF',
+    'math.lcm': 'LCM',
 
     // ── Counts (plural via Intl.PluralRules) ──
     'count.problem.one': '{count} problem',
@@ -117,7 +124,7 @@ export const en = {
     // ── Trial reminders + countdown chip ──
     'trial.endsToday': 'Trial ends today',
     'trial.oneDayLeft': '1 day left in your trial',
-    'trial.weekIn': "You're a week in",
+    'trial.weekIn': 'Halfway through your trial',
     'trial.daysLeft': '{days} left in your trial',
     'trial.urgentBody': 'After today the rest locks. The Daily Challenge stays free.',
     'trial.calmBody': 'A few days to decide. The Daily Challenge stays free either way.',
@@ -131,7 +138,7 @@ export const en = {
     'paywall.feature2': 'All 36 Magic Tricks',
     'paywall.feature3': 'The exclusive Pro cosmetics pack',
     'paywall.proPrice': 'One-time purchase of {price}.',
-    'paywall.expiredTitle': 'Two weeks of Math Challenge',
+    'paywall.expiredTitle': 'One week of Math Challenge',
     'paywall.expiredSub': "Here's what you built.",
     'paywall.statDays.one': 'day',
     'paywall.statDays.other': 'days in a row',
@@ -153,9 +160,6 @@ export const en = {
     'settings.title': 'Settings',
     'settings.gearAria': 'Open settings',
     'settings.done': 'Done',
-    'settings.reset': 'Reset stats',
-    'settings.neverMind': 'never mind',
-    'settings.resetCta': 'reset',
     'settings.versionTap': 'v{v} · tap to update',
     'settings.upToDate': 'v{v} · up to date',
     'settings.updateAvailable': 'v{v} · tap to get v{n}',

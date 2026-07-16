@@ -269,7 +269,7 @@ function TermsBody() {
             </Section>
 
             <Section title="The trial">
-                <p>The 14-day free demo gives you full access to everything in
+                <p>The 7-day free demo gives you full access to everything in
                     the app. After the demo ends, you can purchase lifetime
                     access for $3.14. If you don't purchase, the Daily Challenge
                     stays free; other content locks.</p>
