@@ -28,6 +28,20 @@ export type ParsedSlug =
     | { kind: 'handle'; handle: string }
     | { kind: 'legacy'; name: string; uidPrefix: string };
 
+/** displayName values to query for a legacy slug's parsed name.
+ *
+ *  buildProfileSlug maps spaces → '_' (`displayName.replace(/\s+/g, '_')`),
+ *  which is LOSSY — a stored name with spaces ("John Smith") slugs to
+ *  "John_Smith", so an exact `displayName == "John_Smith"` query misses it.
+ *  We query BOTH the parsed name and its '_'→space form (deduped), which
+ *  recovers spaced names WITHOUT breaking names that contain a literal
+ *  underscore (the parsed form is always tried too). Firestore `in`/`IN`
+ *  takes 1–10 values and needs no composite index for a single field. */
+export function profileNameCandidates(name: string): string[] {
+    const spaced = name.replace(/_/g, ' ');
+    return spaced === name ? [name] : [name, spaced];
+}
+
 export function parseProfileSlug(slug: string): ParsedSlug | null {
     const i = slug.lastIndexOf('-');
     // Heuristic for legacy `name-uid4`: the substring AFTER the last `-` must

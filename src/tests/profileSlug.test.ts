@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildProfileSlug, parseProfileSlug } from '../utils/profileSlug';
+import { buildProfileSlug, parseProfileSlug, profileNameCandidates } from '../utils/profileSlug';
 
 /**
  * Regression guard for the share-loop breaker: Firebase uids are MIXED-CASE,
@@ -40,5 +40,26 @@ describe('parseProfileSlug', () => {
 
     it('returns null for a genuinely malformed slug', () => {
         expect(parseProfileSlug('!!')).toBeNull();
+    });
+});
+
+describe('profileNameCandidates (spaced-name lookup)', () => {
+    it('returns a single candidate when the name has no underscore', () => {
+        expect(profileNameCandidates('BrightWolf16')).toEqual(['BrightWolf16']);
+    });
+
+    it('returns both the underscored and the spaced form for a spaced name', () => {
+        // "John Smith" slugs to "John_Smith"; the stored displayName has a space.
+        expect(profileNameCandidates('John_Smith')).toEqual(['John_Smith', 'John Smith']);
+    });
+
+    it('round-trips a spaced display name through build → parse → candidates', () => {
+        const slug = buildProfileSlug('John Smith', 'FK1oZZZZ');
+        const parsed = parseProfileSlug(slug);
+        expect(parsed?.kind).toBe('legacy');
+        if (parsed?.kind === 'legacy') {
+            // The stored displayName ("John Smith") is one of the candidates.
+            expect(profileNameCandidates(parsed.name)).toContain('John Smith');
+        }
     });
 });
