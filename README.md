@@ -1,4 +1,4 @@
-# Math Swipe ✏️
+# Math Challenge
 
 A fast-paced mental math game with a chalkboard aesthetic. Built with React, TypeScript, Vite, and Firebase.
 
@@ -69,6 +69,6 @@ src/
 
 ## Version
 
-Current: **v1.0.4** (semver). The version string is sourced from
+The current version lives in `package.json`. The version string is sourced from
 `package.json` and surfaced in-app at the bottom of the Me tab —
 that's the authoritative reference if this README drifts.
