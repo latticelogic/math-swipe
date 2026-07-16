@@ -4,6 +4,9 @@ import { es } from '../i18n/es';
 import { ptBR } from '../i18n/pt-BR';
 import { fr } from '../i18n/fr';
 import { de } from '../i18n/de';
+import { it as itCat } from '../i18n/it'; // aliased — bare `it` is vitest's test fn
+import { id } from '../i18n/id';
+import { ko } from '../i18n/ko';
 import { zhHans } from '../i18n/zh-Hans';
 import { zhHant } from '../i18n/zh-Hant';
 import { ja } from '../i18n/ja';
@@ -25,6 +28,9 @@ const CATALOGS: [string, Record<string, string>][] = [
     ['pt-BR', ptBR],
     ['fr', fr],
     ['de', de],
+    ['it', itCat],
+    ['id', id],
+    ['ko', ko],
     ['zh-Hans', zhHans],
     ['zh-Hant', zhHant],
     ['ja', ja],

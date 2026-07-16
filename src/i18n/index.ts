@@ -25,6 +25,9 @@ import { es } from './es';
 import { ptBR } from './pt-BR';
 import { fr } from './fr';
 import { de } from './de';
+import { it } from './it';
+import { id } from './id';
+import { ko } from './ko';
 import { zhHans } from './zh-Hans';
 import { zhHant } from './zh-Hant';
 import { ja } from './ja';
@@ -33,8 +36,8 @@ import { hi } from './hi';
 export type { MsgKey };
 
 /** Every locale the product has committed to (owner list, 2026-07-16).
- *  it/id/ko are declared for the wave plan; Arabic is deliberately NOT here
- *  yet — it needs RTL layout work, a separate project (docs/i18n.md). */
+ *  Arabic is deliberately NOT here yet — it needs RTL layout work, a separate
+ *  project (docs/i18n.md). */
 export type Locale =
     | 'en' | 'es' | 'pt-BR' | 'fr' | 'de' | 'it' | 'id' | 'ko'
     | 'zh-Hans' | 'zh-Hant' | 'ja' | 'hi';
@@ -51,14 +54,18 @@ export const SHIPPED_LOCALES: ReadonlyArray<{ id: Locale; label: string }> = [
     { id: 'pt-BR', label: 'Português (Brasil)' },
     { id: 'fr', label: 'Français' },
     { id: 'de', label: 'Deutsch' },
+    { id: 'it', label: 'Italiano' },
+    { id: 'id', label: 'Bahasa Indonesia' },
+    { id: 'ko', label: '한국어' },
     { id: 'zh-Hans', label: '简体中文' },
     { id: 'zh-Hant', label: '繁體中文' },
     { id: 'ja', label: '日本語' },
     { id: 'hi', label: 'हिन्दी' },
 ];
 
-/** Declared, catalog pending (landing over the next i18n pass). */
-export const PLANNED_LOCALES: ReadonlyArray<Locale> = ['it', 'id', 'ko'];
+/** Declared but not yet shipped. Empty today — Arabic (RTL) is the next
+ *  candidate and is a layout project, tracked separately (docs/i18n.md). */
+export const PLANNED_LOCALES: ReadonlyArray<Locale> = [];
 
 const STORAGE_KEY = 'math-swipe-locale';
 
@@ -68,6 +75,9 @@ const CATALOGS: Partial<Record<Locale, Record<MsgKey, string>>> = {
     'pt-BR': ptBR,
     fr,
     de,
+    it,
+    id,
+    ko,
     'zh-Hans': zhHans,
     'zh-Hant': zhHant,
     ja,
@@ -83,6 +93,9 @@ function matchShipped(tag: string): Locale | null {
     if (lower === 'pt' || lower.startsWith('pt-')) return 'pt-BR';
     if (lower === 'fr' || lower.startsWith('fr-')) return 'fr';
     if (lower === 'de' || lower.startsWith('de-')) return 'de';
+    if (lower === 'it' || lower.startsWith('it-')) return 'it';
+    if (lower === 'id' || lower.startsWith('id-')) return 'id';
+    if (lower === 'ko' || lower.startsWith('ko-')) return 'ko';
     if (lower === 'ja' || lower.startsWith('ja-')) return 'ja';
     if (lower === 'hi' || lower.startsWith('hi-')) return 'hi';
     if (lower === 'zh' || lower.startsWith('zh')) {

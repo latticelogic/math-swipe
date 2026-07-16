@@ -289,9 +289,9 @@ business call, not a code blocker.
   array (`src/domains/math/teachers/*.tsx`), base pool
   (`chalkMessages.ts`), trick lesson (`mathTricks.ts`), or achievement
   description (`mathAchievements.ts`), match this bar.
-- **i18n (see `docs/i18n.md`).** Tier-1 UI is localized and selectable in 9
-  locales (en/es/pt-BR/fr/de/zh-Hans/zh-Hant/ja/hi); it/id/ko declared, catalog
-  pending; ar is out (RTL is a layout project). Non-Latin scripts use a
+- **i18n (see `docs/i18n.md`).** Tier-1 UI is localized and selectable in 12
+  locales (en/es/pt-BR/fr/de/it/id/ko/zh-Hans/zh-Hant/ja/hi); ar is out (RTL is
+  a layout project). Non-Latin scripts use a
   system-font fallback (`[data-locale]` in `index.css`) — a handwriting-font
   pass is a documented follow-up, not a blocker. New UI strings go
   through `t()`/`tCount()` from `src/i18n` — add the key to ALL catalogs
