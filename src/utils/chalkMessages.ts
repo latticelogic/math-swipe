@@ -6,6 +6,7 @@
  * The math domain's overrides live in src/domains/math/mathMessages.ts.
  */
 import type { ChalkState } from '../engine/domain';
+import { voicePool } from '../i18n/voice';
 
 // ── Public types ──────────────────────────────────────────────────────────────
 
@@ -25,9 +26,9 @@ export interface ChalkContext {
  * Return `null` to fall through to default generic messages.
  */
 export interface ChalkMessageOverrides {
-    topicSuccess?: (categoryId: string) => string[] | null;
-    topicFail?: (categoryId: string) => string[] | null;
-    easterEggs?: string[];
+    topicSuccess?: (categoryId: string) => readonly string[] | null;
+    topicFail?: (categoryId: string) => readonly string[] | null;
+    easterEggs?: readonly string[];
 }
 
 // ── Generic message pools ─────────────────────────────────────────────────────
@@ -147,19 +148,19 @@ const STREAK_MILESTONES: Record<number, string[]> = {
     ],
 };
 
-function getTimeMessages(): string[] {
+function getTimeMessages(): readonly string[] {
     const h = new Date().getHours();
-    if (h >= 5 && h < 12) return ['Morning session.', 'Rise and shine.', 'Early-day brain.'];
-    if (h >= 12 && h < 17) return ['Afternoon focus.', 'Post-lunch session.', 'Midday math.'];
-    if (h >= 17 && h < 22) return ['Evening practice.', 'Wind-down session.', 'Sundown math.'];
-    return ['Night-owl session.', 'Burning the midnight oil.', 'Late-night brain.'];
+    if (h >= 5 && h < 12) return voicePool('base.time.morning', ['Morning session.', 'Rise and shine.', 'Early-day brain.']);
+    if (h >= 12 && h < 17) return voicePool('base.time.afternoon', ['Afternoon focus.', 'Post-lunch session.', 'Midday math.']);
+    if (h >= 17 && h < 22) return voicePool('base.time.evening', ['Evening practice.', 'Wind-down session.', 'Sundown math.']);
+    return voicePool('base.time.night', ['Night-owl session.', 'Burning the midnight oil.', 'Late-night brain.']);
 }
 
 // ── Internal picker helper ────────────────────────────────────────────────────
 
 let lastMessage = '';
 
-function pick(arr: string[]): string {
+function pick(arr: readonly string[]): string {
     const filtered = arr.filter(m => m !== lastMessage);
     const choice = filtered[Math.floor(Math.random() * filtered.length)] || arr[0];
     lastMessage = choice;
@@ -183,20 +184,20 @@ export function pickChalkMessage(ctx: ChalkContext, overrides?: ChalkMessageOver
 
     // 2. Session milestones (exact thresholds, on success only)
     if (state === 'success' && SESSION_MILESTONES[totalAnswered]) {
-        return pick(SESSION_MILESTONES[totalAnswered]);
+        return pick(voicePool(`base.sessionMilestone.${totalAnswered}`, SESSION_MILESTONES[totalAnswered]));
     }
 
     // 3. Streak milestones (exact thresholds)
     if ((state === 'success' || state === 'streak') && STREAK_MILESTONES[streak]) {
-        return pick(STREAK_MILESTONES[streak]);
+        return pick(voicePool(`base.streakMilestone.${streak}`, STREAK_MILESTONES[streak]));
     }
 
     // 4. Time-of-day (10% chance on idle)
     if (state === 'idle' && chance(10)) return pick(getTimeMessages());
 
     // 5. Hard/timed mode acknowledgement (15% chance)
-    if (state === 'success' && hardMode && chance(15)) return pick(HARD_MODE);
-    if (state === 'success' && timedMode && chance(15)) return pick(TIMED_MODE);
+    if (state === 'success' && hardMode && chance(15)) return pick(voicePool('base.hardMode', HARD_MODE));
+    if (state === 'success' && timedMode && chance(15)) return pick(voicePool('base.timedMode', TIMED_MODE));
 
     // 6. Domain topic-specific (25% chance on success/fail)
     if (state === 'success' && chance(25) && overrides?.topicSuccess) {
@@ -210,21 +211,21 @@ export function pickChalkMessage(ctx: ChalkContext, overrides?: ChalkMessageOver
 
     // 7. Streak-scaled success messages
     if (state === 'success') {
-        if (streak >= 20) return pick(STREAK_LEGENDARY);
-        if (streak >= 10) return pick(STREAK_HIGH);
-        if (streak >= 5) return pick(STREAK_MID);
-        if (streak >= 1) return chance(40) ? pick(STREAK_EARLY) : pick(BASE_SUCCESS);
+        if (streak >= 20) return pick(voicePool('base.streakLegendary', STREAK_LEGENDARY));
+        if (streak >= 10) return pick(voicePool('base.streakHigh', STREAK_HIGH));
+        if (streak >= 5) return pick(voicePool('base.streakMid', STREAK_MID));
+        if (streak >= 1) return chance(40) ? pick(voicePool('base.streakEarly', STREAK_EARLY)) : pick(voicePool('base.success', BASE_SUCCESS));
     }
 
     // 8. Comeback
-    if (state === 'comeback') return pick(COMEBACK);
+    if (state === 'comeback') return pick(voicePool('base.comeback', COMEBACK));
 
     // 9. Base pools fallback
     switch (state) {
-        case 'idle': return pick(BASE_IDLE);
-        case 'success': return pick(BASE_SUCCESS);
-        case 'fail': return pick(BASE_FAIL);
-        case 'streak': return pick(BASE_STREAK);
-        default: return pick(BASE_IDLE);
+        case 'idle': return pick(voicePool('base.idle', BASE_IDLE));
+        case 'success': return pick(voicePool('base.success', BASE_SUCCESS));
+        case 'fail': return pick(voicePool('base.fail', BASE_FAIL));
+        case 'streak': return pick(voicePool('base.streak', BASE_STREAK));
+        default: return pick(voicePool('base.idle', BASE_IDLE));
     }
 }

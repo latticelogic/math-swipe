@@ -6,6 +6,7 @@
  */
 import type { QuestionType } from './mathCategories';
 import type { ChalkMessageOverrides } from '../../utils/chalkMessages';
+import { voicePool } from '../../i18n/voice';
 
 // ── Topic-specific quips ──────────────────────────────────────────────────────
 //
@@ -74,7 +75,13 @@ const MATH_EASTER_EGGS: string[] = [
  * companion gets math-flavoured quips.
  */
 export const MATH_MESSAGE_OVERRIDES: ChalkMessageOverrides = {
-    topicSuccess: (typeId: string) => TOPIC_SUCCESS[typeId as QuestionType] ?? null,
-    topicFail: (typeId: string) => TOPIC_FAIL[typeId as QuestionType] ?? null,
-    easterEggs: MATH_EASTER_EGGS,
+    topicSuccess: (typeId: string) => {
+        const arr = TOPIC_SUCCESS[typeId as QuestionType];
+        return arr ? voicePool(`topic.${typeId}.success`, arr) : null;
+    },
+    topicFail: (typeId: string) => {
+        const arr = TOPIC_FAIL[typeId as QuestionType];
+        return arr ? voicePool(`topic.${typeId}.fail`, arr) : null;
+    },
+    easterEggs: voicePool('topic.easterEggs', MATH_EASTER_EGGS),
 };

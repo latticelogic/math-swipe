@@ -13,7 +13,8 @@ import type { ChalkState } from '../engine/domain';
 import type { QuestionType } from '../utils/questionTypes';
 import { pickChalkMessage, type ChalkContext, type ChalkMessageOverrides } from '../utils/chalkMessages';
 import { MATH_MESSAGE_OVERRIDES } from '../domains/math/mathMessages';
-import { getTeacher, teacherName } from '../domains/math/teachers';
+import { getTeacher, teacherName, type Teacher as TeacherModel } from '../domains/math/teachers';
+import { voicePool } from '../i18n/voice';
 import { COSTUMES } from '../utils/costumes';
 
 const ANIMS: Record<ChalkState, TargetAndTransition> = {
@@ -61,12 +62,17 @@ export interface TeacherProps {
  * caller override. The teacher's pools take priority for base states (idle/
  * success/etc.) since that's the whole point of having different teachers.
  */
-function mergeVoice(teacherVoice: ChalkMessageOverrides, base: ChalkMessageOverrides | undefined): ChalkMessageOverrides {
+function mergeVoice(teacher: TeacherModel, base: ChalkMessageOverrides | undefined): ChalkMessageOverrides {
     const fallback = base ?? MATH_MESSAGE_OVERRIDES;
+    const teacherVoice = teacher.voice;
     return {
         topicSuccess: teacherVoice.topicSuccess ?? fallback.topicSuccess,
         topicFail: teacherVoice.topicFail ?? fallback.topicFail,
-        easterEggs: teacherVoice.easterEggs ?? fallback.easterEggs,
+        // Localize the teacher's own easter-egg pool when it has one; otherwise
+        // fall back to the (already-localized) domain pool.
+        easterEggs: teacherVoice.easterEggs
+            ? voicePool(`t.${teacher.id}.easterEggs`, teacherVoice.easterEggs)
+            : fallback.easterEggs,
     };
 }
 
@@ -89,7 +95,7 @@ export const Teacher = memo(function Teacher({
     // For now we reach in directly since pickChalkMessage already supports
     // overrides via the engine layer; we just bias the topic pools to the
     // teacher's voice.
-    const voice: ChalkMessageOverrides = mergeVoice(teacher.voice, messageOverrides);
+    const voice: ChalkMessageOverrides = mergeVoice(teacher, messageOverrides);
 
     // Adjust state during render when deps change (React-recommended pattern)
     const depsKey = `${state}-${streak}-${totalAnswered}-${questionType}-${hardMode}-${timedMode}-${teacher.id}`;
@@ -100,7 +106,7 @@ export const Teacher = memo(function Teacher({
         // We use Math.random here for variety; the lint rule "purity in render"
         // mis-classifies this — the message *is* meant to be different on each
         // state-change (which is exactly when this branch runs).
-        const stateVoicePool = pickStateVoice(teacher.voice, state);
+        const stateVoicePool = pickStateVoice(teacher, state);
         if (stateVoicePool && stateVoicePool.length > 0) {
             // eslint-disable-next-line react-hooks/purity
             setMessage(stateVoicePool[Math.floor(Math.random() * stateVoicePool.length)]);
@@ -126,7 +132,9 @@ export const Teacher = memo(function Teacher({
         const start = () => {
             if (interval) return;
             interval = setInterval(() => {
-                const idlePool = teacher.voice.idle;
+                const idlePool = teacher.voice.idle
+                    ? voicePool(`t.${teacher.id}.idle`, teacher.voice.idle)
+                    : undefined;
                 if (idlePool && idlePool.length > 0) {
                     setMessage(idlePool[Math.floor(Math.random() * idlePool.length)]);
                 } else {
@@ -204,14 +212,20 @@ export const Teacher = memo(function Teacher({
     );
 });
 
-function pickStateVoice(voice: import('../domains/math/teachers').Teacher['voice'], state: ChalkState): string[] | undefined {
+function pickStateVoice(teacher: TeacherModel, state: ChalkState): readonly string[] | undefined {
+    const voice = teacher.voice;
+    let pool: readonly string[] | undefined;
     switch (state) {
-        case 'success': return voice.success;
-        case 'fail': return voice.fail;
-        case 'streak': return voice.streak;
-        case 'comeback': return voice.comeback;
-        case 'struggling': return voice.struggling;
+        case 'success': pool = voice.success; break;
+        case 'fail': pool = voice.fail; break;
+        case 'streak': pool = voice.streak; break;
+        case 'comeback': pool = voice.comeback; break;
+        case 'struggling': pool = voice.struggling; break;
         case 'idle':
-        default: return voice.idle;
+        default: pool = voice.idle; break;
     }
+    // Only localize states the teacher actually defines in English; missing
+    // pools return undefined so the caller falls through to pickChalkMessage.
+    if (pool === undefined) return undefined;
+    return voicePool(`t.${teacher.id}.${state}`, pool);
 }
