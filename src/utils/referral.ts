@@ -80,6 +80,23 @@ export async function fetchReferralCount(uid: string): Promise<number> {
     }
 }
 
+/** Caller's server-verified referral CONVERSIONS — invited players who went on
+ *  to buy the unlock (0 on any error/absence). Drives the conversion-only
+ *  reward (the exclusive "Beacon" cosmetic + achievement). Server-written only
+ *  (see functions/src/referral.ts creditReferralConversion), so it can't be
+ *  forged from the client. */
+export async function fetchReferralConversions(uid: string): Promise<number> {
+    try {
+        const [{ db }, { doc, getDoc }] = await Promise.all([
+            getFirebase(), import('firebase/firestore'),
+        ]);
+        const snap = await getDoc(doc(db, 'referralStats', uid));
+        return snap.exists() ? Number(snap.data().converted ?? 0) || 0 : 0;
+    } catch {
+        return 0;
+    }
+}
+
 /** The shareable invite link that credits `uid` when a new player joins. */
 export function buildInviteUrl(uid: string): string {
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://mathchallenge.app';

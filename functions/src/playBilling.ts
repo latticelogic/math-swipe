@@ -40,6 +40,7 @@ import * as admin from 'firebase-admin';
 import * as logger from 'firebase-functions/logger';
 import { GoogleAuth } from 'google-auth-library';
 import { createHash } from 'node:crypto';
+import { creditReferralConversion } from './referral';
 
 /** Must match the TWA's applicationId in twa-manifest.json. */
 const PACKAGE_NAME = 'app.mathchallenge.twa';
@@ -122,6 +123,10 @@ export const verifyPlayPurchase = onCall(
                 updatedAt: admin.firestore.FieldValue.serverTimestamp(),
             }, { merge: true });
         });
+
+        // If this buyer was referred, credit the referrer's conversion count
+        // (guarded — never throws into the grant path).
+        await creditReferralConversion(uid);
 
         // 4) Acknowledge (idempotent; skip if already done). MUST happen or
         //    Play refunds the purchase automatically after 3 days.

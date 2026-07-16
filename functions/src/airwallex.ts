@@ -31,6 +31,7 @@ import { defineSecret } from 'firebase-functions/params';
 import * as admin from 'firebase-admin';
 import * as logger from 'firebase-functions/logger';
 import { createHmac, timingSafeEqual } from 'node:crypto';
+import { creditReferralConversion } from './referral';
 
 const AIRWALLEX_CLIENT_ID = defineSecret('AIRWALLEX_CLIENT_ID');
 const AIRWALLEX_API_KEY = defineSecret('AIRWALLEX_API_KEY');
@@ -243,6 +244,9 @@ async function grant(uid: string | null, txnId: string, res: WebhookResponse) {
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         }, { merge: true });
         logger.info(`[airwallexWebhook] granted lifetime access to ${uid} (${txnId})`);
+        // If this buyer was referred, credit the referrer's conversion count
+        // (guarded — never throws into the grant path).
+        await creditReferralConversion(uid);
         res.status(200).send('ok');
     } catch (err) {
         logger.error('[airwallexWebhook] grant write failed', err);

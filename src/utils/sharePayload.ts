@@ -42,6 +42,18 @@ export interface SharePayloadArgs {
     timedMode?: boolean;
     speedrunTime?: number | null;
     profileUrl?: string | null;
+    /** The sharer's uid. When present it's appended as `?r=<uid>` so a
+     *  recipient who opens the link becomes an attributable referral (the
+     *  client reads `?r=` at boot — see utils/referral.ts). This is the only
+     *  place invites actually enter circulation. */
+    referrerUid?: string | null;
+}
+
+/** Append `r=<uid>` to a share URL, respecting any existing query string. */
+function withReferrer(url: string, referrerUid?: string | null): string {
+    if (!referrerUid) return url;
+    const sep = url.includes('?') ? '&' : '?';
+    return `${url}${sep}r=${encodeURIComponent(referrerUid)}`;
 }
 
 /** Compose the share payload + URL together so callers don't fork on URL
@@ -58,6 +70,7 @@ export function buildSharePayload(
     hardMode?: boolean, timedMode?: boolean,
     speedrunTime?: number | null,
     profileUrl?: string | null,
+    referrerUid?: string | null,
 ): { text: string; url: string } {
     const emojis = history.map(ok => ok ? '🟩' : '🟥');
     const emojiRows: string[] = [];
@@ -84,7 +97,7 @@ export function buildSharePayload(
                 ? `💯 ${t('share.perfect', { xp, streak: streakFire })}${modeTag}`
                 : `${t('share.standard', { xp, streak: streakFire, accuracy, topic: typeLabel })}${modeTag}`;
 
-    const url = profileUrl ?? `${window.location.origin}?c=${createChallengeId()}`;
+    const url = withReferrer(profileUrl ?? `${window.location.origin}?c=${createChallengeId()}`, referrerUid);
 
     const text = [
         headline,
