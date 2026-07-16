@@ -24,7 +24,7 @@ import { achName, achDesc } from '../domains/math/mathAchievements';
 import { RankIcon } from './RankIcon';
 import { EVERY_ACHIEVEMENT } from '../utils/achievements';
 import { opponentChallengeSeed } from '../utils/dailyChallenge';
-import { parseProfileSlug } from '../utils/profileSlug';
+import { parseProfileSlug, profileNameCandidates } from '../utils/profileSlug';
 import { lookupUidBySlug } from '../utils/username';
 import { formatTime } from '../utils/formatTime';
 import { t } from '../i18n';
@@ -120,10 +120,13 @@ export const ProfilePage = memo(function ProfilePage({ slug, onChallenge, onBack
 
                 // Path 2: legacy `<displayName>-<uid4>` lookup. Filter by
                 // displayName, then find the doc whose uid starts with the
-                // 4-char suffix. O(N) on duplicates but capped at 8.
+                // 4-char suffix. O(N) on duplicates but capped at 8. We match
+                // BOTH the parsed name and its '_'→space form so names with
+                // spaces (slugged to underscores) resolve — see
+                // profileNameCandidates.
                 const q = query(
                     collection(db, 'users'),
-                    where('displayName', '==', parsed.name),
+                    where('displayName', 'in', profileNameCandidates(parsed.name)),
                     limit(8),
                 );
                 const snap = await getDocs(q);

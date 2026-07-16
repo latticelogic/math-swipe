@@ -132,7 +132,12 @@ async function fetchProfile(projectId: string, slug: string): Promise<ProfileDat
         return rowToProfile(fields, parsed.handle);
     }
 
-    // Path 2: legacy displayName scan (existing behaviour)
+    // Path 2: legacy displayName scan. Match BOTH the parsed name and its
+    // '_'→space form (buildProfileSlug maps spaces→'_' lossily), so spaced
+    // names resolve — kept in sync with src (profileNameCandidates).
+    const nameCandidates = parsed.name.includes('_')
+        ? [parsed.name, parsed.name.replace(/_/g, ' ')]
+        : [parsed.name];
     const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents:runQuery`;
     const body = {
         structuredQuery: {
@@ -140,8 +145,8 @@ async function fetchProfile(projectId: string, slug: string): Promise<ProfileDat
             where: {
                 fieldFilter: {
                     field: { fieldPath: 'displayName' },
-                    op: 'EQUAL',
-                    value: { stringValue: parsed.name },
+                    op: 'IN',
+                    value: { arrayValue: { values: nameCandidates.map(n => ({ stringValue: n })) } },
                 },
             },
             limit: 8,
