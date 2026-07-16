@@ -5,6 +5,7 @@ import { IosSessionEndPrompt } from './InstallPrompt';
 // Share text/URL composition is shared with the game-rail share button —
 // single source of truth in utils/sharePayload.ts.
 import { buildSharePayload, formatTime } from '../utils/sharePayload';
+import { t } from '../i18n';
 
 interface Props {
     solved: number;
@@ -178,11 +179,11 @@ export const SessionSummary = memo(function SessionSummary({
                                     <line x1="12" y1="2" x2="12" y2="5" />
                                 </motion.svg>
                                 <motion.h3 className="text-2xl chalk text-[var(--color-gold)] mb-1">
-                                    Speedrun Cleared!
+                                    {t('summary.speedrunCleared')}
                                 </motion.h3>
                                 {isNewSpeedrunRecord && (
                                     <div className="text-xs ui font-bold text-[var(--color-speedrun)] uppercase tracking-widest mb-4">
-                                        New Record!
+                                        {t('summary.newRecord')}
                                     </div>
                                 )}
                                 {!isNewSpeedrunRecord && <div className="mb-4" />}
@@ -203,7 +204,7 @@ export const SessionSummary = memo(function SessionSummary({
                                     animate={{ scale: [0, 1.3, 1] }}
                                     transition={{ duration: 0.5, delay: 0.2 }}
                                 >
-                                    Perfect
+                                    {t('summary.perfect')}
                                 </motion.h3>
                             </>
                         ) : (
@@ -236,28 +237,28 @@ export const SessionSummary = memo(function SessionSummary({
                                                 <line x1="12" y1="2" x2="12" y2="5" />
                                             </svg>
                                         )}
-                                        <span>{hardMode && timedMode ? 'ULTIMATE MODE' : hardMode ? 'HARD MODE' : 'TIMED MODE'}</span>
+                                        <span className="uppercase">{hardMode && timedMode ? t('summary.modeUltimate') : hardMode ? t('summary.modeHard') : t('summary.modeTimed')}</span>
                                     </div>
                                 )}
-                                <h3 className="text-xl chalk text-[var(--color-gold)] mb-4">Session Complete</h3>
+                                <h3 className="text-xl chalk text-[var(--color-gold)] mb-4">{t('summary.complete')}</h3>
                             </>
                         )}
 
                         <div className="flex justify-center gap-6 mb-4">
                             <div className="text-center">
                                 <div className="text-2xl chalk text-[rgb(var(--color-fg))]/80">{solved}</div>
-                                <div className="text-[9px] ui text-[rgb(var(--color-fg))]/30">solved</div>
+                                <div className="text-[9px] ui text-[rgb(var(--color-fg))]/30">{t('me.statSolved')}</div>
                             </div>
                             <div className="text-center min-w-[60px]">
                                 {questionType === 'speedrun' && speedrunFinalTime ? (
                                     <>
                                         <div className="text-xl mt-1 chalk text-[var(--color-correct)]">{formatTime(speedrunFinalTime)}</div>
-                                        <div className="text-[9px] ui text-[rgb(var(--color-fg))]/30">clear time</div>
+                                        <div className="text-[9px] ui text-[rgb(var(--color-fg))]/30">{t('summary.clearTime')}</div>
                                     </>
                                 ) : (
                                     <>
                                         <div className="text-2xl chalk text-[var(--color-correct)]">{accuracy}%</div>
-                                        <div className="text-[9px] ui text-[rgb(var(--color-fg))]/30">accuracy</div>
+                                        <div className="text-[9px] ui text-[rgb(var(--color-fg))]/30">{t('me.statAccuracy')}</div>
                                     </>
                                 )}
                             </div>
@@ -269,7 +270,7 @@ export const SessionSummary = memo(function SessionSummary({
                                         <path d="M12 3 C 12 8 7 9 7 14 C 7 18 9 21 12 21 C 15 21 17 18 17 14 C 17 11 14 10 14 7 C 13 8.5 12.5 9 12 3 Z" />
                                     </svg>
                                 </div>
-                                <div className="text-[9px] ui text-[rgb(var(--color-fg))]/30">best streak</div>
+                                <div className="text-[9px] ui text-[rgb(var(--color-fg))]/30">{t('summary.bestStreak')}</div>
                             </div>
                         </div>
 
@@ -288,7 +289,7 @@ export const SessionSummary = memo(function SessionSummary({
                             </div>
                         )}
 
-                        <div className="text-lg chalk text-[var(--color-gold)] mb-4 tabular-nums">+{xpDisplay} points</div>
+                        <div className="text-lg chalk text-[var(--color-gold)] mb-4 tabular-nums">{t('summary.points', { points: xpDisplay })}</div>
 
                         {/* (Next-rank teaser removed 2026-07-16 — owner call:
                             the next rank's name stays a surprise.) */}
@@ -302,19 +303,19 @@ export const SessionSummary = memo(function SessionSummary({
                             const won = byScore
                                 ? xpEarned >= (challengeTarget.score ?? 0)
                                 : !!(speedrunFinalTime && challengeTarget.timeMs != null && speedrunFinalTime <= challengeTarget.timeMs);
-                            const mine = byScore ? `${xpEarned} pts` : (speedrunFinalTime ? formatTime(speedrunFinalTime) : '—');
-                            const theirs = byScore ? `${challengeTarget.score} pts` : formatTime(challengeTarget.timeMs ?? 0);
+                            const mine = byScore ? t('summary.unitPts', { pts: xpEarned }) : (speedrunFinalTime ? formatTime(speedrunFinalTime) : '—');
+                            const theirs = byScore ? t('summary.unitPts', { pts: challengeTarget.score ?? 0 }) : formatTime(challengeTarget.timeMs ?? 0);
                             const diff = byScore
                                 ? Math.abs(xpEarned - (challengeTarget.score ?? 0))
                                 : Math.abs((speedrunFinalTime ?? 0) - (challengeTarget.timeMs ?? 0));
-                            const diffLabel = byScore ? `${diff} pts` : formatTime(diff);
+                            const diffLabel = byScore ? t('summary.unitPts', { pts: diff }) : formatTime(diff);
                             return (
                                 <div className={`w-full rounded-xl border mb-3 px-3 py-2.5 ${won ? 'border-[var(--color-correct)]/40 bg-[var(--color-correct)]/5' : 'border-[var(--color-gold)]/30 bg-[var(--color-gold)]/5'}`}>
                                     <div className={`text-sm ui font-semibold ${won ? 'text-[var(--color-correct)]' : 'text-[var(--color-gold)]'}`}>
-                                        {won ? `You won by ${diffLabel}` : `Just short by ${diffLabel}`}
+                                        {won ? t('summary.wonBy', { diff: diffLabel }) : t('summary.shortBy', { diff: diffLabel })}
                                     </div>
                                     <div className="text-[11px] ui text-[rgb(var(--color-fg))]/50 mt-0.5">
-                                        You {mine} · them {theirs}{won ? ' — send it back' : ' — run it again?'}
+                                        {won ? t('summary.headToHead.won', { mine, theirs }) : t('summary.headToHead.lost', { mine, theirs })}
                                     </div>
                                 </div>
                             );
@@ -335,7 +336,7 @@ export const SessionSummary = memo(function SessionSummary({
                                 <path d="M8 7 L 12 3 L 16 7" />
                                 <path d="M5 12 L 5 20 L 19 20 L 19 12" />
                             </svg>
-                            <span>{copied ? 'Result copied!' : 'Share Result'}</span>
+                            <span>{copied ? t('rail.resultCopied') : t('summary.shareResult')}</span>
                         </motion.button>
 
                         {/* ("Challenge a Friend" removed 2026-07-16 — owner call
@@ -355,7 +356,7 @@ export const SessionSummary = memo(function SessionSummary({
                             onClick={onDismiss}
                             className="text-xs ui text-[rgb(var(--color-fg))]/50 hover:text-[rgb(var(--color-fg))]/70 transition-colors"
                         >
-                            tap to continue
+                            {t('summary.tapContinue')}
                         </button>
                     </motion.div>
                 </motion.div>

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Stats } from '../hooks/useStats';
-import { countLabel } from '../utils/formatNumber';
+import { t, tCount } from '../i18n';
 
 interface Props {
     stats: Stats;
@@ -59,16 +59,16 @@ export function WeeklyRecap({ stats, suppress = false }: Props) {
     // chalkboard aesthetic rules in CLAUDE.md). Each line is a single
     // observation, not a cheer.
     const messages: string[] = [];
-    if (stats.totalSolved > 0) messages.push(`${countLabel(stats.totalSolved, 'problem')} solved.`);
-    if (acc >= 90) messages.push(`${acc}% accuracy. Sharp.`);
-    else if (acc >= 70) messages.push(`${acc}% accuracy — steady.`);
-    else if (stats.totalSolved >= 5) messages.push(`${acc}% accuracy — getting your reps in.`);
-    if (stats.bestStreak >= 10) messages.push(`Best streak: ${stats.bestStreak} in a row.`);
-    if (stats.dayStreak >= 3) messages.push(`${stats.dayStreak} days in a row. A real habit.`);
-    if (stats.sessionsPlayed >= 5) messages.push(`${stats.sessionsPlayed} sessions in.`);
+    if (stats.totalSolved > 0) messages.push(tCount('recap.solved', stats.totalSolved));
+    if (acc >= 90) messages.push(t('recap.accSharp', { acc }));
+    else if (acc >= 70) messages.push(t('recap.accSteady', { acc }));
+    else if (stats.totalSolved >= 5) messages.push(t('recap.accReps', { acc }));
+    if (stats.bestStreak >= 10) messages.push(tCount('recap.bestStreak', stats.bestStreak));
+    if (stats.dayStreak >= 3) messages.push(tCount('recap.daysHabit', stats.dayStreak));
+    if (stats.sessionsPlayed >= 5) messages.push(tCount('recap.sessions', stats.sessionsPlayed));
 
     // Quietly-positive default for users who only just started this week
-    if (messages.length === 0) messages.push(`A few problems in. The shape of a habit starting.`);
+    if (messages.length === 0) messages.push(t('recap.emptyDefault'));
 
     return (
         <AnimatePresence>
@@ -102,7 +102,7 @@ export function WeeklyRecap({ stats, suppress = false }: Props) {
                             <rect x="11" y="9" width="3" height="12" />
                             <rect x="16" y="5" width="3" height="16" />
                         </svg>
-                        <h3 className="text-lg chalk text-[var(--color-gold)] mb-4">Your Week So Far</h3>
+                        <h3 className="text-lg chalk text-[var(--color-gold)] mb-4">{t('recap.title')}</h3>
 
                         <div className="space-y-2 mb-5">
                             {messages.slice(0, 4).map((msg, i) => (
@@ -121,11 +121,11 @@ export function WeeklyRecap({ stats, suppress = false }: Props) {
                         <div className="flex justify-center gap-6 mb-4">
                             <div className="text-center">
                                 <div className="text-xl chalk text-[var(--color-gold)]">{stats.totalXP.toLocaleString()}</div>
-                                <div className="text-[9px] ui text-[rgb(var(--color-fg))]/30">total XP</div>
+                                <div className="text-[9px] ui text-[rgb(var(--color-fg))]/30">{t('recap.totalXp')}</div>
                             </div>
                             <div className="text-center">
                                 <div className="text-xl chalk text-[var(--color-correct)]">{acc}%</div>
-                                <div className="text-[9px] ui text-[rgb(var(--color-fg))]/30">accuracy</div>
+                                <div className="text-[9px] ui text-[rgb(var(--color-fg))]/30">{t('me.statAccuracy')}</div>
                             </div>
                             {stats.dayStreak >= 3 && (
                                 <div className="text-center">
@@ -136,7 +136,7 @@ export function WeeklyRecap({ stats, suppress = false }: Props) {
                                             <path d="M12 3 C 12 8 7 9 7 14 C 7 18 9 21 12 21 C 15 21 17 18 17 14 C 17 11 14 10 14 7 C 13 8.5 12.5 9 12 3 Z" />
                                         </svg>
                                     </div>
-                                    <div className="text-[9px] ui text-[rgb(var(--color-fg))]/30">day streak</div>
+                                    <div className="text-[9px] ui text-[rgb(var(--color-fg))]/30">{t('recap.dayStreak')}</div>
                                 </div>
                             )}
                         </div>
@@ -145,7 +145,7 @@ export function WeeklyRecap({ stats, suppress = false }: Props) {
                             onClick={dismiss}
                             className="text-xs ui text-[rgb(var(--color-fg))]/30 hover:text-[rgb(var(--color-fg))]/50 transition-colors"
                         >
-                            Let's go! →
+                            {t('recap.cta')} →
                         </button>
                     </motion.div>
                 </motion.div>

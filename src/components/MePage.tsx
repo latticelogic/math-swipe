@@ -2,7 +2,7 @@ import { memo, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { useStats } from '../hooks/useStats';
 import { typesForBand, type AgeBand } from '../utils/questionTypes';
-import { t } from '../i18n';
+import { t, tCount } from '../i18n';
 import { ACHIEVEMENTS, HARD_MODE_ACHIEVEMENTS, TIMED_MODE_ACHIEVEMENTS, ULTIMATE_ACHIEVEMENTS, EVERY_ACHIEVEMENT } from '../utils/achievements';
 import { AchievementBadge } from './AchievementBadge';
 import { StreakGarden } from './StreakGarden';
@@ -166,7 +166,7 @@ export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCo
                         <span className="text-2xl chalk text-[rgb(var(--color-fg))]/85">{displayName}</span>
                         <button
                             onClick={() => { setNameInput(displayName); setEditingName(true); }}
-                            aria-label="Edit name"
+                            aria-label={t('me.editNameAria')}
                             className="text-[rgb(var(--color-fg))]/25 hover:text-[rgb(var(--color-fg))]/45 transition-colors"
                         >
                             {/* Pencil — hand-drawn, matches the chalk aesthetic */}
@@ -206,18 +206,16 @@ export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCo
                 Purpose-led CTA + first-class method buttons. */}
             {isAnonymous && (() => {
                 // Name what actually lives only on this device so signing in
-                // reads as protecting real progress. Falls back to a generic
-                // line for a brand-new player with nothing yet.
-                const bits: string[] = [];
-                if (stats.dayStreak >= 2) bits.push(`${stats.dayStreak}-day streak`);
-                if (stats.totalXP > 0) bits.push(`${stats.totalXP.toLocaleString()} XP`);
-                if (unlocked.size > 0) bits.push(`${unlocked.size} achievement${unlocked.size === 1 ? '' : 's'}`);
-                const summary = bits.join(' · ');
-                // The composed progress summary ("7-day streak · 230 XP") stays
-                // English-only for now (Tier 2 — dynamic fragment composition
-                // doesn't translate safely without per-language templates).
-                const line = summary
-                    ? `Your ${summary} live only on this device.`
+                // reads as protecting real progress. Full-sentence template
+                // (no fragment joining) so it translates safely; falls back to
+                // a generic line for a brand-new player with nothing yet.
+                const hasProgress = stats.dayStreak >= 2 || stats.totalXP > 0 || unlocked.size > 0;
+                const line = hasProgress
+                    ? t('me.onDeviceSummary', {
+                        streak: stats.dayStreak,
+                        xp: stats.totalXP.toLocaleString(),
+                        achievements: tCount('me.achievementCount', unlocked.size),
+                    })
                     : t('me.signinBody');
                 const appleEnabled = import.meta.env.VITE_ENABLE_APPLE === '1';
                 const btn = 'w-full flex items-center justify-center gap-2 text-sm ui font-semibold rounded-xl py-2.5 border transition-colors';
@@ -312,7 +310,7 @@ export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCo
                 {!nextRank && mastery && (
                     <div className="mt-3 w-52 mx-auto">
                         <div className="flex items-center justify-between mb-1">
-                            <span className="text-xs ui font-semibold text-[var(--color-skull)]">Mastery Lv. {mastery.level}</span>
+                            <span className="text-xs ui font-semibold text-[var(--color-skull)]">{t('me.masteryLevel', { level: mastery.level })}</span>
                             <span className="text-[10px] ui text-[rgb(var(--color-fg))]/40">{stats.totalXP.toLocaleString()} XP</span>
                         </div>
                         <div className="h-1.5 rounded-full bg-[rgb(var(--color-fg))]/10 overflow-hidden">
@@ -324,7 +322,7 @@ export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCo
                             />
                         </div>
                         <div className="text-[10px] ui text-[rgb(var(--color-fg))]/35 mt-1">
-                            → Mastery Lv. {mastery.level + 1} at {mastery.xpForNext.toLocaleString()} XP
+                            → {t('me.masteryNext', { level: mastery.level + 1, xp: mastery.xpForNext.toLocaleString() })}
                         </div>
                     </div>
                 )}
@@ -401,25 +399,25 @@ export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCo
                 achievements list — owner call 2026-07-16. */}
             <div className="w-full max-w-sm mt-8">
                 <div className="text-sm ui text-[rgb(var(--color-fg))]/50 uppercase tracking-widest text-center mb-1">
-                    TEACHER
+                    {t('me.sectionTeacher')}
                 </div>
                 <div className="text-[10px] ui text-[rgb(var(--color-fg))]/30 text-center mb-3">
-                    Each one has their own voice. Some auto-swap when you change modes.
+                    {t('me.teacherHint')}
                 </div>
                 <div className="grid grid-cols-4 gap-3 justify-items-center">
-                    {TEACHERS.map(t => {
+                    {TEACHERS.map(teacher => {
                         // Free tier = the default teacher only (owner call
                         // 2026-07-16); paid users still EARN the rest via the
                         // existing unlock checks.
-                        const isUnlocked = t.isDefault || (hasPro && (t.unlock?.check(stats) ?? false));
-                        const isActive = (activeTeacherId || DEFAULT_TEACHER_ID) === t.id;
+                        const isUnlocked = teacher.isDefault || (hasPro && (teacher.unlock?.check(stats) ?? false));
+                        const isActive = (activeTeacherId || DEFAULT_TEACHER_ID) === teacher.id;
                         return (
                             <button
-                                key={t.id}
-                                onClick={() => isUnlocked && onTeacherChange(t.id)}
+                                key={teacher.id}
+                                onClick={() => isUnlocked && onTeacherChange(teacher.id)}
                                 disabled={!isUnlocked}
-                                title={isUnlocked ? `${t.name} — ${t.tagline}` : (t.unlock?.reason ?? 'Locked')}
-                                aria-label={isUnlocked ? `Pick ${t.name}` : `Locked: ${t.name}`}
+                                title={isUnlocked ? `${teacher.name} — ${teacher.tagline}` : (teacher.unlock?.reason ?? t('me.locked'))}
+                                aria-label={isUnlocked ? t('me.pickTeacherAria', { name: teacher.name }) : t('me.lockedTeacherAria', { name: teacher.name })}
                                 className={`relative w-16 h-20 rounded-xl border flex flex-col items-center justify-end px-1 pb-1 transition-all ${isActive
                                     ? 'border-[var(--color-gold)] bg-[var(--color-gold)]/8'
                                     : isUnlocked
@@ -427,10 +425,10 @@ export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCo
                                         : 'border-[rgb(var(--color-fg))]/8 opacity-40 cursor-not-allowed'}`}
                             >
                                 <svg viewBox="0 0 100 130" className="w-12 h-14" style={{ color: 'var(--color-chalk)' }}>
-                                    <t.Portrait state="idle" streak={0} />
+                                    <teacher.Portrait state="idle" streak={0} />
                                 </svg>
                                 <span className={`text-[9px] ui leading-tight text-center mt-0.5 ${isActive ? 'text-[var(--color-gold)]' : 'text-[rgb(var(--color-fg))]/55'}`}>
-                                    {t.name.replace(/^(Mr\.?|Ms\.?|Dr\.?|Coach) /, '')}
+                                    {teacher.name.replace(/^(Mr\.?|Ms\.?|Dr\.?|Coach) /, '')}
                                 </span>
                                 {!isUnlocked && (
                                     <span className="absolute top-1 right-1 text-[rgb(var(--color-fg))]/50"><LockIcon size={10} /></span>
@@ -444,31 +442,31 @@ export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCo
             {/* Chalk Themes — locked ones faded like achievements */}
             <div className="w-full max-w-sm mt-6">
                 <div className="text-sm ui text-[rgb(var(--color-fg))]/50 uppercase tracking-widest text-center mb-3">
-                    CHALK COLOR
+                    {t('cosmetic.chalkColor')}
                 </div>
                 <div className="grid grid-cols-6 gap-2.5 justify-items-center max-w-[300px] mx-auto">
-                    {CHALK_THEMES.map(t => {
+                    {CHALK_THEMES.map(theme => {
                         const rankIdx = RANKS.findIndex(r => r.name === rank.name);
-                        const rankOk = rankIdx >= (t.minLevel - 1);
+                        const rankOk = rankIdx >= (theme.minLevel - 1);
                         // Mode-exclusive unlock checks
-                        const hardOk = !t.hardModeOnly || (stats.hardModeSolved >= (t.hardModeMin ?? 0));
-                        const timedOk = !t.timedModeOnly || (stats.timedModeSolved >= (t.timedModeMin ?? 0));
-                        const ultimateOk = !t.ultimateOnly || (stats.ultimateSolved >= (t.ultimateMin ?? 0));
-                        const masteryOk = !t.masteryMin || ((mastery?.level ?? 0) >= t.masteryMin);
+                        const hardOk = !theme.hardModeOnly || (stats.hardModeSolved >= (theme.hardModeMin ?? 0));
+                        const timedOk = !theme.timedModeOnly || (stats.timedModeSolved >= (theme.timedModeMin ?? 0));
+                        const ultimateOk = !theme.ultimateOnly || (stats.ultimateSolved >= (theme.ultimateMin ?? 0));
+                        const masteryOk = !theme.masteryMin || ((mastery?.level ?? 0) >= theme.masteryMin);
                         // Free tier = classic + sky only (owner call 2026-07-16);
                         // everything beyond is part of the Pro set. Paid users
                         // still earn the rank/mode-gated colors by playing.
-                        const freeTier = t.id === 'classic' || t.id === 'sky';
+                        const freeTier = theme.id === 'classic' || theme.id === 'sky';
                         const proOk = hasPro || freeTier;
                         const isAvailable = rankOk && hardOk && timedOk && ultimateOk && masteryOk && proOk;
-                        const isActive = activeTheme === t.id;
+                        const isActive = activeTheme === theme.id;
                         const isLight = document.documentElement.getAttribute('data-theme') === 'light';
-                        const swatchColor = isLight ? t.lightColor : t.color;
+                        const swatchColor = isLight ? theme.lightColor : theme.color;
                         return (
                             <button
-                                key={t.id}
-                                onClick={() => { if (isAvailable) onThemeChange(t); else if (!proOk) onRequestPro?.(); }}
-                                title={`${t.name}${!isAvailable ? ' (locked)' : ''}`}
+                                key={theme.id}
+                                onClick={() => { if (isAvailable) onThemeChange(theme); else if (!proOk) onRequestPro?.(); }}
+                                title={isAvailable ? theme.name : t('cosmetic.lockedTitle', { name: theme.name })}
                                 className={`w-8 h-8 rounded-full border-2 transition-all relative ${isActive ? 'border-[var(--color-gold)] scale-110' :
                                     isAvailable ? 'border-[rgb(var(--color-fg))]/20 hover:border-[rgb(var(--color-fg))]/40' :
                                         'border-[rgb(var(--color-fg))]/8 opacity-40 cursor-not-allowed'
@@ -487,29 +485,29 @@ export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCo
             {/* Swipe Trails */}
             <div className="w-full max-w-sm mt-6">
                 <div className="text-sm ui text-[rgb(var(--color-fg))]/50 uppercase tracking-widest text-center mb-3">
-                    SWIPE TRAIL
+                    {t('cosmetic.swipeTrail')}
                 </div>
                 <div className="flex justify-center gap-2.5 flex-wrap">
-                    {SWIPE_TRAILS.map(t => {
+                    {SWIPE_TRAILS.map(trail => {
                         const rankIdx = RANKS.findIndex(r => r.name === rank.name);
                         // Free tier = the default chalk-dust trail only (owner
                         // call 2026-07-16); the rest is Pro, with progression
                         // gates still applying for paid users.
                         const isUnlocked =
-                            (hasPro || t.id === 'chalk-dust') &&
-                            (!t.minLevel || rankIdx >= t.minLevel - 1) &&
-                            (!t.minStreak || stats.bestStreak >= t.minStreak) &&
-                            (!t.hardModeOnly || stats.hardModeSessions > 0) &&
-                            (!t.timedModeOnly || stats.timedModeSessions > 0) &&
-                            (!t.ultimateOnly || stats.ultimateSessions > 0);
+                            (hasPro || trail.id === 'chalk-dust') &&
+                            (!trail.minLevel || rankIdx >= trail.minLevel - 1) &&
+                            (!trail.minStreak || stats.bestStreak >= trail.minStreak) &&
+                            (!trail.hardModeOnly || stats.hardModeSessions > 0) &&
+                            (!trail.timedModeOnly || stats.timedModeSessions > 0) &&
+                            (!trail.ultimateOnly || stats.ultimateSessions > 0);
 
-                        const isActive = (activeTrailId || 'chalk-dust') === t.id;
+                        const isActive = (activeTrailId || 'chalk-dust') === trail.id;
 
                         return (
                             <button
-                                key={t.id}
-                                onClick={() => { if (isUnlocked) onTrailChange(t.id); else if (!hasPro && t.id !== 'chalk-dust') onRequestPro?.(); }}
-                                title={`${t.name}${!isUnlocked ? ' (Locked)' : ''}`}
+                                key={trail.id}
+                                onClick={() => { if (isUnlocked) onTrailChange(trail.id); else if (!hasPro && trail.id !== 'chalk-dust') onRequestPro?.(); }}
+                                title={isUnlocked ? trail.name : t('cosmetic.lockedTitle', { name: trail.name })}
                                 className={`w-12 h-12 flex items-center justify-center rounded-xl border-2 transition-all 
                                     ${isActive ? 'border-[var(--color-gold)] bg-[var(--color-gold)]/10 scale-105' :
                                         isUnlocked ? 'border-[rgb(var(--color-fg))]/20 hover:border-[rgb(var(--color-fg))]/40' :
@@ -517,7 +515,7 @@ export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCo
                                     }`}
                             >
                                 <span className={isActive ? 'drop-shadow-[0_0_8px_rgba(251,191,36,0.6)] text-[var(--color-gold)]' : 'text-[rgb(var(--color-fg))]/70'}>
-                                    <TrailIcon id={t.id} size={24} />
+                                    <TrailIcon id={trail.id} size={24} />
                                 </span>
                             </button>
                         );
@@ -528,7 +526,7 @@ export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCo
             {/* Achievements — after the customizations (owner call) */}
             <div className="w-full max-w-sm mt-8">
                 <div className="text-sm ui text-[rgb(var(--color-fg))]/50 uppercase tracking-widest text-center mb-1">
-                    achievements · {[...unlocked].length}/{EVERY_ACHIEVEMENT.length}
+                    {t('me.sectionAchievements', { unlocked: [...unlocked].length, total: EVERY_ACHIEVEMENT.length })}
                 </div>
                 {/* (Badge-equip on the leaderboard was removed 2026-07-16 —
                     owner call. Achievements are trophies; costumes still equip.) */}
@@ -551,7 +549,7 @@ export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCo
                                     unlocked={isUnlocked}
                                     equipped={isActive}
                                     name={a.name}
-                                    desc={isActive ? 'costume on' : a.desc}
+                                    desc={isActive ? t('me.costumeOn') : a.desc}
                                 />
                             </div>
                         );
@@ -560,19 +558,19 @@ export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCo
 
                 {/* Hard Mode */}
                 <div className="mt-5 text-xs ui text-[var(--color-skull)] uppercase tracking-widest text-center mb-2">
-                    hard mode
+                    {t('me.sectionHardMode')}
                 </div>
                 <ModeAchievementGrid achievements={HARD_MODE_ACHIEVEMENTS} cols="grid-cols-3" unlocked={unlocked} />
 
                 {/* Timed Mode */}
                 <div className="mt-5 text-xs ui text-[var(--color-timed)] uppercase tracking-widest text-center mb-2">
-                    timed mode
+                    {t('me.sectionTimedMode')}
                 </div>
                 <ModeAchievementGrid achievements={TIMED_MODE_ACHIEVEMENTS} cols="grid-cols-4" unlocked={unlocked} />
 
                 {/* Ultimate Mode */}
                 <div className="mt-5 text-xs ui text-[var(--color-ultimate)] uppercase tracking-widest text-center mb-2">
-                    ultimate
+                    {t('me.sectionUltimate')}
                 </div>
                 <ModeAchievementGrid achievements={ULTIMATE_ACHIEVEMENTS} cols="grid-cols-3" unlocked={unlocked} />
             </div>
@@ -595,7 +593,7 @@ export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCo
                             exit={{ opacity: 0, scale: 0.85 }}
                             transition={{ duration: 0.15 }}
                         >
-                            <h3 className="text-lg chalk text-[var(--color-gold)] text-center mb-4">Ranks</h3>
+                            <h3 className="text-lg chalk text-[var(--color-gold)] text-center mb-4">{t('me.ranksTitle')}</h3>
                             <div className="space-y-2">
                                 {RANKS.map((r) => {
                                     const isCurrent = r.name === rank.name;
@@ -614,10 +612,10 @@ export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCo
                                                     isReached ? 'text-[rgb(var(--color-fg))]/70' : 'text-[rgb(var(--color-fg))]/30'
                                                     }`}>
                                                     {r.name}
-                                                    {isCurrent && <span className="ml-1 text-xs">← you</span>}
+                                                    {isCurrent && <span className="ml-1 text-xs">← {t('me.rankYou')}</span>}
                                                 </div>
                                                 <div className="text-[11px] ui text-[rgb(var(--color-fg))]/25">
-                                                    {r.xp === 0 ? 'Starting rank' : `${r.xp.toLocaleString()} points`}
+                                                    {r.xp === 0 ? t('me.startingRank') : tCount('me.rankPoints', r.xp)}
                                                 </div>
                                             </div>
                                             {isReached && (
@@ -631,7 +629,7 @@ export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCo
                                 onClick={() => setShowRanks(false)}
                                 className="w-full mt-4 py-2 text-sm ui text-[rgb(var(--color-fg))]/40 hover:text-[rgb(var(--color-fg))]/60 transition-colors"
                             >
-                                close
+                                {t('common.close')}
                             </button>
                         </motion.div>
                     </>

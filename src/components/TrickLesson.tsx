@@ -6,6 +6,7 @@ import { TrickPractice } from './TrickPractice';
 import { MathExpr } from './MathExpr';
 import { AutoFitEquation } from './AutoFitEquation';
 import { TrickIcon } from './TrickIcon';
+import { t } from '../i18n';
 
 interface Props {
     trick: MagicTrick;
@@ -53,7 +54,7 @@ export function TrickLesson({ trick, onClose }: Props) {
                     ✕
                 </button>
                 <div className="ui text-[10px] uppercase tracking-widest text-[var(--color-gold)] font-bold">
-                    Lesson mode
+                    {t('magic.lessonMode')}
                 </div>
                 <div className="w-10" />
             </div>
@@ -119,14 +120,14 @@ export function TrickLesson({ trick, onClose }: Props) {
                         onClick={goForward}
                         className="w-full h-14 bg-[var(--color-gold)] text-[#1a1a2e] rounded-xl font-bold ui text-lg shadow-[0_4px_0_rgb(var(--color-fg),0.2)] active:translate-y-1 active:shadow-none transition-all"
                     >
-                        {isLastStep ? 'Start Practice Blitz! ⚡' : 'Next Step'}
+                        {isLastStep ? t('magic.startPractice') : t('magic.nextStep')}
                     </button>
                     {step > 0 && (
                         <button
                             onClick={goBack}
                             className="ui text-xs text-[rgb(var(--color-fg))]/50 py-2"
                         >
-                            Go Back
+                            {t('magic.goBack')}
                         </button>
                     )}
                 </div>

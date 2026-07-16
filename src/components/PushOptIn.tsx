@@ -89,7 +89,7 @@ export function PushOptIn({ uid }: Props) {
         return (
             <div className={`${rowBase} rounded-xl border border-[rgb(var(--color-fg))]/10`}>
                 {label}
-                <span className="text-[10px] ui text-[rgb(var(--color-fg))]/30 uppercase tracking-widest">Soon</span>
+                <span className="text-[10px] ui text-[rgb(var(--color-fg))]/30 uppercase tracking-widest">{t('push.soon')}</span>
             </div>
         );
     }
@@ -127,15 +127,15 @@ export function PushOptIn({ uid }: Props) {
             {masterOn && (
                 <div className="border-t border-[rgb(var(--color-fg))]/10">
                     <SubRow
-                        label="Daily streak reminder"
-                        sub="Once a day if you haven't played yet"
+                        label={t('push.dailyLabel')}
+                        sub={t('push.dailySub')}
                         on={!!status.prefs?.dailyEnabled}
                         busy={busy}
                         onChange={v => handleToggle('dailyEnabled', v)}
                     />
                     <SubRow
-                        label="You got beaten"
-                        sub="When someone bumps you on the leaderboard"
+                        label={t('push.beatenLabel')}
+                        sub={t('push.beatenSub')}
                         on={!!status.prefs?.pingsEnabled}
                         busy={busy}
                         onChange={v => handleToggle('pingsEnabled', v)}

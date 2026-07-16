@@ -162,7 +162,7 @@ export const ActionButtons = memo(function ActionButtons({
     const handleShare = async () => {
         // Share the player's REAL numbers when we have them (live run or last
         // banked session); the generic plug is only for a fresh player.
-        const text = sharePayload?.text ?? 'Try this mental-math game.';
+        const text = sharePayload?.text ?? t('rail.shareFallback');
         const url = sharePayload?.url ?? window.location.href;
         // The clipboard fallback carries the full text (grid + link), not just
         // the bare URL — that's the artifact worth pasting somewhere.

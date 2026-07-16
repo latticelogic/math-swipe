@@ -1,5 +1,6 @@
 import { useState, useEffect, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { t } from '../i18n';
 
 /**
  * Shows a subtle banner when the browser is offline.
@@ -41,7 +42,7 @@ export const OfflineBanner = memo(function OfflineBanner() {
                         {/* Slash — the offline state */}
                         <line x1="4" y1="20" x2="20" y2="4" />
                     </svg>
-                    <span>Offline — your progress is saved locally</span>
+                    <span>{t('common.offline')}</span>
                 </motion.div>
             )}
         </AnimatePresence>

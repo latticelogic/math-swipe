@@ -1,4 +1,5 @@
 import { Component, type ReactNode, type ErrorInfo } from 'react';
+import { t } from '../i18n';
 
 interface Props { children: ReactNode; }
 interface State { hasError: boolean; }
@@ -29,8 +30,8 @@ export class ErrorBoundary extends Component<Props, State> {
                     }}
                 >
                     <div style={{ fontSize: '3rem' }}>😵</div>
-                    <h2 style={{ fontSize: '1.25rem', margin: 0 }}>Something went wrong</h2>
-                    <p style={{ opacity: 0.5, fontSize: '0.875rem', margin: 0 }}>Tap anywhere to reload</p>
+                    <h2 style={{ fontSize: '1.25rem', margin: 0 }}>{t('error.title')}</h2>
+                    <p style={{ opacity: 0.5, fontSize: '0.875rem', margin: 0 }}>{t('error.body')}</p>
                 </div>
             );
         }

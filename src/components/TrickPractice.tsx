@@ -5,6 +5,7 @@ import type { Problem } from '../utils/mathGenerator';
 import { ProblemView } from './ProblemView';
 import { MrChalk } from './MrChalk';
 import type { ChalkState } from '../hooks/useGameLoop';
+import { t } from '../i18n';
 
 const MASTERY_KEY = 'math-swipe-mastered-tricks';
 
@@ -134,7 +135,7 @@ export function TrickPractice({ trick, onClose }: Props) {
 
             {/* Header */}
             <div className="text-center pt-3">
-                <div className="text-xs ui text-[var(--color-gold)]/60 uppercase tracking-wider">Practice Blitz</div>
+                <div className="text-xs ui text-[var(--color-gold)]/60 uppercase tracking-wider">{t('magic.practiceBlitz')}</div>
             </div>
 
             {/* Progress dots */}
@@ -160,16 +161,16 @@ export function TrickPractice({ trick, onClose }: Props) {
                     animate={{ scale: 1, opacity: 1 }}
                 >
                     <div className="text-4xl">🎉</div>
-                    <h2 className="text-2xl chalk text-[var(--color-gold)]">Mastered!</h2>
+                    <h2 className="text-2xl chalk text-[var(--color-gold)]">{t('magic.masteredHeading')}</h2>
                     <p className="text-sm ui text-[rgb(var(--color-fg))]/50 text-center">
-                        You've earned the <span className="text-[var(--color-gold)]">{trick.title}</span> technique
+                        {t('magic.earnedTechnique', { title: trick.title })}
                     </p>
                     <motion.button
                         onClick={onClose}
                         className="mt-4 px-8 py-3 rounded-2xl bg-[var(--color-gold)]/20 border border-[var(--color-gold)]/30 text-[var(--color-gold)] ui font-semibold text-sm"
                         whileTap={{ scale: 0.95 }}
                     >
-                        Continue →
+                        {t('magic.continue')} →
                     </motion.button>
                 </motion.div>
             ) : current ? (

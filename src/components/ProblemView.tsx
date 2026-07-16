@@ -5,6 +5,7 @@ import type { Problem } from '../utils/mathGenerator';
 import type { EngineItem } from '../engine/domain';
 import { formatOptionValue } from '../utils/formatNumber';
 import { MathExpr } from './MathExpr';
+import { t } from '../i18n';
 
 /** Arrow-key → swipe direction map for desktop play */
 const KEY_MAP: Record<string, 'left' | 'right' | 'up' | 'down'> = {
@@ -133,7 +134,7 @@ const SwipeCoach = memo(function SwipeCoach({ correctIndex }: { correctIndex: nu
     // Map option index → x-translate of the demo gesture (left/down/right)
     const targetX = correctIndex === 0 ? -90 : correctIndex === 2 ? 90 : 0;
     const targetY = correctIndex === 1 ? 60 : 0;
-    const captionDir = correctIndex === 0 ? 'left' : correctIndex === 2 ? 'right' : 'down';
+    const captionDir = correctIndex === 0 ? t('game.dirLeft') : correctIndex === 2 ? t('game.dirRight') : t('game.dirDown');
 
     return (
         <div className="absolute inset-x-0 -top-2 flex flex-col items-center pointer-events-none z-20">
@@ -160,7 +161,7 @@ const SwipeCoach = memo(function SwipeCoach({ correctIndex }: { correctIndex: nu
                 animate={{ opacity: [0.4, 1, 0.4] }}
                 transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
             >
-                swipe {captionDir} to answer
+                {t('game.swipeToAnswer', { dir: captionDir })}
             </motion.div>
         </div>
     );

@@ -72,6 +72,7 @@ import { generateDailyChallenge, generateChallenge } from './utils/dailyChalleng
 import { todayKey } from './utils/dateKey';
 import type { EngineItem } from './engine/domain';
 import { STORAGE_KEYS, FIRESTORE } from './config';
+import { t } from './i18n';
 
 type Tab = 'game' | 'league' | 'me' | 'magic';
 const TAB_ORDER: Tab[] = ['game', 'league', 'magic', 'me'];
@@ -451,7 +452,7 @@ function App() {
         // Sanitize incoming senderName: it's user-controlled; render as text only.
         // React already escapes it, but cap the length defensively.
         const senderName = String(data.senderName ?? 'Someone').slice(0, 20);
-        setPingMessage(`${senderName} challenged you! ⚔️`);
+        setPingMessage(t('game.ping.challenged', { name: senderName }));
 
         // Mark as read so it doesn't pop again
         updateDoc(doc(db, FIRESTORE.PINGS, pingDoc.id), { read: true }).catch(() => { /* silent */ });
@@ -873,7 +874,7 @@ function App() {
               // w-12 (not w-11) so its center lines up with the action rail
               // below, whose column is widened to 48px by the topic picker.
               className="w-12 h-11 flex items-center justify-center text-[rgb(var(--color-fg))]/60 active:text-[var(--color-gold)] transition-colors"
-              aria-label="Toggle theme"
+              aria-label={t('hud.themeToggle.aria')}
             >
               {themeMode === 'light' ? (
                 <motion.svg
@@ -940,7 +941,7 @@ function App() {
                       <line x1="5" y1="5" x2="19" y2="19" />
                       <line x1="19" y1="5" x2="5" y2="19" />
                     </svg>
-                    <span>Challenge</span>
+                    <span>{t('game.mode.challenge')}</span>
                     <span className="text-[rgb(var(--color-fg))]/30">·</span>
                     <span className="text-[rgb(var(--color-fg))]/40">{totalAnswered}/10</span>
                   </div>
@@ -949,12 +950,11 @@ function App() {
                       concrete to beat (asymmetric-link payoff). */}
                   {challengeTarget && (challengeTarget.score !== null || challengeTarget.timeMs !== null) && (
                     <div className="text-[10px] ui text-[var(--color-gold)]/70">
-                      Beat{' '}
                       {challengeTarget.timeMs !== null
-                        ? `${(challengeTarget.timeMs / 1000).toFixed(1)}s`
-                        : `${challengeTarget.score} pts`}
+                        ? t('game.beatTime', { time: (challengeTarget.timeMs / 1000).toFixed(1) })
+                        : t('game.beatScore', { pts: challengeTarget.score ?? 0 })}
                       {score > 0 && challengeTarget.score !== null && score >= challengeTarget.score && (
-                        <span className="text-[var(--color-correct)] ml-1">passed</span>
+                        <span className="text-[var(--color-correct)] ml-1">{t('game.passed')}</span>
                       )}
                     </div>
                   )}
@@ -969,13 +969,13 @@ function App() {
                       <line x1="10" y1="2" x2="14" y2="2" />
                       <line x1="12" y1="2" x2="12" y2="5" />
                     </svg>
-                    <span>Speedrun</span>
+                    <span>{t('game.mode.speedrun')}</span>
                     <span className="text-[rgb(var(--color-fg))]/30">·</span>
                     <span className="text-[rgb(var(--color-fg))]/40">{totalCorrect}/10</span>
                   </div>
                   {challengeTarget && challengeTarget.timeMs !== null && (
                     <div className="text-[10px] ui text-[var(--color-speedrun)]/70">
-                      Beat {(challengeTarget.timeMs / 1000).toFixed(1)}s
+                      {t('game.beatTime', { time: (challengeTarget.timeMs / 1000).toFixed(1) })}
                     </div>
                   )}
                 </div>
@@ -990,15 +990,15 @@ function App() {
                       <line x1="3" y1="10" x2="21" y2="10" />
                       <circle cx="12" cy="15" r="1.2" fill="currentColor" stroke="none" />
                     </svg>
-                    <span>Daily Challenge</span>
+                    <span>{t('game.mode.daily')}</span>
                     <span className="text-[rgb(var(--color-fg))]/30">·</span>
                     <span className="text-[rgb(var(--color-fg))]/40">{totalAnswered}/10</span>
                   </div>
                   {challengeTarget && challengeTarget.score !== null && (
                     <div className="text-[10px] ui text-[var(--color-gold)]/70">
-                      Beat {challengeTarget.score} pts
+                      {t('game.beatScore', { pts: challengeTarget.score })}
                       {score >= challengeTarget.score && (
-                        <span className="text-[var(--color-correct)] ml-1">passed</span>
+                        <span className="text-[var(--color-correct)] ml-1">{t('game.passed')}</span>
                       )}
                     </div>
                   )}
@@ -1015,10 +1015,10 @@ function App() {
               {/* Shield count */}
               {/* Screen reader announcement for game feedback */}
               <div className="sr-only" role="status" aria-live="assertive">
-                {flash === 'correct' && `Correct! Streak: ${streak}`}
-                {flash === 'near-miss' && 'Close! Streak reset.'}
-                {flash === 'wrong' && (shieldBroken ? 'Wrong! Shield used, streak saved.' : 'Wrong! Streak reset.')}
-                {milestone && `Milestone reached at ${streak} in a row!`}
+                {flash === 'correct' && t('game.sr.correct', { streak })}
+                {flash === 'near-miss' && t('game.sr.nearMiss')}
+                {flash === 'wrong' && (shieldBroken ? t('game.sr.wrongShield') : t('game.sr.wrong'))}
+                {milestone && t('game.sr.milestone', { streak })}
               </div>
               {stats.streakShields > 0 && streak > 0 && (
                 <div className="text-[rgb(var(--color-fg))]/30 mt-1 flex items-center gap-0.5">
@@ -1096,9 +1096,9 @@ function App() {
               {/* Daily streak */}
               {stats.dayStreak > 0 && (
                 <div className="mt-1 flex items-center justify-center gap-1 text-[10px] ui text-[rgb(var(--color-fg))]/25">
-                  <span className="inline-flex items-center gap-0.5"><FlameIcon size={10} /> Day {stats.dayStreak}</span>
+                  <span className="inline-flex items-center gap-0.5"><FlameIcon size={10} /> {t('hud.dayStreak', { count: stats.dayStreak })}</span>
                   {(stats.streakShields || 0) > 0 && (
-                    <span className="text-[var(--color-gold)] opacity-80 inline-flex items-center gap-0.5" title="Streak Freeze Active">
+                    <span className="text-[var(--color-gold)] opacity-80 inline-flex items-center gap-0.5" title={t('hud.streakFreeze.title')}>
                       {Array.from({ length: stats.streakShields }, (_, i) => <ShieldIcon key={i} size={10} />)}
                     </span>
                   )}
@@ -1122,8 +1122,8 @@ function App() {
                 const completedToday = startedToday && stats.todayDailySolved >= dailyTotal;
                 if (completedToday) return null;
                 const inProgressLabel = startedToday
-                  ? `Daily: ${stats.todayDailySolved}/${dailyTotal} — finish it`
-                  : 'Daily Challenge';
+                  ? t('game.dailyInProgress', { solved: stats.todayDailySolved, total: dailyTotal })
+                  : t('game.mode.daily');
                 return (
                   // Pill-style daily-challenge entry. Previously this was
                   // tiny low-opacity text; testers were missing it. Now it's
@@ -1258,8 +1258,8 @@ function App() {
 
             {/* ── Speed bonus ── */}
             {speedBonus && (
-              <div key={'speed' + score} className="speed-pop absolute left-1/2 -translate-x-1/2 top-[30%] z-40 text-sm ui text-[var(--color-gold)] whitespace-nowrap flex items-center gap-1">
-                <BoltIcon size={13} /> SPEED BONUS +2
+              <div key={'speed' + score} className="speed-pop absolute left-1/2 -translate-x-1/2 top-[30%] z-40 text-sm ui uppercase text-[var(--color-gold)] whitespace-nowrap flex items-center gap-1">
+                <BoltIcon size={13} /> {t('game.speedBonus')}
               </div>
             )}
 
@@ -1276,7 +1276,7 @@ function App() {
         {/* Non-game tabs (no wrapper — each page scrolls independently) */}
         {activeTab === 'league' && (
           <motion.div className="flex-1 flex flex-col min-h-0" onPanEnd={handleTabSwipe}>
-            <Suspense fallback={<TabSkeleton variant="league" />}><LeaguePage userXP={stats.totalXP} userStreak={stats.bestStreak} uid={uid} displayName={user?.displayName ?? 'You'} activeThemeId={activeThemeId as string} activeCostume={activeCostume as string} bestSpeedrunTime={stats.bestSpeedrunTime} speedrunHardMode={stats.speedrunHardMode} onStartSpeedrun={() => { setQuestionType('speedrun'); setActiveTab('game'); }} /></Suspense>
+            <Suspense fallback={<TabSkeleton variant="league" />}><LeaguePage userXP={stats.totalXP} userStreak={stats.bestStreak} uid={uid} displayName={user?.displayName ?? t('common.you')} activeThemeId={activeThemeId as string} activeCostume={activeCostume as string} bestSpeedrunTime={stats.bestSpeedrunTime} speedrunHardMode={stats.speedrunHardMode} onStartSpeedrun={() => { setQuestionType('speedrun'); setActiveTab('game'); }} /></Suspense>
           </motion.div>
         )}
 
@@ -1482,7 +1482,7 @@ function App() {
                 }
               } catch (err) {
                 console.error('[paywall] checkout failed', err);
-                alert('Could not start checkout. Try again in a moment.');
+                alert(t('paywall.checkoutError'));
               } finally {
                 setPaywallBusy(false);
               }
@@ -1513,7 +1513,7 @@ function App() {
                 <AchievementBadge achievementId={currentToast.id} unlocked={true} name="" desc="" iconOnly iconSize={30} />
               </div>
               <div className="min-w-0">
-                <div className="text-[9px] ui uppercase tracking-widest text-[var(--color-gold)]/70 leading-tight">Achievement Unlocked</div>
+                <div className="text-[9px] ui uppercase tracking-widest text-[var(--color-gold)]/70 leading-tight">{t('game.achievementUnlocked')}</div>
                 <div className="text-sm chalk text-[var(--color-gold)] truncate leading-tight">{currentToast.name}</div>
               </div>
             </motion.div>
@@ -1539,8 +1539,8 @@ function App() {
                 </svg>
               </div>
               <div>
-                <div className="text-[10px] ui uppercase tracking-widest text-[var(--color-gold)]/70">Streak Saved</div>
-                <div className="text-sm chalk text-[var(--color-gold)]">Shield absorbed the miss</div>
+                <div className="text-[10px] ui uppercase tracking-widest text-[var(--color-gold)]/70">{t('game.streakSaved')}</div>
+                <div className="text-sm chalk text-[var(--color-gold)]">{t('game.shieldAbsorbed')}</div>
               </div>
             </motion.div>
           )}
