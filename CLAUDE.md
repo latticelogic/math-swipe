@@ -22,21 +22,21 @@ generic ("Sharp." > "AMAZING! 🎉").
 | Surface | Count | File |
 |---|---|---|
 | Tabs (bottom nav) | 4 | Let's Go / League / Magic / Me — wired in `src/App.tsx` |
-| Question topics | 28 | `src/domains/math/mathCategories.ts` (catalog) + `src/utils/mathGenerator.ts` (per-topic generators) |
-| Age bands | 2 | `starter` (K-2 content) + `full` (default, ages 8+) — in `mathCategories.ts` |
+| Question topics | 35 | `src/domains/math/mathCategories.ts` (catalog) + `src/utils/mathGenerator.ts` (per-topic generators) |
+| Age bands | 1 in use | `full` only (default, ages 8+). The `starter`/`AgeBand` machinery survives in `mathCategories.ts` but the picker was removed 2026-07-15 — `ageBand` is hardcoded `full`. |
 | Difficulty levels | 5 | Auto-adjusted by `useDifficulty.ts` based on response time |
 | Magic tricks | 36 | `src/utils/mathTricks.ts` (lessons + practice generators) |
 | Achievements | 28 math + share + early-trial ladder | `src/utils/achievements.ts` (base engine) + `src/domains/math/mathAchievements.ts` (math-specific list, includes the 6-rung early-trial ladder + `spread-the-word` share achievement) |
 | Paywall + trial UX | 7-day demo → \$3.14 lifetime | `src/components/Paywall.tsx`, `src/components/TrialModals.tsx`, `src/hooks/useEntitlement.ts`, `src/utils/entitlement.ts` (incl. `shouldFirePaywall` rule) |
 | Stripe Checkout integration | callable + webhook | `functions/src/stripe.ts` (Cloud Functions) + `src/utils/checkout.ts` (client wrapper) |
-| Legal pages | 3 drafts | `src/components/LegalPages.tsx` — Refund / Privacy / Terms with "DRAFT" banner; routed at `/refund`, `/privacy`, `/terms` |
+| Legal pages | 3 LIVE | `src/components/LegalPages.tsx` — Privacy / Terms / Refund (no draft banner since 2026-07-15); routed at `/privacy`, `/terms`, `/refund`. Footer row shows Privacy · Terms; Refund is linked from inside Terms. |
 | Billing safety runbook | CLI-first | `docs/billing-safety.md` (gcloud / firebase / stripe commands for budget alerts, quota caps, App Check) |
 | Paywall e2e regression | manual checklist | `docs/paywall-e2e.md` (MCP-driven visual e2e) + `src/tests/paywallTrigger.test.ts` (truth-table unit test) |
 | Teachers (companion characters) | 8 | `src/domains/math/teachers/*.tsx` — each has a documented voice persona |
 | Streak milestone tiers | 5 | `MilestoneBurst.tsx` at 3/5/10/25/50 — sparkle → flame → bolt → crown → trophy |
 | Teacher message pools | base + per-teacher | `src/utils/chalkMessages.ts` (base) + `src/domains/math/teachers/*.tsx` (overrides) |
 | Math-topic flavour | per-topic | `src/domains/math/mathMessages.ts` (success/fail quips per topic) |
-| Category icons | 28 | `src/components/CategoryIcon.tsx` — hand-drawn SVGs |
+| Category icons | 35 | `src/components/CategoryIcon.tsx` — hand-drawn SVGs (+ RankIcon / TrailIcon / icons.tsx cover ranks, trails, stat/HUD glyphs) |
 | Trick icons | 36 | `src/components/TrickIcon.tsx` — hand-drawn SVGs |
 | Difficulty curves spec | — | `docs/difficulty-curves.md` (what Easy/Medium/Hard means per topic) |
 | Docs index | — | `docs/README.md` (one-line map of every doc: runbooks, specs, decision records) |
@@ -231,19 +231,17 @@ When Airwallex goes live, the go-live QA section of `docs/airwallex.md`
 walks the full purchase → grant → refund → revoke loop, sandbox first,
 then once with live keys as the real launch gate.
 
-### Legal pages (drafts, replace before launch)
+### Legal pages (LIVE since 2026-07-15)
 
-`src/components/LegalPages.tsx` ships Refund / Privacy / Terms at
-`/refund`, `/privacy`, `/terms`. Each has a yellow **"DRAFT — not legal
-advice"** banner at the top. The drafts are written against the
+`src/components/LegalPages.tsx` ships Privacy / Terms / Refund at
+`/privacy`, `/terms`, `/refund` — no draft banner. Written against the
 codebase's actual data practices (anonymous auth, optional sign-in,
-Firestore stats, optional push, Stripe purchase, no third-party
-ad-tech). Two sections have inline DRAFT-NOTE callouts flagging
-unresolved decisions: **COPPA stance for under-13 users** in Privacy
-and **state of incorporation + dispute-resolution clause** in Terms.
-
-**Don't remove the yellow draft banner** without explicit "final copy
-is in place" instruction.
+Firestore stats, optional push, Airwallex/Play purchase, no third-party
+ad-tech). Resolved by the owner: governing law = Singapore (Lattice
+Logic Pte. Ltd.), COPPA stance = mixed-audience / PDPA-first. The footer
+row is Privacy · Terms; the Refund policy is linked from inside the
+Terms. An optional fixed-fee counsel check is still advisable but is a
+business call, not a code blocker.
 
 ## Conventions
 
@@ -334,7 +332,7 @@ What's **done in code** (no further blockers to launch from the codebase side):
 - Cloudflare Pages + GitHub Actions CI/CD pipeline (auto-deploy on master)
 - Firebase project on `math-swipe-prod` (production) — **on Blaze plan as of 2026-05-12**
 - Self-hosted fonts (Fredericka the Great + Architects Daughter in `public/fonts/`)
-- 28 question generators with real difficulty curves + 191 total tests across 10 suites (87 in mathGenerator alone)
+- 35 question generators with real difficulty curves + ~376 tests across the suite
 - 5-tier streak milestone celebrations + near-miss feedback + daily flourish
 - Theatrical achievement unlock toast with badge SVG + sparkles
 - 8 teacher voices, each with documented persona; full content audit + polish
@@ -343,20 +341,16 @@ What's **done in code** (no further blockers to launch from the codebase side):
 - **Trial UX**: WelcomeModal + Day 4 / 6 reminders + countdown chip, all session-start-gated, all rendering nothing for paid users
 - **Daily-Challenge-free-forever** carve-out (`shouldFirePaywall` exempts `questionType === 'daily'`)
 - **6 early-trial achievements** to fill the dopamine gap (streak-3, daily-1, topic-explorer, three-day, accuracy-early, quick-fifty)
-- **Legal pages** at /refund, /privacy, /terms (DRAFT banners, awaiting lawyer review)
+- **Legal pages** LIVE at /privacy, /terms, /refund (no draft banner; governing law = Singapore, COPPA = mixed-audience/PDPA-first)
 - **PWA install prompt** in Me tab + iOS end-of-first-session prompt inside SessionSummary (`InstallPrompt.tsx`)
 - **Admin billing dashboard** at /admin/billing (`AdminBilling.tsx`) — gated by `isAdmin` custom claim, surfaces trial/paid/expired counts + conversion % + refund rate
 - **Truth-table tests** for the paywall fire rule (`shouldFirePaywall`), plus a manual e2e runbook for visual regressions (`docs/paywall-e2e.md`)
 - **Payments go-live QA** — the sandbox→live loop in `docs/airwallex.md` (web) + the license-tester loop in `docs/google-play-launch.md` (Android)
 
 What's **blocking commercial launch** (operational, not code):
-- **Stripe account verification + bank** — 1-3 day KYC turnaround for Lattice Logic. Stripe SDK is wired in `functions/src/stripe.ts`; what's pending is the dashboard.stripe.com KYC submission. Check status with `stripe accounts retrieve` looking for `charges_enabled: true` and `payouts_enabled: true`.
-- **Live Stripe secrets** — once verification is done: `firebase functions:secrets:set STRIPE_SECRET_KEY/STRIPE_WEBHOOK_SECRET/STRIPE_PRICE_ID/PUBLIC_ORIGIN` then redeploy `createCheckoutSession` and `stripeWebhook`.
-- **Lawyer-reviewed legal copy** — replace draft Refund/Privacy/Terms with reviewed text, strip the yellow DRAFT banner.
-- **COPPA stance decision** — under-13 user data flow choice (flagged in `LegalPages.tsx` PrivacyBody DRAFT-NOTE).
-- **Governing law clause** — state of incorporation + dispute-resolution language for Terms.
+- **Airwallex activation (KYB) + live secrets** — payments are Airwallex-only (`functions/src/airwallex.ts`; Stripe removed 2026-07-15). Pending: the KYB submission at airwallex.com, then `firebase functions:secrets:set AIRWALLEX_CLIENT_ID/AIRWALLEX_API_KEY/AIRWALLEX_WEBHOOK_SECRET/PUBLIC_ORIGIN`, confirm the `TODO(airwallex)` endpoint/event/signature details, deploy, register the webhook. Full runbook: `docs/airwallex.md`.
 - **Pre-launch billing safety steps** — see status table at top of `docs/billing-safety.md`. Firebase Blaze is done; remaining items are budget alerts, quota caps, App Check, refund policy email, beta testing.
-- **Custom domain** (gated on product-name decision — not strictly blocking, `math-swipe-c7k.pages.dev` works).
+- (RESOLVED 2026-07-15 — no longer blocking) legal copy is LIVE, COPPA stance = mixed-audience/PDPA-first, governing law = Singapore, custom domain `mathchallenge.app` is attached.
 - **Google Play release** — owner enrolled a verified org account 2026-07-15 (supersedes the old "defer until 60 days" rule for Play; Apple remains deferred/last). Code is done (#74); what's left is Play Console clickwork + internal-track QA — the full runbook with checkboxes is `docs/google-play-launch.md`.
 - App Store enrollment — defer per the hybrid-distribution rule (Apple is last).
 

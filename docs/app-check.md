@@ -1,7 +1,7 @@
 # App Check setup
 
 App Check attests that traffic hitting Firestore / Cloud Functions comes from
-**the genuine Math Swipe web app**, not a script wielding the public web keys.
+**the genuine Math Challenge web app**, not a script wielding the public web keys.
 It is the primary control behind the leaderboard-integrity and write-spam gaps:
 Security Rules bound *what* a request may do, App Check bounds *who* may send
 one. The client wiring already lands in `src/utils/firebase.ts` (env-gated —
