@@ -3,6 +3,7 @@
  * Mr. Chalk is the only `isDefault: true` and is the new-user fallback.
  */
 
+import { t, type MsgKey } from '../../../i18n';
 import type { Teacher } from './types';
 import { MR_CHALK } from './chalk';
 import { MS_SIGMA } from './sigma';
@@ -33,6 +34,18 @@ const TEACHER_MAP = new Map(TEACHERS.map(t => [t.id, t]));
 export function getTeacher(id: string | null | undefined): Teacher {
     if (!id) return MR_CHALK;
     return TEACHER_MAP.get(id) ?? MR_CHALK;
+}
+
+/** Localized teacher display name. The teacher's `name` field stays as English
+ *  fallback data; this is what the user sees. Keyed by the stable teacher id.
+ *  (Teacher VOICE pools are NOT localized here — that is Phase 2.) */
+export function teacherName(id: string): string {
+    return t(`teacher.${id}.name` as MsgKey);
+}
+
+/** Localized teacher tagline (the one-liner in the picker). */
+export function teacherTagline(id: string): string {
+    return t(`teacher.${id}.tagline` as MsgKey);
 }
 
 /** Resolve which teacher to render given the player's saved choice and the

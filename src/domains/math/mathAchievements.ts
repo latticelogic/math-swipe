@@ -4,6 +4,7 @@
  * Math-specific achievement definitions and stats snapshot type.
  * Moved from src/utils/achievements.ts — keeps subject logic in the domain.
  */
+import { t, type MsgKey } from '../../i18n';
 import type { Achievement } from '../../utils/achievements';
 import type { QuestionType } from './mathCategories';
 import { getMastery } from './ranks';
@@ -238,3 +239,23 @@ export const EVERY_MATH_ACHIEVEMENT: Achievement<MathAchievementStats>[] = [
     ...TIMED_MODE_ACHIEVEMENTS,
     ...ULTIMATE_ACHIEVEMENTS,
 ];
+
+// ── Localized display helpers ─────────────────────────────────────────────────
+// The English `name`/`desc` fields above stay as fallback data (and drive the
+// `check` logic's neighbourhood). These helpers return the localized string the
+// user actually sees, keyed by the stable achievement id, falling back to the
+// English field if a catalog key is somehow missing.
+
+const ACH_MAP = new Map(EVERY_MATH_ACHIEVEMENT.map(a => [a.id, a]));
+
+/** Localized achievement name by id (English `name` as fallback). */
+export function achName(id: string): string {
+    const label = t(`ach.${id}.name` as MsgKey);
+    return label || ACH_MAP.get(id)?.name || id;
+}
+
+/** Localized achievement description by id (English `desc` as fallback). */
+export function achDesc(id: string): string {
+    const label = t(`ach.${id}.desc` as MsgKey);
+    return label || ACH_MAP.get(id)?.desc || '';
+}

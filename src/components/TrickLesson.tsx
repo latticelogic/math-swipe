@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { PanInfo } from 'framer-motion';
-import type { MagicTrick } from '../utils/mathTricks';
+import { trickTitle, type MagicTrick } from '../utils/mathTricks';
 import { TrickPractice } from './TrickPractice';
 import { MathExpr } from './MathExpr';
 import { AutoFitEquation } from './AutoFitEquation';
@@ -66,7 +66,7 @@ export function TrickLesson({ trick, onClose }: Props) {
                 <div className="mb-4 text-[var(--color-chalk)]">
                     <TrickIcon id={trick.id} size={42} />
                 </div>
-                <h2 className="chalk text-2xl text-[var(--color-gold)] mb-8">{trick.title}</h2>
+                <h2 className="chalk text-2xl text-[var(--color-gold)] mb-8">{trickTitle(trick.id)}</h2>
 
                 {/* Example Equation — auto-fits via JS measurement.
                     The earlier CSS-clamp-based fix worked for the intro state

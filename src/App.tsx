@@ -44,7 +44,7 @@ import { useGameLoop } from './hooks/useGameLoop';
 import { useStats } from './hooks/useStats';
 import type { QuestionType } from './utils/questionTypes';
 import { EVERY_ACHIEVEMENT, loadUnlocked, saveUnlocked, checkAchievements, restoreUnlockedFromCloud } from './utils/achievements';
-import { EVERY_MATH_ACHIEVEMENT } from './domains/math/mathAchievements';
+import { EVERY_MATH_ACHIEVEMENT, achName } from './domains/math/mathAchievements';
 import { capturePendingReferrer, maybeClaimReferral, fetchReferralCount } from './utils/referral';
 import { SessionSummary } from './components/SessionSummary';
 import { WeeklyRecap } from './components/WeeklyRecap';
@@ -550,7 +550,7 @@ function App() {
       const items = fresh
         .map(id => EVERY_ACHIEVEMENT.find(a => a.id === id))
         .filter((b): b is NonNullable<typeof b> => !!b)
-        .map(b => ({ id: b.id, name: b.name }));
+        .map(b => ({ id: b.id, name: achName(b.id) }));
       if (items.length) {
         hapticMilestone();
         setAchievementQueue(q => [...q, ...items]);

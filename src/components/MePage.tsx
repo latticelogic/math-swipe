@@ -4,12 +4,13 @@ import type { useStats } from '../hooks/useStats';
 import { typesForBand, type AgeBand } from '../utils/questionTypes';
 import { t, tCount } from '../i18n';
 import { ACHIEVEMENTS, HARD_MODE_ACHIEVEMENTS, TIMED_MODE_ACHIEVEMENTS, ULTIMATE_ACHIEVEMENTS, EVERY_ACHIEVEMENT } from '../utils/achievements';
+import { achName, achDesc } from '../domains/math/mathAchievements';
 import { AchievementBadge } from './AchievementBadge';
 import { StreakGarden } from './StreakGarden';
-import { CHALK_THEMES, type ChalkTheme } from '../utils/chalkThemes';
-import { SWIPE_TRAILS } from '../utils/trails';
-import { TEACHERS, DEFAULT_TEACHER_ID } from '../domains/math/teachers';
-import { RANKS, getRank, getMastery } from '../domains/math/ranks';
+import { CHALK_THEMES, themeLabel, type ChalkTheme } from '../utils/chalkThemes';
+import { SWIPE_TRAILS, trailLabel } from '../utils/trails';
+import { TEACHERS, DEFAULT_TEACHER_ID, teacherName, teacherTagline } from '../domains/math/teachers';
+import { RANKS, getRank, getMastery, rankLabel } from '../domains/math/ranks';
 import { TrialCountdownChip } from './TrialModals';
 import { SettingsSheet } from './SettingsSheet';
 import { InstallPill } from './InstallPrompt';
@@ -90,7 +91,7 @@ function ModeAchievementGrid({ achievements, cols, unlocked }: {
         <div className={`grid ${cols} gap-3 justify-items-center`}>
             {achievements.map(a => (
                 <div key={a.id}>
-                    <AchievementBadge achievementId={a.id} unlocked={unlocked.has(a.id)} name={a.name} desc={a.desc} />
+                    <AchievementBadge achievementId={a.id} unlocked={unlocked.has(a.id)} name={achName(a.id)} desc={achDesc(a.id)} />
                 </div>
             ))}
         </div>
@@ -287,7 +288,7 @@ export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCo
                     onClick={() => setShowRanks(true)}
                     className="text-2xl chalk text-[var(--color-gold)] leading-tight hover:opacity-80 transition-opacity"
                 >
-                    {rank.name}
+                    {rankLabel(rank)}
                 </button>
                 {/* Progress to next rank */}
                 {nextRank && (
@@ -416,8 +417,8 @@ export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCo
                                 key={teacher.id}
                                 onClick={() => isUnlocked && onTeacherChange(teacher.id)}
                                 disabled={!isUnlocked}
-                                title={isUnlocked ? `${teacher.name} — ${teacher.tagline}` : (teacher.unlock?.reason ?? t('me.locked'))}
-                                aria-label={isUnlocked ? t('me.pickTeacherAria', { name: teacher.name }) : t('me.lockedTeacherAria', { name: teacher.name })}
+                                title={isUnlocked ? `${teacherName(teacher.id)} — ${teacherTagline(teacher.id)}` : (teacher.unlock?.reason ?? t('me.locked'))}
+                                aria-label={isUnlocked ? t('me.pickTeacherAria', { name: teacherName(teacher.id) }) : t('me.lockedTeacherAria', { name: teacherName(teacher.id) })}
                                 className={`relative w-16 h-20 rounded-xl border flex flex-col items-center justify-end px-1 pb-1 transition-all ${isActive
                                     ? 'border-[var(--color-gold)] bg-[var(--color-gold)]/8'
                                     : isUnlocked
@@ -428,7 +429,7 @@ export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCo
                                     <teacher.Portrait state="idle" streak={0} />
                                 </svg>
                                 <span className={`text-[9px] ui leading-tight text-center mt-0.5 ${isActive ? 'text-[var(--color-gold)]' : 'text-[rgb(var(--color-fg))]/55'}`}>
-                                    {teacher.name.replace(/^(Mr\.?|Ms\.?|Dr\.?|Coach) /, '')}
+                                    {teacherName(teacher.id).replace(/^(Mr\.?|Ms\.?|Dr\.?|Coach) /, '')}
                                 </span>
                                 {!isUnlocked && (
                                     <span className="absolute top-1 right-1 text-[rgb(var(--color-fg))]/50"><LockIcon size={10} /></span>
@@ -466,7 +467,7 @@ export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCo
                             <button
                                 key={theme.id}
                                 onClick={() => { if (isAvailable) onThemeChange(theme); else if (!proOk) onRequestPro?.(); }}
-                                title={isAvailable ? theme.name : t('cosmetic.lockedTitle', { name: theme.name })}
+                                title={isAvailable ? themeLabel(theme.id) : t('cosmetic.lockedTitle', { name: themeLabel(theme.id) })}
                                 className={`w-8 h-8 rounded-full border-2 transition-all relative ${isActive ? 'border-[var(--color-gold)] scale-110' :
                                     isAvailable ? 'border-[rgb(var(--color-fg))]/20 hover:border-[rgb(var(--color-fg))]/40' :
                                         'border-[rgb(var(--color-fg))]/8 opacity-40 cursor-not-allowed'
@@ -507,7 +508,7 @@ export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCo
                             <button
                                 key={trail.id}
                                 onClick={() => { if (isUnlocked) onTrailChange(trail.id); else if (!hasPro && trail.id !== 'chalk-dust') onRequestPro?.(); }}
-                                title={isUnlocked ? trail.name : t('cosmetic.lockedTitle', { name: trail.name })}
+                                title={isUnlocked ? trailLabel(trail.id) : t('cosmetic.lockedTitle', { name: trailLabel(trail.id) })}
                                 className={`w-12 h-12 flex items-center justify-center rounded-xl border-2 transition-all 
                                     ${isActive ? 'border-[var(--color-gold)] bg-[var(--color-gold)]/10 scale-105' :
                                         isUnlocked ? 'border-[rgb(var(--color-fg))]/20 hover:border-[rgb(var(--color-fg))]/40' :
@@ -548,8 +549,8 @@ export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCo
                                     achievementId={a.id}
                                     unlocked={isUnlocked}
                                     equipped={isActive}
-                                    name={a.name}
-                                    desc={isActive ? t('me.costumeOn') : a.desc}
+                                    name={achName(a.id)}
+                                    desc={isActive ? t('me.costumeOn') : achDesc(a.id)}
                                 />
                             </div>
                         );
@@ -611,7 +612,7 @@ export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCo
                                                 <div className={`text-sm ui font-semibold ${isCurrent ? 'text-[var(--color-gold)]' :
                                                     isReached ? 'text-[rgb(var(--color-fg))]/70' : 'text-[rgb(var(--color-fg))]/30'
                                                     }`}>
-                                                    {r.name}
+                                                    {rankLabel(r)}
                                                     {isCurrent && <span className="ml-1 text-xs">← {t('me.rankYou')}</span>}
                                                 </div>
                                                 <div className="text-[11px] ui text-[rgb(var(--color-fg))]/25">

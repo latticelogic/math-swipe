@@ -1,5 +1,7 @@
 /** Chalk color themes — unlocked at level thresholds or hard mode play */
 
+import { t, type MsgKey } from '../i18n';
+
 export interface ChalkTheme {
     id: string;
     name: string;
@@ -61,8 +63,14 @@ export function applyTheme(theme: ChalkTheme) {
     document.documentElement.style.setProperty('--chalk-theme-color-light', theme.lightColor);
 }
 
+/** Localized display name for a chalk theme. `name` stays as English fallback
+ *  data; this is what the user sees. Keyed by the stable theme id. */
+export function themeLabel(id: string): string {
+    return t(`theme.${id}` as MsgKey);
+}
+
 /** O(1) theme lookup by ID — avoids repeated .find() across components */
-const THEME_MAP = new Map(CHALK_THEMES.map(t => [t.id, t]));
+const THEME_MAP = new Map(CHALK_THEMES.map(th => [th.id, th]));
 export function getThemeColor(id?: string): string | undefined {
     return id ? THEME_MAP.get(id)?.color : undefined;
 }
@@ -74,9 +82,9 @@ export function getThemeColor(id?: string): string | undefined {
  *  that follows the app theme (leaderboard rows, profile name, …). */
 export function getThemeDisplayColor(id?: string): string | undefined {
     if (!id) return undefined;
-    const t = THEME_MAP.get(id);
-    if (!t) return undefined;
+    const th = THEME_MAP.get(id);
+    if (!th) return undefined;
     const isLight = typeof document !== 'undefined'
         && document.documentElement.getAttribute('data-theme') === 'light';
-    return isLight ? t.lightColor : t.color;
+    return isLight ? th.lightColor : th.color;
 }

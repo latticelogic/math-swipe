@@ -16,10 +16,11 @@ import { memo, useState, useEffect, type ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import { collection, query, where, limit, getDoc, getDocs, doc } from 'firebase/firestore';
 import { getFirebase } from '../utils/firebase';
-import { getRank, getMastery } from '../domains/math/ranks';
-import { getTeacher } from '../domains/math/teachers';
+import { getRank, getMastery, rankLabel } from '../domains/math/ranks';
+import { getTeacher, teacherName } from '../domains/math/teachers';
 import { getThemeDisplayColor } from '../utils/chalkThemes';
 import { AchievementBadge } from './AchievementBadge';
+import { achName, achDesc } from '../domains/math/mathAchievements';
 import { RankIcon } from './RankIcon';
 import { EVERY_ACHIEVEMENT } from '../utils/achievements';
 import { opponentChallengeSeed } from '../utils/dailyChallenge';
@@ -223,7 +224,7 @@ export const ProfilePage = memo(function ProfilePage({ slug, onChallenge, onBack
                     {profile.displayName}
                 </h1>
                 <div className="text-xs ui text-[rgb(var(--color-fg))]/50 mb-1">
-                    {t('profile.taughtBy', { name: teacher.name })}
+                    {t('profile.taughtBy', { name: teacherName(teacher.id) })}
                 </div>
             </motion.div>
 
@@ -235,7 +236,7 @@ export const ProfilePage = memo(function ProfilePage({ slug, onChallenge, onBack
                 transition={{ delay: 0.1 }}
             >
                 <span className="text-[var(--color-gold)]"><RankIcon rank={rank.name} size={18} /></span>
-                <span className="chalk text-[var(--color-gold)]">{rank.name}</span>
+                <span className="chalk text-[var(--color-gold)]">{rankLabel(rank)}</span>
                 {mastery && (
                     <span className="chalk text-[var(--color-skull)] border-l border-[var(--color-gold)]/30 pl-2 ml-1">
                         {t('profile.masteryPill', { level: mastery.level })}
@@ -316,8 +317,8 @@ export const ProfilePage = memo(function ProfilePage({ slug, onChallenge, onBack
                                 key={a.id}
                                 achievementId={a.id}
                                 unlocked
-                                name={a.name}
-                                desc={a.desc}
+                                name={achName(a.id)}
+                                desc={achDesc(a.id)}
                             />
                         ))}
                     </div>
