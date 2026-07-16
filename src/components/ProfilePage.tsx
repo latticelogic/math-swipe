@@ -26,6 +26,7 @@ import { opponentChallengeSeed } from '../utils/dailyChallenge';
 import { parseProfileSlug } from '../utils/profileSlug';
 import { lookupUidBySlug } from '../utils/username';
 import { formatTime } from '../utils/formatTime';
+import { t } from '../i18n';
 
 interface ProfileData {
     uid: string;
@@ -82,7 +83,7 @@ export const ProfilePage = memo(function ProfilePage({ slug, onChallenge, onBack
             // Synchronous failure path — the slug is malformed before we even
             // hit Firestore. Lint rule mis-classifies this; treat as edge.
             // eslint-disable-next-line react-hooks/set-state-in-effect
-            setError('Invalid profile link.');
+            setError(t('profile.errInvalid'));
             setLoading(false);
             return;
         }
@@ -100,14 +101,14 @@ export const ProfilePage = memo(function ProfilePage({ slug, onChallenge, onBack
                     const uid = await lookupUidBySlug(parsed.handle);
                     if (cancelled) return;
                     if (!uid) {
-                        setError(`No player found for "@${parsed.handle}".`);
+                        setError(t('profile.errNoHandle', { handle: parsed.handle }));
                         setLoading(false);
                         return;
                     }
                     const userSnap = await getDoc(doc(db, 'users', uid));
                     if (cancelled) return;
                     if (!userSnap.exists()) {
-                        setError(`No player found for "@${parsed.handle}".`);
+                        setError(t('profile.errNoHandle', { handle: parsed.handle }));
                         setLoading(false);
                         return;
                     }
@@ -127,13 +128,13 @@ export const ProfilePage = memo(function ProfilePage({ slug, onChallenge, onBack
                 const snap = await getDocs(q);
                 if (cancelled) return;
                 if (snap.empty) {
-                    setError(`No player found for "${parsed.name}".`);
+                    setError(t('profile.errNoName', { name: parsed.name }));
                     setLoading(false);
                     return;
                 }
                 const match = snap.docs.find(d => d.id.toLowerCase().startsWith(parsed.uidPrefix));
                 if (!match) {
-                    setError(`No player matches that link.`);
+                    setError(t('profile.errNoMatch'));
                     setLoading(false);
                     return;
                 }
@@ -142,7 +143,7 @@ export const ProfilePage = memo(function ProfilePage({ slug, onChallenge, onBack
             } catch (err) {
                 if (cancelled) return;
                 console.warn('Profile load failed:', err);
-                setError('Couldn\'t load profile. Try again later.');
+                setError(t('profile.errLoad'));
                 setLoading(false);
             }
         })();
@@ -157,7 +158,7 @@ export const ProfilePage = memo(function ProfilePage({ slug, onChallenge, onBack
                     animate={{ opacity: [0.3, 1, 0.3] }}
                     transition={{ duration: 1.5, repeat: Infinity }}
                 >
-                    Loading profile…
+                    {t('profile.loading')}
                 </motion.div>
             </div>
         );
@@ -171,13 +172,13 @@ export const ProfilePage = memo(function ProfilePage({ slug, onChallenge, onBack
                     <circle cx="10" cy="10" r="6" />
                     <line x1="14.5" y1="14.5" x2="20" y2="20" />
                 </svg>
-                <div className="chalk text-xl text-[var(--color-gold)]">Profile not found</div>
+                <div className="chalk text-xl text-[var(--color-gold)]">{t('profile.notFound')}</div>
                 <p className="text-sm ui text-[rgb(var(--color-fg))]/50 max-w-xs">{error}</p>
                 <button
                     onClick={onBackToGame}
                     className="mt-4 px-6 py-2.5 rounded-xl border border-[var(--color-gold)]/30 text-sm ui text-[var(--color-gold)] hover:bg-[var(--color-gold)]/10 transition-colors"
                 >
-                    ← Back to game
+                    ← {t('profile.backToGame')}
                 </button>
             </div>
         );
@@ -203,10 +204,10 @@ export const ProfilePage = memo(function ProfilePage({ slug, onChallenge, onBack
         <div className="flex-1 flex flex-col items-center overflow-y-auto px-6 pt-[calc(env(safe-area-inset-top,16px)+24px)] pb-20">
             <button
                 onClick={onBackToGame}
-                aria-label="Back to game"
+                aria-label={t('profile.backToGame')}
                 className="self-start text-xs ui text-[rgb(var(--color-fg))]/40 hover:text-[rgb(var(--color-fg))]/70 transition-colors mb-4"
             >
-                ← Back
+                ← {t('me.back')}
             </button>
 
             {/* Hero: teacher portrait + name in their chalk colour */}
@@ -222,7 +223,7 @@ export const ProfilePage = memo(function ProfilePage({ slug, onChallenge, onBack
                     {profile.displayName}
                 </h1>
                 <div className="text-xs ui text-[rgb(var(--color-fg))]/50 mb-1">
-                    Taught by {teacher.name}
+                    {t('profile.taughtBy', { name: teacher.name })}
                 </div>
             </motion.div>
 
@@ -237,7 +238,7 @@ export const ProfilePage = memo(function ProfilePage({ slug, onChallenge, onBack
                 <span className="chalk text-[var(--color-gold)]">{rank.name}</span>
                 {mastery && (
                     <span className="chalk text-[var(--color-skull)] border-l border-[var(--color-gold)]/30 pl-2 ml-1">
-                        Mastery {mastery.level}
+                        {t('profile.masteryPill', { level: mastery.level })}
                     </span>
                 )}
             </motion.div>
@@ -254,7 +255,7 @@ export const ProfilePage = memo(function ProfilePage({ slug, onChallenge, onBack
                         />
                     </div>
                     <div className="text-[10px] ui text-[rgb(var(--color-fg))]/40 mt-1.5 text-center">
-                        {profile.totalXP.toLocaleString()} / {nextRank.xp.toLocaleString()} XP
+                        {t('profile.xpProgress', { xp: profile.totalXP.toLocaleString(), next: nextRank.xp.toLocaleString() })}
                     </div>
                 </div>
             ) : mastery && (
@@ -268,7 +269,7 @@ export const ProfilePage = memo(function ProfilePage({ slug, onChallenge, onBack
                         />
                     </div>
                     <div className="text-[10px] ui text-[rgb(var(--color-fg))]/40 mt-1.5 text-center">
-                        {profile.totalXP.toLocaleString()} XP · Mastery Lv. {mastery.level + 1} at {mastery.xpForNext.toLocaleString()}
+                        {t('profile.masteryProgress', { xp: profile.totalXP.toLocaleString(), level: mastery.level + 1, next: mastery.xpForNext.toLocaleString() })}
                     </div>
                 </div>
             )}
@@ -276,24 +277,24 @@ export const ProfilePage = memo(function ProfilePage({ slug, onChallenge, onBack
             {/* Core stats */}
             <div className="grid grid-cols-2 gap-x-8 gap-y-4 mt-8 mb-2">
                 <Stat
-                    label={<><StatIcon>{/* check — replaces ✅ */}<path d="M5 12 l4 4 l10 -10" /></StatIcon><span>solved</span></>}
+                    label={<><StatIcon>{/* check — replaces ✅ */}<path d="M5 12 l4 4 l10 -10" /></StatIcon><span>{t('me.statSolved')}</span></>}
                     value={profile.totalSolved.toLocaleString()}
                     color="rgba(var(--color-fg), 0.85)"
                 />
                 <Stat
-                    label={<><StatIcon>{/* target — replaces 🎯 */}<circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="4" /><circle cx="12" cy="12" r="0.5" /></StatIcon><span>accuracy</span></>}
+                    label={<><StatIcon>{/* target — replaces 🎯 */}<circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="4" /><circle cx="12" cy="12" r="0.5" /></StatIcon><span>{t('me.statAccuracy')}</span></>}
                     value={`${profile.accuracy}%`}
                     color="var(--color-correct)"
                 />
                 <Stat
-                    label={<><StatIcon>{/* flame — replaces 🔥 */}<path d="M12 3 C 12 8 7 9 7 14 C 7 18 9 21 12 21 C 15 21 17 18 17 14 C 17 11 14 10 14 7 C 13 8.5 12.5 9 12 3 Z" /></StatIcon><span>best streak</span></>}
+                    label={<><StatIcon>{/* flame — replaces 🔥 */}<path d="M12 3 C 12 8 7 9 7 14 C 7 18 9 21 12 21 C 15 21 17 18 17 14 C 17 11 14 10 14 7 C 13 8.5 12.5 9 12 3 Z" /></StatIcon><span>{t('summary.bestStreak')}</span></>}
                     value={profile.bestStreak.toString()}
                     color="var(--color-streak-fire)"
                 />
                 <Stat
                     label={<>
                         <StatIcon>{/* stopwatch — replaces ⏱️ */}<circle cx="12" cy="14" r="7" /><line x1="12" y1="14" x2="15" y2="11" /><line x1="10" y1="2" x2="14" y2="2" /><line x1="12" y1="2" x2="12" y2="5" /></StatIcon>
-                        <span>speedrun</span>
+                        <span>{t('profile.statSpeedrun')}</span>
                         {profile.speedrunHardMode && (
                             <StatIcon>{/* skull — replaces 💀 */}<path d="M20 11 C 20 6.6 16.4 4 12 4 C 7.6 4 4 6.6 4 11 C 4 13.5 5.2 14.8 6 15.5 L 6 18 C 6 19 6.5 19.5 7.5 19.5 L 16.5 19.5 C 17.5 19.5 18 19 18 18 L 18 15.5 C 18.8 14.8 20 13.5 20 11 Z" /><circle cx="9" cy="12" r="1.5" /><circle cx="15" cy="12" r="1.5" /><line x1="10" y1="19.5" x2="10" y2="16.5" /><line x1="12" y1="19.5" x2="12" y2="16.5" /><line x1="14" y1="19.5" x2="14" y2="16.5" /></StatIcon>
                         )}
@@ -307,7 +308,7 @@ export const ProfilePage = memo(function ProfilePage({ slug, onChallenge, onBack
             {trophies.length > 0 && (
                 <div className="mt-8 w-full max-w-sm">
                     <div className="text-xs ui text-[rgb(var(--color-fg))]/40 uppercase tracking-widest text-center mb-3">
-                        recent trophies
+                        {t('profile.recentTrophies')}
                     </div>
                     <div className="grid grid-cols-4 gap-3 justify-items-center">
                         {trophies.map(a => a && (
@@ -331,7 +332,7 @@ export const ProfilePage = memo(function ProfilePage({ slug, onChallenge, onBack
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
-                aria-label={`Challenge ${profile.displayName}`}
+                aria-label={t('profile.challengeCta', { name: profile.displayName })}
             >
                 {/* Crossed swords — hand-drawn, replaces ⚔️ emoji */}
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -340,7 +341,9 @@ export const ProfilePage = memo(function ProfilePage({ slug, onChallenge, onBack
                     <line x1="11" y1="17" x2="13" y2="19" />
                     <line x1="13" y1="17" x2="11" y2="19" />
                 </svg>
-                <span>Challenge {profile.displayName}{raceTime ? ` · beat ${formatTime(raceTime)}` : ''}</span>
+                <span>{raceTime
+                    ? t('profile.challengeCtaBeat', { name: profile.displayName, time: formatTime(raceTime) })
+                    : t('profile.challengeCta', { name: profile.displayName })}</span>
             </motion.button>
 
             {/* Receiver-conversion CTA — the visitor is at peak intent here
@@ -350,10 +353,10 @@ export const ProfilePage = memo(function ProfilePage({ slug, onChallenge, onBack
                 onClick={onBackToGame}
                 className="mt-4 px-7 py-2.5 rounded-2xl border border-[var(--color-chalk)]/30 text-[rgb(var(--color-fg))]/75 ui text-sm active:scale-95 transition-all"
             >
-                Start your own — it's free
+                {t('profile.startOwn')}
             </button>
             <span className="mt-1.5 text-[10px] ui text-[rgb(var(--color-fg))]/35">
-                Same daily set as {profile.displayName}. Your streak saves as you go.
+                {t('profile.sameDailyHint', { name: profile.displayName })}
             </span>
         </div>
     );

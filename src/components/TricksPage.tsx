@@ -5,6 +5,7 @@ import { TrickLesson } from './TrickLesson';
 import { loadMastered } from './TrickPractice';
 import { MathExpr } from './MathExpr';
 import { TrickIcon } from './TrickIcon';
+import { t } from '../i18n';
 
 interface Props {
     onLessonActive: (active: boolean) => void;
@@ -74,9 +75,9 @@ export function TricksPage({ onLessonActive, hasPro = true, onProLocked }: Props
             className="flex-1 flex flex-col pt-[max(env(safe-area-inset-top,12px),12px)] px-4 pb-24 overflow-y-auto"
         >
             <div className="text-center mb-5">
-                <h1 className="text-3xl chalk text-[var(--color-gold)] mb-1">Magic School</h1>
+                <h1 className="text-3xl chalk text-[var(--color-gold)] mb-1">{t('magic.title')}</h1>
                 <p className="text-xs ui text-[rgb(var(--color-fg))]/50">
-                    Master mental math shortcuts · <span className="text-[var(--color-gold)]">{masteredCount}/{MAGIC_TRICKS.length}</span>
+                    {t('magic.subtitle')} · <span className="text-[var(--color-gold)]">{masteredCount}/{MAGIC_TRICKS.length}</span>
                 </p>
             </div>
 
@@ -92,7 +93,7 @@ export function TricksPage({ onLessonActive, hasPro = true, onProLocked }: Props
                         <TrickIcon id={recommended.id} size={28} />
                     </div>
                     <div className="flex-1 min-w-0">
-                        <div className="text-[10px] ui text-[var(--color-gold)]/60 mb-0.5">Recommended for you</div>
+                        <div className="text-[10px] ui text-[var(--color-gold)]/60 mb-0.5">{t('magic.recommended')}</div>
                         <div className="text-sm chalk text-[rgb(var(--color-fg))]/90 group-hover:text-[var(--color-gold)] transition-colors truncate">
                             {recommended.title}
                         </div>
@@ -136,7 +137,7 @@ export function TricksPage({ onLessonActive, hasPro = true, onProLocked }: Props
                                 </div>
                                 <div className="flex-1 text-left">
                                     <div className="text-sm chalk text-[rgb(var(--color-fg))]/70">{cat.label}</div>
-                                    <div className="text-[9px] ui text-[rgb(var(--color-fg))]/30">{catMastered}/{tricks.length} mastered</div>
+                                    <div className="text-[9px] ui text-[rgb(var(--color-fg))]/30">{t('magic.catMastered', { mastered: catMastered, total: tricks.length })}</div>
                                 </div>
                                 {/* Chevron */}
                                 <motion.div
@@ -189,12 +190,12 @@ export function TricksPage({ onLessonActive, hasPro = true, onProLocked }: Props
                                                                 </p>
                                                             </div>
                                                             {locked ? (
-                                                                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="var(--color-gold)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="opacity-70 shrink-0" aria-label="Pro — unlock"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 018 0v4" /></svg>
+                                                                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="var(--color-gold)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="opacity-70 shrink-0" aria-label={t('magic.proUnlockAria')}><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 018 0v4" /></svg>
                                                             ) : isMastered ? (
-                                                                <div className="text-[var(--color-gold)] text-base" title="Mastered">✓</div>
+                                                                <div className="text-[var(--color-gold)] text-base" title={t('magic.masteredTitle')}>✓</div>
                                                             ) : (
                                                                 <div className="ui text-[9px] font-semibold px-1.5 py-0.5 rounded bg-[var(--color-gold)]/10 text-[var(--color-gold)]/70">
-                                                                    Lv.{trick.difficulty}
+                                                                    {t('magic.levelShort', { level: trick.difficulty })}
                                                                 </div>
                                                             )}
                                                         </motion.button>
@@ -216,7 +217,7 @@ export function TricksPage({ onLessonActive, hasPro = true, onProLocked }: Props
                                                                         }
                                                                     </div>
                                                                     <div className="text-[11px] ui text-[rgb(var(--color-fg))]/50 leading-relaxed">{trick.lesson.steps[0]}</div>
-                                                                    <div className="text-[9px] ui text-[rgb(var(--color-fg))]/25 mt-2">Tap to dismiss · Tap card to start lesson</div>
+                                                                    <div className="text-[9px] ui text-[rgb(var(--color-fg))]/25 mt-2">{t('magic.previewHint')}</div>
                                                                 </motion.div>
                                                             )}
                                                         </AnimatePresence>

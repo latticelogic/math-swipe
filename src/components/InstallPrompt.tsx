@@ -37,6 +37,7 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { safeGetItem, safeSetItem } from '../utils/safeStorage';
+import { t } from '../i18n';
 
 const DISMISS_KEY = 'math-swipe-install-dismissed';
 
@@ -147,14 +148,14 @@ export function InstallPill() {
                         <path d="M7 10 L 12 15 L 17 10" />
                         <path d="M5 19 L 19 19" />
                     </svg>
-                    <span>Install app</span>
+                    <span>{t('install.pill')}</span>
                 </button>
                 <button
                     onClick={permanentlyDismiss}
                     className="text-[10px] ui text-[rgb(var(--color-fg))]/25 hover:text-[rgb(var(--color-fg))]/45 transition-colors"
-                    aria-label="Hide install prompt"
+                    aria-label={t('install.hideAria')}
                 >
-                    not now
+                    {t('install.notNow')}
                 </button>
             </div>
 
@@ -196,20 +197,19 @@ export function InstallInstructionsModal({ open, onClose }: InstallInstructionsM
                         transition={{ duration: 0.22 }}
                     >
                         <h2 id="install-modal-title" className="text-xl chalk text-[var(--color-gold)] mb-1">
-                            Install Math Challenge
+                            {t('install.modalTitle')}
                         </h2>
                         <p className="text-xs ui text-[rgb(var(--color-fg))]/50 mb-5">
-                            Two taps in Safari. Adds an icon to your home screen.
+                            {t('install.modalSub')}
                         </p>
 
                         <Step number={1}>
-                            Tap the <strong className="text-[var(--color-gold)]">Share</strong> icon
-                            at the bottom of Safari.
+                            {t('install.step1')}
                             <ShareIcon />
                         </Step>
 
                         <Step number={2}>
-                            Scroll down and tap <strong className="text-[var(--color-gold)]">Add to Home Screen</strong>.
+                            {t('install.step2')}
                             <AddIcon />
                         </Step>
 
@@ -217,7 +217,7 @@ export function InstallInstructionsModal({ open, onClose }: InstallInstructionsM
                             onClick={onClose}
                             className="w-full mt-2 py-2.5 rounded-xl bg-[var(--color-gold)]/15 border border-[var(--color-gold)]/30 text-sm ui font-semibold text-[var(--color-gold)] hover:bg-[var(--color-gold)]/25 transition-colors active:scale-[0.98]"
                         >
-                            Got it
+                            {t('common.gotIt')}
                         </button>
                     </motion.div>
                 </>
@@ -333,21 +333,21 @@ export function IosSessionEndPrompt({ visible }: IosSessionEndPromptProps) {
                 </svg>
                 <div className="flex-1 min-w-0 text-left">
                     <div className="text-[11px] ui text-[var(--color-gold)]/90 leading-tight">
-                        Save to your home screen
+                        {t('install.sessionTitle')}
                     </div>
                     <div className="text-[9px] ui text-[rgb(var(--color-fg))]/40 leading-tight mt-0.5">
-                        Keep your streak alive — one tap to open next time.
+                        {t('install.sessionSub')}
                     </div>
                 </div>
                 <button
                     onClick={() => setModalOpen(true)}
                     className="shrink-0 text-[10px] ui font-semibold text-[var(--color-gold)] px-2 py-1 rounded-lg bg-[var(--color-gold)]/10 hover:bg-[var(--color-gold)]/20 transition-colors active:scale-95"
                 >
-                    Show me
+                    {t('install.showMe')}
                 </button>
                 <button
                     onClick={dismiss}
-                    aria-label="Dismiss install prompt"
+                    aria-label={t('install.dismissAria')}
                     className="shrink-0 text-[rgb(var(--color-fg))]/25 hover:text-[rgb(var(--color-fg))]/50 transition-colors"
                 >
                     <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>

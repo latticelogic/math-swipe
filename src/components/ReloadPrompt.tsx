@@ -1,5 +1,6 @@
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { t } from '../i18n';
 
 interface ReloadPromptProps {
     /** When true (e.g. user is mid-game), the toast is hidden until they navigate away */
@@ -47,15 +48,15 @@ export function ReloadPrompt({ suppress = false }: ReloadPromptProps) {
                         <path d="M12 3 L 13.5 10.5 L 21 12 L 13.5 13.5 L 12 21 L 10.5 13.5 L 3 12 L 10.5 10.5 Z" />
                     </svg>
                     <div className="flex-1 min-w-0">
-                        <div className="text-xs ui text-[rgb(var(--color-fg))]/60">New version available</div>
-                        <div className="text-sm chalk text-[var(--color-chalk)]">Tap update to get the latest.</div>
+                        <div className="text-xs ui text-[rgb(var(--color-fg))]/60">{t('reload.title')}</div>
+                        <div className="text-sm chalk text-[var(--color-chalk)]">{t('reload.body')}</div>
                     </div>
                     <div className="flex gap-2">
                         <button
                             onClick={close}
                             className="text-xs ui text-[rgb(var(--color-fg))]/40 px-2 py-1 rounded-lg active:bg-white/5 transition-colors"
                         >
-                            Later
+                            {t('common.later')}
                         </button>
                         <button
                             onClick={() => {
@@ -65,7 +66,7 @@ export function ReloadPrompt({ suppress = false }: ReloadPromptProps) {
                             }}
                             className="text-xs ui font-semibold text-[var(--color-gold)] bg-[var(--color-gold)]/10 px-3 py-1 rounded-lg active:bg-[var(--color-gold)]/20 transition-colors"
                         >
-                            Update
+                            {t('reload.update')}
                         </button>
                     </div>
                 </motion.div>

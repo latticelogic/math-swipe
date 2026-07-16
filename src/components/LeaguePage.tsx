@@ -5,6 +5,7 @@ import { getFirebase } from '../utils/firebase';
 import { getThemeDisplayColor } from '../utils/chalkThemes';
 import { COSTUMES } from '../utils/costumes';
 import { formatTime } from '../utils/formatTime';
+import { t } from '../i18n';
 
 interface LeaderboardEntry {
     uid: string;
@@ -79,7 +80,7 @@ export const LeaguePage = memo(function LeaguePage({ userXP, userStreak, uid, di
                 }
                 const name = selectedPlayer.displayName;
                 setSelectedPlayer(null);
-                setPingSuccess(`Pinged ${name}!`);
+                setPingSuccess(t('league.pingedToast', { name }));
                 pingSuccessTimer.current = setTimeout(() => setPingSuccess(''), 3000);
             } catch {
                 setSelectedPlayer(null);
@@ -148,7 +149,7 @@ export const LeaguePage = memo(function LeaguePage({ userXP, userStreak, uid, di
         const userIdx = uid ? list.findIndex(e => e.uid === uid) : -1;
         if (userIdx === -1 && uid) {
             list.push({
-                uid, displayName: displayName || 'You', totalXP: userXP, bestStreak: userStreak,
+                uid, displayName: displayName || t('common.you'), totalXP: userXP, bestStreak: userStreak,
                 activeThemeId, activeCostume, bestSpeedrunTime: bestSpeedrunTime || 0,
             });
         } else if (userIdx >= 0) {
@@ -171,7 +172,7 @@ export const LeaguePage = memo(function LeaguePage({ userXP, userStreak, uid, di
         const userInList = uid ? list.find(e => e.uid === uid) : null;
         if (!userInList && uid && bestSpeedrunTime && bestSpeedrunTime > 0) {
             list.push({
-                uid, displayName: displayName || 'You', totalXP: userXP, bestStreak: userStreak,
+                uid, displayName: displayName || t('common.you'), totalXP: userXP, bestStreak: userStreak,
                 activeThemeId, activeCostume, bestSpeedrunTime,
             });
         } else if (userInList && bestSpeedrunTime) {
@@ -193,8 +194,8 @@ export const LeaguePage = memo(function LeaguePage({ userXP, userStreak, uid, di
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
             >
-                <h2 className="text-3xl chalk text-[var(--color-gold)] mb-1">League</h2>
-                <p className="text-xs ui text-[rgb(var(--color-fg))]/30">Global leaderboard</p>
+                <h2 className="text-3xl chalk text-[var(--color-gold)] mb-1">{t('league.title')}</h2>
+                <p className="text-xs ui text-[rgb(var(--color-fg))]/30">{t('league.subtitle')}</p>
             </motion.div>
 
             {/* Tab Toggle */}
@@ -210,7 +211,7 @@ export const LeaguePage = memo(function LeaguePage({ userXP, userStreak, uid, di
                     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                         <path d="M13 2 L 4 14 L 11 14 L 11 22 L 20 10 L 13 10 Z" />
                     </svg>
-                    Score
+                    {t('league.tabScore')}
                 </button>
                 <button
                     onClick={() => setTab('speedrun')}
@@ -226,7 +227,7 @@ export const LeaguePage = memo(function LeaguePage({ userXP, userStreak, uid, di
                         <line x1="10" y1="2" x2="14" y2="2" />
                         <line x1="12" y1="2" x2="12" y2="5" />
                     </svg>
-                    Speedrun
+                    {t('game.mode.speedrun')}
                 </button>
             </div>
 
@@ -247,7 +248,7 @@ export const LeaguePage = memo(function LeaguePage({ userXP, userStreak, uid, di
                             <line x1="10" y1="2" x2="14" y2="2" />
                             <line x1="12" y1="2" x2="12" y2="5" />
                         </svg>
-                        <span>Start Speedrun (10 Questions)</span>
+                        <span>{t('league.startSpeedrun', { count: 10 })}</span>
                     </span>
                 </motion.button>
             )}
@@ -255,10 +256,10 @@ export const LeaguePage = memo(function LeaguePage({ userXP, userStreak, uid, di
             {/* Your best time badge */}
             {tab === 'speedrun' && bestSpeedrunTime != null && bestSpeedrunTime > 0 && (
                 <div className="text-xs ui text-[rgb(var(--color-fg))]/40 mb-3 flex items-center justify-center gap-1">
-                    <span>Your best: <span className="text-[var(--color-speedrun)] font-semibold">{formatTime(bestSpeedrunTime)}</span></span>
+                    <span>{t('league.yourBest', { time: formatTime(bestSpeedrunTime) })}</span>
                     {speedrunHardMode && (
                         // Skull — hand-drawn, replaces 💀 hard-mode emoji
-                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-label="Hard Mode">
+                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-label={t('league.hardModeAria')}>
                             <path d="M20 11 C 20 6.6 16.4 4 12 4 C 7.6 4 4 6.6 4 11 C 4 13.5 5.2 14.8 6 15.5 L 6 18 C 6 19 6.5 19.5 7.5 19.5 L 16.5 19.5 C 17.5 19.5 18 19 18 18 L 18 15.5 C 18.8 14.8 20 13.5 20 11 Z" />
                             <circle cx="9" cy="12" r="1.5" />
                             <circle cx="15" cy="12" r="1.5" />
@@ -278,7 +279,7 @@ export const LeaguePage = memo(function LeaguePage({ userXP, userStreak, uid, di
                         animate={{ opacity: [0.3, 1, 0.3] }}
                         transition={{ duration: 1.5, repeat: Infinity }}
                     >
-                        Loading leaderboard...
+                        {t('league.loading')}
                     </motion.div>
                 </div>
             )}
@@ -288,8 +289,8 @@ export const LeaguePage = memo(function LeaguePage({ userXP, userStreak, uid, di
                 <div className="text-sm ui text-[rgb(var(--color-fg))]/30 mt-8 text-center flex items-center justify-center gap-1.5">
                     <span>
                         {tab === 'speedrun'
-                            ? 'No speedrun times yet. Be the first!'
-                            : 'No players yet. Be the first!'}
+                            ? t('league.emptySpeedrun')
+                            : t('league.emptyScore')}
                     </span>
                     {tab === 'speedrun' ? (
                         // Stopwatch — hand-drawn, replaces ⏱️ emoji
@@ -343,20 +344,20 @@ export const LeaguePage = memo(function LeaguePage({ userXP, userStreak, uid, di
                                     }`}>
                                     {entry.rank === 1 ? (
                                         // Crown
-                                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-label="1st place">
+                                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-label={t('league.place1Aria')}>
                                             <path d="M3 18 L 5 8 L 9 12 L 12 6 L 15 12 L 19 8 L 21 18 Z" />
                                             <line x1="3" y1="20.5" x2="21" y2="20.5" />
                                         </svg>
                                     ) : entry.rank === 2 ? (
                                         // Medal — circle on ribbon
-                                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-label="2nd place">
+                                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-label={t('league.place2Aria')}>
                                             <path d="M8 3 L 10 9" />
                                             <path d="M16 3 L 14 9" />
                                             <circle cx="12" cy="15" r="6" />
                                         </svg>
                                     ) : entry.rank === 3 ? (
                                         // Flame
-                                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-label="3rd place">
+                                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-label={t('league.place3Aria')}>
                                             <path d="M12 21 C 6 21 4 16 6 12 C 7 14 8 14 9 13 C 8 9 10 5 12 3 C 12 7 15 8 16 11 C 17 9 18 9 18 11 C 20 15 18 21 12 21 Z" />
                                         </svg>
                                     ) : entry.rank}
@@ -369,7 +370,7 @@ export const LeaguePage = memo(function LeaguePage({ userXP, userStreak, uid, di
                                         style={entry.activeThemeId ? { color: getThemeDisplayColor(entry.activeThemeId) } : undefined}
                                     >
                                         {entry.displayName}
-                                        {entry.isYou && <span className="ml-1 text-xs opacity-50" style={{ color: 'rgb(var(--color-fg))' }}>(you)</span>}
+                                        {entry.isYou && <span className="ml-1 text-xs opacity-50" style={{ color: 'rgb(var(--color-fg))' }}>{t('league.youTag')}</span>}
                                     </div>
                                     {entry.activeCostume && COSTUMES[entry.activeCostume] && (
                                         <svg viewBox="0 0 100 160" className="w-[14px] h-[22px] flex-shrink-0" style={{ color: getThemeDisplayColor(entry.activeThemeId) || 'var(--color-chalk)' }}>
@@ -402,7 +403,7 @@ export const LeaguePage = memo(function LeaguePage({ userXP, userStreak, uid, di
                                         <div className={`text-sm ui font-semibold tabular-nums ${entry.isYou ? 'text-[var(--color-speedrun)]' : 'text-[var(--color-speedrun)]/70'}`}>
                                             {entry.bestSpeedrunTime ? formatTime(entry.bestSpeedrunTime) : '—'}
                                         </div>
-                                        <div className="text-[9px] ui text-[rgb(var(--color-fg))]/20">time</div>
+                                        <div className="text-[9px] ui text-[rgb(var(--color-fg))]/20">{t('league.timeLabel')}</div>
                                     </div>
                                 )}
                             </motion.div>
@@ -450,7 +451,7 @@ export const LeaguePage = memo(function LeaguePage({ userXP, userStreak, uid, di
                                     >
                                         {selectedPlayer.displayName}
                                     </h3>
-                                    <p className="text-xs ui text-[rgb(var(--color-fg))]/40">Rank #{selectedPlayer.rank} • {selectedPlayer.totalXP.toLocaleString()} XP</p>
+                                    <p className="text-xs ui text-[rgb(var(--color-fg))]/40">{t('league.playerMeta', { rank: selectedPlayer.rank ?? 0, xp: selectedPlayer.totalXP.toLocaleString() })}</p>
                                 </div>
                             </div>
 
@@ -466,7 +467,7 @@ export const LeaguePage = memo(function LeaguePage({ userXP, userStreak, uid, di
                                         <line x1="11" y1="17" x2="13" y2="19" />
                                         <line x1="13" y1="17" x2="11" y2="19" />
                                     </svg>
-                                    Ghost Race
+                                    {t('league.ghostRace')}
                                 </button>
                                 <button
                                     onClick={() => handleAction('ping')}
@@ -478,7 +479,7 @@ export const LeaguePage = memo(function LeaguePage({ userXP, userStreak, uid, di
                                         <path d="M10.5 21 C 11 21.5 13 21.5 13.5 21" />
                                         <line x1="12" y1="5" x2="12" y2="8" />
                                     </svg>
-                                    Ping Player
+                                    {t('league.pingPlayer')}
                                 </button>
                             </div>
                         </motion.div>

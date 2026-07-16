@@ -6,6 +6,7 @@
  */
 
 import { motion } from 'framer-motion';
+import { t } from '../i18n';
 
 export function PersonalBestRibbon({ streak }: { streak: number }) {
     return (
@@ -35,10 +36,10 @@ export function PersonalBestRibbon({ streak }: { streak: number }) {
             </svg>
 
             <div className="mt-1 text-base chalk text-[var(--color-gold)] whitespace-nowrap">
-                New personal best
+                {t('pb.title')}
             </div>
             <div className="text-xs ui text-[rgb(var(--color-fg))]/70 whitespace-nowrap">
-                {streak === 1 ? 'Your best yet' : `${streak} in a row`}
+                {streak === 1 ? t('pb.first') : t('pb.inARow', { streak })}
             </div>
         </motion.div>
     );

@@ -10,7 +10,7 @@
  */
 
 import { useState } from 'react';
-import { shortDateLabel } from '../i18n';
+import { shortDateLabel, t } from '../i18n';
 
 const CELLS = 21; // 3 weeks
 
@@ -67,9 +67,9 @@ export function StreakGarden({
     const selLabel = sel
         ? (() => {
             const dateLabel = shortDateLabel(new Date(`${sel.key}T12:00:00`));
-            if (!sel.entry || sel.entry.solved === 0) return `${dateLabel} — no play`;
+            if (!sel.entry || sel.entry.solved === 0) return t('streak.dayNoPlay', { date: dateLabel });
             const acc = Math.round((sel.entry.correct / sel.entry.solved) * 100);
-            return `${dateLabel} — ${sel.entry.solved} solved · ${acc}% · +${sel.entry.xp} points`;
+            return t('streak.dayDetail', { date: dateLabel, solved: sel.entry.solved, acc, xp: sel.entry.xp });
         })()
         : null;
 

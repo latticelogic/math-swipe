@@ -1,5 +1,6 @@
 import { memo } from 'react';
 import { motion } from 'framer-motion';
+import { t } from '../i18n';
 
 /**
  * Quiet one-per-day moment when the player gets their first correct answer
@@ -19,10 +20,10 @@ export const DailyFlourish = memo(function DailyFlourish({ dayStreak }: Props) {
     // Pick a copy variant that fits the streak — first-time vs returning vs
     // long-streak. All tone-matched: warm but not childish.
     const label =
-        dayStreak <= 1 ? 'First answer of the day' :
-            dayStreak < 7 ? `Day ${dayStreak} · welcome back` :
-                dayStreak < 30 ? `Day ${dayStreak} · streak strong` :
-                    `Day ${dayStreak} · legendary streak`;
+        dayStreak <= 1 ? t('flourish.firstAnswer') :
+            dayStreak < 7 ? t('flourish.welcomeBack', { day: dayStreak }) :
+                dayStreak < 30 ? t('flourish.streakStrong', { day: dayStreak }) :
+                    t('flourish.legendary', { day: dayStreak });
 
     return (
         <motion.div

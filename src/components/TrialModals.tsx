@@ -279,7 +279,7 @@ export function TrialReminderModal({ uid, status, daysLeft, entitlementLoading, 
                             The CTA button does the price-naming. */}
                         <p className="text-sm ui text-[rgb(var(--color-fg))]/60 mb-5 leading-relaxed">
                             {isMidpoint
-                                ? `Halfway through your trial. If you like it, ${PRICE_USD.toFixed(2)} keeps it.`
+                                ? t('trial.midpointBody', { price: PRICE_LABEL })
                                 : isUrgent
                                     ? t('trial.urgentBody')
                                     : t('trial.calmBody')}

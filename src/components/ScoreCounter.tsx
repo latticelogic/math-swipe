@@ -1,10 +1,6 @@
 import { memo, useState, useEffect, useRef } from 'react';
 import { motion, useSpring, useMotionValueEvent } from 'framer-motion';
-
-/** THE pre-score greeting. Owner call 2026-07-16: no rotation — it always
- *  says "Let's Go!!" (matches the tab's name; the rotating variants read
- *  dubious out of context). */
-const GREETING = "Let's Go!!";
+import { t } from '../i18n';
 
 /**
  * Animated score counter that "rolls" up to the new value.
@@ -37,10 +33,10 @@ export const ScoreCounter = memo(function ScoreCounter({ value }: { value: numbe
             transition={{ duration: 0.3 }}
             role="status"
             aria-live="polite"
-            aria-label={`Score: ${value}`}
+            aria-label={t('hud.score.aria', { value })}
         >
             {value === 0 ? (
-                <span className="text-5xl leading-tight">{GREETING}</span>
+                <span className="text-5xl leading-tight">{t('hud.greeting')}</span>
             ) : display}
         </motion.div>
     );
