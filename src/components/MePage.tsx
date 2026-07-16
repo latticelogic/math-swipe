@@ -13,6 +13,9 @@ import { RANKS, getRank, getMastery } from '../domains/math/ranks';
 import { TrialCountdownChip } from './TrialModals';
 import { SettingsSheet } from './SettingsSheet';
 import { InstallPill } from './InstallPrompt';
+import { RankIcon } from './RankIcon';
+import { TrailIcon } from './TrailIcon';
+import { FlameIcon, TargetIcon, CheckIcon, CalendarIcon, LockIcon } from './icons';
 import { CategoryIcon } from './CategoryIcon';
 import { todayKey } from '../utils/dateKey';
 
@@ -267,7 +270,7 @@ export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCo
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
             >
-                <div className="text-5xl mb-2">{rank.emoji}</div>
+                <div className="mb-2 flex justify-center text-[var(--color-gold)]"><RankIcon rank={rank.name} size={52} /></div>
                 <button
                     onClick={() => setShowRanks(true)}
                     className="text-2xl chalk text-[var(--color-gold)] leading-tight hover:opacity-80 transition-opacity"
@@ -319,25 +322,25 @@ export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCo
                     <div className="text-2xl chalk text-[var(--color-streak-fire)]">
                         {stats.bestStreak}
                     </div>
-                    <div className="text-xs ui text-[rgb(var(--color-fg))]/60">🔥 {t('me.statStreak')}</div>
+                    <div className="text-xs ui text-[rgb(var(--color-fg))]/60 flex items-center justify-center gap-1"><FlameIcon size={12} /> {t('me.statStreak')}</div>
                 </div>
                 <div className="text-center">
                     <div className="text-2xl chalk text-[var(--color-correct)]">
                         {accuracy}%
                     </div>
-                    <div className="text-xs ui text-[rgb(var(--color-fg))]/40">🎯 {t('me.statAccuracy')}</div>
+                    <div className="text-xs ui text-[rgb(var(--color-fg))]/40 flex items-center justify-center gap-1"><TargetIcon size={12} /> {t('me.statAccuracy')}</div>
                 </div>
                 <div className="text-center">
                     <div className="text-2xl chalk text-[rgb(var(--color-fg))]/70">
                         {stats.totalSolved}
                     </div>
-                    <div className="text-xs ui text-[rgb(var(--color-fg))]/40">✅ {t('me.statSolved')}</div>
+                    <div className="text-xs ui text-[rgb(var(--color-fg))]/40 flex items-center justify-center gap-1"><CheckIcon size={12} /> {t('me.statSolved')}</div>
                 </div>
                 <div className="text-center">
                     <div className="text-2xl chalk text-[var(--color-gold)]">
                         {dailyAcc !== null ? `${dailyAcc}%` : '-'}
                     </div>
-                    <div className="text-xs ui text-[rgb(var(--color-fg))]/60">📅 {t('me.statDaily')}</div>
+                    <div className="text-xs ui text-[rgb(var(--color-fg))]/60 flex items-center justify-center gap-1"><CalendarIcon size={12} /> {t('me.statDaily')}</div>
                 </div>
             </div>
 
@@ -401,7 +404,7 @@ export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCo
                                 key={t.id}
                                 onClick={() => isUnlocked && onTeacherChange(t.id)}
                                 disabled={!isUnlocked}
-                                title={isUnlocked ? `${t.name} — ${t.tagline}` : `🔒 ${t.unlock?.reason ?? 'Locked'}`}
+                                title={isUnlocked ? `${t.name} — ${t.tagline}` : (t.unlock?.reason ?? 'Locked')}
                                 aria-label={isUnlocked ? `Pick ${t.name}` : `Locked: ${t.name}`}
                                 className={`relative w-16 h-20 rounded-xl border flex flex-col items-center justify-end px-1 pb-1 transition-all ${isActive
                                     ? 'border-[var(--color-gold)] bg-[var(--color-gold)]/8'
@@ -416,7 +419,7 @@ export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCo
                                     {t.name.replace(/^(Mr\.?|Ms\.?|Dr\.?|Coach) /, '')}
                                 </span>
                                 {!isUnlocked && (
-                                    <span className="absolute top-1 right-1 text-[9px]">🔒</span>
+                                    <span className="absolute top-1 right-1 text-[rgb(var(--color-fg))]/50"><LockIcon size={10} /></span>
                                 )}
                             </button>
                         );
@@ -445,22 +448,21 @@ export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCo
                         const proOk = hasPro || freeTier;
                         const isAvailable = rankOk && hardOk && timedOk && ultimateOk && masteryOk && proOk;
                         const isActive = activeTheme === t.id;
-                        const modeIcon = t.ultimateOnly ? '💀⏱️' : t.hardModeOnly ? '💀' : t.timedModeOnly ? '⏱️' : t.masteryMin ? '✨' : !freeTier ? '✦' : '';
                         const isLight = document.documentElement.getAttribute('data-theme') === 'light';
                         const swatchColor = isLight ? t.lightColor : t.color;
                         return (
                             <button
                                 key={t.id}
                                 onClick={() => { if (isAvailable) onThemeChange(t); else if (!proOk) onRequestPro?.(); }}
-                                title={`${t.name}${modeIcon ? ` ${modeIcon}` : ''}${!isAvailable ? ' (locked)' : ''}`}
+                                title={`${t.name}${!isAvailable ? ' (locked)' : ''}`}
                                 className={`w-8 h-8 rounded-full border-2 transition-all relative ${isActive ? 'border-[var(--color-gold)] scale-110' :
                                     isAvailable ? 'border-[rgb(var(--color-fg))]/20 hover:border-[rgb(var(--color-fg))]/40' :
                                         'border-[rgb(var(--color-fg))]/8 opacity-40 cursor-not-allowed'
                                     }`}
                                 style={{ backgroundColor: swatchColor }}
                             >
-                                {modeIcon && !isAvailable && (
-                                    <span className="absolute -top-1 -right-1 text-[8px]">{modeIcon}</span>
+                                {!isAvailable && (
+                                    <span className="absolute -top-1 -right-1 text-[rgb(var(--color-fg))]/60"><LockIcon size={9} /></span>
                                 )}
                             </button>
                         );
@@ -500,8 +502,8 @@ export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCo
                                             'border-[rgb(var(--color-fg))]/5 opacity-30 cursor-not-allowed bg-[var(--color-surface)]'
                                     }`}
                             >
-                                <span className={`text-2xl ${isActive ? 'drop-shadow-[0_0_8px_rgba(251,191,36,0.6)]' : ''}`}>
-                                    {t.emoji}
+                                <span className={isActive ? 'drop-shadow-[0_0_8px_rgba(251,191,36,0.6)] text-[var(--color-gold)]' : 'text-[rgb(var(--color-fg))]/70'}>
+                                    <TrailIcon id={t.id} size={24} />
                                 </span>
                             </button>
                         );
@@ -592,7 +594,7 @@ export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCo
                                                 : ''
                                                 }`}
                                         >
-                                            <span className="text-xl">{r.emoji}</span>
+                                            <span className="text-[rgb(var(--color-fg))]/70"><RankIcon rank={r.name} size={22} /></span>
                                             <div className="flex-1">
                                                 <div className={`text-sm ui font-semibold ${isCurrent ? 'text-[var(--color-gold)]' :
                                                     isReached ? 'text-[rgb(var(--color-fg))]/70' : 'text-[rgb(var(--color-fg))]/30'

@@ -116,7 +116,7 @@ export const es: Record<MsgKey, string> = {
     'paywall.feature1': 'Modos Difícil, Contrarreloj y Ultimate',
     'paywall.feature2': 'Los 36 Trucos de Magia',
     'paywall.feature3': 'El pack de cosméticos Pro',
-    'paywall.proPrice': 'Tuyo para siempre por {price}. Un solo pago — sin suscripción.',
+    'paywall.proPrice': 'Pago único de {price}.',
     'paywall.expiredTitle': 'Dos semanas de Math Challenge',
     'paywall.expiredSub': 'Esto es lo que construiste.',
     'paywall.statDays.one': 'día',

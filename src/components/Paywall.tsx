@@ -266,10 +266,13 @@ export function Paywall({ progress, onUnlock, busy, mode = 'expired', onClose, p
                 </button>
 
                 {/* Sub-line clarifies what "keep playing" means without baking
-                    a possession threat into the headline itself. */}
-                <p className="text-[10px] ui text-[rgb(var(--color-fg))]/35 mt-2">
-                    {t('paywall.lifetime')}
-                </p>
+                    a possession threat into the headline itself. Pro mode skips
+                    it (owner call: the price line above already says one-time). */}
+                {!isPro && (
+                    <p className="text-[10px] ui text-[rgb(var(--color-fg))]/35 mt-2">
+                        {t('paywall.lifetime')}
+                    </p>
+                )}
                 </>)}
 
                 <button
@@ -279,19 +282,22 @@ export function Paywall({ progress, onUnlock, busy, mode = 'expired', onClose, p
                     {t('paywall.maybeLater')}
                 </button>
 
-                {/* Quiet hint that the Daily Challenge isn't locked. Not
-                    promoted (would dilute the CTA) but visible so a user
-                    who taps "Maybe later" knows they can still come back. */}
-                <p className="text-[10px] ui text-[rgb(var(--color-fg))]/30 mt-3">
-                    {t('paywall.dailyFree')}
-                </p>
-
-                {/* Legal links — refund / privacy / terms. Quiet but discoverable
-                    at the moment of payment. The 14-day refund is also a
-                    trust signal that reduces purchase hesitation. */}
-                <div className="mt-5 pt-3 border-t border-[rgb(var(--color-fg))]/8">
-                    <LegalFooterRow omitRefund />
-                </div>
+                {/* Pro mode is a clean pitch (owner call 2026-07-16): no
+                    daily-free hint, no legal row — both live in Settings and
+                    on the EXPIRED gate, where they actually matter. */}
+                {!isPro && (
+                    <>
+                        {/* Quiet hint that the Daily Challenge isn't locked — the
+                            user tapping "Maybe later" on the hard gate needs to
+                            know they can still come back. */}
+                        <p className="text-[10px] ui text-[rgb(var(--color-fg))]/30 mt-3">
+                            {t('paywall.dailyFree')}
+                        </p>
+                        <div className="mt-5 pt-3 border-t border-[rgb(var(--color-fg))]/8">
+                            <LegalFooterRow />
+                        </div>
+                    </>
+                )}
 
                 {import.meta.env.DEV && onDevReset && (
                     <button

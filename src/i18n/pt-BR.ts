@@ -115,7 +115,7 @@ export const ptBR: Record<MsgKey, string> = {
     'paywall.feature1': 'Modos Difícil, Relógio e Ultimate',
     'paywall.feature2': 'Todos os 36 Truques de Magia',
     'paywall.feature3': 'O pacote de visuais Pro',
-    'paywall.proPrice': 'Seu para sempre por {price}. Pagamento único — sem assinatura.',
+    'paywall.proPrice': 'Compra única de {price}.',
     'paywall.expiredTitle': 'Duas semanas de Math Challenge',
     'paywall.expiredSub': 'Olha o que você construiu.',
     'paywall.statDays.one': 'dia',
