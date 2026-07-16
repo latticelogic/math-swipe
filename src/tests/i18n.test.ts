@@ -2,6 +2,12 @@ import { describe, it, expect } from 'vitest';
 import { en } from '../i18n/en';
 import { es } from '../i18n/es';
 import { ptBR } from '../i18n/pt-BR';
+import { fr } from '../i18n/fr';
+import { de } from '../i18n/de';
+import { zhHans } from '../i18n/zh-Hans';
+import { zhHant } from '../i18n/zh-Hant';
+import { ja } from '../i18n/ja';
+import { hi } from '../i18n/hi';
 import { t, tCount, getLocale } from '../i18n';
 
 /**
@@ -17,6 +23,12 @@ const CATALOGS: [string, Record<string, string>][] = [
     ['en', en as Record<string, string>],
     ['es', es],
     ['pt-BR', ptBR],
+    ['fr', fr],
+    ['de', de],
+    ['zh-Hans', zhHans],
+    ['zh-Hant', zhHant],
+    ['ja', ja],
+    ['hi', hi],
 ];
 
 const EN_KEYS = Object.keys(en);

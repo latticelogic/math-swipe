@@ -160,8 +160,10 @@ export const en = {
     'settings.title': 'Settings',
     'settings.gearAria': 'Open settings',
     'settings.done': 'Done',
+    'settings.language': 'Language',
     'settings.sound': 'Sound effects',
-    'settings.versionTap': 'v{v} · tap to update',
+    'settings.notifications': 'Notifications',
+    'settings.version': 'v{v}',
     'settings.upToDate': 'v{v} · up to date',
     'settings.updateAvailable': 'v{v} · tap to get v{n}',
 

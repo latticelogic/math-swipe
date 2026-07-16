@@ -1,14 +1,18 @@
 /**
  * SettingsSheet — the app's settings surface, opened from the gear at the
  * top-right of the Me tab (owner call 2026-07-16: Me is for identity +
- * progress; maintenance lives here). Contains:
+ * progress; maintenance lives here).
  *
- *   - Language picker (shipped locales; switching persists + reloads —
- *     see src/i18n design decision 1)
- *   - Sound effects toggle (opt-in, default off)
- *   - Notifications opt-in (PushOptIn)
- *   - Version / force-update escape hatch
- *   - Legal links + reCAPTCHA attribution
+ * Layout contract (owner call 2026-07-16): every setting is ONE consistent
+ * row — attribute label on the LEFT, control (picker value / on-off) on the
+ * RIGHT. Rows:
+ *   - Language  → expandable row; right side shows the current language +
+ *     chevron, taps open the full list (switching persists + reloads, see
+ *     src/i18n design decision 1)
+ *   - Sound effects → right-side on/off toggle (opt-in, default off)
+ *   - Notifications → right-side on/off toggle (PushOptIn, same row style)
+ * Below the rows: a subtle version/build stamp (force-update escape hatch)
+ * and the legal links + reCAPTCHA attribution.
  */
 
 import { useState, useEffect } from 'react';
@@ -30,11 +34,15 @@ interface Props {
 export function SettingsSheet({ open, onClose, uid }: Props) {
     const locale = getLocale();
     const [soundOn, setSoundOnState] = useState(isSoundOn());
+    const [langOpen, setLangOpen] = useState(false);
+    const currentLangLabel = SHIPPED_LOCALES.find(l => l.id === locale)?.label ?? 'English';
 
     // Latest deployed version — /version.json is emitted at build time, so
     // comparing it to the baked-in __APP_VERSION__ says whether THIS running
-    // bundle is current ("up to date") or stale ("tap to get vX"). null =
-    // check unavailable (offline) → fall back to the neutral label.
+    // bundle is current. null = check unavailable (offline, or dev where the
+    // file isn't emitted) → we show a PLAIN version stamp, never "tap to
+    // update" (owner call: the update prompt appears ONLY when a strictly
+    // newer build actually exists).
     const [latest, setLatest] = useState<string | null>(null);
     useEffect(() => {
         if (!open) return;
@@ -45,11 +53,13 @@ export function SettingsSheet({ open, onClose, uid }: Props) {
             .catch(() => { /* offline — keep neutral label */ });
         return () => { cancelled = true; };
     }, [open]);
-    const versionLabel = latest === null
-        ? t('settings.versionTap', { v: __APP_VERSION__ })
+
+    const updateAvailable = latest !== null && latest !== __APP_VERSION__;
+    const versionLabel = updateAvailable
+        ? t('settings.updateAvailable', { v: __APP_VERSION__, n: latest as string })
         : latest === __APP_VERSION__
             ? t('settings.upToDate', { v: __APP_VERSION__ })
-            : t('settings.updateAvailable', { v: __APP_VERSION__, n: latest });
+            : t('settings.version', { v: __APP_VERSION__ });
 
     return (
         <AnimatePresence>
@@ -82,55 +92,63 @@ export function SettingsSheet({ open, onClose, uid }: Props) {
                             </button>
                         </div>
 
-                        {/* ── Language ── */}
-                        <div className="mb-6">
-                            <div className="text-xs ui text-[rgb(var(--color-fg))]/50 uppercase tracking-widest mb-2">
-                                {t('me.language')}
-                            </div>
-                            <div className="flex flex-col gap-1.5">
-                                {SHIPPED_LOCALES.map(l => (
-                                    <button
-                                        key={l.id}
-                                        onClick={() => { if (l.id !== locale) setLocale(l.id); }}
-                                        className={`w-full text-left px-4 py-2.5 rounded-xl text-sm ui border transition-colors ${l.id === locale
-                                            ? 'border-[var(--color-gold)]/40 bg-[var(--color-gold)]/10 text-[var(--color-gold)]'
-                                            : 'border-[rgb(var(--color-fg))]/10 text-[rgb(var(--color-fg))]/70 hover:border-[rgb(var(--color-fg))]/25'
-                                            }`}
-                                        aria-pressed={l.id === locale}
-                                    >
-                                        {l.label}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
+                        {/* Consistent setting rows: label left, control right. */}
+                        <div className="flex flex-col gap-2.5 mb-6">
 
-                        {/* ── Sound ── (opt-in; a tap plays a sample so the
-                            user hears what they're enabling) */}
-                        <button
-                            onClick={() => {
-                                const next = !soundOn;
-                                setSoundOn(next);       // persists + warms the AudioContext on this gesture
-                                setSoundOnState(next);
-                                if (next) soundCorrect(); // preview the "correct" tone
-                            }}
-                            role="switch"
-                            aria-checked={soundOn}
-                            className="w-full flex items-center justify-between px-4 py-3 rounded-xl border border-[rgb(var(--color-fg))]/10 mb-4 hover:border-[rgb(var(--color-fg))]/25 transition-colors"
-                        >
-                            <span className="text-sm ui text-[rgb(var(--color-fg))]/80">{t('settings.sound')}</span>
-                            <span className={`relative w-10 h-6 rounded-full transition-colors ${soundOn ? 'bg-[var(--color-gold)]/70' : 'bg-[rgb(var(--color-fg))]/15'}`}>
-                                <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-[var(--color-board)] transition-all ${soundOn ? 'left-[18px]' : 'left-0.5'}`} />
-                            </span>
-                        </button>
+                            {/* ── Language (expandable row) ── */}
+                            <div className="rounded-xl border border-[rgb(var(--color-fg))]/10 overflow-hidden">
+                                <button
+                                    onClick={() => setLangOpen(o => !o)}
+                                    className="w-full flex items-center justify-between gap-3 px-4 py-3 hover:bg-[rgb(var(--color-fg))]/[0.03] transition-colors"
+                                    aria-expanded={langOpen}
+                                >
+                                    <span className="text-sm ui text-[rgb(var(--color-fg))]/80">{t('settings.language')}</span>
+                                    <span className="flex items-center gap-1.5 text-sm ui text-[var(--color-gold)]">
+                                        {currentLangLabel}
+                                        <Chevron open={langOpen} />
+                                    </span>
+                                </button>
+                                {langOpen && (
+                                    <div className="border-t border-[rgb(var(--color-fg))]/10">
+                                        {SHIPPED_LOCALES.map(l => (
+                                            <button
+                                                key={l.id}
+                                                onClick={() => { if (l.id !== locale) setLocale(l.id); }}
+                                                className={`w-full flex items-center justify-between px-4 py-2.5 text-sm ui transition-colors ${l.id === locale
+                                                    ? 'text-[var(--color-gold)]'
+                                                    : 'text-[rgb(var(--color-fg))]/70 hover:bg-[rgb(var(--color-fg))]/[0.03]'}`}
+                                                aria-pressed={l.id === locale}
+                                            >
+                                                <span>{l.label}</span>
+                                                {l.id === locale && <Check />}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
 
-                        {/* ── Notifications ── */}
-                        <div className="mb-6">
+                            {/* ── Sound (opt-in; a tap plays a sample so the
+                                user hears what they're enabling) ── */}
+                            <button
+                                onClick={() => {
+                                    const next = !soundOn;
+                                    setSoundOn(next);       // persists + warms the AudioContext on this gesture
+                                    setSoundOnState(next);
+                                    if (next) soundCorrect(); // preview the "correct" tone
+                                }}
+                                role="switch"
+                                aria-checked={soundOn}
+                                className="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-[rgb(var(--color-fg))]/10 hover:border-[rgb(var(--color-fg))]/25 transition-colors"
+                            >
+                                <span className="text-sm ui text-[rgb(var(--color-fg))]/80">{t('settings.sound')}</span>
+                                <Toggle on={soundOn} />
+                            </button>
+
+                            {/* ── Notifications (same row style) ── */}
                             <PushOptIn uid={uid} />
                         </div>
 
-                        {/* (Reset stats removed 2026-07-16 — owner call.) */}
-
-                        {/* ── Version / force update ── */}
+                        {/* ── Version / force-update escape hatch ── */}
                         <button
                             onClick={async () => {
                                 try {
@@ -147,7 +165,7 @@ export function SettingsSheet({ open, onClose, uid }: Props) {
                                     window.location.reload();
                                 }
                             }}
-                            className={`w-full text-center text-[10px] ui tracking-widest transition-colors mb-3 ${latest !== null && latest !== __APP_VERSION__
+                            className={`w-full text-center text-[10px] ui tracking-widest transition-colors mb-3 ${updateAvailable
                                 ? 'text-[var(--color-gold)]/70 active:text-[var(--color-gold)]'
                                 : 'text-[rgb(var(--color-fg))]/25 active:text-[rgb(var(--color-fg))]/50'}`}
                             aria-label={versionLabel}
@@ -162,5 +180,31 @@ export function SettingsSheet({ open, onClose, uid }: Props) {
                 </>
             )}
         </AnimatePresence>
+    );
+}
+
+/** Pill toggle — matches PushOptIn so every control reads the same. */
+function Toggle({ on }: { on: boolean }) {
+    return (
+        <span className={`relative w-10 h-6 rounded-full shrink-0 transition-colors ${on ? 'bg-[var(--color-gold)]/70' : 'bg-[rgb(var(--color-fg))]/15'}`}>
+            <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-[var(--color-board)] transition-all ${on ? 'left-[18px]' : 'left-0.5'}`} />
+        </span>
+    );
+}
+
+function Chevron({ open }: { open: boolean }) {
+    return (
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden
+            className={`transition-transform ${open ? 'rotate-180' : ''}`}>
+            <path d="M6 9 L12 15 L18 9" />
+        </svg>
+    );
+}
+
+function Check() {
+    return (
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M5 12 L10 17 L19 7" />
+        </svg>
     );
 }

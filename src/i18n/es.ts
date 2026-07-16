@@ -141,8 +141,10 @@ export const es: Record<MsgKey, string> = {
     'settings.title': 'Ajustes',
     'settings.gearAria': 'Abrir ajustes',
     'settings.done': 'Listo',
+    'settings.language': 'Idioma',
     'settings.sound': 'Efectos de sonido',
-    'settings.versionTap': 'v{v} · toca para actualizar',
+    'settings.notifications': 'Notificaciones',
+    'settings.version': 'v{v}',
     'settings.upToDate': 'v{v} · al día',
     'settings.updateAvailable': 'v{v} · toca para v{n}',
 
