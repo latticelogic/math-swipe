@@ -6,10 +6,20 @@
  * duplicating the data.
  */
 
+import { t, type MsgKey } from '../../i18n';
+
 export interface Rank {
     name: string;
     emoji: string;
     xp: number;
+}
+
+/** Localized display label for a rank. `rank.name` stays the stable English
+ *  id used for lookups/comparisons (RankIcon, RANKS.findIndex); this is what
+ *  the user actually sees. Slug = name lowercased, spaces → '-'. */
+export function rankLabel(rank: Rank): string {
+    const slug = rank.name.toLowerCase().replace(/\s+/g, '-');
+    return t(`rank.${slug}` as MsgKey);
 }
 
 export const RANKS: ReadonlyArray<Rank> = [

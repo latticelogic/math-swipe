@@ -23,12 +23,13 @@ const KEY_MAP: Record<string, 'left' | 'right' | 'up' | 'down'> = {
  */
 function friendlyAriaLabel(expression: string): string {
     return expression
-        .replace(/×/g, ' times ')
-        .replace(/÷/g, ' divided by ')
-        .replace(/−/g, ' minus ')
-        .replace(/²/g, ' squared')
-        .replace(/³/g, ' cubed')
-        .replace(/√/g, ' square root of ')
+        .replace(/×/g, ` ${t('aria.times')} `)
+        .replace(/÷/g, ` ${t('aria.dividedBy')} `)
+        .replace(/−/g, ` ${t('aria.minus')} `)
+        .replace(/\+/g, ` ${t('aria.plus')} `)
+        .replace(/²/g, ` ${t('aria.squared')}`)
+        .replace(/³/g, ` ${t('aria.cubed')}`)
+        .replace(/√/g, ` ${t('aria.sqrt')} `)
         .replace(/\s+/g, ' ')
         .trim();
 }

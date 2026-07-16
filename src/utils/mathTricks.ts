@@ -1,5 +1,7 @@
 /** Data structures defining the Math Magic curriculum */
 
+import { t, type MsgKey } from '../i18n';
+
 export interface MagicTrick {
     id: string;
     title: string;
@@ -1151,6 +1153,26 @@ export const TRICK_CATEGORIES: TrickCategory[] = [
         trickIds: ['flip-percent'],
     }
 ];
+
+// ── Localized display helpers ─────────────────────────────────────────────────
+// The English `title`/`description`/`label` fields stay as fallback data; these
+// return the localized string the user sees, keyed by the stable id. The lesson
+// STEPS and practice content are intentionally NOT localized here — Phase 3.
+
+/** Localized trick title by id. */
+export function trickTitle(id: string): string {
+    return t(`trick.${id}.title` as MsgKey);
+}
+
+/** Localized trick description by id. */
+export function trickDesc(id: string): string {
+    return t(`trick.${id}.desc` as MsgKey);
+}
+
+/** Localized trick-category label by category id. */
+export function trickCategoryLabel(catId: string): string {
+    return t(`trickcat.${catId}` as MsgKey);
+}
 
 /** Find the next recommended trick: first unmastered by difficulty order */
 export function getRecommendedTrick(mastered: Set<string>): MagicTrick | null {

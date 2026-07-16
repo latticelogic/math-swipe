@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MAGIC_TRICKS, TRICK_CATEGORIES, getRecommendedTrick, isFreeTrick, type MagicTrick } from '../utils/mathTricks';
+import { MAGIC_TRICKS, TRICK_CATEGORIES, getRecommendedTrick, isFreeTrick, trickTitle, trickDesc, trickCategoryLabel, type MagicTrick } from '../utils/mathTricks';
 import { TrickLesson } from './TrickLesson';
 import { loadMastered } from './TrickPractice';
 import { MathExpr } from './MathExpr';
@@ -95,9 +95,9 @@ export function TricksPage({ onLessonActive, hasPro = true, onProLocked }: Props
                     <div className="flex-1 min-w-0">
                         <div className="text-[10px] ui text-[var(--color-gold)]/60 mb-0.5">{t('magic.recommended')}</div>
                         <div className="text-sm chalk text-[rgb(var(--color-fg))]/90 group-hover:text-[var(--color-gold)] transition-colors truncate">
-                            {recommended.title}
+                            {trickTitle(recommended.id)}
                         </div>
-                        <div className="text-[10px] ui text-[rgb(var(--color-fg))]/40 truncate">{recommended.description}</div>
+                        <div className="text-[10px] ui text-[rgb(var(--color-fg))]/40 truncate">{trickDesc(recommended.id)}</div>
                     </div>
                     <div className="text-[var(--color-gold)]/50 text-lg">→</div>
                 </motion.button>
@@ -136,7 +136,7 @@ export function TricksPage({ onLessonActive, hasPro = true, onProLocked }: Props
                                     <span className="absolute inset-0 flex items-center justify-center text-xs">{cat.emoji}</span>
                                 </div>
                                 <div className="flex-1 text-left">
-                                    <div className="text-sm chalk text-[rgb(var(--color-fg))]/70">{cat.label}</div>
+                                    <div className="text-sm chalk text-[rgb(var(--color-fg))]/70">{trickCategoryLabel(cat.id)}</div>
                                     <div className="text-[9px] ui text-[rgb(var(--color-fg))]/30">{t('magic.catMastered', { mastered: catMastered, total: tricks.length })}</div>
                                 </div>
                                 {/* Chevron */}
@@ -183,10 +183,10 @@ export function TricksPage({ onLessonActive, hasPro = true, onProLocked }: Props
                                                             </div>
                                                             <div className="flex-1 min-w-0">
                                                                 <h3 className="chalk text-sm text-[rgb(var(--color-fg))]/90 group-hover:text-[var(--color-gold)] transition-colors truncate">
-                                                                    {trick.title}
+                                                                    {trickTitle(trick.id)}
                                                                 </h3>
                                                                 <p className="ui text-[10px] text-[rgb(var(--color-fg))]/50 leading-tight mt-0.5 truncate">
-                                                                    {trick.description}
+                                                                    {trickDesc(trick.id)}
                                                                 </p>
                                                             </div>
                                                             {locked ? (

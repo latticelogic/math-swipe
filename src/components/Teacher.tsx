@@ -13,7 +13,7 @@ import type { ChalkState } from '../engine/domain';
 import type { QuestionType } from '../utils/questionTypes';
 import { pickChalkMessage, type ChalkContext, type ChalkMessageOverrides } from '../utils/chalkMessages';
 import { MATH_MESSAGE_OVERRIDES } from '../domains/math/mathMessages';
-import { getTeacher } from '../domains/math/teachers';
+import { getTeacher, teacherName } from '../domains/math/teachers';
 import { COSTUMES } from '../utils/costumes';
 
 const ANIMS: Record<ChalkState, TargetAndTransition> = {
@@ -170,7 +170,7 @@ export const Teacher = memo(function Teacher({
         <motion.div
             className={`absolute bottom-4 right-2 pointer-events-none z-30 ${displayState === 'streak' ? 'on-fire' : ''}`}
             animate={displayState === 'idle' ? (gesture ?? ANIMS.idle) : ANIMS[displayState]}
-            aria-label={teacher.name}
+            aria-label={teacherName(teacher.id)}
         >
             <AnimatePresence mode="wait">
                 {currentMessage && (

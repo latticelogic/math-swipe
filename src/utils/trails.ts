@@ -1,3 +1,5 @@
+import { t, type MsgKey } from '../i18n';
+
 export interface TrailConfig {
     id: string;
     name: string;
@@ -42,3 +44,9 @@ export const SWIPE_TRAILS: TrailConfig[] = [
         pro: true,
     },
 ];
+
+/** Localized display name for a swipe trail. `name` is kept as English
+ *  fallback data; this is what the user sees. Keyed by the stable trail id. */
+export function trailLabel(id: string): string {
+    return t(`trail.${id}` as MsgKey);
+}

@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { MagicTrick } from '../utils/mathTricks';
+import { trickTitle, type MagicTrick } from '../utils/mathTricks';
 import type { Problem } from '../utils/mathGenerator';
 import { ProblemView } from './ProblemView';
 import { MrChalk } from './MrChalk';
@@ -163,7 +163,7 @@ export function TrickPractice({ trick, onClose }: Props) {
                     <div className="text-4xl">🎉</div>
                     <h2 className="text-2xl chalk text-[var(--color-gold)]">{t('magic.masteredHeading')}</h2>
                     <p className="text-sm ui text-[rgb(var(--color-fg))]/50 text-center">
-                        {t('magic.earnedTechnique', { title: trick.title })}
+                        {t('magic.earnedTechnique', { title: trickTitle(trick.id) })}
                     </p>
                     <motion.button
                         onClick={onClose}
