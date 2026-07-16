@@ -195,7 +195,7 @@ export const ActionButtons = memo(function ActionButtons({
     // down past y≈160px and would otherwise eat clicks on the share
     // button at top-right.
     return (
-        <div className="absolute right-3 top-[25%] -translate-y-1/2 flex flex-col gap-4 z-40">
+        <div className="absolute right-3 top-[25%] -translate-y-1/2 flex flex-col items-center gap-4 z-40">
             {/* Share */}
             <ActionTooltip label={t('rail.share')}>
                 <div className="relative">
