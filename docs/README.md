@@ -15,9 +15,25 @@ their findings ship (the git history keeps them); what lives here is either a
 | [difficulty-curves.md](difficulty-curves.md) | spec | What Easy/Medium/Hard means per topic — the contract `mathGenerator.ts` + its discrimination tests implement | Live spec |
 | [paywall-e2e.md](paywall-e2e.md) | runbook | Manual visual e2e checklist for the trial/paywall UX (complements the `shouldFirePaywall` truth-table unit tests) | Run before releases |
 | [legal-review-brief.md](legal-review-brief.md) | brief | Hand-off packet for an optional fixed-fee counsel review of the live Refund/Privacy/Terms | Optional, advisable |
-| [og-card-image.md](og-card-image.md) | decision record | Why per-profile `og:image` is deferred + the two viable approaches when picked up | Deferred |
+
+## Sharing decisions (2026-07-16, owner calls after tester sessions)
+
+Recorded here because three plausible-looking features were deliberately
+REMOVED — don't reintroduce them without new evidence:
+
+1. **No share-card image generation.** The 1080×1920 PNG card (html-to-image)
+   made users wait; the text artifact — headline + 🟩🟥 grid + link — is
+   instant and works in every target. `og-card-image.md` (the per-profile
+   og:image spike) was deleted with it; `/u/` pages keep the icon image.
+2. **No share-destination sheet.** "Share Result" acts directly: native OS
+   share where available, otherwise instant clipboard copy with inline
+   confirmation. (The per-network intent URLs are in git history.)
+3. **No "Challenge a Friend" button.** It duplicated Share Result while
+   implying real-time PvP that doesn't exist. Incoming `?c=`/`?target=`
+   links still resolve, so old shared links keep working.
 
 Deleted (in git history if ever needed): `audit-2026-05-11.md` and
 `content-audit-2026-05-12.md` (point-in-time audits, findings shipped),
 `google-app.md` (research note superseded by google-play-launch.md),
-`first-purchase-qa.md` (Stripe-era, removed with Stripe).
+`first-purchase-qa.md` (Stripe-era, removed with Stripe),
+`og-card-image.md` (superseded by the no-image sharing decision above).

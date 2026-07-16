@@ -1,12 +1,10 @@
-import { memo, useState, useEffect, useRef, useCallback } from 'react';
+import { memo, useState, useEffect } from 'react';
 import { motion, AnimatePresence, useSpring, useMotionValueEvent } from 'framer-motion';
-import { ShareSheet } from './ShareSheet';
 import { buildProfileSlug } from '../utils/profileSlug';
 import { IosSessionEndPrompt } from './InstallPrompt';
 // Share text/URL composition is shared with the game-rail share button —
 // single source of truth in utils/sharePayload.ts.
-import { buildSharePayload, formatTime, shortDateStamp } from '../utils/sharePayload';
-import { createChallengeId } from '../utils/dailyChallenge';
+import { buildSharePayload, formatTime } from '../utils/sharePayload';
 
 interface Props {
     solved: number;
@@ -53,15 +51,9 @@ interface Props {
 export const SessionSummary = memo(function SessionSummary({
     solved, bestStreak: streak, accuracy, xpEarned, answerHistory, questionType, visible, onDismiss,
     hardMode, timedMode, speedrunFinalTime, isNewSpeedrunRecord,
-    displayName, uid, claimedHandle, challengeId, challengeTarget, onShared,
+    displayName, uid, claimedHandle, challengeTarget, onShared,
 }: Props) {
     const [isSharing, setIsSharing] = useState(false);
-    const cardRef = useRef<HTMLDivElement>(null);
-    // Desktop share modal state
-    const [shareSheetOpen, setShareSheetOpen] = useState(false);
-    const [shareImage, setShareImage] = useState<Blob | null>(null);
-    const [shareText, setShareText] = useState('');
-    const [shareUrl, setShareUrl] = useState('');
 
     // Rolling count-up for XP
     const xpSpring = useSpring(0, { stiffness: 60, damping: 20 });
@@ -80,35 +72,12 @@ export const SessionSummary = memo(function SessionSummary({
         }
     }, [visible, xpEarned, xpSpring]);
 
-    /** Render the off-screen share card to a PNG blob. Heavy (lazy-loads
-     *  html-to-image) but only runs on demand. */
-    const generateImage = useCallback(async (): Promise<Blob | null> => {
-        if (!cardRef.current) return null;
-        try {
-            const { toBlob } = await import('html-to-image');
-            return await toBlob(cardRef.current, {
-                cacheBust: true,
-                type: 'image/png',
-                pixelRatio: 2,
-                filter: (node: Node) => {
-                    // Skip cross-origin <link> stylesheets to avoid CORS errors
-                    if (node instanceof HTMLLinkElement && node.rel === 'stylesheet' && node.href) {
-                        try { return new URL(node.href).origin === window.location.origin; }
-                        catch { return true; }
-                    }
-                    return true;
-                },
-            });
-        } catch {
-            return null;
-        }
-    }, []);
-
-    const regenerateForSheet = useCallback(async () => {
-        const blob = await generateImage();
-        setShareImage(blob);
-    }, [generateImage]);
-
+    // Sharing is DIRECT (owner calls 2026-07-16, after tester sessions):
+    // no PNG card generation (nobody waits for an image; the text artifact —
+    // headline + green/red grid + link — works everywhere instantly) and no
+    // destination-picker sheet (native OS share on mobile; instant clipboard
+    // copy on desktop). See docs/README.md "Sharing decisions".
+    const [copied, setCopied] = useState(false);
     const handleShare = async () => {
         if (isSharing) return;
         setIsSharing(true);
@@ -122,46 +91,30 @@ export const SessionSummary = memo(function SessionSummary({
             xpEarned, streak, accuracy, answerHistory, questionType,
             hardMode, timedMode, speedrunFinalTime, profileUrl,
         );
-        // Capture for the sheet in case we fall through
-        setShareText(text);
-        setShareUrl(challengeUrl);
-
         try {
-            // Mobile: try native OS share first — one-tap is the gold standard
-            // when it's available.
             if (typeof navigator.share === 'function') {
-                const blob = await generateImage();
-                if (blob) {
-                    const file = new File([blob], 'math-swipe-share.png', { type: 'image/png' });
-                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                        await navigator.share({ files: [file], text });
-                        onShared?.();
-                        setIsSharing(false);
-                        return;
-                    }
-                }
-                // Files unsupported but native share works — text-only path
+                // Mobile: native OS share, text-only — instant.
                 await navigator.share({ text, url: challengeUrl });
                 onShared?.();
-                setIsSharing(false);
-                return;
+            } else {
+                // Desktop: copy the full artifact and confirm inline.
+                await navigator.clipboard.writeText(text);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 1800);
+                onShared?.();
             }
-
-            // Desktop (or any browser without navigator.share): open the
-            // proper share modal so the user actually picks a destination.
-            const blob = await generateImage();
-            setShareImage(blob);
-            setShareSheetOpen(true);
         } catch (err) {
-            // User cancelled OR native share threw — fall back to opening
-            // the modal so they always have a path to actually post the card.
-            // Log so real failures (permissions, file encoding, missing APIs)
-            // are diagnosable from a tester's DevTools instead of silent.
             // AbortError = user-cancelled and isn't actually a problem.
             if (!(err instanceof Error) || err.name !== 'AbortError') {
-                console.error('[share] native share failed, falling back to modal:', err);
+                console.error('[share] share failed:', err);
+                // Last resort: clipboard.
+                try {
+                    await navigator.clipboard.writeText(text);
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 1800);
+                    onShared?.();
+                } catch { /* nothing left to try */ }
             }
-            setShareSheetOpen(true);
         } finally {
             setIsSharing(false);
         }
@@ -185,115 +138,8 @@ export const SessionSummary = memo(function SessionSummary({
                         transition={{ duration: 0.25 }}
                         onClick={e => e.stopPropagation()}
                     >
-                        {/* Hidden Share Card for Image Generation */}
-                        <div className="absolute left-[-9999px] top-[-9999px]">
-                            <div
-                                ref={cardRef}
-                                className="w-[1080px] h-[1920px] flex flex-col items-center justify-center relative overflow-hidden chalkboard-bg p-16"
-                                style={{ background: '#1a1a24' /* fallback solid for html-to-image */ }}
-                            >
-                                <div className="absolute inset-0 opacity-10 blur-[80px] bg-gradient-to-br from-[var(--color-speedrun)] via-transparent to-[#00FFFF]" />
-
-                                <div className="z-10 text-center flex flex-col items-center w-full">
-                                    <h1 className="text-8xl chalk text-[var(--color-gold)] mb-6">Math Challenge</h1>
-                                    {/* Daily gets a date stamp instead of the plain mode tag — same Wordle
-                                        trick that turns shares into "got the May 12 yet?" conversations. */}
-                                    <div className="text-4xl ui text-white/50 mb-12 tracking-widest uppercase">
-                                        {questionType === 'daily'
-                                            ? `DAILY · ${shortDateStamp().toUpperCase()}`
-                                            : hardMode && timedMode ? 'ULTIMATE'
-                                            : hardMode ? 'HARD MODE'
-                                            : timedMode ? 'TIMED MODE'
-                                            : questionType.toUpperCase()}
-                                    </div>
-
-                                    {/* Big icon — hand-drawn SVG, matches the rest of the app's no-emoji look */}
-                                    <div className="mb-6 text-white/90">
-                                        {questionType === 'speedrun' ? (
-                                            <svg viewBox="0 0 24 24" width="180" height="180" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--color-speedrun)]" aria-hidden>
-                                                <circle cx="12" cy="14" r="7" />
-                                                <line x1="12" y1="14" x2="15" y2="11" />
-                                                <line x1="10" y1="2" x2="14" y2="2" />
-                                                <line x1="12" y1="2" x2="12" y2="5" />
-                                            </svg>
-                                        ) : accuracy === 100 ? (
-                                            <svg viewBox="0 0 24 24" width="180" height="180" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--color-gold)]" aria-hidden>
-                                                <path d="M7 3 L 7 11 C 7 14 9 16 12 16 C 15 16 17 14 17 11 L 17 3 Z" />
-                                                <path d="M7 5 C 4 5 3 7 3 9 C 3 11 5 12 7 12" />
-                                                <path d="M17 5 C 20 5 21 7 21 9 C 21 11 19 12 17 12" />
-                                                <line x1="12" y1="16" x2="12" y2="19" />
-                                                <line x1="9" y1="19" x2="15" y2="19" />
-                                            </svg>
-                                        ) : (
-                                            <svg viewBox="0 0 24 24" width="180" height="180" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--color-chalk)]" aria-hidden>
-                                                <rect x="5" y="3" width="14" height="18" rx="1" />
-                                                <line x1="9" y1="8" x2="15" y2="8" />
-                                                <line x1="9" y1="12" x2="15" y2="12" />
-                                                <line x1="9" y1="16" x2="13" y2="16" />
-                                            </svg>
-                                        )}
-                                    </div>
-                                    <div className="text-8xl chalk text-white mb-14">
-                                        {questionType === 'speedrun' ? 'SPEEDRUN CLEAR' : accuracy === 100 ? 'PERFECT SCORE' : 'SESSION COMPLETED'}
-                                    </div>
-
-                                    <div className="flex justify-between items-center w-[80%] mb-14 px-8 py-12 border-2 border-white/20 rounded-[3rem] bg-black/20">
-                                        <div className="text-center flex-1">
-                                            <div className="text-9xl chalk text-white/80">{solved}</div>
-                                            <div className="text-3xl ui text-white/40 mt-4">SOLVED</div>
-                                        </div>
-                                        <div className="text-center flex-1">
-                                            {questionType === 'speedrun' && speedrunFinalTime ? (
-                                                <>
-                                                    <div className="text-7xl chalk text-[var(--color-correct)] mt-4">{formatTime(speedrunFinalTime)}</div>
-                                                    <div className="text-3xl ui text-white/40 mt-6">CLEAR TIME</div>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <div className="text-9xl chalk text-[var(--color-correct)]">{accuracy}%</div>
-                                                    <div className="text-3xl ui text-white/40 mt-4">ACCURACY</div>
-                                                </>
-                                            )}
-                                        </div>
-                                        <div className="text-center flex-1">
-                                            {/* Number + flame on one line — explicit flexbox prevents the emoji
-                                                from wrapping when streak is two digits at text-9xl. */}
-                                            <div className="flex items-center justify-center gap-3">
-                                                <span className="text-9xl chalk text-[var(--color-streak-fire)] tabular-nums">{streak}</span>
-                                                <svg viewBox="0 0 24 24" width="60" height="72" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--color-streak-fire)] -mb-2" aria-hidden>
-                                                    <path d="M12 3 C 12 8 7 9 7 14 C 7 18 9 21 12 21 C 15 21 17 18 17 14 C 17 11 14 10 14 7 C 13 8.5 12.5 9 12 3 Z" />
-                                                </svg>
-                                            </div>
-                                            <div className="text-3xl ui text-white/40 mt-4">STREAK</div>
-                                        </div>
-                                    </div>
-
-                                    {/* Answer history grid — the Wordle hook. Big squares are the
-                                        visual pattern non-players recognise; small ones don't read
-                                        on a feed thumbnail. Cap at 920px so 10 squares (10×72 +
-                                        9×16 = 864) sit on one line for the canonical "result row"
-                                        silhouette; longer histories wrap cleanly. */}
-                                    {answerHistory.length > 0 && (
-                                        <div className="flex flex-wrap justify-center gap-[16px] mb-12 max-w-[920px] mx-auto">
-                                            {answerHistory.map((ok, i) => (
-                                                <div
-                                                    key={i}
-                                                    className={`w-[72px] h-[72px] rounded-2xl ${ok ? 'bg-[var(--color-correct)]' : 'bg-[var(--color-wrong)]'}`}
-                                                />
-                                            ))}
-                                        </div>
-                                    )}
-
-                                    <div className="text-7xl chalk text-[var(--color-gold)] tabular-nums mb-20">
-                                        + {xpEarned} XP
-                                    </div>
-
-                                    <div className="text-4xl ui text-white/60 tracking-wider">
-                                        {window.location.host}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        {/* (The off-screen 1080×1920 share-card render was removed
+                            2026-07-16 with image generation — owner call.) */}
 
                         {/* Emoji rain — performance-based floating emojis */}
                         <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
@@ -483,76 +329,19 @@ export const SessionSummary = memo(function SessionSummary({
                                 }`}
                             whileTap={!isSharing ? { scale: 0.95 } : undefined}
                         >
-                            {isSharing ? (
-                                <span>Generating image…</span>
-                            ) : (
-                                <>
-                                    {/* Share glyph — hand-drawn box + up-arrow, replaces 📤 emoji */}
-                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                                        <path d="M12 3 L 12 15" />
-                                        <path d="M8 7 L 12 3 L 16 7" />
-                                        <path d="M5 12 L 5 20 L 19 20 L 19 12" />
-                                    </svg>
-                                    <span>Share Result</span>
-                                </>
-                            )}
+                            {/* Share glyph — hand-drawn box + up-arrow, replaces 📤 emoji */}
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                                <path d="M12 3 L 12 15" />
+                                <path d="M8 7 L 12 3 L 16 7" />
+                                <path d="M5 12 L 5 20 L 19 20 L 19 12" />
+                            </svg>
+                            <span>{copied ? 'Result copied!' : 'Share Result'}</span>
                         </motion.button>
 
-                        {/* "Challenge a Friend" is only shown when we can build a
-                            link the friend can ACTUALLY race against:
-                              • seeded challenge — replay the same seed + target score
-                              • speedrun — fixed 10 problems, target the clear time
-                              • daily — friend opens today's daily directly
-                            For topical sessions (multiply, fractions, …) the
-                            sender's problems were generated ad-hoc, so there's
-                            no fair shared set; we drop the button rather than
-                            mint a misleading new seed. */}
-                        {(challengeId || questionType === 'speedrun' || questionType === 'daily') && (
-                            <button
-                                onClick={async (e) => {
-                                    e.stopPropagation();
-                                    let url: string;
-                                    let text: string;
-                                    if (questionType === 'speedrun' && speedrunFinalTime) {
-                                        // Speedrun: the 10 problems aren't shareable
-                                        // (they're random), but the *time target* is —
-                                        // the friend starts their own speedrun and
-                                        // sees "Beat 47.2s" until they do.
-                                        url = `${window.location.origin}?c=${createChallengeId()}&targetTime=${Math.round(speedrunFinalTime)}`;
-                                        text = `Cleared Math Challenge Speedrun in ${formatTime(speedrunFinalTime)}. Try it: ${url}`;
-                                    } else if (questionType === 'daily') {
-                                        // Daily: friend lands directly on today's
-                                        // daily challenge — no seed needed because
-                                        // generateDailyChallenge() is date-keyed.
-                                        url = `${window.location.origin}?daily=1&target=${xpEarned}`;
-                                        text = `Got ${xpEarned} pts on today's Math Challenge Daily. Beat me: ${url}`;
-                                    } else {
-                                        // Challenge: forward the seed the sender
-                                        // actually played + target score so the
-                                        // banner shows "Beat 145 pts".
-                                        url = `${window.location.origin}?c=${challengeId}&target=${xpEarned}`;
-                                        text = `Beat my ${xpEarned} pts on this Math Challenge challenge: ${url}`;
-                                    }
-                                    try {
-                                        if (navigator.share) {
-                                            await navigator.share({ text, url });
-                                        } else {
-                                            await navigator.clipboard.writeText(text);
-                                        }
-                                    } catch { /* cancelled */ }
-                                }}
-                                className="w-full py-2 rounded-xl border text-xs ui mb-3 border-[rgb(var(--color-fg))]/10 text-[rgb(var(--color-fg))]/40 hover:text-[rgb(var(--color-fg))]/60 transition-colors flex items-center justify-center gap-1.5"
-                            >
-                                {/* Crossed swords — hand-drawn, replaces ⚔️ emoji */}
-                                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                                    <line x1="4" y1="4" x2="14" y2="14" />
-                                    <line x1="20" y1="4" x2="10" y2="14" />
-                                    <line x1="11" y1="17" x2="13" y2="19" />
-                                    <line x1="13" y1="17" x2="11" y2="19" />
-                                </svg>
-                                <span>Challenge a Friend</span>
-                            </button>
-                        )}
+                        {/* ("Challenge a Friend" removed 2026-07-16 — owner call
+                            after testing: it duplicated Share Result while implying
+                            real in-game PvP that doesn't exist. Incoming ?c=/?target=
+                            links still work; Share Result carries the loop.) */}
 
                         {/* iOS-only end-of-session install nudge. Only renders on
                             iOS Safari when the app isn't already installed and
@@ -571,18 +360,6 @@ export const SessionSummary = memo(function SessionSummary({
                     </motion.div>
                 </motion.div>
             )}
-            {/* Desktop / fallback share modal — sibling of the summary so it
-                can render above other UI even when the summary itself is
-                dismissed. */}
-            <ShareSheet
-                open={shareSheetOpen}
-                onClose={() => setShareSheetOpen(false)}
-                text={shareText}
-                url={shareUrl}
-                imageBlob={shareImage}
-                onRegenerate={regenerateForSheet}
-                onShared={onShared}
-            />
         </AnimatePresence>
     );
 });
