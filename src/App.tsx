@@ -342,12 +342,18 @@ function App() {
   // after 3s. The setState here is a one-shot synchronization with the prop
   // edge, not a feedback loop, so the lint rule's worry doesn't apply.
   const [shieldToast, setShieldToast] = useState(false);
+  // Open on the rising edge of `shieldBroken`…
   useEffect(() => {
-    if (!shieldBroken) return;
-    setShieldToast(true);
+    if (shieldBroken) setShieldToast(true);
+  }, [shieldBroken]);
+  // …and auto-close keyed on the TOAST, not on `shieldBroken` (which flips back
+  // on the next answer — that re-run would otherwise cancel the close timer and
+  // strand the toast on screen, same bug class as the teacher tip).
+  useEffect(() => {
+    if (!shieldToast) return;
     const t = setTimeout(() => setShieldToast(false), 3000);
     return () => clearTimeout(t);
-  }, [shieldBroken]);
+  }, [shieldToast]);
 
   const currentProblem = problems[0];
   const isFirstQuestion = totalAnswered === 0;
@@ -410,6 +416,19 @@ function App() {
   // ── Ping Listener (Async Taunts) ──
   const [pingMessage, setPingMessage] = useState<string | null>(null);
 
+  // The teacher bubble shows `pingMessage` (a ping OR a teacher tip) OVER the
+  // normal per-answer message, so if it's ever left set the teacher freezes on
+  // it and no other message renders again (Teacher.tsx). The single auto-clear
+  // MUST be keyed on `pingMessage` itself — NOT on gameplay deps — so the next
+  // answer can't fire an effect-cleanup that cancels the timer and strands the
+  // bubble. (Bug: tips/pings were cleared from effects keyed on
+  // totalAnswered/streak, which change on every answer.)
+  useEffect(() => {
+    if (pingMessage === null) return;
+    const t = setTimeout(() => setPingMessage(null), 6000);
+    return () => clearTimeout(t);
+  }, [pingMessage]);
+
   // ── Teacher tips — feature discovery in the teacher's voice ──
   // Replaces the old floating banner prompts. At most one tip per session,
   // each shown once ever, delivered through the teacher's speech bubble
@@ -425,14 +444,11 @@ function App() {
     if (!tip) return;
     tipShownThisSession.current = true;
     markTipSeen(tip.id);
-    setPingMessage(tip.text);
-    const t = setTimeout(() => setPingMessage(null), 6000);
-    return () => clearTimeout(t);
+    setPingMessage(tip.text); // cleared by the pingMessage-keyed effect above
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, totalAnswered, streak, questionType]);
   useEffect(() => {
     if (!uid) return;
-    let clearTimer: ReturnType<typeof setTimeout> | undefined;
     let unsub: (() => void) | undefined;
     let cancelled = false;
     Promise.all([getFirebase(), import('firebase/firestore')]).then(([{ db }, fs]) => {
@@ -456,10 +472,7 @@ function App() {
 
         // Mark as read so it doesn't pop again
         updateDoc(doc(db, FIRESTORE.PINGS, pingDoc.id), { read: true }).catch(() => { /* silent */ });
-
-        // Clear after 6 seconds (replace any in-flight clear timer)
-        if (clearTimer) clearTimeout(clearTimer);
-        clearTimer = setTimeout(() => setPingMessage(null), 6000);
+        // Auto-clear is handled by the pingMessage-keyed effect above.
       }, (err) => {
         console.warn('Ping listener failed:', err);
       });
@@ -467,7 +480,6 @@ function App() {
     return () => {
       cancelled = true;
       if (unsub) unsub();
-      if (clearTimer) clearTimeout(clearTimer);
     };
   }, [uid]);
 
