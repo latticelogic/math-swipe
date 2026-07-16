@@ -350,5 +350,27 @@ service cloud.firestore {
 
       allow update, delete: if false;
     }
+
+    // ── A/B experiment exposures ──
+    // Write-only telemetry (mirrors `vitals`): the client logs which variant
+    // it showed; the owner joins exposures to conversions server-side via the
+    // admin SDK. No client reads.
+    match /experimentExposures/{exposureId} {
+      allow read: if false;
+
+      allow create: if request.auth != null
+                    && request.resource.data.keys().hasOnly([
+                         'experimentId', 'variant', 'uid', 'timestamp'
+                       ])
+                    && request.resource.data.experimentId is string
+                    && request.resource.data.experimentId.size() <= 40
+                    && request.resource.data.variant is string
+                    && request.resource.data.variant.size() <= 40
+                    && (request.resource.data.uid == null
+                        || (request.resource.data.uid is string
+                            && request.resource.data.uid.size() <= 128));
+
+      allow update, delete: if false;
+    }
   }
 }
