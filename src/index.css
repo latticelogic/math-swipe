@@ -280,6 +280,34 @@ button.action-icon-skull-active:focus:not(:focus-visible) {
   font-family: var(--font-ui);
 }
 
+/* ── Per-locale font fallback ──
+   The chalk display face (Fredericka) and UI face (Architects Daughter) are
+   Latin-only. For CJK + Devanagari we swap both --font-chalk and --font-ui to
+   a clean system stack for that script so glyphs render (no tofu) instead of
+   the hand-drawn look. A handwriting-font pass for these scripts (Kalam for
+   Devanagari, a CJK handwriting face) is the documented aesthetic follow-up.
+   data-locale is set on <html> at boot by src/i18n/index.ts. */
+html[data-locale="zh-Hans"] {
+  --font-chalk: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+  --font-ui: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+}
+html[data-locale="zh-Hant"] {
+  --font-chalk: "PingFang TC", "Hiragino Sans CNS", "Microsoft JhengHei", "Noto Sans CJK TC", sans-serif;
+  --font-ui: "PingFang TC", "Hiragino Sans CNS", "Microsoft JhengHei", "Noto Sans CJK TC", sans-serif;
+}
+html[data-locale="ja"] {
+  --font-chalk: "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic", "Meiryo", "Noto Sans CJK JP", sans-serif;
+  --font-ui: "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic", "Meiryo", "Noto Sans CJK JP", sans-serif;
+}
+html[data-locale="ko"] {
+  --font-chalk: "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans CJK KR", sans-serif;
+  --font-ui: "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans CJK KR", sans-serif;
+}
+html[data-locale="hi"] {
+  --font-chalk: "Kohinoor Devanagari", "Noto Sans Devanagari", "Nirmala UI", "Mangal", sans-serif;
+  --font-ui: "Kohinoor Devanagari", "Noto Sans Devanagari", "Nirmala UI", "Mangal", sans-serif;
+}
+
 /* ── Milestone pop ── */
 @keyframes milestone-pop {
   0% {

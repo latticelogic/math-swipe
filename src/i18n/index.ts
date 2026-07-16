@@ -23,22 +23,49 @@
 import { en, type MsgKey } from './en';
 import { es } from './es';
 import { ptBR } from './pt-BR';
+import { fr } from './fr';
+import { de } from './de';
+import { it } from './it';
+import { id } from './id';
+import { ko } from './ko';
+import { zhHans } from './zh-Hans';
+import { zhHant } from './zh-Hant';
+import { ja } from './ja';
+import { hi } from './hi';
 
 export type { MsgKey };
 
-/** Every locale the product has committed to (owner list, 2026-07-16). */
-export type Locale = 'en' | 'es' | 'pt-BR' | 'zh-Hans' | 'zh-Hant' | 'ja' | 'hi';
+/** Every locale the product has committed to (owner list, 2026-07-16).
+ *  Arabic is deliberately NOT here yet — it needs RTL layout work, a separate
+ *  project (docs/i18n.md). */
+export type Locale =
+    | 'en' | 'es' | 'pt-BR' | 'fr' | 'de' | 'it' | 'id' | 'ko'
+    | 'zh-Hans' | 'zh-Hant' | 'ja' | 'hi';
 
-/** Selectable today: catalog complete + fonts render the aesthetic. */
+/** Selectable today: catalog complete. Non-Latin scripts (zh/ja/hi) fall
+ *  back to a clean system font via [data-locale] in index.css — the
+ *  hand-drawn chalk face is Latin-only, so a handwriting-font pass for these
+ *  scripts (Kalam covers Devanagari; a CJK handwriting face for zh/ja) is a
+ *  documented aesthetic follow-up, not a launch blocker. Labels are in each
+ *  language's own script so users self-identify. */
 export const SHIPPED_LOCALES: ReadonlyArray<{ id: Locale; label: string }> = [
     { id: 'en', label: 'English' },
     { id: 'es', label: 'Español' },
     { id: 'pt-BR', label: 'Português (Brasil)' },
+    { id: 'fr', label: 'Français' },
+    { id: 'de', label: 'Deutsch' },
+    { id: 'it', label: 'Italiano' },
+    { id: 'id', label: 'Bahasa Indonesia' },
+    { id: 'ko', label: '한국어' },
+    { id: 'zh-Hans', label: '简体中文' },
+    { id: 'zh-Hant', label: '繁體中文' },
+    { id: 'ja', label: '日本語' },
+    { id: 'hi', label: 'हिन्दी' },
 ];
 
-/** Declared, awaiting catalog + font work (zh/ja: CJK handwriting stack;
- *  hi: Kalam covers Devanagari). Kept here so the wave plan is in code. */
-export const PLANNED_LOCALES: ReadonlyArray<Locale> = ['zh-Hans', 'zh-Hant', 'ja', 'hi'];
+/** Declared but not yet shipped. Empty today — Arabic (RTL) is the next
+ *  candidate and is a layout project, tracked separately (docs/i18n.md). */
+export const PLANNED_LOCALES: ReadonlyArray<Locale> = [];
 
 const STORAGE_KEY = 'math-swipe-locale';
 
@@ -46,14 +73,36 @@ const CATALOGS: Partial<Record<Locale, Record<MsgKey, string>>> = {
     en,
     es,
     'pt-BR': ptBR,
+    fr,
+    de,
+    it,
+    id,
+    ko,
+    'zh-Hans': zhHans,
+    'zh-Hant': zhHant,
+    ja,
+    hi,
 };
 
-/** Map a BCP-47 tag from the browser onto a shipped locale. */
+/** Map a BCP-47 tag from the browser onto a shipped locale. Order matters:
+ *  Chinese resolves script (Hans/Hant) from the subtag or region. */
 function matchShipped(tag: string): Locale | null {
     const lower = tag.toLowerCase();
     if (lower === 'en' || lower.startsWith('en-')) return 'en';
     if (lower === 'es' || lower.startsWith('es-')) return 'es';
     if (lower === 'pt' || lower.startsWith('pt-')) return 'pt-BR';
+    if (lower === 'fr' || lower.startsWith('fr-')) return 'fr';
+    if (lower === 'de' || lower.startsWith('de-')) return 'de';
+    if (lower === 'it' || lower.startsWith('it-')) return 'it';
+    if (lower === 'id' || lower.startsWith('id-')) return 'id';
+    if (lower === 'ko' || lower.startsWith('ko-')) return 'ko';
+    if (lower === 'ja' || lower.startsWith('ja-')) return 'ja';
+    if (lower === 'hi' || lower.startsWith('hi-')) return 'hi';
+    if (lower === 'zh' || lower.startsWith('zh')) {
+        // Traditional for Hant/TW/HK/MO; Simplified otherwise (incl. plain zh).
+        if (/hant|-tw|-hk|-mo/.test(lower)) return 'zh-Hant';
+        return 'zh-Hans';
+    }
     return null;
 }
 
@@ -71,6 +120,14 @@ function detect(): Locale {
 
 // Fixed at module load — see design decision (1).
 const current: Locale = detect();
+
+// Reflect the locale onto <html> so CSS can swap font stacks for non-Latin
+// scripts ([data-locale] in index.css) and assistive tech reads the right
+// language. Guarded for jsdom/SSR where document may be absent.
+try {
+    document.documentElement.lang = current;
+    document.documentElement.setAttribute('data-locale', current);
+} catch { /* no document (tests/SSR) */ }
 
 export function getLocale(): Locale {
     return current;

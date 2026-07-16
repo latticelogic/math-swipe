@@ -140,8 +140,10 @@ export const ptBR: Record<MsgKey, string> = {
     'settings.title': 'Ajustes',
     'settings.gearAria': 'Abrir ajustes',
     'settings.done': 'Pronto',
+    'settings.language': 'Idioma',
     'settings.sound': 'Efeitos sonoros',
-    'settings.versionTap': 'v{v} · toque para atualizar',
+    'settings.notifications': 'Notificações',
+    'settings.version': 'v{v}',
     'settings.upToDate': 'v{v} · atualizado',
     'settings.updateAvailable': 'v{v} · toque para v{n}',
 
