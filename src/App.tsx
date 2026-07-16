@@ -870,13 +870,14 @@ function App() {
           <div className="absolute top-[calc(env(safe-area-inset-top,12px)+12px)] right-3 z-50 flex items-center gap-2">
             <button
               onClick={toggleThemeMode}
-              // 44×44 tap target (was 36×36) — see comment on Change level button.
-              className="w-11 h-11 flex items-center justify-center text-[rgb(var(--color-fg))]/60 active:text-[var(--color-gold)] transition-colors"
+              // w-12 (not w-11) so its center lines up with the action rail
+              // below, whose column is widened to 48px by the topic picker.
+              className="w-12 h-11 flex items-center justify-center text-[rgb(var(--color-fg))]/60 active:text-[var(--color-gold)] transition-colors"
               aria-label="Toggle theme"
             >
               {themeMode === 'light' ? (
                 <motion.svg
-                  viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                  viewBox="0 0 24 24" className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
                   animate={{ rotate: 360 }}
                   transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
                 >
@@ -892,7 +893,7 @@ function App() {
                 </motion.svg>
               ) : (
                 <motion.svg
-                  viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                  viewBox="0 0 24 24" className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
                   animate={{ rotate: [0, -8, 8, -5, 5, 0] }}
                   transition={{ duration: 4, repeat: Infinity, repeatDelay: 3, ease: 'easeInOut' }}
                 >
@@ -926,7 +927,7 @@ function App() {
             }
           }} className="flex-1 flex flex-col w-full">
             {/* ── Score (centered, pushed down from edge) ── */}
-            <div className="landscape-score flex flex-col items-center pt-[calc(env(safe-area-inset-top,16px)+40px)] pb-6 z-30">
+            <div className="landscape-score flex flex-col items-center pt-[calc(env(safe-area-inset-top,16px)+28px)] pb-5 z-30">
               {/* Mode headers — Challenge / Speedrun / Daily get a small
                   status banner above the score so users know they're in a
                   finite-length session. Without it, the only mode indicator
