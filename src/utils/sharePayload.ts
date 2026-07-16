@@ -15,13 +15,7 @@
  */
 
 import { createChallengeId } from './dailyChallenge';
-
-/** Short, human-readable date stamp for the daily-challenge share card.
- *  "May 12" — used as a Wordle-style conversation hook so the artifact
- *  signals *which* daily was solved. */
-export function shortDateStamp(): string {
-    return new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-}
+import { t, shortDateLabel } from '../i18n';
 
 export function formatTime(ms: number): string {
     const totalSeconds = ms / 1000;
@@ -71,19 +65,24 @@ export function buildSharePayload(
         emojiRows.push(emojis.slice(i, i + 10).join(''));
     }
 
+    // The topic tag is a game-side label (kept English as a proper-noun-ish
+    // mode name); every surrounding WORD localizes to the sender's locale.
+    // Emoji + digits + the "Math Challenge" brand stay in code — the catalog
+    // is emoji-free by rule.
     const typeLabel = questionType.startsWith('mix-') ? 'Mix' : questionType.charAt(0).toUpperCase() + questionType.slice(1);
-    const modeTag = hardMode && timedMode ? ' 💀⏱️ ULTIMATE' : hardMode ? ' 💀 HARD' : timedMode ? ' ⏱️ TIMED' : '';
+    const modeTag = hardMode && timedMode ? ` 💀⏱️ ${t('share.ultimate')}` : hardMode ? ` 💀 ${t('share.hard')}` : timedMode ? ` ⏱️ ${t('share.timed')}` : '';
+    const streakFire = `${streak}🔥`;
     // Punchier headlines — first line is what platforms show as preview, so make
     // it count. Leads with the score/streak/time, brand fades to second line.
     // The daily case gets a date stamp so the artifact carries social context
-    // ("got the May 12") — same trick Wordle uses to make shares conversational.
+    // — same trick Wordle uses to make shares conversational.
     const headline = questionType === 'daily'
-        ? `Math Challenge Daily · ${shortDateStamp()} — ${xp} pts, ${accuracy}% ${streak > 1 ? `, ${streak}🔥` : ''}`
+        ? t('share.daily', { date: shortDateLabel(), xp, accuracy }) + (streak > 1 ? `, ${streak}🔥` : '')
         : questionType === 'speedrun' && speedrunTime
-            ? `⏱️ Cleared 10 in ${formatTime(speedrunTime)} on Math Challenge`
+            ? `⏱️ ${t('share.speedrun', { time: formatTime(speedrunTime) })}`
             : accuracy === 100
-                ? `💯 ${xp} pts, ${streak}🔥 — perfect run on Math Challenge${modeTag}`
-                : `${xp} pts · ${streak}🔥 streak · ${accuracy}% — Math Challenge ${typeLabel}${modeTag}`;
+                ? `💯 ${t('share.perfect', { xp, streak: streakFire })}${modeTag}`
+                : `${t('share.standard', { xp, streak: streakFire, accuracy, topic: typeLabel })}${modeTag}`;
 
     const url = profileUrl ?? `${window.location.origin}?c=${createChallengeId()}`;
 
@@ -92,7 +91,7 @@ export function buildSharePayload(
         '',
         ...emojiRows,
         '',
-        `Can you beat me? 👉 ${url}`,
+        t('share.cta', { arrow: '👉', url }),
     ].join('\n');
 
     return { text, url };

@@ -314,7 +314,7 @@ function genCompare(d: number, hard: boolean): Problem {
         if (left.val === right.val) right.val = left.val + 1; // forced safety
         const answer = Math.max(left.val, right.val);
         const smaller = Math.min(left.val, right.val);
-        return pack(`Bigger: ${left.str} or ${right.str}?`, answer, () => {
+        return pack(t('gen.bigger', { a: left.str, b: right.str }), answer, () => {
             const d1 = smaller;
             let d2 = answer + randInt(1, 3);
             if (d2 === d1) d2 = answer + 4;
@@ -327,7 +327,7 @@ function genCompare(d: number, hard: boolean): Problem {
     if (a === b) b = a + randInt(1, 5);
     const answer = Math.max(a, b);
     const smaller = Math.min(a, b);
-    return pack(`Bigger: ${a} or ${b}?`, answer, () => {
+    return pack(t('gen.bigger', { a, b }), answer, () => {
         const d1 = smaller;
         let d2 = answer + randInt(1, 3);
         if (d2 === d1) d2 = answer + 4;
@@ -405,7 +405,7 @@ function genShapes(d: number, hard: boolean): Problem {
     const pool = ALL.filter(s => s.sides <= maxSides);
     const shape = pickRandom(pool);
     const answer = shape.sides;
-    return pack(`Sides of ${shape.emoji} ?`, answer, (ans) => {
+    return pack(t('gen.sidesOf', { shape: shape.emoji }), answer, (ans) => {
         // Distractors: other plausible side counts within the active pool
         const distractorPool = pool.map(s => s.sides).filter(n => n !== ans);
         // Shuffle deterministically against rng
@@ -434,21 +434,21 @@ function genEvenOdd(d: number, hard: boolean): Problem {
             const a = randInt(10, 99), b = randInt(10, 99);
             const op = pickRandom(['+', '×']);
             value = op === '+' ? a + b : a * b;
-            expression = `Is ${a} ${op} ${b} even or odd?`;
+            expression = t('gen.evenOddExpr', { expr: `${a} ${op} ${b}` });
         } else {
             value = randInt(1000, 9999);
-            expression = `Is ${value} even or odd?`;
+            expression = t('gen.evenOdd', { n: value });
         }
     } else {
         // Easy (d=1): 1-20; Med (d=2-3): 2-99; Hard (d=4-5): 100-999
         const max = d <= 1 ? 20 : d <= 3 ? 99 : 999;
         const min = d <= 1 ? 1 : d <= 3 ? 2 : 100;
         value = randInt(min, max);
-        expression = `Is ${value} even or odd?`;
+        expression = t('gen.evenOdd', { n: value });
     }
     const correct = value % 2 === 0 ? 0 : 1;
     const options = [0, 1, 2];
-    const optionLabels = ['Even', 'Odd', 'Either'];
+    const optionLabels = [t('gen.even'), t('gen.odd'), t('gen.either')];
     return {
         id: uid(),
         expression,
@@ -474,25 +474,24 @@ function genTens(d: number, hard: boolean): Problem {
         const n = randInt(120, 870);
         const isMore = _rng() > 0.5;
         const answer = isMore ? n + step : n - step;
-        const verb = isMore ? `${step} more than` : `${step} less than`;
-        return pack(`${verb} ${n}`, answer, smallDistractors);
+        return pack(t(isMore ? 'gen.moreThan' : 'gen.lessThan', { step, n }), answer, smallDistractors);
     }
     if (d <= 1) {
         const n = randInt(1, 39);
-        return pack(`10 more than ${n}`, n + 10, smallDistractors);
+        return pack(t('gen.moreThan', { step: 10, n }), n + 10, smallDistractors);
     }
     if (d <= 3) {
         const n = randInt(10, 89);
         const isMore = _rng() > 0.4;
         const answer = isMore ? n + 10 : n - 10;
-        return pack(`${isMore ? '10 more than' : '10 less than'} ${n}`, answer, smallDistractors);
+        return pack(t(isMore ? 'gen.moreThan' : 'gen.lessThan', { step: 10, n }), answer, smallDistractors);
     }
     // Hard: ±30
     const n = randInt(40, 89);
     const isMore = _rng() > 0.5;
     const step = 30;
     const answer = isMore ? n + step : n - step;
-    return pack(`${isMore ? '30 more than' : '30 less than'} ${n}`, answer, smallDistractors);
+    return pack(t(isMore ? 'gen.moreThan' : 'gen.lessThan', { step, n }), answer, smallDistractors);
 }
 
 // ── Core 3-5 Generators ─────────────────────────────────
@@ -512,8 +511,8 @@ function genRound(d: number, hard: boolean): Problem {
         const answer = Math.round(n / places) * places;
         // JS float quirks: re-round answer to clean it up
         const cleanAns = Math.round(answer * 100) / 100;
-        const placeLabel = places === 1 ? 'whole number' : 'tenth';
-        return pack(`Round ${n} to nearest ${placeLabel}`, cleanAns, decimalDistractors);
+        const placeLabel = places === 1 ? t('gen.placeWhole') : t('gen.placeTenth');
+        return pack(t('gen.roundToNearest', { n, unit: placeLabel }), cleanAns, decimalDistractors);
     }
     const placeOptions = hard ? [10, 100, 1000]
         : d <= 1 ? [10]
@@ -524,7 +523,7 @@ function genRound(d: number, hard: boolean): Problem {
     const rangeMin = places === 10 ? 11 : places === 100 ? 101 : 1001;
     const n = randInt(rangeMin, rangeMax);
     const answer = Math.round(n / places) * places;
-    return pack(`Round ${n} to nearest ${places}`, answer, (ans) => {
+    return pack(t('gen.roundToNearest', { n, unit: places }), answer, (ans) => {
         // Common mistake distractors: round wrong direction
         const d1 = ans === Math.floor(n / places) * places
             ? Math.ceil(n / places) * places
@@ -935,7 +934,7 @@ function genPercent(d: number, hard: boolean): Problem {
         const pct = pickRandom(percents);
         const base = pickRandom([40, 60, 80, 100, 120, 200, 240, 400, 500, 600, 800]);
         const answer = Math.round((pct / 100) * base * 100) / 100;
-        return pack(`${pct}% of ${base}`, answer, nearDistractors, `${pct}\\% \\text{ of } ${base}`);
+        return pack(`${pct}% ${t('gen.of')} ${base}`, answer, nearDistractors, `${pct}\\% \\text{ ${t('gen.of')} } ${base}`);
     }
     let percents: number[], bases: number[];
     if (d <= 1) {
@@ -1094,7 +1093,7 @@ const TRICKY_BIG = [119, 121, 133, 143, 161, 169, 187, 203, 209, 217, 221];
 function genPrimes(d: number, hard: boolean): Problem {
     const whichPrime = (primes: number[], tricky: number[]): Problem => {
         const answer = pickRandom(primes);
-        return pack('Which is prime?', answer, () => {
+        return pack(t('gen.whichPrime'), answer, () => {
             const c1 = pickRandom(tricky);
             let c2 = pickRandom(tricky);
             let safety = 0;
@@ -1112,7 +1111,7 @@ function genPrimes(d: number, hard: boolean): Problem {
         let safety = 0;
         while (q === p && safety++ < 10) q = pickRandom(pool);
         const n = p * q;
-        return pack(`Which divides ${n}?`, p, () => {
+        return pack(t('gen.whichDivides', { n }), p, () => {
             const innocents = PRIMES_SMALL.filter(x => x !== p && x !== q && n % x !== 0);
             const i1 = pickRandom(innocents);
             let i2 = pickRandom(innocents);

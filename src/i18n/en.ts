@@ -635,6 +635,52 @@ export const en = {
     'aria.squared': 'squared',
     'aria.cubed': 'cubed',
     'aria.sqrt': 'square root of',
+
+    // ── Teacher tips (feature-discovery in the teacher's voice; delivered
+    //    through the existing pingMessage bubble) ──
+    'tip.speedrun': "You're quick today. There's a speedrun in the League tab, if you're curious.",
+    'tip.tables': 'Want to drill just one times-table? Tap the topic button and pick Tables.',
+    'tip.theme': 'Too bright? The moon button up top turns the board dark.',
+    'tip.trail': 'Your finger can leave a trail on the board. Pick one in the Me tab.',
+    'tip.chalk': 'There are other chalk colors in Me. A few unlock as you go.',
+
+    // ── Generator prompt words (problem text + swipe option labels). Digits,
+    //    operators and latex math stay locale-invariant — only the WORDS
+    //    translate, the way math.gcd/math.lcm already do. ──
+    'gen.bigger': 'Bigger: {a} or {b}?',
+    'gen.sidesOf': 'Sides of {shape} ?',
+    'gen.evenOddExpr': 'Is {expr} even or odd?',
+    'gen.evenOdd': 'Is {n} even or odd?',
+    'gen.even': 'Even',
+    'gen.odd': 'Odd',
+    'gen.either': 'Either',
+    'gen.moreThan': '{step} more than {n}',
+    'gen.lessThan': '{step} less than {n}',
+    'gen.roundToNearest': 'Round {n} to nearest {unit}',
+    'gen.placeWhole': 'whole number',
+    'gen.placeTenth': 'tenth',
+    'gen.of': 'of',
+    'gen.whichPrime': 'Which is prime?',
+    'gen.whichDivides': 'Which divides {n}?',
+    'gen.divBy11': '{n} div by 11?',
+    'gen.yes': 'Yes',
+    'gen.no': 'No',
+    'gen.lastDigit': 'Last digit: {expr}',
+    'gen.lastDigitOf': 'Last digit of',
+
+    // ── Share payload — composed in the SENDER's locale. Emoji, digits and
+    //    the "Math Challenge" brand stay in code; only the words translate. ──
+    'share.daily': 'Math Challenge Daily · {date} — {xp} pts, {accuracy}%',
+    'share.speedrun': 'Cleared 10 in {time} on Math Challenge',
+    'share.perfect': '{xp} pts, {streak} — perfect run on Math Challenge',
+    'share.standard': '{xp} pts · {streak} streak · {accuracy}% — Math Challenge {topic}',
+    'share.hard': 'HARD',
+    'share.timed': 'TIMED',
+    'share.ultimate': 'ULTIMATE',
+    'share.cta': 'Can you beat me? {arrow} {url}',
+
+    // ── Me tab ──
+    'me.emailPlaceholder': 'your@email.com',
 } as const;
 
 export type MsgKey = keyof typeof en;
