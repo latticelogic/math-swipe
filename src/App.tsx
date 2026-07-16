@@ -60,6 +60,7 @@ import { buildSharePayloadFromArgs, type SharePayloadArgs } from './utils/shareP
 import { buildProfileSlug } from './utils/profileSlug';
 import { EndRunDialog } from './components/EndRunDialog';
 import { nextTeacherTip, markTipSeen } from './utils/teacherTips';
+import { FlameIcon, ShieldIcon, BoltIcon } from './components/icons';
 import { Paywall } from './components/Paywall';
 import { WelcomeModal, TrialReminderModal } from './components/TrialModals';
 import { LegalPage, type LegalDocId } from './components/LegalPages';
@@ -1019,8 +1020,8 @@ function App() {
                 {milestone && `Milestone reached at ${streak} in a row!`}
               </div>
               {stats.streakShields > 0 && streak > 0 && (
-                <div className="text-[10px] ui text-[rgb(var(--color-fg))]/30 mt-1 flex items-center gap-0.5">
-                  {'🛡️'.repeat(stats.streakShields)}
+                <div className="text-[rgb(var(--color-fg))]/30 mt-1 flex items-center gap-0.5">
+                  {Array.from({ length: stats.streakShields }, (_, i) => <ShieldIcon key={i} size={11} />)}
                 </div>
               )}
 
@@ -1073,7 +1074,7 @@ function App() {
                           : 'text-[var(--color-gold)]'
                           }`}
                       >
-                        {streak >= 10 ? `🔥 ${streak}×` : `${streak}×`}
+                        {streak >= 10 ? <span className="inline-flex items-center gap-0.5"><FlameIcon size={12} />{streak}×</span> : `${streak}×`}
                       </span>
                     )}
                     {/* Milestone pulse — added 3 so the first sub-milestone gets a celebration too */}
@@ -1094,10 +1095,10 @@ function App() {
               {/* Daily streak */}
               {stats.dayStreak > 0 && (
                 <div className="mt-1 flex items-center justify-center gap-1 text-[10px] ui text-[rgb(var(--color-fg))]/25">
-                  <span>🔥 Day {stats.dayStreak}</span>
+                  <span className="inline-flex items-center gap-0.5"><FlameIcon size={10} /> Day {stats.dayStreak}</span>
                   {(stats.streakShields || 0) > 0 && (
-                    <span className="text-[var(--color-gold)] opacity-80" title="Streak Freeze Active">
-                      {'🛡️'.repeat(stats.streakShields)}
+                    <span className="text-[var(--color-gold)] opacity-80 inline-flex items-center gap-0.5" title="Streak Freeze Active">
+                      {Array.from({ length: stats.streakShields }, (_, i) => <ShieldIcon key={i} size={10} />)}
                     </span>
                   )}
                 </div>
@@ -1121,7 +1122,7 @@ function App() {
                 if (completedToday) return null;
                 const inProgressLabel = startedToday
                   ? `Daily: ${stats.todayDailySolved}/${dailyTotal} — finish it`
-                  : 'Daily challenge available';
+                  : 'Daily Challenge';
                 return (
                   // Pill-style daily-challenge entry. Previously this was
                   // tiny low-opacity text; testers were missing it. Now it's
@@ -1256,8 +1257,8 @@ function App() {
 
             {/* ── Speed bonus ── */}
             {speedBonus && (
-              <div key={'speed' + score} className="speed-pop absolute left-1/2 -translate-x-1/2 top-[30%] z-40 text-sm ui text-[var(--color-gold)] whitespace-nowrap">
-                ⚡ SPEED BONUS +2
+              <div key={'speed' + score} className="speed-pop absolute left-1/2 -translate-x-1/2 top-[30%] z-40 text-sm ui text-[var(--color-gold)] whitespace-nowrap flex items-center gap-1">
+                <BoltIcon size={13} /> SPEED BONUS +2
               </div>
             )}
 

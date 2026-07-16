@@ -20,6 +20,7 @@ import { getRank, getMastery } from '../domains/math/ranks';
 import { getTeacher } from '../domains/math/teachers';
 import { getThemeDisplayColor } from '../utils/chalkThemes';
 import { AchievementBadge } from './AchievementBadge';
+import { RankIcon } from './RankIcon';
 import { EVERY_ACHIEVEMENT } from '../utils/achievements';
 import { opponentChallengeSeed } from '../utils/dailyChallenge';
 import { parseProfileSlug } from '../utils/profileSlug';
@@ -232,7 +233,7 @@ export const ProfilePage = memo(function ProfilePage({ slug, onChallenge, onBack
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ delay: 0.1 }}
             >
-                <span className="text-lg">{rank.emoji}</span>
+                <span className="text-[var(--color-gold)]"><RankIcon rank={rank.name} size={18} /></span>
                 <span className="chalk text-[var(--color-gold)]">{rank.name}</span>
                 {mastery && (
                     <span className="chalk text-[var(--color-skull)] border-l border-[var(--color-gold)]/30 pl-2 ml-1">

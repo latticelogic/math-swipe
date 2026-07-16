@@ -130,7 +130,7 @@ export const en = {
     'paywall.feature1': 'Hard, Timed & Ultimate modes',
     'paywall.feature2': 'All 36 Magic Tricks',
     'paywall.feature3': 'The exclusive Pro cosmetics pack',
-    'paywall.proPrice': 'Yours forever for {price}. One time — no subscription.',
+    'paywall.proPrice': 'One-time purchase of {price}.',
     'paywall.expiredTitle': 'Two weeks of Math Challenge',
     'paywall.expiredSub': "Here's what you built.",
     'paywall.statDays.one': 'day',
