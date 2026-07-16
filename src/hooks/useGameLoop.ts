@@ -11,6 +11,7 @@ import { SWIPE_TO_INDEX, DEFAULT_GAME_CONFIG } from '../engine/domain';
 import { scoreCorrect, scorePenalty, FAST_ANSWER_MS } from '../engine/scoring';
 import { useDifficulty } from './useDifficulty';
 import { hapticCorrect, hapticWrong, hapticMilestone } from '../utils/haptics';
+import { soundCorrect, soundWrong, soundMilestone } from '../utils/sound';
 import { milestoneDurationMs } from '../components/milestoneTiers';
 
 // Re-export engine types so callers that import from useGameLoop still work
@@ -327,8 +328,8 @@ export function useGameLoop(
                 newStreak = prev.streak + 1;
                 milestoneEmoji = milestones[newStreak] ?? '';
                 // Haptic: louder buzz on milestones, normal pulse otherwise.
-                if (milestoneEmoji) hapticMilestone();
-                else hapticCorrect();
+                if (milestoneEmoji) { hapticMilestone(); soundMilestone(); }
+                else { hapticCorrect(); soundCorrect(); }
                 return {
                     ...prev,
                     streak: newStreak,
@@ -367,6 +368,7 @@ export function useGameLoop(
             }, autoAdvanceMs);
         } else {
             hapticWrong();
+            soundWrong();
             setGs(prev => {
                 const isTutorial = prev.totalAnswered === 0;
                 if (isTutorial) {

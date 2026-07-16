@@ -260,13 +260,16 @@ business call, not a code blocker.
 - All Firestore writes from the client must respect `firestore.rules`. Adding
   a new collection requires adding a rule block; the CI doesn't catch missing
   rules but the runtime will reject writes silently
-- **No audio in v1 — intentional.** The app uses haptic feedback for physical
-  satisfaction (see `src/utils/haptics.ts`) but does not play any sounds.
-  Mobile games with audio get muted in >80% of sessions; adding sound also
-  brings: opt-in toggle persistence, asset loading cost, autoplay policy
-  compliance, accessibility considerations. Decision is to keep haptic-only
-  until there's clear product reason to add sound. Don't add `new Audio()`
-  or `<audio>` elements without first revisiting this decision in CLAUDE.md.
+- **Sound is opt-in, default OFF, and asset-free** (revised 2026-07-16 — the
+  earlier "no audio in v1" decision was reopened on owner request). Mobile
+  games with audio get muted in >80% of sessions, so it stays off unless the
+  player enables it in Settings. Tones are **synthesized via the Web Audio
+  API** (`src/utils/sound.ts`) — no `.mp3`/`.wav` assets, no loading cost,
+  nothing to precache. Sounds fire from the answer moment (inside the swipe
+  gesture), so autoplay policy is satisfied without a separate unlock. If you
+  add new sounds, put them in `sound.ts` next to the haptic siblings, keep
+  them short + gentle (kids' confidence), and gate on `isSoundOn()`. Still no
+  `<audio>` elements or asset files without revisiting this note.
 - **Particles are reserved for milestones only.** `MilestoneBurst` (streak
   3/5/10/25/50) and the achievement-unlock toast fire small particle bursts.
   No other surfaces should add particles — confetti-on-every-correct-answer
