@@ -202,7 +202,7 @@ echo "sk_test_..." | firebase functions:secrets:set STRIPE_SECRET_KEY --data-fil
 stripe prices create \
   --unit-amount=314 \
   --currency=usd \
-  --product-data[name]="Math Swipe — Lifetime Unlock"
+  --product-data[name]="Math Challenge — Lifetime Unlock"
 # Copy the returned price id (price_test_...) into the next secret:
 echo "price_test_..." | firebase functions:secrets:set STRIPE_PRICE_ID --data-file -
 
@@ -273,7 +273,7 @@ via `stripe refunds create --charge=ch_...` afterward.
 the Paywall footer (the moment of payment) and the Me-tab footer
 (always-discoverable). Component at `src/components/LegalPages.tsx`.
 
-The Refund page (`/refund`) currently displays a 14-day no-questions
+The Refund page (`/refund`) displays a 14-day no-questions
 refund commitment routed to `help@latticelogic.app`. Body is a DRAFT
 under the yellow banner — replace with lawyer-reviewed copy before
 launch (see "Lawyer-reviewed legal copy" in CLAUDE.md's pre-launch
@@ -311,8 +311,9 @@ in dispute fees) instead of a friendly reply (cost: $0).
 
 This is a human step — no CLI for "ask your friends to use the app".
 
-The dev-only `mockBackdateTrial` lets a beta tester jump to day 13 or
-day 15 without waiting. Use that to accelerate the test, then have
+The dev-only `mockBackdateTrial` lets a beta tester jump to day 6 or
+day 8 (past the 7-day trial) without waiting. Use that to accelerate the
+test, then have
 them go through one real fresh-install run to see the natural pacing.
 
 Things to ask after they've tested:

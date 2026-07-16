@@ -1,12 +1,12 @@
 # Paywall flow — manual e2e regression checklist
 
-This is the visual end-to-end regression for the 14-day demo → paywall
+This is the visual end-to-end regression for the 7-day demo → paywall
 → unlock flow. Run it before any release that touches:
 
 - `useEntitlement`, the trial clock
 - `shouldFirePaywall` or the App.tsx trigger useEffect
 - `Paywall.tsx`, `TrialModals.tsx`, `TrialCountdownChip`
-- Stripe Checkout / webhook
+- Airwallex payment / webhook (or Google Play Billing)
 - Anything in `entitlements/{uid}` Firestore writes
 
 The unit + integration tests in `src/tests/paywallTrigger.test.ts` and
@@ -15,6 +15,9 @@ catches visual + state-flow regressions** that can't be unit-tested:
 modals layering correctly, dev controls present, mock grants closing
 the paywall, etc.
 
+Trial length is `TRIAL_DAYS` in `utils/entitlement.ts` (currently **7**).
+Copy strings live in the i18n catalogs (`src/i18n/*`), not hardcoded.
+
 ## Prerequisites
 
 - A dev build running locally (`npm run dev`)
@@ -22,8 +25,7 @@ the paywall, etc.
 
 The DEV-only mock helpers (`mockBackdateTrial`, `mockGrantAccess`) are
 gated by `import.meta.env.DEV` and only work on `npm run dev` / preview
-builds — they no-op in production. So this checklist requires a dev or
-preview deploy, not production.
+builds — they no-op in production.
 
 ---
 
@@ -31,92 +33,95 @@ preview deploy, not production.
 
 1. ☐ Open in a private/incognito tab (clean state)
 2. ☐ Welcome modal appears within ~600ms of app load
-3. ☐ Welcome modal copy says **"Free for 14 days"** and mentions
-   **"The Daily Challenge is always free"** (regression for the
+3. ☐ Welcome modal copy says **"7 days free — all topics and modes"** and
+   **"Daily Challenge is always free"** (regression for the
    daily-free-forever decision)
-4. ☐ Tap "Got it" — modal dismisses, doesn't reappear on refresh
-5. ☐ Navigate to Me tab — trial countdown chip shows "14 days left in trial"
+4. ☐ Tap "Let's go" — modal dismisses, doesn't reappear on refresh
+5. ☐ Navigate to Me tab — trial countdown chip shows "7 days left in trial"
 6. ☐ Play a problem (any topic) — first-steps achievement unlocks
    IMMEDIATELY (regression for the in-session achievement fix)
 
-## Section 2 — Day 7 midpoint
+## Section 2 — Day 4 midpoint reminder
 
-7. ☐ Open browser console, run a paste of the snippet at the bottom of
-   this file to force trial to Day 7 (via `mockBackdateTrial`)
-8. ☐ Navigate to a non-game tab (League / Me) — Day 7 reminder fires
-   with copy **"You're a week in"**
+7. ☐ Use the console snippet below to force trial to Day 4 (`daysAgo = 4`)
+8. ☐ Navigate to a non-game tab (League / Me) — the midpoint reminder fires
+   with copy **"Halfway through your trial"**
 9. ☐ Reminder NEVER fires mid-session (regression for the
-   never-interrupt-mid-play decision) — tested by:
-   - Backdate to 7 while on game tab with totalAnswered > 0
-   - Confirm modal does NOT appear
+   never-interrupt-mid-play decision):
+   - Backdate to 4 while on the game tab with totalAnswered > 0
+   - Confirm the modal does NOT appear
    - Switch tabs — modal NOW appears
 
-## Section 3 — Day 10 and Day 13 reminders
+## Section 3 — Day 6 reminder (1 day left)
 
-10. ☐ Backdate to Day 10 — reminder fires with **"4 days left in your trial"**
+10. ☐ Backdate to Day 6 — reminder shows urgent copy **"1 day left in your trial"**
 11. ☐ Same session-start gating verified (no mid-play interruption)
-12. ☐ Backdate to Day 13 — reminder shows urgent copy **"1 day left"**
-13. ☐ Day-13 reminder mentions **"The Daily Challenge stays free"**
+12. ☐ Reminder body mentions the Daily Challenge stays free
 
 ## Section 4 — Paywall (value-anchored fire)
 
-14. ☐ Backdate to Day 14 → status is now 'expired'
-15. ☐ Open app — paywall does NOT auto-fire (this is correct — value-anchored, not on-open)
-16. ☐ Start a multiply session
-17. ☐ Answer one problem
-18. ☐ Paywall opens AFTER the problem completes
-19. ☐ Paywall headline reads **"Two weeks of Math Swipe"**, sub-line **"Here's what you built"**
-20. ☐ User's own stats are visible (totalSolved, bestStreak, dayStreak, achievementCount)
-21. ☐ Price phrase: "Want to keep going? Everything stays unlocked for $3.14"
+13. ☐ Backdate to Day 7 → status is now 'expired'
+14. ☐ Open app — paywall does NOT auto-fire (correct — value-anchored, not on-open)
+15. ☐ Start a multiply session
+16. ☐ Answer one problem
+17. ☐ Paywall opens AFTER the problem completes
+18. ☐ Paywall headline reads **"One week of Math Challenge"**, sub-line **"Here's what you built."**
+19. ☐ User's own stats are visible (totalSolved, bestStreak, dayStreak, achievementCount)
+20. ☐ Price phrase: "Want to keep going? Everything stays unlocked for $3.14. One time."
     (NOT "$3.14 keeps your progress forever" — regression for the
     forbidden phrasing rule)
-22. ☐ "The Daily Challenge is always free." line is present
-23. ☐ Legal footer row visible: **Refund · Privacy · Terms**
+21. ☐ "The Daily Challenge is always free." line is present (EXPIRED gate only)
+22. ☐ Legal footer row visible: **Privacy · Terms** (Refund is NOT in the
+    row — it lives inside the Terms; regression for the 2026-07-16 change)
 
 ## Section 5 — Daily exemption (the most important regression check)
 
-24. ☐ Still expired. Tap "Maybe later" to close paywall (closes the app
+23. ☐ Still expired. Tap "Maybe later" to close paywall (closes the app
     or navigates to about:blank — that's correct behavior)
-25. ☐ Reopen app
-26. ☐ Tap the Daily Challenge button
-27. ☐ Play a daily problem
-28. ☐ Paywall does NOT fire — this confirms `shouldFirePaywall` exempts
-    `questionType === 'daily'` correctly
-29. ☐ Complete the full daily — paywall STILL doesn't fire at session end
+24. ☐ Reopen app → tap the Daily Challenge button → play a daily problem
+25. ☐ Paywall does NOT fire — confirms `shouldFirePaywall` exempts
+    `questionType === 'daily'`
+26. ☐ Complete the full daily — paywall STILL doesn't fire at session end
 
 ## Section 6 — Unlock flow (DEV mock)
 
-30. ☐ Trigger paywall again (non-daily session, problem #1)
-31. ☐ Tap "Keep playing"
-32. ☐ In dev: button text changes to "Just a sec…" briefly, paywall closes
-33. ☐ Status now resolves to 'paid' — countdown chip in Me tab disappears
-34. ☐ Subsequent non-daily sessions never re-fire the paywall
+27. ☐ Trigger paywall again (non-daily session, problem #1)
+28. ☐ Tap "Keep playing"
+29. ☐ In dev: button text changes to "Just a sec…" briefly, paywall closes
+30. ☐ Status now resolves to 'paid' — countdown chip in Me tab disappears
+31. ☐ Subsequent non-daily sessions never re-fire the paywall
+32. ☐ The Pro set (advanced modes, full Magic Tricks, Pro cosmetics) is now
+    unlocked; free-tier cosmetics gating is gone
 
-## Section 7 — Legal pages
+## Section 7 — Pro upsell (early conversion)
 
-35. ☐ Tap any legal link in paywall or Me tab footer
-36. ☐ Page renders with **yellow "DRAFT" banner** at top (regression
-    for the legal-pages-are-drafts memory note)
-37. ☐ Back button returns to the app at /
-38. ☐ Inter-doc footer row navigates correctly
+33. ☐ During an ACTIVE trial, tap a locked Pro thing (a Hard/Timed toggle,
+    a locked Magic Trick, a Pro chalk color)
+34. ☐ Paywall opens in `mode='pro'`: headline "Unlock everything", the
+    feature list, price line "One-time purchase of $3.14."
+35. ☐ Pro mode has NO legal row, NO "Daily Challenge is always free" line,
+    NO "Lifetime access" subline (those are EXPIRED-gate only)
+36. ☐ "Maybe later" DISMISSES (doesn't close the app) in pro mode
+
+## Section 8 — Legal pages
+
+37. ☐ Tap a legal link (Privacy/Terms) in the paywall or Settings
+38. ☐ Page renders WITHOUT any draft banner (legal went live 2026-07-15)
+39. ☐ Refund policy is reachable via the link inside the Terms
+40. ☐ Back returns to the app at /
 
 ---
 
 ## Helper: console snippet to backdate trial
 
 ```js
-// Run in browser console while signed in. The hook reads via
-// useEntitlement; calling its DEV mock writes to Firestore.
-// Find the active entitlement state by inspecting React DevTools
-// → look for the `entitlement` object on the App component.
-//
-// Or: simpler — write directly to Firestore via the SDK in console:
+// Run in browser console while signed in.
 import('firebase/firestore').then(async (fs) => {
   const { db } = await import('./src/utils/firebase');
   const auth = (await import('firebase/auth')).getAuth();
   const uid = auth.currentUser?.uid;
   if (!uid) return console.error('no uid');
-  const daysAgo = 7; // change to 10, 13, 14
+  const daysAgo = 4; // change to 6 (1-day reminder) or 7 (expired)
   await fs.setDoc(
     fs.doc(db, 'entitlements', uid),
     {
@@ -132,16 +137,15 @@ import('firebase/firestore').then(async (fs) => {
 });
 ```
 
-For the simplest version: open the Me tab in dev, scroll to the bottom,
-and there'll be a `[dev] reset trial` button on the Paywall component
-when it's already showing. Otherwise, the console-snippet method is the
-fallback.
+There's also a `[dev] reset trial` button on the Paywall in dev builds
+once it's showing.
 
 ---
 
 ## When this runbook gets out of date
 
-If the user-facing copy changes (eg you decide "Two weeks of Math Swipe"
-should become "Your trial is up"), update steps 18-22 to match. The
-unit test in `paywallTrigger.test.ts` is the source-of-truth for the
-*logic*; this doc is the source-of-truth for the *visual flow*.
+If `TRIAL_DAYS` or the reminder thresholds change, update the day numbers
+here to match. Copy strings are in the i18n catalogs — verify against
+those, not against this doc's quoted text. The unit test in
+`paywallTrigger.test.ts` is the source-of-truth for the *logic*; this doc
+is the source-of-truth for the *visual flow*.
