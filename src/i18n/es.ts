@@ -163,5 +163,4 @@ export const es: Record<MsgKey, string> = {
     'me.statSolved': 'resueltos',
     'me.statDaily': 'diario',
     'me.byType': 'por tema',
-    'me.byTypeHint': 'tu acierto en cada operación, en todos los modos',
 };

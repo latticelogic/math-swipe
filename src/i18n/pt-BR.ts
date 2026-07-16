@@ -162,5 +162,4 @@ export const ptBR: Record<MsgKey, string> = {
     'me.statSolved': 'resolvidos',
     'me.statDaily': 'diário',
     'me.byType': 'por tema',
-    'me.byTypeHint': 'seus acertos em cada operação, em todos os modos',
 };

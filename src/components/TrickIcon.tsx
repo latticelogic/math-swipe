@@ -155,10 +155,10 @@ export function TrickIcon({ id, size = 24, className }: Props) {
 
         // ── Squaring tricks ────────────────────────────────────────────
         case 'square-5':
-            // n5² — the small-5 superscript trick
+            // 35² — a concrete example beats the abstract n5² (users misread the n)
             return (
                 <svg {...p}>
-                    <text x="3" y="18" fontSize="14" fontFamily="serif" fontWeight="700" fill="currentColor" stroke="none">n5²</text>
+                    <text x="2" y="18" fontSize="13" fontFamily="serif" fontWeight="700" fill="currentColor" stroke="none">35²</text>
                 </svg>
             );
         case 'square-40s':
