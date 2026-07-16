@@ -7,6 +7,7 @@ import { MathExpr } from './MathExpr';
 import { AutoFitEquation } from './AutoFitEquation';
 import { TrickIcon } from './TrickIcon';
 import { t } from '../i18n';
+import { lessonSteps, lessonResult } from '../i18n/lessons';
 
 interface Props {
     trick: MagicTrick;
@@ -18,7 +19,12 @@ export function TrickLesson({ trick, onClose }: Props) {
     const [startedPractice, setStartedPractice] = useState(false);
     const [dir, setDir] = useState(1); // 1 = forward, -1 = back
 
-    const isLastStep = step === trick.lesson.steps.length - 1;
+    // Localized lesson prose: steps + the (rare) worded result. English arrays
+    // in mathTricks.ts stay the source-of-truth + fallback (see i18n/lessons.ts).
+    const steps = lessonSteps(trick.id, trick.lesson.steps);
+    const result = lessonResult(trick.id, trick.lesson.result);
+
+    const isLastStep = step === steps.length - 1;
 
     const goForward = useCallback(() => {
         if (isLastStep) setStartedPractice(true);
@@ -78,13 +84,13 @@ export function TrickLesson({ trick, onClose }: Props) {
                     <AutoFitEquation key={`${step}-${isLastStep ? 'final' : 'mid'}`}>
                         {trick.lesson.latex ? (
                             <MathExpr
-                                latex={`${trick.lesson.latex} = ${isLastStep ? String.raw`{\color{gold} ${trick.lesson.result}}` : '?'}`}
+                                latex={`${trick.lesson.latex} = ${isLastStep ? String.raw`{\color{gold} ${result}}` : '?'}`}
                                 displayMode
                                 className="text-4xl"
                             />
                         ) : (
                             <div className="text-5xl chalk whitespace-nowrap">
-                                {trick.lesson.equation} = {isLastStep ? <span className="text-[var(--color-gold)]">{trick.lesson.result}</span> : '?'}
+                                {trick.lesson.equation} = {isLastStep ? <span className="text-[var(--color-gold)]">{result}</span> : '?'}
                             </div>
                         )}
                     </AutoFitEquation>
@@ -101,7 +107,7 @@ export function TrickLesson({ trick, onClose }: Props) {
                             className="absolute inset-0 flex items-center justify-center"
                         >
                             <p className="ui text-lg leading-relaxed text-[rgb(var(--color-fg))]/80">
-                                {trick.lesson.steps[step]}
+                                {steps[step]}
                             </p>
                         </motion.div>
                     </AnimatePresence>
@@ -109,7 +115,7 @@ export function TrickLesson({ trick, onClose }: Props) {
 
                 {/* Step dots */}
                 <div className="flex justify-center gap-2 mb-8">
-                    {trick.lesson.steps.map((_, i) => (
+                    {steps.map((_, i) => (
                         <div key={i} className={`w-2 h-2 rounded-full transition-colors ${i <= step ? 'bg-[var(--color-gold)]' : 'bg-[rgb(var(--color-fg))]/15'}`} />
                     ))}
                 </div>
