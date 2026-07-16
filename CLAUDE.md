@@ -327,7 +327,11 @@ business call, not a code blocker.
   When extending, *follow* the model; don't propose alternative pricing,
   subscription tiers, freemium variants, or "Pro" features. The lever
   for raising revenue is conversion-rate UX (trial polish, paywall copy,
-  habit formation) — not price changes or tier additions.
+  habit formation) — not price changes or tier additions. To MEASURE those
+  UX bets, use the A/B scaffolding in `src/utils/experiments.ts`: register an
+  experiment (deterministic per-uid assignment, kill-switch via `active`),
+  consume it with `useExperiment(id, uid)`, and exposures log to
+  `experimentExposures` (write-only, joined to conversions server-side).
 
 ## Pre-launch state
 
