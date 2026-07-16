@@ -64,7 +64,10 @@ function parseSlug(slug: string): ParsedSlug | null {
     const i = slug.lastIndexOf('-');
     if (i >= 1 && i < slug.length - 1) {
         const tail = slug.slice(i + 1);
-        if (/^[a-z0-9]{3,8}$/.test(tail)) {
+        // Mixed-case uid suffixes ("FK1o") must parse — kept in sync with
+        // src/utils/profileSlug.ts (case-insensitive; uid compared lowercased
+        // at line ~158). A lowercase-only test broke per-profile OG cards.
+        if (/^[a-zA-Z0-9]{3,8}$/.test(tail)) {
             const name = decodeURIComponent(slug.slice(0, i));
             return { kind: 'legacy', name, uidPrefix: tail.toLowerCase() };
         }

@@ -36,7 +36,13 @@ export function parseProfileSlug(slug: string): ParsedSlug | null {
     // because the slug normalizer strips dashes) is treated as a handle.
     if (i >= 1 && i < slug.length - 1) {
         const tail = slug.slice(i + 1);
-        if (/^[a-z0-9]{3,8}$/.test(tail)) {
+        // Firebase uids are MIXED-CASE, so `buildProfileSlug`'s `uid.slice(0,4)`
+        // suffix can contain capitals (e.g. "FK1o"). The tail test must accept
+        // them — matching is case-insensitive downstream (both this uidPrefix
+        // and the compared uid are lowercased). A lowercase-only test here made
+        // every share link for a capitalized-uid user resolve to "Invalid
+        // profile link" — the whole viral loop, silently broken.
+        if (/^[a-zA-Z0-9]{3,8}$/.test(tail)) {
             const name = decodeURIComponent(slug.slice(0, i));
             return { kind: 'legacy', name, uidPrefix: tail.toLowerCase() };
         }
