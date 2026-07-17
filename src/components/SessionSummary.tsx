@@ -172,7 +172,7 @@ export const SessionSummary = memo(function SessionSummary({
                         {questionType === 'speedrun' && speedrunFinalTime ? (
                             <>
                                 {/* Stopwatch — hand-drawn, replaces ⏱️ emoji */}
-                                <motion.svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mb-2 mx-auto text-[var(--color-speedrun)]" animate={{ scale: [1, 1.15, 1] }} transition={{ duration: 2, repeat: Infinity }} aria-hidden>
+                                <motion.svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mb-2 mx-auto text-[var(--color-gold)]" animate={{ scale: [1, 1.15, 1] }} transition={{ duration: 2, repeat: Infinity }} aria-hidden>
                                     <circle cx="12" cy="14" r="7" />
                                     <line x1="12" y1="14" x2="15" y2="11" />
                                     <line x1="10" y1="2" x2="14" y2="2" />
@@ -182,7 +182,7 @@ export const SessionSummary = memo(function SessionSummary({
                                     {t('summary.speedrunCleared')}
                                 </motion.h3>
                                 {isNewSpeedrunRecord && (
-                                    <div className="text-xs ui font-bold text-[var(--color-speedrun)] uppercase tracking-widest mb-4">
+                                    <div className="text-xs ui font-bold text-[var(--color-gold)] uppercase tracking-widest mb-4">
                                         {t('summary.newRecord')}
                                     </div>
                                 )}

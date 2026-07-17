@@ -304,7 +304,7 @@ export const ProfilePage = memo(function ProfilePage({ slug, onChallenge, onBack
                         )}
                     </>}
                     value={profile.bestSpeedrunTime && profile.bestSpeedrunTime > 0 ? formatTime(profile.bestSpeedrunTime) : '—'}
-                    color="var(--color-speedrun)"
+                    color="var(--color-gold)"
                 />
             </div>
 
