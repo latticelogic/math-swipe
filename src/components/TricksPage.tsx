@@ -136,10 +136,20 @@ export function TricksPage({ onLessonActive, hasPro = true, onProLocked }: Props
                                 onClick={() => toggleCat(cat.id)}
                                 className="w-full flex items-center gap-3 p-3 hover:bg-[rgb(var(--color-fg))]/[0.03] transition-colors"
                             >
-                                {/* Mini progress ring */}
-                                <div className="relative w-8 h-8 shrink-0">
+                                {/* Progress ring — THE category progress indicator. The
+                                    "N/M mastered" sub-line was redundant with this ring
+                                    (owner call 2026-07-17), so the ring carries it alone:
+                                    slightly stronger track (an empty ring must still read
+                                    as a ring), full-strength gold when complete, and the
+                                    exact count lives on as its tooltip + aria label. */}
+                                <div
+                                    className="relative w-8 h-8 shrink-0"
+                                    role="img"
+                                    aria-label={t('magic.catMastered', { mastered: catMastered, total: tricks.length })}
+                                    title={t('magic.catMastered', { mastered: catMastered, total: tricks.length })}
+                                >
                                     <svg viewBox="0 0 32 32" className="w-full h-full -rotate-90">
-                                        <circle cx="16" cy="16" r="13" fill="none" stroke="rgb(var(--color-fg) / 0.08)" strokeWidth="2.5" />
+                                        <circle cx="16" cy="16" r="13" fill="none" stroke="rgb(var(--color-fg) / 0.14)" strokeWidth="2.5" />
                                         {progress > 0 && (
                                             <circle
                                                 cx="16" cy="16" r="13" fill="none"
@@ -147,7 +157,7 @@ export function TricksPage({ onLessonActive, hasPro = true, onProLocked }: Props
                                                 strokeWidth="2.5"
                                                 strokeDasharray={`${progress * 81.68} 81.68`}
                                                 strokeLinecap="round"
-                                                opacity={0.7}
+                                                opacity={progress >= 1 ? 1 : 0.7}
                                             />
                                         )}
                                     </svg>
@@ -155,7 +165,6 @@ export function TricksPage({ onLessonActive, hasPro = true, onProLocked }: Props
                                 </div>
                                 <div className="flex-1 text-left">
                                     <div className="text-sm chalk text-[rgb(var(--color-fg))]/70">{trickCategoryLabel(cat.id)}</div>
-                                    <div className="text-[9px] ui text-[rgb(var(--color-fg))]/30">{t('magic.catMastered', { mastered: catMastered, total: tricks.length })}</div>
                                 </div>
                                 {/* Chevron */}
                                 <motion.div
