@@ -166,7 +166,7 @@ export const id: Record<MsgKey, string> = {
     'me.statAccuracy': 'akurasi',
     'me.statSolved': 'terjawab',
     'me.statDaily': 'harian',
-    'me.byType': 'per jenis',
+    'me.byType': 'akurasi',
 
     'rail.shareFallback': 'Coba game hitung cepat ini.',
     'hud.themeToggle.aria': 'Ganti tema',
@@ -254,7 +254,7 @@ export const id: Record<MsgKey, string> = {
     'magic.catMastered': '{mastered}/{total} dikuasai',
     'magic.proUnlockAria': 'Pro — buka',
     'magic.masteredTitle': 'Dikuasai',
-    'magic.levelShort': 'Lv.{level}',
+    'magic.levelShort': 'Lv{level}',
     'magic.previewHint': 'Ketuk untuk tutup · Ketuk kartu untuk mulai pelajaran',
     'magic.lessonMode': 'Mode pelajaran',
     'magic.startPractice': 'Mulai Latihan Kilat!',
@@ -615,4 +615,6 @@ export const id: Record<MsgKey, string> = {
     'share.cta': 'Bisa kalahkan aku? {arrow} {url}',
 
     'me.emailPlaceholder': 'kamu@email.com',
+    'me.typeDetail': '{name} — {correct}/{solved} benar · {acc}%',
+    'me.typeNoData': '{name} — belum dicoba',
 };

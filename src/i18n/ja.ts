@@ -165,7 +165,7 @@ export const ja: Record<MsgKey, string> = {
     'me.statAccuracy': '正解率',
     'me.statSolved': '解答数',
     'me.statDaily': 'デイリー',
-    'me.byType': '種類別',
+    'me.byType': '正解率',
 
     'rail.shareFallback': '暗算ゲーム、やってみて。',
     'hud.themeToggle.aria': 'テーマ切替',
@@ -253,7 +253,7 @@ export const ja: Record<MsgKey, string> = {
     'magic.catMastered': '{mastered}/{total} 習得',
     'magic.proUnlockAria': 'Pro — 解除',
     'magic.masteredTitle': '習得済み',
-    'magic.levelShort': 'Lv.{level}',
+    'magic.levelShort': 'Lv{level}',
     'magic.previewHint': 'タップで閉じる · カードをタップでレッスン開始',
     'magic.lessonMode': 'レッスンモード',
     'magic.startPractice': '練習ブリッツを開始!',
@@ -614,4 +614,6 @@ export const ja: Record<MsgKey, string> = {
     'share.cta': '勝てるかな?{arrow} {url}',
 
     'me.emailPlaceholder': 'you@email.com',
+    'me.typeDetail': '{name} — {solved}問中{correct}問正解 · {acc}%',
+    'me.typeNoData': '{name} — まだ挑戦していません',
 };

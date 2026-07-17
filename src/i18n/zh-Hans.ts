@@ -165,7 +165,7 @@ export const zhHans: Record<MsgKey, string> = {
     'me.statAccuracy': '正确率',
     'me.statSolved': '已解答',
     'me.statDaily': '每日',
-    'me.byType': '按题型',
+    'me.byType': '正确率',
 
     'rail.shareFallback': '来玩这个心算游戏。',
     'hud.themeToggle.aria': '切换主题',
@@ -253,7 +253,7 @@ export const zhHans: Record<MsgKey, string> = {
     'magic.catMastered': '已掌握 {mastered}/{total}',
     'magic.proUnlockAria': 'Pro — 解锁',
     'magic.masteredTitle': '已掌握',
-    'magic.levelShort': 'Lv.{level}',
+    'magic.levelShort': 'Lv{level}',
     'magic.previewHint': '点击关闭 · 点击卡片开始课程',
     'magic.lessonMode': '课程模式',
     'magic.startPractice': '开始闪电练习!',
@@ -611,4 +611,6 @@ export const zhHans: Record<MsgKey, string> = {
     'share.ultimate': '终极',
     'share.cta': '能超过我吗?{arrow} {url}',
     'me.emailPlaceholder': 'you@email.com',
+    'me.typeDetail': '{name} — {solved} 题中答对 {correct} 题 · {acc}%',
+    'me.typeNoData': '{name} — 还没试过',
 };

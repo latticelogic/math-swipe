@@ -164,7 +164,7 @@ export const ptBR: Record<MsgKey, string> = {
     'me.statAccuracy': 'acertos',
     'me.statSolved': 'resolvidos',
     'me.statDaily': 'diário',
-    'me.byType': 'por tema',
+    'me.byType': 'acertos',
 
     'rail.shareFallback': 'Um jogo rápido de cálculo mental.',
     'hud.themeToggle.aria': 'Alternar tema',
@@ -252,7 +252,7 @@ export const ptBR: Record<MsgKey, string> = {
     'magic.catMastered': '{mastered}/{total} dominados',
     'magic.proUnlockAria': 'Pro — desbloquear',
     'magic.masteredTitle': 'Dominado',
-    'magic.levelShort': 'Nv.{level}',
+    'magic.levelShort': 'Lv{level}',
     'magic.previewHint': 'Toque para fechar · Toque no cartão para começar a lição',
     'magic.lessonMode': 'Modo lição',
     'magic.startPractice': 'Começar treino relâmpago!',
@@ -603,4 +603,6 @@ export const ptBR: Record<MsgKey, string> = {
     'share.ultimate': 'SUPREMO',
     'share.cta': 'Consegue me superar? {arrow} {url}',
     'me.emailPlaceholder': 'voce@email.com',
+    'me.typeDetail': '{name} — {correct}/{solved} certas · {acc}%',
+    'me.typeNoData': '{name} — ainda não tentado',
 };

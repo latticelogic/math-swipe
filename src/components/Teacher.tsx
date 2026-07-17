@@ -175,8 +175,16 @@ export const Teacher = memo(function Teacher({
     const PortraitSvg = teacher.Portrait;
 
     return (
+        // Outer wrapper owns positioning + stacking + the short-viewport shrink
+        // (.teacher-pip media rule in index.css). It sits BELOW the play
+        // surface (z-[5] < ProblemView's z-10) so the mascot/bubble can never
+        // render on top of an answer button (tester report 2026-07-17: on
+        // short viewports it overlapped the right answer circle). The scale
+        // lives here, not on the motion.div, so it can't fight framer-motion's
+        // inline transforms. pointer-events-none inherits to the whole subtree.
+        <div className="absolute bottom-4 right-2 pointer-events-none z-[5] teacher-pip">
         <motion.div
-            className={`absolute bottom-4 right-2 pointer-events-none z-30 ${displayState === 'streak' ? 'on-fire' : ''}`}
+            className={displayState === 'streak' ? 'on-fire' : ''}
             animate={displayState === 'idle' ? (gesture ?? ANIMS.idle) : ANIMS[displayState]}
             aria-label={teacherName(teacher.id)}
         >
@@ -209,6 +217,7 @@ export const Teacher = memo(function Teacher({
                 <span className="absolute -top-1 right-0 text-xl pointer-events-none">🔥</span>
             )}
         </motion.div>
+        </div>
     );
 });
 

@@ -21,7 +21,11 @@ export function RankIcon({ rank, size = 24, className }: Props) {
         viewBox: '0 0 24 24',
         fill: 'none',
         stroke: 'currentColor',
-        strokeWidth: 1.8,
+        // The viewBox stroke scales with render size, so a fixed 1.8 turned
+        // chunky at the Me-header size (~4.8px at 64px — tester: "too
+        // thick"). Cap the RENDERED stroke at ~2.1px: chip-size icons are
+        // unchanged; large crests thin out to match the chalk line weight.
+        strokeWidth: Math.min(1.8, 50 / size),
         strokeLinecap: 'round' as const,
         strokeLinejoin: 'round' as const,
         className,

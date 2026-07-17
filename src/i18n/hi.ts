@@ -165,7 +165,7 @@ export const hi: Record<MsgKey, string> = {
     'me.statAccuracy': 'सटीकता',
     'me.statSolved': 'हल किए',
     'me.statDaily': 'दैनिक',
-    'me.byType': 'प्रकार से',
+    'me.byType': 'सटीकता',
 
     'rail.shareFallback': 'यह मानसिक-गणित का खेल आज़माएँ।',
 
@@ -264,7 +264,7 @@ export const hi: Record<MsgKey, string> = {
     'magic.catMastered': '{mastered}/{total} में महारत',
     'magic.proUnlockAria': 'Pro — अनलॉक',
     'magic.masteredTitle': 'महारत',
-    'magic.levelShort': 'स्तर {level}',
+    'magic.levelShort': 'Lv{level}',
     'magic.previewHint': 'बंद करने के लिए टैप · पाठ शुरू करने के लिए कार्ड टैप करें',
     'magic.lessonMode': 'पाठ मोड',
     'magic.startPractice': 'अभ्यास ब्लिट्ज़ शुरू करें!',
@@ -633,4 +633,6 @@ export const hi: Record<MsgKey, string> = {
     'share.cta': 'मुझे हरा सकते हैं? {arrow} {url}',
 
     'me.emailPlaceholder': 'you@email.com',
+    'me.typeDetail': '{name} — {solved} में से {correct} सही · {acc}%',
+    'me.typeNoData': '{name} — अभी तक नहीं आज़माया',
 };

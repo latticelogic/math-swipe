@@ -177,12 +177,15 @@ export function TricksPage({ onLessonActive, hasPro = true, onProLocked }: Props
                                                             className={`w-full text-left bg-[rgb(var(--color-fg))]/[0.02] border rounded-xl p-3 flex items-center gap-3 transition-colors hover:bg-[rgb(var(--color-fg))]/5 relative overflow-hidden group
                                                                 ${isMastered ? 'border-[var(--color-gold)]/30' : 'border-[rgb(var(--color-fg))]/10'}`}
                                                         >
-                                                            <div className={`absolute left-0 top-0 bottom-0 w-1 transition-opacity ${isMastered ? 'bg-[var(--color-gold)] opacity-70' : 'bg-[var(--color-gold)] opacity-30 group-hover:opacity-100'}`} />
+                                                            {/* Locked tiles skip the gold hover affordance — on touch,
+                                                                sticky :hover made a padlocked row read as selected/active
+                                                                after returning from a lesson (tester report 2026-07-17). */}
+                                                            <div className={`absolute left-0 top-0 bottom-0 w-1 transition-opacity ${isMastered ? 'bg-[var(--color-gold)] opacity-70' : locked ? 'bg-[var(--color-gold)] opacity-20' : 'bg-[var(--color-gold)] opacity-30 group-hover:opacity-100'}`} />
                                                             <div className={`w-9 h-9 rounded-full flex items-center justify-center ${isMastered ? 'bg-[var(--color-gold)]/15 text-[var(--color-gold)]' : 'bg-[rgb(var(--color-fg))]/5 text-[rgb(var(--color-fg))]/70'}`}>
                                                                 <TrickIcon id={trick.id} size={20} />
                                                             </div>
                                                             <div className="flex-1 min-w-0">
-                                                                <h3 className="chalk text-sm text-[rgb(var(--color-fg))]/90 group-hover:text-[var(--color-gold)] transition-colors truncate">
+                                                                <h3 className={`chalk text-sm text-[rgb(var(--color-fg))]/90 transition-colors truncate ${locked ? '' : 'group-hover:text-[var(--color-gold)]'}`}>
                                                                     {trickTitle(trick.id)}
                                                                 </h3>
                                                                 <p className="ui text-[10px] text-[rgb(var(--color-fg))]/50 leading-tight mt-0.5 truncate">
@@ -194,7 +197,7 @@ export function TricksPage({ onLessonActive, hasPro = true, onProLocked }: Props
                                                             ) : isMastered ? (
                                                                 <div className="text-[var(--color-gold)] text-base" title={t('magic.masteredTitle')}>✓</div>
                                                             ) : (
-                                                                <div className="ui text-[9px] font-semibold px-1.5 py-0.5 rounded bg-[var(--color-gold)]/10 text-[var(--color-gold)]/70">
+                                                                <div className="ui text-[10px] font-semibold px-1.5 py-0.5 rounded bg-[var(--color-gold)]/10 text-[var(--color-gold)]/80 whitespace-nowrap">
                                                                     {t('magic.levelShort', { level: trick.difficulty })}
                                                                 </div>
                                                             )}

@@ -106,3 +106,13 @@ export const TIMED_MODE_ACHIEVEMENTS = EVERY_MATH_ACHIEVEMENT.filter(a =>
 
 /** @deprecated Import from domains/math/mathAchievements instead */
 export const ULTIMATE_ACHIEVEMENTS = EVERY_MATH_ACHIEVEMENT.filter(a => a.id.startsWith('ultimate-'));
+
+/** Everything EXCEPT the mode-specific ladders — the Me tab's flat grid uses
+ *  this, because Hard/Timed/Ultimate achievements render again under their own
+ *  section headers below it (tester report 2026-07-17: 13 badges duplicated). */
+export const GENERAL_ACHIEVEMENTS = (() => {
+    const modeIds = new Set([
+        ...HARD_MODE_ACHIEVEMENTS, ...TIMED_MODE_ACHIEVEMENTS, ...ULTIMATE_ACHIEVEMENTS,
+    ].map(a => a.id));
+    return EVERY_MATH_ACHIEVEMENT.filter(a => !modeIds.has(a.id));
+})();

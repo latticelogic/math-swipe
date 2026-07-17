@@ -186,7 +186,7 @@ export const en = {
     'me.statAccuracy': 'accuracy',
     'me.statSolved': 'solved',
     'me.statDaily': 'daily',
-    'me.byType': 'by type',
+    'me.byType': 'accuracy',
 
     // ── HUD / game / session ──
     'hud.themeToggle.aria': 'Toggle theme',
@@ -288,7 +288,7 @@ export const en = {
     'magic.catMastered': '{mastered}/{total} mastered',
     'magic.proUnlockAria': 'Pro — unlock',
     'magic.masteredTitle': 'Mastered',
-    'magic.levelShort': 'Lv.{level}',
+    'magic.levelShort': 'Lv{level}',
     'magic.previewHint': 'Tap to dismiss · Tap card to start lesson',
     'magic.lessonMode': 'Lesson mode',
     'magic.startPractice': 'Start Practice Blitz!',
@@ -681,6 +681,8 @@ export const en = {
 
     // ── Me tab ──
     'me.emailPlaceholder': 'your@email.com',
+    'me.typeDetail': '{name} — {correct}/{solved} correct · {acc}%',
+    'me.typeNoData': '{name} — not tried yet',
 } as const;
 
 export type MsgKey = keyof typeof en;

@@ -53,12 +53,20 @@ export function StreakGarden({
     // [lastPlayed - (dayStreak-1), lastPlayed].
     const streakStart = lastNum - (dayStreak - 1);
 
+    // With a per-day ledger, ONLY days actually played fill gold — a no-play
+    // day inside the streak window (a shield/freeze day) must not look like a
+    // played day (tester report 2026-07-17: gold cell whose detail said "no
+    // play"). Users from before the ledger existed have no dayLog, so fall
+    // back to the streak-window fill rather than showing an empty garden.
+    const hasLedger = !!dayLog && Object.keys(dayLog).length > 0;
     const cells = Array.from({ length: CELLS }, (_, i) => {
         const daysAgo = CELLS - 1 - i; // oldest → today
         const cellNum = todayNum - daysAgo;
         const key = dateKeyAgo(today, daysAgo);
         const entry = dayLog?.[key];
-        const filled = (cellNum >= streakStart && cellNum <= lastNum) || (entry?.solved ?? 0) > 0;
+        const filled = hasLedger
+            ? (entry?.solved ?? 0) > 0
+            : (cellNum >= streakStart && cellNum <= lastNum);
         const isToday = cellNum === todayNum;
         return { filled, isToday, key, entry };
     });
@@ -85,10 +93,13 @@ export function StreakGarden({
                         onMouseLeave={() => setSelected(prev => (prev === i ? null : prev))}
                         className={[
                             'aspect-square rounded-[5px] transition-colors',
+                            // Played → gold fill. No play → uncolored, a quiet
+                            // SOLID line (owner call 2026-07-17: a missed day
+                            // must never read as a played one).
                             c.filled
                                 ? 'bg-[var(--color-gold)]/80'
-                                : 'border border-dashed border-[rgb(var(--color-fg))]/15',
-                            c.isToday && !c.filled ? 'border-solid border-[var(--color-gold)]/60' : '',
+                                : 'border border-solid border-[rgb(var(--color-fg))]/20',
+                            c.isToday && !c.filled ? 'border-[var(--color-gold)]/60' : '',
                             c.isToday && c.filled ? 'ring-1 ring-[rgb(var(--color-fg))]/40' : '',
                             selected === i ? 'ring-2 ring-[rgb(var(--color-fg))]/50' : '',
                         ].join(' ')}
