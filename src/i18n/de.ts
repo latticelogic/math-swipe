@@ -606,4 +606,6 @@ export const de: Record<MsgKey, string> = {
     'me.emailPlaceholder': 'du@email.com',
     'me.typeDetail': '{name} — {correct}/{solved} richtig · {acc}%',
     'me.typeNoData': '{name} — noch nicht probiert',
+    'settings.theme': 'Dunkelmodus',
+    'game.dailyChip': 'Täglich {solved}/{total}',
 };

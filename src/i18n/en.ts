@@ -683,6 +683,8 @@ export const en = {
     'me.emailPlaceholder': 'your@email.com',
     'me.typeDetail': '{name} — {correct}/{solved} correct · {acc}%',
     'me.typeNoData': '{name} — not tried yet',
+    'settings.theme': 'Dark mode',
+    'game.dailyChip': 'Daily {solved}/{total}',
 } as const;
 
 export type MsgKey = keyof typeof en;

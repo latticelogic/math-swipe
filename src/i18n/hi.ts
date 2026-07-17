@@ -635,4 +635,6 @@ export const hi: Record<MsgKey, string> = {
     'me.emailPlaceholder': 'you@email.com',
     'me.typeDetail': '{name} — {solved} में से {correct} सही · {acc}%',
     'me.typeNoData': '{name} — अभी तक नहीं आज़माया',
+    'settings.theme': 'डार्क मोड',
+    'game.dailyChip': 'दैनिक {solved}/{total}',
 };

@@ -59,6 +59,10 @@ interface Props {
     /** Called when the user taps the countdown chip → triggers unlock
      *  flow (mock in dev, Stripe Checkout in Phase 4). */
     onUnlock?: () => void;
+    /** Dark/light mode — surfaced as a Settings row (the on-board toggle was
+     *  removed 2026-07-17; dark is the default). */
+    themeMode: string;
+    onToggleTheme: () => void;
 }
 
 // A proper toothed cog for the settings gear, computed once. 8 trapezoidal
@@ -98,7 +102,7 @@ function ModeAchievementGrid({ achievements, cols, unlocked }: {
     );
 }
 
-export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCostume, onCostumeChange, activeTheme, onThemeChange, activeTrailId, onTrailChange, displayName, onDisplayNameChange, isAnonymous, onLinkGoogle, onLinkApple, onSendEmailLink, authMessage, onClearAuthMessage, ageBand, activeTeacherId, onTeacherChange, uid, entitlementStatus, entitlementDaysLeft, onUnlock, hasPro = true, onRequestPro }: Props) {
+export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCostume, onCostumeChange, activeTheme, onThemeChange, activeTrailId, onTrailChange, displayName, onDisplayNameChange, isAnonymous, onLinkGoogle, onLinkApple, onSendEmailLink, authMessage, onClearAuthMessage, ageBand, activeTeacherId, onTeacherChange, uid, entitlementStatus, entitlementDaysLeft, onUnlock, hasPro = true, onRequestPro, themeMode, onToggleTheme }: Props) {
     const [showRanks, setShowRanks] = useState(false);
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [editingName, setEditingName] = useState(false);
@@ -668,11 +672,13 @@ export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCo
                 )}
             </AnimatePresence>
 
-            {/* Settings sheet — language, notifications, version, legal */}
+            {/* Settings sheet — language, appearance, notifications, version, legal */}
             <SettingsSheet
                 open={settingsOpen}
                 onClose={() => setSettingsOpen(false)}
                 uid={uid}
+                themeMode={themeMode}
+                onToggleTheme={onToggleTheme}
             />
             {/* "Install app" pill — only renders when the browser supports
                 install AND the app isn't already running standalone AND

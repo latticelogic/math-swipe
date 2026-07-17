@@ -893,44 +893,9 @@ function App() {
           baseColor={getThemeDisplayColor(activeThemeId as string)}
         />
 
-        {/* ── Top-right controls (theme toggle) — game tab only ── */}
-        {activeTab === 'game' && (
-          <div className="absolute top-[calc(env(safe-area-inset-top,12px)+12px)] right-3 z-50 flex items-center gap-2">
-            <button
-              onClick={toggleThemeMode}
-              // w-12 (not w-11) so its center lines up with the action rail
-              // below, whose column is widened to 48px by the topic picker.
-              className="w-12 h-11 flex items-center justify-center text-[rgb(var(--color-fg))]/60 active:text-[var(--color-gold)] transition-colors"
-              aria-label={t('hud.themeToggle.aria')}
-            >
-              {themeMode === 'light' ? (
-                <motion.svg
-                  viewBox="0 0 24 24" className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-                >
-                  <circle cx="12" cy="12" r="5" />
-                  <line x1="12" y1="1" x2="12" y2="3" />
-                  <line x1="12" y1="21" x2="12" y2="23" />
-                  <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
-                  <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-                  <line x1="1" y1="12" x2="3" y2="12" />
-                  <line x1="21" y1="12" x2="23" y2="12" />
-                  <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
-                  <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-                </motion.svg>
-              ) : (
-                <motion.svg
-                  viewBox="0 0 24 24" className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                  animate={{ rotate: [0, -8, 8, -5, 5, 0] }}
-                  transition={{ duration: 4, repeat: Infinity, repeatDelay: 3, ease: 'easeInOut' }}
-                >
-                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-                </motion.svg>
-              )}
-            </button>
-          </div>
-        )}
+        {/* (Top-right theme toggle removed 2026-07-17 — owner call: dark is
+            the default; light mode is a set-once preference and now lives as
+            a Settings row. One less always-visible button on the board.) */}
 
         {activeTab === 'game' && (
           <div ref={(el) => {
@@ -1140,6 +1105,12 @@ function App() {
                     - started but unfinished → "📅 Daily: 3/10 — finish it"
                     - completed today        → suppressed (no point re-pitching)
                   Hidden in hard/timed mode because the daily set isn't designed for those modifiers. */}
+              {/* Mode chips — Daily + Speedrun in ONE compact row (owner call
+                  2026-07-17: the stacked wordy pills were crowding the board).
+                  Icon + one word each; the daily chip carries its progress
+                  count when a set is underway, and disappears once today's
+                  daily is done (Speedrun then centers alone). Speedrun lives
+                  here, not in League — League reviews scores. */}
               {(() => {
                 if (!isFirstQuestion || hardMode || timedMode) return null;
                 if (questionType === 'daily' || questionType === 'speedrun' || questionType === 'challenge') return null;
@@ -1147,36 +1118,48 @@ function App() {
                 const startedToday = stats.lastDailyDate === today && stats.todayDailySolved > 0;
                 const dailyTotal = 10; // Matches DAILY_COUNT in mathDailyConfig
                 const completedToday = startedToday && stats.todayDailySolved >= dailyTotal;
-                if (completedToday) return null;
-                const inProgressLabel = startedToday
-                  ? t('game.dailyInProgress', { solved: stats.todayDailySolved, total: dailyTotal })
-                  : t('game.mode.daily');
+                const chip = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[11px] ui font-semibold transition-colors';
                 return (
-                  // Pill-style daily-challenge entry. Previously this was
-                  // tiny low-opacity text; testers were missing it. Now it's
-                  // a small bordered pill with a hand-drawn calendar icon —
-                  // still subordinate to "Let's Go!!" / score but no longer
-                  // invisible. Hand icon nudges the user toward tapping.
-                  <motion.button
+                  <motion.div
                     initial={{ opacity: 0, y: 4 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.5 }}
-                    className={`mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[11px] ui font-semibold transition-colors ${startedToday
-                      ? 'border-[var(--color-gold)]/60 text-[var(--color-gold)] bg-[var(--color-gold)]/10 active:bg-[var(--color-gold)]/20'
-                      : 'border-[var(--color-gold)]/40 text-[var(--color-gold)]/90 bg-[var(--color-gold)]/5 active:bg-[var(--color-gold)]/15'
-                      }`}
-                    onClick={() => switchType('daily' as QuestionType)}
+                    className="mt-2 flex items-center justify-center gap-2"
                   >
-                    {/* Hand-drawn calendar icon — matches CategoryIcon('daily') */}
-                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                      <rect x="3" y="5" width="18" height="16" rx="2" />
-                      <line x1="8" y1="3" x2="8" y2="7" />
-                      <line x1="16" y1="3" x2="16" y2="7" />
-                      <line x1="3" y1="10" x2="21" y2="10" />
-                      <circle cx="12" cy="15" r="1.2" fill="currentColor" stroke="none" />
-                    </svg>
-                    {inProgressLabel}
-                  </motion.button>
+                    {!completedToday && (
+                      <button
+                        className={`${chip} ${startedToday
+                          ? 'border-[var(--color-gold)]/60 text-[var(--color-gold)] bg-[var(--color-gold)]/10 active:bg-[var(--color-gold)]/20'
+                          : 'border-[var(--color-gold)]/40 text-[var(--color-gold)]/90 bg-[var(--color-gold)]/5 active:bg-[var(--color-gold)]/15'}`}
+                        onClick={() => switchType('daily' as QuestionType)}
+                      >
+                        {/* Hand-drawn calendar icon — matches CategoryIcon('daily') */}
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                          <rect x="3" y="5" width="18" height="16" rx="2" />
+                          <line x1="8" y1="3" x2="8" y2="7" />
+                          <line x1="16" y1="3" x2="16" y2="7" />
+                          <line x1="3" y1="10" x2="21" y2="10" />
+                          <circle cx="12" cy="15" r="1.2" fill="currentColor" stroke="none" />
+                        </svg>
+                        {startedToday
+                          ? t('game.dailyChip', { solved: stats.todayDailySolved, total: dailyTotal })
+                          : t('cat.daily')}
+                      </button>
+                    )}
+                    <button
+                      className={`${chip} border-[var(--color-speedrun)]/40 text-[var(--color-speedrun)]/90 bg-[var(--color-speedrun)]/5 active:bg-[var(--color-speedrun)]/15`}
+                      onClick={() => switchType('speedrun' as QuestionType)}
+                    >
+                      {/* Stopwatch — matches the League tab icon */}
+                      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                        <circle cx="12" cy="14" r="7" />
+                        <line x1="12" y1="14" x2="15" y2="11" />
+                        <line x1="10" y1="2" x2="14" y2="2" />
+                        <line x1="12" y1="2" x2="12" y2="5" />
+                      </svg>
+                      {t('game.mode.speedrun')}
+                    </button>
+                  </motion.div>
                 );
               })()}
             </div>
@@ -1303,7 +1286,7 @@ function App() {
         {/* Non-game tabs (no wrapper — each page scrolls independently) */}
         {activeTab === 'league' && (
           <motion.div className="flex-1 flex flex-col min-h-0" onPanEnd={handleTabSwipe}>
-            <Suspense fallback={<TabSkeleton variant="league" />}><LeaguePage userXP={stats.totalXP} userStreak={Math.max(stats.bestStreak, stats.hardModeBestStreak, stats.timedModeBestStreak, stats.ultimateBestStreak)} uid={uid} displayName={user?.displayName ?? t('common.you')} activeThemeId={activeThemeId as string} activeCostume={activeCostume as string} bestSpeedrunTime={stats.bestSpeedrunTime} speedrunHardMode={stats.speedrunHardMode} onStartSpeedrun={() => { setQuestionType('speedrun'); setActiveTab('game'); }} /></Suspense>
+            <Suspense fallback={<TabSkeleton variant="league" />}><LeaguePage userXP={stats.totalXP} userStreak={Math.max(stats.bestStreak, stats.hardModeBestStreak, stats.timedModeBestStreak, stats.ultimateBestStreak)} uid={uid} displayName={user?.displayName ?? t('common.you')} activeThemeId={activeThemeId as string} activeCostume={activeCostume as string} bestSpeedrunTime={stats.bestSpeedrunTime} speedrunHardMode={stats.speedrunHardMode} /></Suspense>
           </motion.div>
         )}
 
@@ -1338,6 +1321,8 @@ function App() {
               onUnlock={() => setPaywallOpen(true)}
               hasPro={hasPro}
               onRequestPro={requestPro}
+              themeMode={themeMode as string}
+              onToggleTheme={toggleThemeMode}
             /></Suspense>
           </motion.div>
         )}

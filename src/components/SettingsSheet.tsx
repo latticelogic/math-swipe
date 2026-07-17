@@ -29,9 +29,13 @@ interface Props {
     open: boolean;
     onClose: () => void;
     uid: string | null;
+    /** Dark/light mode. Dark is the default; the on-board toggle was removed
+     *  (owner call 2026-07-17) — this row is now the only switch. */
+    themeMode: string;
+    onToggleTheme: () => void;
 }
 
-export function SettingsSheet({ open, onClose, uid }: Props) {
+export function SettingsSheet({ open, onClose, uid, themeMode, onToggleTheme }: Props) {
     const locale = getLocale();
     const [soundOn, setSoundOnState] = useState(isSoundOn());
     const [langOpen, setLangOpen] = useState(false);
@@ -126,6 +130,17 @@ export function SettingsSheet({ open, onClose, uid }: Props) {
                                     </div>
                                 )}
                             </div>
+
+                            {/* ── Dark mode (default ON; light is the opt-out) ── */}
+                            <button
+                                onClick={onToggleTheme}
+                                role="switch"
+                                aria-checked={themeMode !== 'light'}
+                                className="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-[rgb(var(--color-fg))]/10 hover:border-[rgb(var(--color-fg))]/25 transition-colors"
+                            >
+                                <span className="text-sm ui text-[rgb(var(--color-fg))]/80">{t('settings.theme')}</span>
+                                <Toggle on={themeMode !== 'light'} />
+                            </button>
 
                             {/* ── Sound (opt-in; a tap plays a sample so the
                                 user hears what they're enabling) ── */}

@@ -605,4 +605,6 @@ export const ptBR: Record<MsgKey, string> = {
     'me.emailPlaceholder': 'voce@email.com',
     'me.typeDetail': '{name} — {correct}/{solved} certas · {acc}%',
     'me.typeNoData': '{name} — ainda não tentado',
+    'settings.theme': 'Modo escuro',
+    'game.dailyChip': 'Diário {solved}/{total}',
 };

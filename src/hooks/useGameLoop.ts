@@ -266,11 +266,21 @@ export function useGameLoop(
         setGs(INITIAL_STATE);
     }, [categoryId, hardMode, buildInitialSet, resetTypeTally]);
 
-    // ── Keep infinite buffer full ─────────────────────────────────────────────
+    // ── Keep the buffer full ──────────────────────────────────────────────────
+    // Seeded finite sets (daily/challenge) are fixed and never refill. Infinite
+    // play tops up to bufferSize. SPEEDRUN MUST refill too: its end condition is
+    // N *correct*, but advanceProblem consumes one item per answer (correct OR
+    // wrong), so a fixed N-item queue empties on the first miss → the loop froze
+    // with an empty buffer while the stopwatch kept running (tester report
+    // 2026-07-17: garbled question + 15-45s freeze + phantom answer). Topping it
+    // up keeps a live problem on screen until the win fires.
     useEffect(() => {
-        if (isSpeedrun(categoryId) || isFiniteSet(categoryId)) return;
-        if (items.length < bufferSize) {
-            setItems(prev => [...prev, genFresh(categoryId, hardMode)]);
+        if (isFiniteSet(categoryId)) return;
+        const speed = isSpeedrun(categoryId);
+        const target = speed ? speedrunCount : bufferSize;
+        if (items.length < target) {
+            // Speedrun draws from the same 'mix-all' pool buildInitialSet uses.
+            setItems(prev => [...prev, genFresh(speed ? 'mix-all' : categoryId, hardMode)]);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [items.length, level, categoryId, hardMode]);
@@ -324,6 +334,12 @@ export function useGameLoop(
             let newStreak = 0;
             let milestoneEmoji = '';
 
+            // In SPEEDRUN the theatrical burst is suppressed: auto-advance is
+            // 150ms but a burst lasts 1.2-2.8s, so it would smear across the
+            // next several equations, and a longer pause would eat the player's
+            // clock. Haptic/sound still fire; the streak readout still shows
+            // "Nx". (2026-07-17 tester report.)
+            const showBurst = !isSpeedrun(categoryId);
             setGs(prev => {
                 newStreak = prev.streak + 1;
                 milestoneEmoji = milestones[newStreak] ?? '';
@@ -340,7 +356,7 @@ export function useGameLoop(
                     score: prev.score + scoreCorrect(newStreak, isFast),
                     flash: 'correct',
                     chalkState: newStreak >= 10 ? 'streak' : (prev.wrongStreak >= 3 ? 'comeback' as ChalkState : 'success'),
-                    milestone: milestoneEmoji,
+                    milestone: showBurst ? milestoneEmoji : '',
                     speedBonus: isFast,
                     wrongStreak: 0,
                     frozen: true,
@@ -350,7 +366,7 @@ export function useGameLoop(
             scheduleChalkReset(newStreak >= 10 ? 2000 : 800);
             // Per-tier duration — trophy stays on screen longer than sparkle.
             // Falls back to 1300ms for unknown tiers.
-            if (milestoneEmoji) safeTimeout(() => setGs(p => ({ ...p, milestone: '' })), milestoneDurationMs(milestoneEmoji));
+            if (milestoneEmoji && showBurst) safeTimeout(() => setGs(p => ({ ...p, milestone: '' })), milestoneDurationMs(milestoneEmoji));
             if (isFast) safeTimeout(() => setGs(p => ({ ...p, speedBonus: false })), 900);
 
             // Speedrun win condition
