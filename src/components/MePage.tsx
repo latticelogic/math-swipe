@@ -63,6 +63,9 @@ interface Props {
      *  removed 2026-07-17; dark is the default). */
     themeMode: string;
     onToggleTheme: () => void;
+    /** Timed-mode countdown, seconds (one of TIMED_DURATION_PRESETS). */
+    timedSecs: number;
+    onTimedSecsChange: (secs: number) => void;
 }
 
 // A proper toothed cog for the settings gear, computed once. 8 trapezoidal
@@ -102,7 +105,7 @@ function ModeAchievementGrid({ achievements, cols, unlocked }: {
     );
 }
 
-export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCostume, onCostumeChange, activeTheme, onThemeChange, activeTrailId, onTrailChange, displayName, onDisplayNameChange, isAnonymous, onLinkGoogle, onLinkApple, onSendEmailLink, authMessage, onClearAuthMessage, ageBand, activeTeacherId, onTeacherChange, uid, entitlementStatus, entitlementDaysLeft, onUnlock, hasPro = true, onRequestPro, themeMode, onToggleTheme }: Props) {
+export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCostume, onCostumeChange, activeTheme, onThemeChange, activeTrailId, onTrailChange, displayName, onDisplayNameChange, isAnonymous, onLinkGoogle, onLinkApple, onSendEmailLink, authMessage, onClearAuthMessage, ageBand, activeTeacherId, onTeacherChange, uid, entitlementStatus, entitlementDaysLeft, onUnlock, hasPro = true, onRequestPro, themeMode, onToggleTheme, timedSecs, onTimedSecsChange }: Props) {
     const [showRanks, setShowRanks] = useState(false);
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [editingName, setEditingName] = useState(false);
@@ -679,6 +682,8 @@ export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCo
                 uid={uid}
                 themeMode={themeMode}
                 onToggleTheme={onToggleTheme}
+                timedSecs={timedSecs}
+                onTimedSecsChange={onTimedSecsChange}
             />
             {/* "Install app" pill — only renders when the browser supports
                 install AND the app isn't already running standalone AND

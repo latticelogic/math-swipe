@@ -109,6 +109,12 @@ export interface GameConfig {
     finiteTypeIds: string[];
 }
 
+/** Selectable timed-mode countdowns (Settings row), in seconds. 10s is the
+ *  long-standing default; 20s is the deliberate MAX — any longer and the
+ *  ring stops meaning "beat the clock". 5s is the floor so a kid can at
+ *  least read the problem before it expires. */
+export const TIMED_DURATION_PRESETS = [5, 10, 15, 20] as const;
+
 export const DEFAULT_GAME_CONFIG: GameConfig = {
     bufferSize: 8,
     speedrunCount: 10,

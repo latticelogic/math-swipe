@@ -22,6 +22,7 @@ import { LegalFooterRow } from './LegalPages';
 import { RecaptchaNotice } from './RecaptchaNotice';
 import { t, getLocale, setLocale, SHIPPED_LOCALES } from '../i18n';
 import { isSoundOn, setSoundOn, soundCorrect } from '../utils/sound';
+import { TIMED_DURATION_PRESETS } from '../engine/domain';
 
 declare const __APP_VERSION__: string;
 
@@ -33,9 +34,12 @@ interface Props {
      *  (owner call 2026-07-17) — this row is now the only switch. */
     themeMode: string;
     onToggleTheme: () => void;
+    /** Timed-mode countdown, seconds (one of TIMED_DURATION_PRESETS). */
+    timedSecs: number;
+    onTimedSecsChange: (secs: number) => void;
 }
 
-export function SettingsSheet({ open, onClose, uid, themeMode, onToggleTheme }: Props) {
+export function SettingsSheet({ open, onClose, uid, themeMode, onToggleTheme, timedSecs, onTimedSecsChange }: Props) {
     const locale = getLocale();
     const [soundOn, setSoundOnState] = useState(isSoundOn());
     const [langOpen, setLangOpen] = useState(false);
@@ -141,6 +145,27 @@ export function SettingsSheet({ open, onClose, uid, themeMode, onToggleTheme }: 
                                 <span className="text-sm ui text-[rgb(var(--color-fg))]/80">{t('settings.theme')}</span>
                                 <Toggle on={themeMode !== 'light'} />
                             </button>
+
+                            {/* ── Timed-mode duration (label left, presets right;
+                                same row pattern). Applies from the next problem. ── */}
+                            <div className="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-[rgb(var(--color-fg))]/10">
+                                <span className="text-sm ui text-[rgb(var(--color-fg))]/80">{t('rail.timed')}</span>
+                                <div className="flex gap-1" role="radiogroup" aria-label={t('rail.timed')}>
+                                    {TIMED_DURATION_PRESETS.map(s => (
+                                        <button
+                                            key={s}
+                                            role="radio"
+                                            aria-checked={timedSecs === s}
+                                            onClick={() => onTimedSecsChange(s)}
+                                            className={`px-2 py-1 rounded-lg text-xs ui tabular-nums transition-colors ${timedSecs === s
+                                                ? 'bg-[var(--color-gold)]/15 border border-[var(--color-gold)]/40 text-[var(--color-gold)]'
+                                                : 'border border-[rgb(var(--color-fg))]/10 text-[rgb(var(--color-fg))]/60 hover:border-[rgb(var(--color-fg))]/25'}`}
+                                        >
+                                            {s}s
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
 
                             {/* ── Sound (opt-in; a tap plays a sample so the
                                 user hears what they're enabling) ── */}

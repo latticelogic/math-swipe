@@ -27,6 +27,8 @@ export const STORAGE_KEYS = {
     trail: `${STORAGE_PREFIX}-trail`,
     chalkTheme: `${STORAGE_PREFIX}-chalk-theme`,
     theme: `${STORAGE_PREFIX}-theme`,
+    /** Timed-mode countdown per problem, in SECONDS (one of 5/10/15/20). */
+    timedSecs: `${STORAGE_PREFIX}-timed-secs`,
     ageBand: `${STORAGE_PREFIX}-age-band`,
     // YYYY-MM-DD of the most recent day we showed the "first correct of the
     // day" flourish. Stays purely device-local — no Firestore sync needed

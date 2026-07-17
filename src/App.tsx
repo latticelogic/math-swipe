@@ -71,6 +71,7 @@ import { generateProblem } from './utils/mathGenerator';
 import { generateDailyChallenge, generateChallenge } from './utils/dailyChallenge';
 import { todayKey } from './utils/dateKey';
 import type { EngineItem } from './engine/domain';
+import { DEFAULT_GAME_CONFIG, TIMED_DURATION_PRESETS } from './engine/domain';
 import { STORAGE_KEYS, FIRESTORE } from './config';
 import { t } from './i18n';
 
@@ -308,6 +309,18 @@ function App() {
     void maybeClaimReferral(uid, stats.totalSolved);
   }, [uid, stats.totalSolved]);
 
+  // ── Timed-mode duration (user-set in Settings; presets 5/10/15/20s) ──
+  // Persisted + cloud-synced like the theme. Clamped to the preset list so a
+  // corrupted store can't produce a 0s (unwinnable) or 10-minute (not timed)
+  // ring. Applies from the NEXT problem — the ring is per-problem anyway.
+  const [timedSecsRaw, setTimedSecsRaw] = useLocalState(STORAGE_KEYS.timedSecs, '10', uid); // string store
+  const safeTimedSecs = (TIMED_DURATION_PRESETS as readonly number[]).includes(Number(timedSecsRaw)) ? Number(timedSecsRaw) : 10;
+  const setTimedSecs = useCallback((s: number) => setTimedSecsRaw(String(s)), [setTimedSecsRaw]);
+  const gameConfig = useMemo(
+    () => ({ ...DEFAULT_GAME_CONFIG, timedModeMs: safeTimedSecs * 1000 }),
+    [safeTimedSecs],
+  );
+
   const {
     problems,
     score,
@@ -338,7 +351,7 @@ function App() {
     effectiveTimed,
     stats.streakShields,
     consumeShield,
-    undefined, // use DEFAULT_GAME_CONFIG
+    gameConfig, // DEFAULT_GAME_CONFIG + the user's timed-mode duration
     generateMathFiniteSet,
   );
 
@@ -1323,6 +1336,8 @@ function App() {
               onRequestPro={requestPro}
               themeMode={themeMode as string}
               onToggleTheme={toggleThemeMode}
+              timedSecs={safeTimedSecs}
+              onTimedSecsChange={setTimedSecs}
             /></Suspense>
           </motion.div>
         )}
