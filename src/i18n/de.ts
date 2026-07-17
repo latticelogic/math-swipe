@@ -165,7 +165,7 @@ export const de: Record<MsgKey, string> = {
     'me.statAccuracy': 'Genauigkeit',
     'me.statSolved': 'gelöst',
     'me.statDaily': 'täglich',
-    'me.byType': 'nach Typ',
+    'me.byType': 'Genauigkeit',
 
     'rail.shareFallback': 'Probier dieses Kopfrechen-Spiel.',
     'hud.themeToggle.aria': 'Design umschalten',
@@ -253,7 +253,7 @@ export const de: Record<MsgKey, string> = {
     'magic.catMastered': '{mastered}/{total} gemeistert',
     'magic.proUnlockAria': 'Pro — freischalten',
     'magic.masteredTitle': 'Gemeistert',
-    'magic.levelShort': 'St.{level}',
+    'magic.levelShort': 'Lv{level}',
     'magic.previewHint': 'Tippen zum Schließen · Karte tippen für die Lektion',
     'magic.lessonMode': 'Lektion',
     'magic.startPractice': 'Übungs-Blitz starten!',
@@ -604,4 +604,6 @@ export const de: Record<MsgKey, string> = {
     'share.ultimate': 'ULTIMATIV',
     'share.cta': 'Schaffst du mehr? {arrow} {url}',
     'me.emailPlaceholder': 'du@email.com',
+    'me.typeDetail': '{name} — {correct}/{solved} richtig · {acc}%',
+    'me.typeNoData': '{name} — noch nicht probiert',
 };

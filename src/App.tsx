@@ -628,6 +628,10 @@ function App() {
   // dialog (and then the summary) is up; endRunSummary feeds the summary from
   // the banked snapshot (the live loop is already reset by then).
   const [pendingTab, setPendingTab] = useState<Tab | null>(null);
+  // Same courtesy for a mid-run TOPIC change (tester report 2026-07-17: the
+  // silent score/streak reset read as data loss, inconsistent with the
+  // tab-leave confirm). Holds the requested type while the dialog is up.
+  const [pendingSwitch, setPendingSwitch] = useState<QuestionType | null>(null);
   const [endRunSummary, setEndRunSummary] = useState<SharePayloadArgs | null>(null);
 
   /** Bank the current run exactly once: record stats (with the per-operation
@@ -651,15 +655,21 @@ function App() {
     return args;
   }, [score, totalCorrect, totalAnswered, bestStreak, questionType, effectiveHard, effectiveTimed, speedrunFinalTime, answerHistory, recordSession, getTypeTally, snapshotSession]);
 
-  // ── Mid-run reconfiguration: bank silently, no dialog ──
-  // Changing topic or toggling hard mode rebuilds the loop, which ENDS the
-  // run mechanically. These are "reconfigure play" gestures, not "leave" —
-  // interrupting them with a dialog would nag, so the run banks silently
-  // (previously it was DISCARDED: score reset, XP never recorded).
+  // ── Mid-run topic change: same End-run confirm as tab-leave ──
+  // Changing topic rebuilds the loop, which ENDS the run mechanically. It
+  // used to bank silently, but the visible score/streak reset with no warning
+  // read as data loss (tester report 2026-07-17) — and was inconsistent with
+  // the tab-leave dialog. Now: mid-run topic taps hold the switch and ask;
+  // "Keep playing" cancels, "End" banks → summary → applies the switch.
   const switchType = useCallback((t: QuestionType) => {
-    if (t !== questionType && isInfinitePlay) bankCurrentRun();
+    if (t === questionType) return;
+    if (isInfinitePlay && totalAnswered > 0) {
+      setPendingSwitch(t);
+      return;
+    }
+    if (isInfinitePlay) bankCurrentRun(); // no answers → no-op
     setQuestionType(t);
-  }, [questionType, isInfinitePlay, bankCurrentRun]);
+  }, [questionType, isInfinitePlay, totalAnswered, bankCurrentRun]);
 
   const toggleHardMode = useCallback(() => {
     if (isInfinitePlay) bankCurrentRun();
@@ -1386,18 +1396,21 @@ function App() {
             boundary — and the player decides: end (bank → summary → land on
             the chosen tab) or keep playing (navigation cancelled). */}
         <EndRunDialog
-          open={pendingTab !== null && endRunSummary === null}
+          open={(pendingTab !== null || pendingSwitch !== null) && endRunSummary === null}
           answered={totalAnswered}
           score={score}
-          onKeepPlaying={() => setPendingTab(null)}
+          onKeepPlaying={() => { setPendingTab(null); setPendingSwitch(null); }}
           onEnd={() => {
             const args = bankCurrentRun();
             resetSession();
             if (args) {
-              setEndRunSummary(args);   // summary next; navigation on its dismiss
-            } else if (pendingTab) {
-              setActiveTab(pendingTab); // nothing to show — just go
+              setEndRunSummary(args);   // summary next; held action on its dismiss
+            } else {
+              // nothing to show — apply the held action directly
+              if (pendingTab) setActiveTab(pendingTab);
+              if (pendingSwitch) setQuestionType(pendingSwitch);
               setPendingTab(null);
+              setPendingSwitch(null);
             }
           }}
         />
@@ -1420,6 +1433,10 @@ function App() {
               if (pendingTab) {
                 setActiveTab(pendingTab);
                 setPendingTab(null);
+              }
+              if (pendingSwitch) {
+                setQuestionType(pendingSwitch);
+                setPendingSwitch(null);
               }
             }}
             hardMode={endRunSummary.hardMode}

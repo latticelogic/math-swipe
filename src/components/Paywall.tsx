@@ -131,11 +131,16 @@ export function Paywall({ progress, onUnlock, busy, mode = 'expired', onClose, p
     const showStatsBlock = visibleStats.length > 0;
 
     return (
+        // No opacity fade on the ROOT: while the whole surface faded 0→1 the
+        // opaque board background was semi-transparent, so the paywall text
+        // briefly overlapped the content underneath (tester report
+        // 2026-07-17). The background now lands opaque on frame 1; the inner
+        // badge/stat elements keep their own entrance animations.
         <motion.div
             className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[var(--color-board)] px-6 overflow-y-auto py-8"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.3 }}
+            initial={{ scale: 1.03 }}
+            animate={{ scale: 1 }}
+            transition={{ duration: 0.25, ease: 'easeOut' }}
             role="dialog"
             aria-modal="true"
             aria-labelledby="paywall-title"

@@ -2,8 +2,8 @@ import { memo, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { useStats } from '../hooks/useStats';
 import { typesForBand, type AgeBand } from '../utils/questionTypes';
-import { t, tCount } from '../i18n';
-import { ACHIEVEMENTS, HARD_MODE_ACHIEVEMENTS, TIMED_MODE_ACHIEVEMENTS, ULTIMATE_ACHIEVEMENTS, EVERY_ACHIEVEMENT } from '../utils/achievements';
+import { t, tCount, type MsgKey } from '../i18n';
+import { GENERAL_ACHIEVEMENTS, HARD_MODE_ACHIEVEMENTS, TIMED_MODE_ACHIEVEMENTS, ULTIMATE_ACHIEVEMENTS, EVERY_ACHIEVEMENT } from '../utils/achievements';
 import { achName, achDesc } from '../domains/math/mathAchievements';
 import { AchievementBadge } from './AchievementBadge';
 import { StreakGarden } from './StreakGarden';
@@ -103,6 +103,8 @@ export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCo
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [editingName, setEditingName] = useState(false);
     const [nameInput, setNameInput] = useState(displayName);
+    // Which accuracy-grid cell is showing its detail line (tap/hover).
+    const [selectedTypeStat, setSelectedTypeStat] = useState<string | null>(null);
     const [showEmailInput, setShowEmailInput] = useState(false);
     const [emailInput, setEmailInput] = useState('');
     const [emailSent, setEmailSent] = useState(false);
@@ -349,12 +351,17 @@ export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCo
                     </div>
                     <div className="text-xs ui text-[rgb(var(--color-fg))]/40 flex items-center justify-center gap-1"><CheckIcon size={12} /> {t('me.statSolved')}</div>
                 </div>
-                <div className="text-center">
-                    <div className="text-2xl chalk text-[var(--color-gold)]">
-                        {dailyAcc !== null ? `${dailyAcc}%` : '-'}
+                {/* Today's-daily accuracy — hidden until today's daily is
+                    played. A bare dash confused testers, and "0%" would
+                    misread as zero accuracy (2026-07-17). */}
+                {dailyAcc !== null && (
+                    <div className="text-center">
+                        <div className="text-2xl chalk text-[var(--color-gold)]">
+                            {dailyAcc}%
+                        </div>
+                        <div className="text-xs ui text-[rgb(var(--color-fg))]/60 flex items-center justify-center gap-1"><CalendarIcon size={12} /> {t('me.statDaily')}</div>
                     </div>
-                    <div className="text-xs ui text-[rgb(var(--color-fg))]/60 flex items-center justify-center gap-1"><CalendarIcon size={12} /> {t('me.statDaily')}</div>
-                </div>
+                )}
             </div>
 
             {/* Streak garden — the day-streak, drawn */}
@@ -368,19 +375,30 @@ export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCo
             {/* ("Invite a friend" button removed 2026-07-16 — owner call. The
                 referral loop lives on through shared results/challenge links.) */}
 
-            {/* Per question type row */}
+            {/* Per-topic accuracy grid. Header says what the numbers ARE
+                ("accuracy", not "by type" — tester call 2026-07-17), and each
+                cell is tappable/hoverable: a quiet detail line under the grid
+                names the topic + correct/solved counts (same touch-friendly
+                pattern as StreakGarden — no floating tooltip). */}
             <div className="w-full max-w-sm">
                 <div className="text-xs ui text-[rgb(var(--color-fg))]/50 uppercase tracking-widest text-center mb-3">
                     {t('me.byType')}
                 </div>
                 <div className="grid grid-cols-5 gap-2 justify-items-center">
-                    {typesForBand(ageBand).filter(t => !t.id.startsWith('mix-') && t.id !== 'daily' && t.id !== 'challenge').map(t => {
-                        const ts = stats.byType[t.id] ?? { solved: 0, correct: 0 };
+                    {typesForBand(ageBand).filter(qt => !qt.id.startsWith('mix-') && qt.id !== 'daily' && qt.id !== 'challenge').map(qt => {
+                        const ts = stats.byType[qt.id] ?? { solved: 0, correct: 0 };
                         const pct = ts.solved > 0 ? Math.round((ts.correct / ts.solved) * 100) : 0;
                         return (
-                            <div key={t.id} className="flex flex-col items-center gap-1">
+                            <button
+                                key={qt.id}
+                                onClick={() => setSelectedTypeStat(prev => (prev === qt.id ? null : qt.id))}
+                                onMouseEnter={() => setSelectedTypeStat(qt.id)}
+                                onMouseLeave={() => setSelectedTypeStat(prev => (prev === qt.id ? null : prev))}
+                                aria-label={t(('cat.' + qt.id) as MsgKey)}
+                                className={`flex flex-col items-center gap-1 px-1 rounded-lg transition-shadow ${selectedTypeStat === qt.id ? 'ring-1 ring-[rgb(var(--color-fg))]/40' : ''}`}
+                            >
                                 <div className="text-[rgb(var(--color-fg))]/50">
-                                    <CategoryIcon id={t.id} size={22} />
+                                    <CategoryIcon id={qt.id} size={22} />
                                 </div>
                                 <div className={`text-sm ui font-semibold ${ts.solved === 0 ? 'text-[rgb(var(--color-fg))]/20' :
                                     pct >= 80 ? 'text-[var(--color-correct)]' :
@@ -389,9 +407,18 @@ export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCo
                                     }`}>
                                     {ts.solved === 0 ? '—' : `${pct}%`}
                                 </div>
-                            </div>
+                            </button>
                         );
                     })}
+                </div>
+                <div className="h-5 mt-2 text-[11px] ui text-[rgb(var(--color-fg))]/55 text-center" aria-live="polite">
+                    {selectedTypeStat ? (() => {
+                        const ts = stats.byType[selectedTypeStat] ?? { solved: 0, correct: 0 };
+                        const name = t(('cat.' + selectedTypeStat) as MsgKey);
+                        return ts.solved === 0
+                            ? t('me.typeNoData', { name })
+                            : t('me.typeDetail', { name, correct: ts.correct, solved: ts.solved, acc: Math.round((ts.correct / ts.solved) * 100) });
+                    })() : ''}
                 </div>
             </div>
 
@@ -531,8 +558,12 @@ export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCo
                 </div>
                 {/* (Badge-equip on the leaderboard was removed 2026-07-16 —
                     owner call. Achievements are trophies; costumes still equip.) */}
+                {/* Mode-specific ladders are EXCLUDED here — they render under
+                    their own Hard/Timed/Ultimate headers just below (they were
+                    duplicated before). The n/total header stays global: it
+                    counts every section on this page. */}
                 <div className="grid grid-cols-4 gap-3 justify-items-center">
-                    {ACHIEVEMENTS.map(a => {
+                    {GENERAL_ACHIEVEMENTS.map(a => {
                         const isUnlocked = unlocked.has(a.id);
                         const hasCostume = ['streak-5', 'streak-20', 'sharpshooter', 'math-machine', 'century'].includes(a.id);
                         const isActive = activeCostume === a.id;

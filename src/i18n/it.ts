@@ -165,7 +165,7 @@ export const it: Record<MsgKey, string> = {
     'me.statAccuracy': 'precisione',
     'me.statSolved': 'risolti',
     'me.statDaily': 'giornaliero',
-    'me.byType': 'per tipo',
+    'me.byType': 'precisione',
 
     'rail.shareFallback': 'Gioco di calcolo mentale. Prova.',
     'hud.themeToggle.aria': 'Cambia tema',
@@ -253,7 +253,7 @@ export const it: Record<MsgKey, string> = {
     'magic.catMastered': '{mastered}/{total} padroneggiati',
     'magic.proUnlockAria': 'Pro — sblocca',
     'magic.masteredTitle': 'Padroneggiato',
-    'magic.levelShort': 'Liv.{level}',
+    'magic.levelShort': 'Lv{level}',
     'magic.previewHint': 'Tocca per chiudere · Tocca la carta per iniziare la lezione',
     'magic.lessonMode': 'Modalità lezione',
     'magic.startPractice': 'Inizia la Sfida lampo!',
@@ -611,4 +611,6 @@ export const it: Record<MsgKey, string> = {
     'share.ultimate': 'SUPREMO',
     'share.cta': 'Riesci a battermi? {arrow} {url}',
     'me.emailPlaceholder': 'tu@email.com',
+    'me.typeDetail': '{name} — {correct}/{solved} giuste · {acc}%',
+    'me.typeNoData': '{name} — non ancora provato',
 };

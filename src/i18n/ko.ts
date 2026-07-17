@@ -167,7 +167,7 @@ export const ko: Record<MsgKey, string> = {
     'me.statAccuracy': '정확도',
     'me.statSolved': '해결',
     'me.statDaily': '매일',
-    'me.byType': '유형별',
+    'me.byType': '정확도',
 
     'rail.shareFallback': '이 암산 게임을 해보세요.',
     'hud.themeToggle.aria': '테마 전환',
@@ -255,7 +255,7 @@ export const ko: Record<MsgKey, string> = {
     'magic.catMastered': '{mastered}/{total} 마스터',
     'magic.proUnlockAria': 'Pro — 잠금 해제',
     'magic.masteredTitle': '마스터 완료',
-    'magic.levelShort': 'Lv.{level}',
+    'magic.levelShort': 'Lv{level}',
     'magic.previewHint': '탭해서 닫기 · 카드를 탭해 레슨 시작',
     'magic.lessonMode': '레슨 모드',
     'magic.startPractice': '연습 블리츠 시작!',
@@ -606,4 +606,6 @@ export const ko: Record<MsgKey, string> = {
     'share.ultimate': '얼티밋',
     'share.cta': '나를 이길 수 있나요? {arrow} {url}',
     'me.emailPlaceholder': '나@email.com',
+    'me.typeDetail': '{name} — {solved}문제 중 {correct} 정답 · {acc}%',
+    'me.typeNoData': '{name} — 아직 안 풀었어요',
 };

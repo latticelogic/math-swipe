@@ -50,7 +50,12 @@ export function TrickLesson({ trick, onClose }: Props) {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 1.05 }}
-            className="absolute inset-0 bg-[var(--color-bg)] z-50 flex flex-col pt-[max(env(safe-area-inset-top,12px),12px)] px-4 pb-[env(safe-area-inset-bottom,12px)]"
+            // Bottom padding must clear the bottom nav: this overlay's z-50 is
+            // nested inside the tab content's stacking context, so the ROOT
+            // nav bar paints over the lesson's bottom band — with only a thin
+            // pad, "Go Back" landed on top of the "League" label (tester
+            // report 2026-07-17).
+            className="absolute inset-0 bg-[var(--color-bg)] z-50 flex flex-col pt-[max(env(safe-area-inset-top,12px),12px)] px-4 pb-[calc(env(safe-area-inset-bottom,0px)+80px)]"
         >
             <div className="flex items-center justify-between mb-8">
                 <button
@@ -65,10 +70,16 @@ export function TrickLesson({ trick, onClose }: Props) {
                 <div className="w-10" />
             </div>
 
+            {/* Scroll container + auto-margin centering: on tall screens the
+                content centers as before; on SHORT screens it scrolls instead
+                of overflowing past the root's padding into the nav band
+                (padding alone couldn't fix that — flex centering overflows
+                both ends when content is taller than the space). */}
             <motion.div
-                className="flex-1 flex flex-col items-center justify-center -mt-12 text-center w-full max-w-md mx-auto px-4 touch-none"
+                className="flex-1 min-h-0 overflow-y-auto w-full touch-none"
                 onPanEnd={handlePanEnd}
             >
+            <div className="min-h-full flex flex-col items-center justify-center text-center max-w-md mx-auto px-4">
                 <div className="mb-4 text-[var(--color-chalk)]">
                     <TrickIcon id={trick.id} size={42} />
                 </div>
@@ -137,6 +148,7 @@ export function TrickLesson({ trick, onClose }: Props) {
                         </button>
                     )}
                 </div>
+            </div>
             </motion.div>
         </motion.div>
     );

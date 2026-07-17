@@ -308,6 +308,17 @@ html[data-locale="hi"] {
   --font-ui: "Kohinoor Devanagari", "Noto Sans Devanagari", "Nirmala UI", "Mangal", sans-serif;
 }
 
+/* ── Teacher PiP ──
+   On short viewports the mascot's corner would intrude into the answer-button
+   row; shrink it so the play surface stays clear. The independent `scale`
+   property composes with framer-motion's inline `transform` on the child. */
+@media (max-height: 640px) {
+  .teacher-pip {
+    scale: 0.72;
+    transform-origin: bottom right;
+  }
+}
+
 /* ── Milestone pop ── */
 @keyframes milestone-pop {
   0% {
