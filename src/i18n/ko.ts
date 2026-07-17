@@ -608,4 +608,6 @@ export const ko: Record<MsgKey, string> = {
     'me.emailPlaceholder': '나@email.com',
     'me.typeDetail': '{name} — {solved}문제 중 {correct} 정답 · {acc}%',
     'me.typeNoData': '{name} — 아직 안 풀었어요',
+    'settings.theme': '다크 모드',
+    'game.dailyChip': '매일 {solved}/{total}',
 };

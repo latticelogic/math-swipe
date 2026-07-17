@@ -31,10 +31,9 @@ interface Props {
     activeCostume: string;
     bestSpeedrunTime?: number;
     speedrunHardMode?: boolean;
-    onStartSpeedrun?: () => void;
 }
 
-export const LeaguePage = memo(function LeaguePage({ userXP, userStreak, uid, displayName, activeThemeId, activeCostume, bestSpeedrunTime, speedrunHardMode, onStartSpeedrun }: Props) {
+export const LeaguePage = memo(function LeaguePage({ userXP, userStreak, uid, displayName, activeThemeId, activeCostume, bestSpeedrunTime, speedrunHardMode }: Props) {
     const [tab, setTab] = useState<LeagueTab>('score');
     const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
     const [speedrunEntries, setSpeedrunEntries] = useState<LeaderboardEntry[]>([]);
@@ -231,27 +230,9 @@ export const LeaguePage = memo(function LeaguePage({ userXP, userStreak, uid, di
                 </button>
             </div>
 
-            {/* Start Speedrun CTA (only on speedrun tab) */}
-            {tab === 'speedrun' && onStartSpeedrun && (
-                <motion.button
-                    onClick={onStartSpeedrun}
-                    className="w-full max-w-xs mb-4 py-3 rounded-xl ui font-bold text-sm bg-gradient-to-r from-[var(--color-speedrun)]/20 to-[#00FFFF]/20 border border-[var(--color-speedrun)]/30 text-[var(--color-speedrun)] active:scale-95 transition-transform"
-                    whileTap={{ scale: 0.95 }}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                >
-                    <span className="flex items-center justify-center gap-1.5">
-                        {/* Stopwatch — hand-drawn, replaces ⏱️ emoji */}
-                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                            <circle cx="12" cy="14" r="7" />
-                            <line x1="12" y1="14" x2="15" y2="11" />
-                            <line x1="10" y1="2" x2="14" y2="2" />
-                            <line x1="12" y1="2" x2="12" y2="5" />
-                        </svg>
-                        <span>{t('league.startSpeedrun', { count: 10 })}</span>
-                    </span>
-                </motion.button>
-            )}
+            {/* Speedrun is STARTED from the play surface now (owner call
+                2026-07-17: League reviews scores, it doesn't launch runs). This
+                tab keeps the speedrun leaderboard + your-best time for review. */}
 
             {/* Your best time badge */}
             {tab === 'speedrun' && bestSpeedrunTime != null && bestSpeedrunTime > 0 && (

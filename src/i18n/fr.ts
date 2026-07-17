@@ -613,4 +613,6 @@ export const fr: Record<MsgKey, string> = {
     'me.emailPlaceholder': 'toi@email.com',
     'me.typeDetail': '{name} — {correct}/{solved} justes · {acc}%',
     'me.typeNoData': '{name} — pas encore essayé',
+    'settings.theme': 'Mode sombre',
+    'game.dailyChip': 'Quotidien {solved}/{total}',
 };

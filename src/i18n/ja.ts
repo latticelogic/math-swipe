@@ -616,4 +616,6 @@ export const ja: Record<MsgKey, string> = {
     'me.emailPlaceholder': 'you@email.com',
     'me.typeDetail': '{name} — {solved}問中{correct}問正解 · {acc}%',
     'me.typeNoData': '{name} — まだ挑戦していません',
+    'settings.theme': 'ダークモード',
+    'game.dailyChip': 'デイリー {solved}/{total}',
 };

@@ -613,4 +613,6 @@ export const zhHans: Record<MsgKey, string> = {
     'me.emailPlaceholder': 'you@email.com',
     'me.typeDetail': '{name} — {solved} 题中答对 {correct} 题 · {acc}%',
     'me.typeNoData': '{name} — 还没试过',
+    'settings.theme': '深色模式',
+    'game.dailyChip': '每日 {solved}/{total}',
 };

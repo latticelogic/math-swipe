@@ -617,4 +617,6 @@ export const id: Record<MsgKey, string> = {
     'me.emailPlaceholder': 'kamu@email.com',
     'me.typeDetail': '{name} — {correct}/{solved} benar · {acc}%',
     'me.typeNoData': '{name} — belum dicoba',
+    'settings.theme': 'Mode gelap',
+    'game.dailyChip': 'Harian {solved}/{total}',
 };

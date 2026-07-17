@@ -137,9 +137,14 @@ export const ActionButtons = memo(function ActionButtons({
     timedMode, onTimedModeToggle, timedDurationMs, problemKey,
     ageBand, hasPro = true, onProLocked, sharePayload,
 }: Props) {
-    // Hard/Timed don't apply to the fixed daily/challenge sets, so hide the
-    // toggles there (App also neutralizes the flags for those types).
-    const hideModeToggles = questionType === 'daily' || questionType === 'challenge';
+    // Hard/Timed don't apply to the fixed daily/challenge/speedrun sets, so
+    // hide the toggles there (App also neutralizes the flags for those types).
+    const hideModeToggles = questionType === 'daily' || questionType === 'challenge' || questionType === 'speedrun';
+    // Speedrun is a fixed-mode race — there's no topic to switch, and the
+    // picker's CategoryIcon fell back to the raw "speedrun" id text stacked
+    // over a "Topic ▾" label (tester report 2026-07-17: broken spacing). Hide
+    // the topic picker during a speedrun; the rail is just Share then.
+    const hideTopicPicker = questionType === 'speedrun';
     // Advanced modes are Pro: locked → tap opens the upsell, and a small lock
     // badge sits on the control.
     const locked = !hasPro;
@@ -233,9 +238,11 @@ export const ActionButtons = memo(function ActionButtons({
             </ActionTooltip>
 
             {/* Question type */}
-            <ActionTooltip label={t('rail.switchTopic')}>
-                <QuestionTypePicker current={questionType} onChange={onTypeChange} ageBand={ageBand} />
-            </ActionTooltip>
+            {!hideTopicPicker && (
+                <ActionTooltip label={t('rail.switchTopic')}>
+                    <QuestionTypePicker current={questionType} onChange={onTypeChange} ageBand={ageBand} />
+                </ActionTooltip>
+            )}
 
             {!hideModeToggles && (<>
             {/* Stopwatch / timed mode */}
