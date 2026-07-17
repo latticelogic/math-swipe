@@ -63,7 +63,6 @@
   /* Speedrun accent. Replaces hot magenta #FF00FF that was used
      ad-hoc — softer fuchsia, still vivid but plays nicer with the
      chalkboard palette. */
-  --color-speedrun: #e879f9;
 }
 
 /* ── Semantic runtime tokens (dark defaults) ── */

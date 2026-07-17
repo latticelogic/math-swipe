@@ -215,7 +215,7 @@ export const LeaguePage = memo(function LeaguePage({ userXP, userStreak, uid, di
                 <button
                     onClick={() => setTab('speedrun')}
                     className={`flex-1 py-2 rounded-lg text-xs ui font-semibold transition-all duration-200 flex items-center justify-center gap-1.5 ${tab === 'speedrun'
-                        ? 'bg-[var(--color-speedrun)]/15 text-[var(--color-speedrun)] shadow-sm'
+                        ? 'bg-[var(--color-gold)]/20 text-[var(--color-gold)] shadow-sm'
                         : 'text-[rgb(var(--color-fg))]/40 hover:text-[rgb(var(--color-fg))]/60'
                         }`}
                 >
@@ -363,7 +363,7 @@ export const LeaguePage = memo(function LeaguePage({ userXP, userStreak, uid, di
                                 {/* Score or Time */}
                                 {tab === 'score' ? (
                                     <>
-                                        <div className={`text-right text-sm ui font-semibold whitespace-nowrap tabular-nums ${entry.isYou ? 'text-[var(--color-gold)]' : 'text-[rgb(var(--color-fg))]/50'}`}>
+                                        <div className={`text-right text-base chalk whitespace-nowrap ${entry.isYou ? 'text-[var(--color-gold)]' : 'text-[rgb(var(--color-fg))]/60'}`}>
                                             {entry.totalXP.toLocaleString()}
                                         </div>
                                         <div className="text-right w-10">
@@ -381,7 +381,7 @@ export const LeaguePage = memo(function LeaguePage({ userXP, userStreak, uid, di
                                     </>
                                 ) : (
                                     <div className="text-right">
-                                        <div className={`text-sm ui font-semibold tabular-nums ${entry.isYou ? 'text-[var(--color-speedrun)]' : 'text-[var(--color-speedrun)]/70'}`}>
+                                        <div className={`text-base chalk ${entry.isYou ? 'text-[var(--color-gold)]' : 'text-[rgb(var(--color-fg))]/60'}`}>
                                             {entry.bestSpeedrunTime ? formatTime(entry.bestSpeedrunTime) : '—'}
                                         </div>
                                         <div className="text-[9px] ui text-[rgb(var(--color-fg))]/20">{t('league.timeLabel')}</div>
