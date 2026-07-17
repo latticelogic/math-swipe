@@ -285,6 +285,24 @@ export function useGameLoop(
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [items.length, level, categoryId, hardMode]);
 
+    // ── Milestone burst auto-clear ────────────────────────────────────────────
+    // Keyed on the DISPLAYED VALUE, not scheduled inside the answer handler.
+    // The old imperative setTimeout could be stranded (tester reports: the
+    // burst stuck over the next equation until the next action). With this
+    // effect, a non-empty milestone ALWAYS has a live countdown by
+    // construction: it re-arms whenever the value changes and no other code
+    // path can cancel it. Same pattern as the teacher-tip / shield-toast
+    // fixes (the app's recurring bug class: clear-timers keyed on volatile
+    // gameplay deps).
+    useEffect(() => {
+        if (!gs.milestone) return;
+        const t = setTimeout(
+            () => setGs(p => (p.milestone ? { ...p, milestone: '' } : p)),
+            milestoneDurationMs(gs.milestone),
+        );
+        return () => clearTimeout(t);
+    }, [gs.milestone]);
+
     // ── Advance to next problem ───────────────────────────────────────────────
     const advanceProblem = useCallback(() => {
         setItems(prev => {
@@ -366,7 +384,8 @@ export function useGameLoop(
             scheduleChalkReset(newStreak >= 10 ? 2000 : 800);
             // Per-tier duration — trophy stays on screen longer than sparkle.
             // Falls back to 1300ms for unknown tiers.
-            if (milestoneEmoji && showBurst) safeTimeout(() => setGs(p => ({ ...p, milestone: '' })), milestoneDurationMs(milestoneEmoji));
+            // (Milestone auto-clear lives in the value-keyed effect below —
+            // scheduling it here left it strandable; see that effect's note.)
             if (isFast) safeTimeout(() => setGs(p => ({ ...p, speedBonus: false })), 900);
 
             // Speedrun win condition
