@@ -15,6 +15,24 @@ interface Props {
     onProLocked?: () => void;
 }
 
+/** Language-free difficulty badge: 1–3 gold dots (chili-pepper model), no
+ *  letters. The 1–5 catalog difficulty collapses to the three tiers the
+ *  curves spec actually thinks in (Easy/Medium/Hard — docs/difficulty-
+ *  curves.md); the earlier "Lv1" text badge was an English-specific token
+ *  (owner call 2026-07-17). Screen readers + hover get the localized tier
+ *  word instead of dots. */
+function DifficultyDots({ difficulty }: { difficulty: number }) {
+    const tier = difficulty <= 2 ? 1 : difficulty === 3 ? 2 : 3;
+    const label = tier === 1 ? t('magic.diffEasy') : tier === 2 ? t('magic.diffMedium') : t('magic.diffHard');
+    return (
+        <div className="flex items-center gap-[3px] shrink-0 pr-0.5" role="img" aria-label={label} title={label}>
+            {Array.from({ length: tier }, (_, i) => (
+                <span key={i} className="w-[5px] h-[5px] rounded-full bg-[var(--color-gold)]/70" />
+            ))}
+        </div>
+    );
+}
+
 export function TricksPage({ onLessonActive, hasPro = true, onProLocked }: Props) {
     const [selectedTrick, setSelectedTrick] = useState<MagicTrick | null>(null);
     const [mastered, setMastered] = useState(() => loadMastered());
@@ -197,9 +215,7 @@ export function TricksPage({ onLessonActive, hasPro = true, onProLocked }: Props
                                                             ) : isMastered ? (
                                                                 <div className="text-[var(--color-gold)] text-base" title={t('magic.masteredTitle')}>✓</div>
                                                             ) : (
-                                                                <div className="ui text-[10px] font-semibold px-1.5 py-0.5 rounded bg-[var(--color-gold)]/10 text-[var(--color-gold)]/80 whitespace-nowrap">
-                                                                    {t('magic.levelShort', { level: trick.difficulty })}
-                                                                </div>
+                                                                <DifficultyDots difficulty={trick.difficulty} />
                                                             )}
                                                         </motion.button>
 
