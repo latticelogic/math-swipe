@@ -104,6 +104,10 @@ export interface GameConfig {
      * The generator for this type must be registered via generateItem.
      */
     speedrunTypeId: string;
+    /** Question-type ID speedrun problems are DRAWN from. The player picks
+     *  this per race (owner call 2026-07-17): 'mix-basic' (+−×÷ — fair for
+     *  kids who haven't met decimals yet) or 'mix-all' (every topic). */
+    speedrunPoolId: string;
     /** Question-type IDs that are "finite sets" (daily, challenge).
      *  The engine will not refill the buffer for these types. */
     finiteTypeIds: string[];
@@ -128,5 +132,6 @@ export const DEFAULT_GAME_CONFIG: GameConfig = {
     // longer duration, more particle elaboration.
     milestones: { 3: 'sparkle', 5: 'flame', 10: 'bolt', 25: 'crown', 50: 'trophy' },
     speedrunTypeId: 'speedrun',
+    speedrunPoolId: 'mix-all',
     finiteTypeIds: ['daily', 'challenge'],
 };

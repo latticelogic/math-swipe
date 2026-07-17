@@ -104,12 +104,13 @@ export function useGameLoop(
     const [items, setItems] = useState<EngineItem[]>([]);
     const [gs, setGs] = useState<GameState>(INITIAL_STATE);
 
-    const { bufferSize, speedrunCount, autoAdvanceMs, failPauseMs, milestones, speedrunTypeId, finiteTypeIds } = config;
+    const { bufferSize, speedrunCount, autoAdvanceMs, failPauseMs, milestones, speedrunTypeId, speedrunPoolId, finiteTypeIds } = config;
 
     const chalkTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
     const startedRef = useRef(false);
     const prevCategoryId = useRef(categoryId);
     const prevHard = useRef(hardMode);
+    const prevPool = useRef(speedrunPoolId);
     const frozenRef = useRef(false);
     const correctCountRef = useRef(0);
     const pendingTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -207,14 +208,14 @@ export function useGameLoop(
     const buildInitialSet = useCallback((catId: string, hard: boolean): EngineItem[] => {
         recentKeysRef.current = [];   // fresh buffer → fresh recency window
         if (isSpeedrun(catId)) {
-            return Array.from({ length: speedrunCount }, () => genFresh('mix-all', hard));
+            return Array.from({ length: speedrunCount }, () => genFresh(speedrunPoolId, hard));
         }
         if (isFiniteSet(catId) && generateFiniteSet) {
             return generateFiniteSet(catId, challengeId);   // seeded finite sets are intentionally fixed
         }
         return Array.from({ length: bufferSize }, () => genFresh(catId, hard));
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [level, bufferSize, speedrunCount, challengeId, genFresh, generateFiniteSet]);
+    }, [level, bufferSize, speedrunCount, speedrunPoolId, challengeId, genFresh, generateFiniteSet]);
 
     // ── Initialize buffer ─────────────────────────────────────────────────────
     useEffect(() => {
@@ -233,9 +234,11 @@ export function useGameLoop(
 
     // ── Regenerate on category / hard mode change ─────────────────────────────
     useEffect(() => {
-        if (prevCategoryId.current === categoryId && prevHard.current === hardMode) return;
+        if (prevCategoryId.current === categoryId && prevHard.current === hardMode
+            && (!isSpeedrun(categoryId) || prevPool.current === speedrunPoolId)) return;
         prevCategoryId.current = categoryId;
         prevHard.current = hardMode;
+        prevPool.current = speedrunPoolId;
 
         const fresh = buildInitialSet(categoryId, hardMode);
         if (fresh[0]) fresh[0].startTime = Date.now();
@@ -250,7 +253,7 @@ export function useGameLoop(
         setItems(fresh);
         setGs(INITIAL_STATE);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [categoryId, hardMode, buildInitialSet]);
+    }, [categoryId, hardMode, speedrunPoolId, buildInitialSet]);
 
     // ── Reset the current session (same category) ─────────────────────────────
     // Zeroes the counters + rebuilds the buffer WITHOUT a category change. The
@@ -279,11 +282,11 @@ export function useGameLoop(
         const speed = isSpeedrun(categoryId);
         const target = speed ? speedrunCount : bufferSize;
         if (items.length < target) {
-            // Speedrun draws from the same 'mix-all' pool buildInitialSet uses.
-            setItems(prev => [...prev, genFresh(speed ? 'mix-all' : categoryId, hardMode)]);
+            // Speedrun draws from the player's chosen pool (mix-basic/mix-all).
+            setItems(prev => [...prev, genFresh(speed ? speedrunPoolId : categoryId, hardMode)]);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [items.length, level, categoryId, hardMode]);
+    }, [items.length, level, categoryId, hardMode, speedrunPoolId]);
 
     // ── Milestone burst auto-clear ────────────────────────────────────────────
     // Keyed on the DISPLAYED VALUE, not scheduled inside the answer handler.
@@ -453,7 +456,7 @@ export function useGameLoop(
                 frozenRef.current = true;
                 scheduleChalkReset(failPauseMs);
                 if (isSpeedrun(categoryId)) {
-                    setItems(p => [...p, generateItem(level, 'mix-all', hardMode)]);
+                    setItems(p => [...p, generateItem(level, speedrunPoolId, hardMode)]);
                 }
                 safeTimeout(() => {
                     setGs(p => ({ ...p, flash: 'none', frozen: false }));
@@ -477,7 +480,7 @@ export function useGameLoop(
             });
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [items, recordAnswer, scheduleChalkReset, advanceProblem, safeTimeout, categoryId, streakShields, onConsumeShield, hardMode, level, milestones, autoAdvanceMs, failPauseMs, speedrunCount, generateItem]);
+    }, [items, recordAnswer, scheduleChalkReset, advanceProblem, safeTimeout, categoryId, streakShields, onConsumeShield, hardMode, level, milestones, autoAdvanceMs, failPauseMs, speedrunCount, speedrunPoolId, generateItem]);
 
     // ── Timed mode tick + auto-skip ───────────────────────────────────────────
     useEffect(() => {

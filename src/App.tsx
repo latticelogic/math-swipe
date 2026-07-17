@@ -316,9 +316,14 @@ function App() {
   const [timedSecsRaw, setTimedSecsRaw] = useLocalState(STORAGE_KEYS.timedSecs, '10', uid); // string store
   const safeTimedSecs = (TIMED_DURATION_PRESETS as readonly number[]).includes(Number(timedSecsRaw)) ? Number(timedSecsRaw) : 10;
   const setTimedSecs = useCallback((s: number) => setTimedSecsRaw(String(s)), [setTimedSecsRaw]);
+  // Speedrun problem pool — picked per race via a one-tap chooser (owner call
+  // 2026-07-17): 'mix-basic' keeps the race fair for kids who haven't met
+  // decimals/roots yet; 'mix-all' is the full-curriculum race.
+  const [speedrunPool, setSpeedrunPool] = useState<'mix-basic' | 'mix-all'>('mix-all');
+  const [speedrunChooserOpen, setSpeedrunChooserOpen] = useState(false);
   const gameConfig = useMemo(
-    () => ({ ...DEFAULT_GAME_CONFIG, timedModeMs: safeTimedSecs * 1000 }),
-    [safeTimedSecs],
+    () => ({ ...DEFAULT_GAME_CONFIG, timedModeMs: safeTimedSecs * 1000, speedrunPoolId: speedrunPool }),
+    [safeTimedSecs, speedrunPool],
   );
 
   const {
@@ -967,7 +972,9 @@ function App() {
               )}
               {questionType === 'speedrun' && (
                 <div className="mb-2 flex flex-col items-center gap-0.5">
-                  <div className="text-xs ui text-[var(--color-speedrun)] flex items-center gap-2">
+                  {/* Chalk-colored, not purple — the race screen keeps the
+                      board's two-hue rule: chalk + gold (owner call 2026-07-17). */}
+                  <div className="text-xs ui text-[var(--color-chalk)] flex items-center gap-2">
                     <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                       <circle cx="12" cy="14" r="7" />
                       <line x1="12" y1="14" x2="15" y2="11" />
@@ -979,7 +986,7 @@ function App() {
                     <span className="text-[rgb(var(--color-fg))]/40">{totalCorrect}/10</span>
                   </div>
                   {challengeTarget && challengeTarget.timeMs !== null && (
-                    <div className="text-[10px] ui text-[var(--color-speedrun)]/70">
+                    <div className="text-[10px] ui text-[var(--color-chalk)]/70">
                       {t('game.beatTime', { time: (challengeTarget.timeMs / 1000).toFixed(1) })}
                     </div>
                   )}
@@ -1010,7 +1017,7 @@ function App() {
                 </div>
               )}
               {questionType === 'speedrun' ? (
-                <div className="chalk text-[var(--color-speedrun)] text-7xl leading-none tabular-nums">
+                <div className="chalk text-[var(--color-chalk)] text-7xl leading-none tabular-nums">
                   {((speedrunFinalTime ?? speedrunElapsed) / 1000).toFixed(1)}<span className="text-3xl">s</span>
                 </div>
               ) : (
@@ -1159,9 +1166,15 @@ function App() {
                           : t('cat.daily')}
                       </button>
                     )}
+                    {/* Neutral, not purple — the play board carries exactly two
+                        hues: the player's chalk color + gold (tester call
+                        2026-07-17: a third hue is jarring). Daily keeps gold
+                        (the retention loop deserves the accent); Speedrun is
+                        the quiet secondary. Purple stays in its home contexts
+                        (League speedrun tab, in-race HUD). */}
                     <button
-                      className={`${chip} border-[var(--color-speedrun)]/40 text-[var(--color-speedrun)]/90 bg-[var(--color-speedrun)]/5 active:bg-[var(--color-speedrun)]/15`}
-                      onClick={() => switchType('speedrun' as QuestionType)}
+                      className={`${chip} border-[rgb(var(--color-fg))]/20 text-[rgb(var(--color-fg))]/60 active:bg-[rgb(var(--color-fg))]/10`}
+                      onClick={() => setSpeedrunChooserOpen(true)}
                     >
                       {/* Stopwatch — matches the League tab icon */}
                       <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -1217,8 +1230,12 @@ function App() {
               </AnimatePresence>
             </div>
 
-            {/* ── TikTok-style action buttons ── */}
-            <ActionButtons
+            {/* ── TikTok-style action buttons ── Hidden entirely during a
+                speedrun: the topic/mode toggles already hide there, and
+                mid-race sharing is meaningless (the end summary has Share
+                Result) — so the rail's last item goes too and the race
+                screen is fully chrome-free (owner call 2026-07-17). */}
+            {questionType !== 'speedrun' && <ActionButtons
               questionType={questionType}
               onTypeChange={switchType}
               hardMode={hardMode}
@@ -1231,7 +1248,7 @@ function App() {
               hasPro={hasPro}
               onProLocked={requestPro}
               sharePayload={railSharePayload}
-            />
+            />}
 
             {/* ── Mr. Chalk PiP ── */}
             <div className="landscape-hide">
@@ -1395,6 +1412,62 @@ function App() {
             Free play has no natural end, so leaving the game tab is the run
             boundary — and the player decides: end (bank → summary → land on
             the chosen tab) or keep playing (navigation cancelled). */}
+        {/* ── Speedrun pool chooser ── one tap before the race (owner call
+            2026-07-17): Basic Mix (+−×÷, fair for kids who haven't met
+            decimals yet) vs All Mix (full curriculum). */}
+        <AnimatePresence>
+          {speedrunChooserOpen && (
+            <>
+              <motion.div
+                className="fixed inset-0 bg-[var(--color-overlay-dim)] z-[95] backdrop-blur-sm"
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                onClick={() => setSpeedrunChooserOpen(false)}
+              />
+              <motion.div
+                role="dialog" aria-modal="true" aria-label={t('game.speedrunPick')}
+                className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[96] bg-[var(--color-overlay)] border border-[rgb(var(--color-fg))]/15 rounded-2xl p-5 w-[270px]"
+                initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.15 }}
+              >
+                {/* Gold, not purple — this overlay opens over the play board,
+                    so the board's two-hue rule applies here too. */}
+                <div className="text-sm chalk text-[var(--color-gold)] text-center mb-4">{t('game.speedrunPick')}</div>
+                <div className="flex gap-3">
+                  {(['mix-basic', 'mix-all'] as const).map(pool => (
+                    <button
+                      key={pool}
+                      onClick={() => {
+                        setSpeedrunPool(pool);
+                        setSpeedrunChooserOpen(false);
+                        switchType('speedrun' as QuestionType);
+                      }}
+                      className="flex-1 flex flex-col items-center gap-2 py-4 rounded-xl border border-[rgb(var(--color-fg))]/15 text-[rgb(var(--color-fg))]/80 hover:border-[var(--color-gold)]/50 hover:text-[var(--color-gold)] active:scale-95 transition-all"
+                    >
+                      {/* Hand-drawn icons (the chalk-font glyph rows were
+                          mush — owner call 2026-07-17): a 2×2 operator grid
+                          for Arithmetic, a 3×3 "all of it" dot grid for
+                          Everything. */}
+                      {pool === 'mix-basic' ? (
+                        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                          {/* + */}<line x1="7" y1="4.5" x2="7" y2="9.5" /><line x1="4.5" y1="7" x2="9.5" y2="7" />
+                          {/* − */}<line x1="14.5" y1="7" x2="19.5" y2="7" />
+                          {/* × */}<line x1="5.2" y1="15.2" x2="8.8" y2="18.8" /><line x1="8.8" y1="15.2" x2="5.2" y2="18.8" />
+                          {/* ÷ */}<line x1="14.5" y1="17" x2="19.5" y2="17" /><circle cx="17" cy="14.6" r="0.7" fill="currentColor" stroke="none" /><circle cx="17" cy="19.4" r="0.7" fill="currentColor" stroke="none" />
+                        </svg>
+                      ) : (
+                        <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor" stroke="none" aria-hidden>
+                          {[5, 12, 19].flatMap(y => [5, 12, 19].map(x => <circle key={`${x}-${y}`} cx={x} cy={y} r="1.7" />))}
+                        </svg>
+                      )}
+                      <span className="text-sm ui">{t(pool === 'mix-basic' ? 'game.poolBasic' : 'game.poolAll')}</span>
+                    </button>
+                  ))}
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
+
         <EndRunDialog
           open={(pendingTab !== null || pendingSwitch !== null) && endRunSummary === null}
           answered={totalAnswered}
