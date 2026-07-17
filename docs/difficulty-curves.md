@@ -22,9 +22,21 @@ topics. If you're modifying difficulty behavior, edit
 Math Challenge has two difficulty controls that act on the generator
 **independently**:
 
-1. **`difficulty` (1–5)** — automatically adjusted by `useDifficulty.ts`
-   based on response time. Fast answers (<1.5s) bump up by 1; slow
-   answers (>4s) drop by 1. Initial value is 2 for all bands.
+1. **`difficulty` (1–5)** — automatically adjusted based on response
+   time + correctness. Rules live in `src/engine/difficulty.ts` (pure,
+   tested in `difficulty.test.ts`); `useDifficulty.ts` wraps them with
+   persistence. Tuned 2026-07-17:
+   - **Climb**: 3 consecutive correct answers *fast for the current
+     level* → +1. The "fast" bar scales with level (L1 <1.5s → L5
+     <2.7s) so the top levels are reachable on big-operand topics.
+   - **Descend**: 2 consecutive *struggle* signals → −1, where a
+     struggle is a WRONG answer (any speed — fast guessing isn't
+     mastery) **or** a correct answer slow for the level (L1 >4s → L5
+     >7s, so the top level is stable once earned). Confidence-first: a
+     struggling kid is back on winnable problems within two answers.
+   - **Persistence**: the level survives sessions (localStorage),
+     resumed warm-up-capped at 4 — no session ever opens at max; a
+     player who left at 1 resumes at 1. Fresh users start at 2.
 
    *Intent*: smooth, invisible flow-state tuning. Should feel like "a
    slightly bigger version of the same kind of problem."

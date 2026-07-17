@@ -1,43 +1,42 @@
-import { useState, useCallback, useRef } from 'react';
+/**
+ * useDifficulty — React wrapper around the pure adaptive-difficulty
+ * adjuster in engine/difficulty.ts (rules + tuning rationale live there;
+ * tests in src/tests/difficulty.test.ts).
+ *
+ * This wrapper adds the one impure concern: persistence. The level
+ * survives reloads via localStorage and resumes warm-up-capped (never
+ * above 4), so returning players don't re-grind from 2 every session and
+ * struggling players aren't arbitrarily bumped back up.
+ */
 
-const MIN_LEVEL = 1;
-const MAX_LEVEL = 5;
-const FAST_THRESHOLD_MS = 1500;
-const SLOW_THRESHOLD_MS = 4000;
-const FAST_STREAK_TO_LEVEL_UP = 3;
-const SLOW_STREAK_TO_LEVEL_DOWN = 2;
+import { useState, useCallback, useRef } from 'react';
+import {
+    initialDifficultyState, stepDifficulty, resumeLevel,
+    type DifficultyState,
+} from '../engine/difficulty';
+import { safeGetItem, safeSetItem } from '../utils/safeStorage';
+
+const STORAGE_KEY = 'math-swipe-difficulty';
+
+function readResumeLevel(): number {
+    const stored = safeGetItem(STORAGE_KEY); // Number(null) would be 0 — keep null null
+    return resumeLevel(stored === null ? null : Number(stored));
+}
 
 export function useDifficulty() {
-    const [level, setLevel] = useState(2);
-    const fastCount = useRef(0);
-    const slowCount = useRef(0);
+    const [level, setLevel] = useState(readResumeLevel);
+    // Full adjuster state lives in a ref, touched only at event time (the
+    // react-hooks/refs rule forbids render-time reads; this also keeps the
+    // counters safe from StrictMode double-invocation of render).
+    const stateRef = useRef<DifficultyState | null>(null);
 
     const recordAnswer = useCallback((ttsMs: number, correct: boolean) => {
-        if (!correct) {
-            // Wrong answer: don't change difficulty, just reset streaks
-            fastCount.current = 0;
-            slowCount.current = 0;
-            return;
-        }
-
-        if (ttsMs < FAST_THRESHOLD_MS) {
-            slowCount.current = 0;
-            fastCount.current += 1;
-            if (fastCount.current >= FAST_STREAK_TO_LEVEL_UP) {
-                setLevel(l => Math.min(l + 1, MAX_LEVEL));
-                fastCount.current = 0;
-            }
-        } else if (ttsMs > SLOW_THRESHOLD_MS) {
-            fastCount.current = 0;
-            slowCount.current += 1;
-            if (slowCount.current >= SLOW_STREAK_TO_LEVEL_DOWN) {
-                setLevel(l => Math.max(l - 1, MIN_LEVEL));
-                slowCount.current = 0;
-            }
-        } else {
-            // In the "flow zone" (1.5–4s): reset both counters
-            fastCount.current = 0;
-            slowCount.current = 0;
+        const prev = stateRef.current ?? initialDifficultyState(readResumeLevel());
+        const next = stepDifficulty(prev, ttsMs, correct);
+        stateRef.current = next;
+        if (next.level !== prev.level) {
+            setLevel(next.level);
+            safeSetItem(STORAGE_KEY, String(next.level));
         }
     }, []);
 
