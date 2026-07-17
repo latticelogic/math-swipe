@@ -59,6 +59,15 @@ export function StreakGarden({
     // play"). Users from before the ledger existed have no dayLog, so fall
     // back to the streak-window fill rather than showing an empty garden.
     const hasLedger = !!dayLog && Object.keys(dayLog).length > 0;
+    // The garden starts at the player's FIRST day of play — days before that
+    // are pre-install history and must not render at all (owner call
+    // 2026-07-17: "Jun 27 — no play" for a day before the app existed for
+    // this player is noise). Earliest ledger entry wins; streakStart is the
+    // fallback signal for pre-ledger users.
+    const ledgerNums = hasLedger
+        ? Object.keys(dayLog).map(dayNumber).filter((n): n is number => n !== null)
+        : [];
+    const firstNum = Math.min(streakStart, ...(ledgerNums.length ? ledgerNums : [streakStart]));
     const cells = Array.from({ length: CELLS }, (_, i) => {
         const daysAgo = CELLS - 1 - i; // oldest → today
         const cellNum = todayNum - daysAgo;
@@ -68,7 +77,10 @@ export function StreakGarden({
             ? (entry?.solved ?? 0) > 0
             : (cellNum >= streakStart && cellNum <= lastNum);
         const isToday = cellNum === todayNum;
-        return { filled, isToday, key, entry };
+        // Invisible spacer (not a cell): keeps today anchored bottom-right
+        // while drawing nothing before the first day of play.
+        const preHistory = cellNum < firstNum;
+        return { filled, isToday, key, entry, preHistory };
     });
 
     const sel = selected !== null ? cells[selected] : null;
@@ -85,6 +97,9 @@ export function StreakGarden({
         <div className="flex flex-col items-center">
             <div className="grid grid-cols-7 gap-1.5 w-full max-w-[240px] mx-auto">
                 {cells.map((c, i) => (
+                    c.preHistory ? (
+                        <div key={c.key} className="aspect-square" aria-hidden />
+                    ) : (
                     <button
                         key={c.key}
                         aria-label={shortDateLabel(new Date(c.key))}
@@ -104,6 +119,7 @@ export function StreakGarden({
                             selected === i ? 'ring-2 ring-[rgb(var(--color-fg))]/50' : '',
                         ].join(' ')}
                     />
+                    )
                 ))}
             </div>
             {/* Per-day detail — a quiet line under the grid (no floating
