@@ -34,7 +34,11 @@ echo "Shell propagated."
 fail=0
 for f in dist/assets/*; do
   name=$(basename "$f")
-  read -r code ct < <(curl -s -o /dev/null -w '%{http_code} %{content_type}' "$ORIGIN/assets/$name")
+  # NOTE: not `read < <(curl -w ...)` — curl's -w output has no trailing
+  # newline, so read exits 1 and `set -e` would kill the whole script.
+  resp=$(curl -s -o /dev/null -w '%{http_code} %{content_type}' "$ORIGIN/assets/$name")
+  code=${resp%% *}
+  ct=${resp#* }
   bad=""
   [ "$code" = "200" ] || bad="status"
   case "$ct" in *text/html*) bad="html-fallback";; esac
