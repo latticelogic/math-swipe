@@ -11,6 +11,38 @@ in `functions/src/airwallex.ts` + `src/utils/checkout.ts`.
 > `TODO(airwallex)` markers in `airwallex.ts` are the handful of things to
 > confirm against the current API reference before the first real charge.
 
+## Website requirements (application rejected 2026-07-21)
+
+The first payment-activation application was **rejected for all methods**
+(Visa / MC / Amex / UnionPay / Apple Pay / Google Pay) with reason
+"website requirements". Airwallex's onboarding doc requires the site to
+show: business identification (company name, registration number, contact
+details incl. address), discoverable policies (Terms, Privacy, **Refund**),
+a public checkout/pricing surface, and governing law matching the
+registered country.
+
+Fixed in code (2026-07-21):
+
+- **`/pricing`** — public product + pricing page (US$3.14 one-time, what it
+  unlocks, payment methods, refund link). The in-app paywall is invisible to
+  a reviewer; this page is the public checkout surface.
+- **Footer row** is now Pricing · Privacy · Terms · Refund on the legal
+  pages, the Paywall, the Settings sheet, AND the bottom of the Me tab
+  (previously Refund was only linked from inside the Terms — undiscoverable).
+- **`<BusinessBlock />`** — company name + UEN + contact email shown under
+  every legal page and the Me tab.
+- **Stale Stripe references** in the Privacy/Refund copy replaced with
+  Airwallex (the policy text named a different processor than the
+  application — a consistency red flag).
+- Governing law already matched (Singapore ↔ Lattice Logic Pte. Ltd.). ✓
+
+**Before reapplying:** the registered office address is filled in
+(`BUSINESS` in `src/components/LegalPages.tsx`; a public phone stays
+optional/empty). Merge to master, let CI deploy, confirm
+`https://mathchallenge.app/pricing` and the footer render live, then
+resubmit at `airwallex.com/app/kyb/payment-activation` with
+`https://mathchallenge.app`.
+
 ## Prerequisites
 
 1. **Airwallex Payment Acceptance activated** — complete the KYB at
