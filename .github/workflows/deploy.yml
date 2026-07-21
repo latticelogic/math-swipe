@@ -55,3 +55,10 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy dist --project-name=math-swipe --branch=${{ github.head_ref || github.ref_name }}
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+
+      # Production only: fail the workflow if the live site isn't serving
+      # the build we just uploaded, or any hashed asset comes back missing
+      # or as text/html (the 2026-07-21 cache-poison outage mode).
+      - name: Post-deploy smoke check (production)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        run: bash scripts/smoke-prod.sh https://mathchallenge.app

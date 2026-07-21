@@ -1,0 +1,36 @@
+# Uptime probe — every 30 minutes, verify production serves the app shell
+# AND that the shell's main JS chunk is real JavaScript (not an HTML
+# fallback — the 2026-07-21 cache-poison failure mode). A failed run turns
+# the workflow red and GitHub emails the failure notification.
+#
+# Kept deliberately light (one job, ~20s) so the cron stays well inside
+# the org's free Actions minutes. If minute budget ever gets tight, move
+# this to an external monitor and delete the file.
+name: Uptime check
+
+on:
+  schedule:
+    - cron: '3,33 * * * *'
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Probe production
+        run: |
+          set -euo pipefail
+          ORIGIN=https://mathchallenge.app
+          html=$(curl -sf --max-time 20 "$ORIGIN/")
+          echo "$html" | grep -q 'Math Challenge' || { echo 'index.html missing expected content'; exit 1; }
+          asset=$(echo "$html" | grep -oE 'assets/index-[A-Za-z0-9_-]+\.js' | head -1)
+          [ -n "$asset" ] || { echo 'no shell chunk reference in index.html'; exit 1; }
+          ct=$(curl -s -o /dev/null -w '%{content_type}' "$ORIGIN/$asset")
+          echo "shell chunk: $asset ($ct)"
+          case "$ct" in
+            *javascript*) ;;
+            *) echo "shell chunk served as $ct — asset layer is broken"; exit 1;;
+          esac
+          curl -sf -o /dev/null --max-time 20 "$ORIGIN/pricing"
+          echo "OK"
