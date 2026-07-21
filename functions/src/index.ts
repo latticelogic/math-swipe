@@ -294,3 +294,60 @@ export const notifyBeaten = onDocumentUpdated(
         }).catch(() => { /* non-fatal */ });
     }
 });
+
+// ── 3. Error-spike alert (ops, not user-facing) ──────────────────────────────
+//
+// The client writes crash reports to `errors/` (errorMonitor.ts) but until
+// 2026-07-21 nothing read them — a production outage was first reported by a
+// tester, hours in. This cron closes that loop: every hour, if the last hour
+// produced >= ERROR_SPIKE_THRESHOLD reports, push a notification to every
+// admin (isAdmin custom claim) who has a push subscription, deep-linking to
+// /admin/errors. Runs at :30 to stay out of dailyReminder's :00 slot.
+
+const ERROR_SPIKE_THRESHOLD = 3;
+
+export const errorSpike = onSchedule(
+    {
+        schedule: '30 * * * *',
+        timeZone: 'Etc/UTC',
+        secrets: [VAPID_PUBLIC, VAPID_PRIVATE, VAPID_SUBJECT],
+        maxInstances: 1,
+    },
+    async () => {
+        const oneHourAgo = admin.firestore.Timestamp.fromMillis(Date.now() - 60 * 60 * 1000);
+        const snap = await db.collection('errors')
+            .where('timestamp', '>', oneHourAgo)
+            .get();
+        if (snap.size < ERROR_SPIKE_THRESHOLD) return;
+
+        // Sample the most common message for the notification body.
+        const firstMsg = (snap.docs[0]?.data()?.message as string | undefined) ?? '';
+
+        // Admins = users carrying the isAdmin custom claim. listUsers pages
+        // 1000 at a time — fine at pre-launch scale; revisit if the user base
+        // outgrows a single page (admins are created manually and early, so
+        // in practice they live in the first page anyway).
+        const { users } = await admin.auth().listUsers(1000);
+        const adminUids = users.filter(u => u.customClaims?.isAdmin === true).map(u => u.uid);
+        if (adminUids.length === 0) {
+            logger.warn('errorSpike: spike detected but no admin users to notify', { count: snap.size });
+            return;
+        }
+
+        configurePush();
+        let sent = 0;
+        for (const uid of adminUids) {
+            const subSnap = await db.collection('pushSubscriptions').doc(uid).get();
+            if (!subSnap.exists) continue;
+            const sub = subSnap.data() as PushSubscriptionDoc;
+            const ok = await sendOne(uid, sub, {
+                title: `Math Challenge: ${snap.size} errors in the last hour`,
+                body: firstMsg.slice(0, 120) || 'Open the error dashboard for details.',
+                url: '/admin/errors',
+                kind: 'generic',
+            });
+            if (ok) sent++;
+        }
+        logger.info('errorSpike: alerted admins', { errors: snap.size, admins: adminUids.length, sent });
+    },
+);
