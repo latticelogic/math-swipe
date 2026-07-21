@@ -138,7 +138,6 @@ export const ko: Record<MsgKey, string> = {
     'paywall.ctaExpired': '계속하기',
     'paywall.lifetime': '평생 이용 · 구독 없음',
     'paywall.maybeLater': '나중에',
-    'paywall.dailyFree': '매일 챌린지는 항상 무료예요.',
 
     'settings.title': '설정',
     'settings.gearAria': '설정 열기',

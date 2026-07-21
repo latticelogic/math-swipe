@@ -136,7 +136,6 @@ export const hi: Record<MsgKey, string> = {
     'paywall.ctaExpired': 'खेलते रहें',
     'paywall.lifetime': 'आजीवन पहुँच · कोई सदस्यता नहीं',
     'paywall.maybeLater': 'शायद बाद में',
-    'paywall.dailyFree': 'दैनिक चुनौती हमेशा मुफ़्त है।',
 
     'settings.title': 'सेटिंग्स',
     'settings.gearAria': 'सेटिंग्स खोलें',

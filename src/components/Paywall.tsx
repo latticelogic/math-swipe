@@ -287,21 +287,15 @@ export function Paywall({ progress, onUnlock, busy, mode = 'expired', onClose, p
                     {t('paywall.maybeLater')}
                 </button>
 
-                {/* Pro mode is a clean pitch (owner call 2026-07-16): no
-                    daily-free hint, no legal row — both live in Settings and
-                    on the EXPIRED gate, where they actually matter. */}
+                {/* Pro mode is a clean pitch (owner call 2026-07-16): no legal
+                    row — it lives in Settings and on the EXPIRED gate, where it
+                    actually matters. The old "Daily is always free" hint was
+                    removed app-wide 2026-07-21 (owner call — no forward-binding
+                    free-forever promises in product copy). */}
                 {!isPro && (
-                    <>
-                        {/* Quiet hint that the Daily Challenge isn't locked — the
-                            user tapping "Maybe later" on the hard gate needs to
-                            know they can still come back. */}
-                        <p className="text-[10px] ui text-[rgb(var(--color-fg))]/30 mt-3">
-                            {t('paywall.dailyFree')}
-                        </p>
-                        <div className="mt-5 pt-3 border-t border-[rgb(var(--color-fg))]/8">
-                            <LegalFooterRow />
-                        </div>
-                    </>
+                    <div className="mt-5 pt-3 border-t border-[rgb(var(--color-fg))]/8">
+                        <LegalFooterRow />
+                    </div>
                 )}
 
                 {import.meta.env.DEV && onDevReset && (

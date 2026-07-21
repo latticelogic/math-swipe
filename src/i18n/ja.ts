@@ -136,7 +136,6 @@ export const ja: Record<MsgKey, string> = {
     'paywall.ctaExpired': '続ける',
     'paywall.lifetime': '永久アクセス · サブスクなし',
     'paywall.maybeLater': 'あとで',
-    'paywall.dailyFree': 'デイリーチャレンジはいつでも無料。',
 
     'settings.title': '設定',
     'settings.gearAria': '設定を開く',

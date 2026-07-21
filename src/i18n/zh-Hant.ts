@@ -136,7 +136,6 @@ export const zhHant: Record<MsgKey, string> = {
     'paywall.ctaExpired': '繼續遊戲',
     'paywall.lifetime': '永久使用 · 無訂閱',
     'paywall.maybeLater': '以後再說',
-    'paywall.dailyFree': '每日挑戰永遠免費。',
 
     'settings.title': '設定',
     'settings.gearAria': '開啟設定',

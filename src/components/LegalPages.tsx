@@ -398,10 +398,9 @@ function TermsBody() {
 function PricingBody() {
     return (
         <>
-            <Section title="One price, once">
+            <Section title="The price">
                 <p>
-                    Math Challenge is a mental-math game for ages 8 and up. There is
-                    exactly one thing to buy:
+                    Math Challenge is a mental-math game for ages 8 and up.
                 </p>
                 <div className="rounded-2xl border border-[var(--color-gold)]/30 bg-[var(--color-gold)]/5 px-4 py-4 text-center">
                     <div className="text-base ui font-semibold text-[rgb(var(--color-fg))]/90">
@@ -409,8 +408,7 @@ function PricingBody() {
                     </div>
                     <div className="text-3xl chalk text-[var(--color-gold)] my-1">US$3.14</div>
                     <div className="text-xs ui text-[rgb(var(--color-fg))]/50">
-                        One-time purchase. No subscription, no recurring charge,
-                        no in-app currency.
+                        One-time purchase.
                     </div>
                 </div>
             </Section>
@@ -427,8 +425,7 @@ function PricingBody() {
             <Section title="Try before you buy">
                 <p>
                     Every new player gets the core game free for 7 days — no card
-                    details required to start. The Daily Challenge stays free
-                    forever, purchase or not.
+                    details required to start.
                 </p>
             </Section>
 
@@ -443,15 +440,6 @@ function PricingBody() {
                 </p>
             </Section>
 
-            <Section title="Refunds">
-                <p>
-                    Every purchase is covered by a 14-day, no-questions refund
-                    policy — the full policy is at{' '}
-                    <a href="/refund" className="underline text-[var(--color-gold)]/70">
-                        mathchallenge.app/refund
-                    </a>. Questions before buying: <Email />.
-                </p>
-            </Section>
         </>
     );
 }
@@ -499,14 +487,15 @@ interface FooterRowProps {
 }
 
 /**
- * Shared "Pricing · Privacy · Terms · Refund" link row. Exported so the
- * Paywall (during checkout), the Me tab, and the Settings sheet can all
- * render it without duplicating markup.
+ * Shared "Pricing · Privacy · Terms" link row. Exported so the Paywall
+ * (during checkout), the Me tab, and the Settings sheet can all render
+ * it without duplicating markup.
  *
- * Refund + Pricing were restored to the row 2026-07-21: Airwallex rejected
- * the payment application on website requirements, which demand a
- * discoverable refund policy and public pricing (this reverses the
- * 2026-07-16 owner call that tucked Refund inside the Terms).
+ * Refund is deliberately NOT in the row — it lives inside the Terms
+ * (owner call 2026-07-16, reaffirmed 2026-07-21 after briefly restoring
+ * it for the Airwallex resubmission; the /refund page itself stays live
+ * for stores/support). Pricing joined the row 2026-07-21 for Airwallex's
+ * public-pricing requirement.
  *
  * Uses plain <a href> so direct navigation works for SEO, browser
  * history, and right-click "Open in new tab" — but also accepts an
@@ -518,7 +507,6 @@ export function LegalFooterRow({ current, onNavigate }: FooterRowProps) {
         { id: 'pricing', label: 'Pricing' },
         { id: 'privacy', label: 'Privacy' },
         { id: 'terms', label: 'Terms' },
-        { id: 'refund', label: 'Refund' },
     ] as { id: LegalDocId; label: string }[]);
 
     return (

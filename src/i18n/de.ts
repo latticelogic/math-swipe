@@ -136,7 +136,6 @@ export const de: Record<MsgKey, string> = {
     'paywall.ctaExpired': 'Weiterspielen',
     'paywall.lifetime': 'Lebenslanger Zugang · Kein Abo',
     'paywall.maybeLater': 'Später',
-    'paywall.dailyFree': 'Die Tages-Challenge ist immer gratis.',
 
     'settings.title': 'Einstellungen',
     'settings.gearAria': 'Einstellungen öffnen',

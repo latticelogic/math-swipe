@@ -29,7 +29,7 @@ generic ("Sharp." > "AMAZING! 🎉").
 | Achievements | 28 math + share + early-trial ladder | `src/utils/achievements.ts` (base engine) + `src/domains/math/mathAchievements.ts` (math-specific list, includes the 6-rung early-trial ladder + `spread-the-word` share achievement) |
 | Paywall + trial UX | 7-day demo → \$3.14 lifetime | `src/components/Paywall.tsx`, `src/components/TrialModals.tsx`, `src/hooks/useEntitlement.ts`, `src/utils/entitlement.ts` (incl. `shouldFirePaywall` rule) |
 | Stripe Checkout integration | callable + webhook | `functions/src/stripe.ts` (Cloud Functions) + `src/utils/checkout.ts` (client wrapper) |
-| Legal pages | 3 LIVE | `src/components/LegalPages.tsx` — Privacy / Terms / Refund (no draft banner since 2026-07-15); routed at `/privacy`, `/terms`, `/refund`. Footer row shows Privacy · Terms; Refund is linked from inside Terms. |
+| Legal pages | 4 LIVE | `src/components/LegalPages.tsx` — Privacy / Terms / Refund / Pricing (no draft banner since 2026-07-15; Pricing + `BusinessBlock` added 2026-07-21 for Airwallex website requirements); routed at `/privacy`, `/terms`, `/refund`, `/pricing`. Footer row shows Pricing · Privacy · Terms; Refund is linked from inside Terms (owner call, reaffirmed 2026-07-21). |
 | Billing safety runbook | CLI-first | `docs/billing-safety.md` (gcloud / firebase / stripe commands for budget alerts, quota caps, App Check) |
 | Paywall e2e regression | manual checklist | `docs/paywall-e2e.md` (MCP-driven visual e2e) + `src/tests/paywallTrigger.test.ts` (truth-table unit test) |
 | Teachers (companion characters) | 8 | `src/domains/math/teachers/*.tsx` — each has a documented voice persona |
@@ -202,8 +202,14 @@ modify the rule, modify the test in the same change.
   hard, citing it as too direct. Correct framing leads with the user's
   own progress numbers (loss aversion via specifics, not slogans) and
   the price sits below as a quiet invitation.
-- The paywall surface always mentions **"The Daily Challenge is always
-  free"** so users know they're not fully locked out.
+- **No forward-binding "free forever" promises in product copy** (owner
+  call 2026-07-21): the paywall's "The Daily Challenge is always free"
+  line was removed, along with the pricing page's "no subscription ever"
+  absolutism — the owner may expand the model later (possibly including
+  subscriptions) and product copy shouldn't box that in. The Daily
+  *behavior* (never gated) is unchanged; only the copy promises went.
+  The WelcomeModal still has a softer `welcome.dailyFree` line — flag it
+  to the owner before adding any new copy of this kind.
 - Modals never interrupt mid-session — both `WelcomeModal` and
   `TrialReminderModal` accept an `inSession` prop and defer until the
   user is between sessions (game tab with totalAnswered === 0, OR any
