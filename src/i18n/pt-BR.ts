@@ -135,7 +135,6 @@ export const ptBR: Record<MsgKey, string> = {
     'paywall.ctaExpired': 'Continuar jogando',
     'paywall.lifetime': 'Acesso vitalício · Sem assinatura',
     'paywall.maybeLater': 'Talvez depois',
-    'paywall.dailyFree': 'O Desafio Diário é sempre grátis.',
 
     'settings.title': 'Ajustes',
     'settings.gearAria': 'Abrir ajustes',

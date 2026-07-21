@@ -137,7 +137,6 @@ export const id: Record<MsgKey, string> = {
     'paywall.ctaExpired': 'Terus main',
     'paywall.lifetime': 'Akses seumur hidup · Tanpa langganan',
     'paywall.maybeLater': 'Nanti saja',
-    'paywall.dailyFree': 'Tantangan Harian selalu gratis.',
 
     'settings.title': 'Pengaturan',
     'settings.gearAria': 'Buka pengaturan',

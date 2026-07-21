@@ -136,7 +136,6 @@ export const zhHans: Record<MsgKey, string> = {
     'paywall.ctaExpired': '继续游戏',
     'paywall.lifetime': '永久使用 · 无订阅',
     'paywall.maybeLater': '以后再说',
-    'paywall.dailyFree': '每日挑战永远免费。',
 
     'settings.title': '设置',
     'settings.gearAria': '打开设置',

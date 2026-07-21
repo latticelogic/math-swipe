@@ -155,7 +155,6 @@ export const en = {
     'paywall.ctaExpired': 'Keep playing',
     'paywall.lifetime': 'Lifetime access · No subscription',
     'paywall.maybeLater': 'Maybe later',
-    'paywall.dailyFree': 'The Daily Challenge is always free.',
 
     // ── Settings sheet ──
     'settings.title': 'Settings',
