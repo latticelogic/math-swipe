@@ -36,11 +36,12 @@ Fixed in code (2026-07-21):
   application — a consistency red flag).
 - Governing law already matched (Singapore ↔ Lattice Logic Pte. Ltd.). ✓
 
-**Before reapplying (owner):** fill in `BUSINESS.address` (ACRA registered
-office) and optionally `BUSINESS.phone` in `src/components/LegalPages.tsx` —
-Airwallex lists address explicitly under "contact information". Then deploy
-(merge to master) and resubmit at `airwallex.com/app/kyb/payment-activation`
-with `https://mathchallenge.app`.
+**Before reapplying:** the registered office address is filled in
+(`BUSINESS` in `src/components/LegalPages.tsx`; a public phone stays
+optional/empty). Merge to master, let CI deploy, confirm
+`https://mathchallenge.app/pricing` and the footer render live, then
+resubmit at `airwallex.com/app/kyb/payment-activation` with
+`https://mathchallenge.app`.
 
 ## Prerequisites
 

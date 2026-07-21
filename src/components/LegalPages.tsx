@@ -46,14 +46,13 @@ const TITLES: Record<LegalDocId, string> = {
 // registration number, and contact details to be clearly displayed on the
 // site — not buried in a terms clause. Rendered by <BusinessBlock /> at the
 // bottom of every legal page and the Me tab.
-// REGISTERED_ADDRESS / CONTACT_PHONE are owner-supplied facts: fill them in
-// before reapplying to Airwallex (empty strings render nothing).
+// `phone` is optional and renders nothing while empty.
 const BUSINESS = {
     company: 'Lattice Logic Pte. Ltd.',
     uen: 'UEN 202610912N',
     email: 'help@latticelogic.app',
-    address: '', // TODO(owner): ACRA registered office address
-    phone: '',   // TODO(owner): contact phone, if you want one public
+    address: '77 High Street, #10-12B High Street Plaza, Singapore 179433',
+    phone: '',
 };
 
 const LAST_UPDATED = '2026-07-15';
