@@ -257,8 +257,9 @@ service cloud.firestore {
 
     // ── Error Reports (monitoring) ──
     match /errors/{errorId} {
-      // No reads — only admins via console
-      allow read: if false;
+      // Reads: admin-only (powers /admin/errors) — same isAdmin custom
+      // claim as pushEvents/entitlements.
+      allow read: if request.auth != null && request.auth.token.isAdmin == true;
 
       // Authenticated users can create error reports
       allow create: if request.auth != null

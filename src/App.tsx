@@ -40,6 +40,7 @@ const TricksPage = lazy(() => lazyRetry(() => import('./components/TricksPage'))
 const ProfilePage = lazy(() => lazyRetry(() => import('./components/ProfilePage')).then(m => ({ default: m.ProfilePage })));
 const AdminPushAnalytics = lazy(() => lazyRetry(() => import('./components/AdminPushAnalytics')).then(m => ({ default: m.AdminPushAnalytics })));
 const AdminBilling = lazy(() => lazyRetry(() => import('./components/AdminBilling')).then(m => ({ default: m.AdminBilling })));
+const AdminErrors = lazy(() => lazyRetry(() => import('./components/AdminErrors')).then(m => ({ default: m.AdminErrors })));
 
 import { useGameLoop } from './hooks/useGameLoop';
 import { useStats } from './hooks/useStats';
@@ -184,11 +185,13 @@ function App() {
   // Admin routes — owner-only by Firebase custom claim. Add new admin
   // surfaces here as path-matchers; the matched value drives which
   // component renders below. /admin/push (push notification analytics)
-  // and /admin/billing (entitlement / refund-rate dashboard).
-  const [adminRoute, setAdminRoute] = useState<'push' | 'billing' | null>(() => {
+  // /admin/billing (entitlement / refund-rate dashboard), and
+  // /admin/errors (client crash reports — errorSpike pushes point here).
+  const [adminRoute, setAdminRoute] = useState<'push' | 'billing' | 'errors' | null>(() => {
     const p = window.location.pathname;
     if (/^\/admin\/push\/?$/.test(p)) return 'push';
     if (/^\/admin\/billing\/?$/.test(p)) return 'billing';
+    if (/^\/admin\/errors\/?$/.test(p)) return 'errors';
     return null;
   });
   // ?c=<seed> loads a seeded challenge. ?daily=1 routes straight to today's
@@ -883,6 +886,20 @@ function App() {
       <BlackboardLayout>
         <Suspense fallback={<TabSkeleton variant="generic" />}>
           <AdminBilling
+            onBackToGame={() => {
+              setAdminRoute(null);
+              window.history.replaceState({}, '', '/');
+            }}
+          />
+        </Suspense>
+      </BlackboardLayout>
+    );
+  }
+  if (adminRoute === 'errors') {
+    return (
+      <BlackboardLayout>
+        <Suspense fallback={<TabSkeleton variant="generic" />}>
+          <AdminErrors
             onBackToGame={() => {
               setAdminRoute(null);
               window.history.replaceState({}, '', '/');
