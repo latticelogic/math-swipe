@@ -232,6 +232,7 @@ export const ko: Record<MsgKey, string> = {
     'common.gotIt': '알겠어요',
     'error.title': '문제가 생겼어요',
     'error.body': '아무 곳이나 눌러 새로고침하세요',
+    'error.retry': '다시 시도',
     'paywall.checkoutError': '결제를 시작할 수 없어요. 잠시 후 다시 시도하세요.',
     'league.title': '리그',
     'league.subtitle': '전 세계 순위표',

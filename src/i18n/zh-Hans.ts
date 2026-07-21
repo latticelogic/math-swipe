@@ -230,6 +230,7 @@ export const zhHans: Record<MsgKey, string> = {
     'common.gotIt': '知道了',
     'error.title': '出了点问题',
     'error.body': '点击任意处重新加载',
+    'error.retry': '再试一次',
     'paywall.checkoutError': '无法开始结账。请稍后重试。',
     'league.title': '联赛',
     'league.subtitle': '全球排行榜',

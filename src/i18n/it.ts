@@ -230,6 +230,7 @@ export const it: Record<MsgKey, string> = {
     'common.gotIt': 'Capito',
     'error.title': 'Qualcosa è andato storto',
     'error.body': 'Tocca ovunque per ricaricare',
+    'error.retry': 'Riprova',
     'paywall.checkoutError': 'Impossibile avviare il pagamento. Riprova tra un momento.',
     'league.title': 'Lega',
     'league.subtitle': 'Classifica globale',

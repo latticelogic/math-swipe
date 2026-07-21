@@ -230,6 +230,7 @@ export const de: Record<MsgKey, string> = {
     'common.gotIt': 'Verstanden',
     'error.title': 'Etwas ist schiefgelaufen',
     'error.body': 'Tippe irgendwo zum Neuladen',
+    'error.retry': 'Erneut versuchen',
     'paywall.checkoutError': 'Kauf konnte nicht gestartet werden. Versuch es gleich nochmal.',
     'league.title': 'Liga',
     'league.subtitle': 'Globale Rangliste',

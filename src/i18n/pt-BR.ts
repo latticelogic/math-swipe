@@ -229,6 +229,7 @@ export const ptBR: Record<MsgKey, string> = {
     'common.gotIt': 'Entendi',
     'error.title': 'Algo deu errado',
     'error.body': 'Toque em qualquer lugar para recarregar',
+    'error.retry': 'Tente de novo',
     'paywall.checkoutError': 'Não foi possível iniciar a compra. Tente de novo em instantes.',
     'league.title': 'Liga',
     'league.subtitle': 'Classificação global',

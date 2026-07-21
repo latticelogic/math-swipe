@@ -230,6 +230,7 @@ export const zhHant: Record<MsgKey, string> = {
     'common.gotIt': '知道了',
     'error.title': '出了點狀況',
     'error.body': '點擊任意處重新載入',
+    'error.retry': '再試一次',
     'paywall.checkoutError': '無法開始結帳,請稍後再試。',
     'league.title': '聯賽',
     'league.subtitle': '全球排行榜',
