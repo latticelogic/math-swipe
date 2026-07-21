@@ -1,17 +1,22 @@
 /**
  * LegalPages.tsx
  *
- * Three static pages reachable via path-based routing:
+ * Four static pages reachable via path-based routing:
  *   /refund    — refund policy
  *   /privacy   — privacy policy
  *   /terms     — terms of service
+ *   /pricing   — public product + pricing page (payment-provider onboarding
+ *                requires a publicly visible "checkout section with clear
+ *                pricing and product details"; the in-app paywall is invisible
+ *                to a compliance reviewer, so this page is the public surface)
  *
  * These are the live consumer terms for Lattice Logic Pte. Ltd. (Singapore).
  * They're written against what the codebase actually does (anonymous Firebase
  * auth, optional Google/email sign-in, stats blob, optional push tokens,
- * optional Stripe purchase) and follow the Singapore-PDPA-first / mixed-audience
- * COPPA structure recorded in docs/legal-review-brief.md. Governing law is
- * Singapore; a class-action waiver and a Singapore-courts dispute clause apply.
+ * optional Airwallex purchase) and follow the Singapore-PDPA-first /
+ * mixed-audience COPPA structure recorded in docs/legal-review-brief.md.
+ * Governing law is Singapore; a class-action waiver and a Singapore-courts
+ * dispute clause apply.
  *
  * NOTE: these are boilerplate-style docs shipped without a bespoke legal review
  * (a business decision by the owner). A one-off Singapore-counsel confirmation
@@ -22,7 +27,7 @@
 import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 
-type LegalDocId = 'refund' | 'privacy' | 'terms';
+type LegalDocId = 'refund' | 'privacy' | 'terms' | 'pricing';
 
 interface Props {
     doc: LegalDocId;
@@ -33,6 +38,22 @@ const TITLES: Record<LegalDocId, string> = {
     refund: 'Refund Policy',
     privacy: 'Privacy Policy',
     terms: 'Terms of Service',
+    pricing: 'Pricing',
+};
+
+// ── Business identification ───────────────────────────────────────────────────
+// Airwallex (and card-network) onboarding requires the company name,
+// registration number, and contact details to be clearly displayed on the
+// site — not buried in a terms clause. Rendered by <BusinessBlock /> at the
+// bottom of every legal page and the Me tab.
+// REGISTERED_ADDRESS / CONTACT_PHONE are owner-supplied facts: fill them in
+// before reapplying to Airwallex (empty strings render nothing).
+const BUSINESS = {
+    company: 'Lattice Logic Pte. Ltd.',
+    uen: 'UEN 202610912N',
+    email: 'help@latticelogic.app',
+    address: '', // TODO(owner): ACRA registered office address
+    phone: '',   // TODO(owner): contact phone, if you want one public
 };
 
 const LAST_UPDATED = '2026-07-15';
@@ -68,13 +89,15 @@ export function LegalPage({ doc, onBack }: Props) {
                     {doc === 'refund' && <RefundBody />}
                     {doc === 'privacy' && <PrivacyBody />}
                     {doc === 'terms' && <TermsBody />}
+                    {doc === 'pricing' && <PricingBody />}
                 </div>
 
-                <div className="mt-12 pt-6 border-t border-[rgb(var(--color-fg))]/8">
+                <div className="mt-12 pt-6 border-t border-[rgb(var(--color-fg))]/8 space-y-4">
                     {/* Inter-doc navigation. We let the <a href> in the footer
                         row do a real navigation — App.tsx's pathname-matcher
                         re-renders us with the new doc on the next load. */}
                     <LegalFooterRow current={doc} />
+                    <BusinessBlock />
                 </div>
             </div>
         </motion.div>
@@ -127,8 +150,8 @@ function RefundBody() {
                     This policy is in addition to your rights under Singapore's
                     Consumer Protection (Fair Trading) Act. Math Challenge is a digital
                     product delivered instantly on purchase; refunds are processed
-                    exclusively through Stripe once the transaction is verified
-                    against our records.
+                    exclusively through our payment provider, Airwallex, once the
+                    transaction is verified against our records.
                 </p>
             </Section>
         </>
@@ -142,8 +165,8 @@ function PrivacyBody() {
                 <p>The shortest accurate version: an anonymous account id, your
                     chosen display name, your gameplay stats, and (only if you
                     opt in) one of: a Google account link, an email address for
-                    sign-in, a push notification token, or a Stripe customer id
-                    after purchase.</p>
+                    sign-in, a push notification token, or a payment reference
+                    from Airwallex after purchase.</p>
 
                 <p>We do not collect: your real name, address, phone number,
                     location, contacts, or anything not listed above. We do not
@@ -169,9 +192,9 @@ function PrivacyBody() {
                 <Bullet><strong>Push notifications.</strong> Optional. If enabled,
                     we store a browser-issued push subscription endpoint (no
                     direct device identifier).</Bullet>
-                <Bullet><strong>Payment.</strong> Only if you purchase. Stripe
+                <Bullet><strong>Payment.</strong> Only if you purchase. Airwallex
                     handles the actual card details — we never see them. We
-                    store a Stripe customer id and a transaction id to verify
+                    store a payment id and a transaction reference to verify
                     your lifetime entitlement.</Bullet>
                 <Bullet><strong>Error reports + performance.</strong> When the app
                     crashes, we log the error message, stack, page URL, and
@@ -202,7 +225,7 @@ function PrivacyBody() {
                     third parties that touch any of it are:</p>
                 <Bullet><strong>Firebase</strong> (Google) — authentication and structured database hosting; push delivery</Bullet>
                 <Bullet><strong>Cloudflare</strong> — global edge routing, hosting, and DDoS mitigation</Bullet>
-                <Bullet><strong>Stripe</strong> — secure tokenised payment processing (purchases only)</Bullet>
+                <Bullet><strong>Airwallex</strong> — secure tokenised payment processing (purchases only)</Bullet>
                 {import.meta.env.VITE_APPCHECK_SITE_KEY && (
                     <Bullet><strong>Google reCAPTCHA</strong> — abuse and fraud prevention only (via Firebase App Check, to verify requests come from the genuine app); subject to Google's Privacy Policy and Terms. No advertising or profiling.</Bullet>
                 )}
@@ -269,10 +292,13 @@ function TermsBody() {
             </Section>
 
             <Section title="The trial">
-                <p>The 7-day free demo gives you full access to everything in
-                    the app. After the demo ends, you can purchase lifetime
-                    access for $3.14. If you don't purchase, the Daily Challenge
-                    stays free; other content locks.</p>
+                <p>The 7-day free demo gives you the core game — all topics,
+                    the Daily Challenge, streaks, and achievements. A small Pro
+                    set (advanced modes, the full Magic Tricks library, Pro
+                    cosmetics) is part of the purchase from day one. After the
+                    demo ends, you can purchase lifetime access for $3.14. If
+                    you don't purchase, the Daily Challenge stays free; other
+                    content locks.</p>
                 <p>Purchases are covered by our 14-day, no-questions refund
                     policy — the full policy is at{' '}
                     <a href="/refund" className="underline text-[var(--color-gold)]/70">
@@ -370,6 +396,67 @@ function TermsBody() {
     );
 }
 
+function PricingBody() {
+    return (
+        <>
+            <Section title="One price, once">
+                <p>
+                    Math Challenge is a mental-math game for ages 8 and up. There is
+                    exactly one thing to buy:
+                </p>
+                <div className="rounded-2xl border border-[var(--color-gold)]/30 bg-[var(--color-gold)]/5 px-4 py-4 text-center">
+                    <div className="text-base ui font-semibold text-[rgb(var(--color-fg))]/90">
+                        Math Challenge — lifetime access
+                    </div>
+                    <div className="text-3xl chalk text-[var(--color-gold)] my-1">US$3.14</div>
+                    <div className="text-xs ui text-[rgb(var(--color-fg))]/50">
+                        One-time purchase. No subscription, no recurring charge,
+                        no in-app currency.
+                    </div>
+                </div>
+            </Section>
+
+            <Section title="What the purchase unlocks">
+                <Bullet>All 35 practice topics with adaptive difficulty, streaks,
+                    and achievements — for as long as the app is operated.</Bullet>
+                <Bullet>The full library of 36 Magic Tricks (mental-math shortcut
+                    lessons with guided practice).</Bullet>
+                <Bullet>Advanced play modes: Hard, Timed, and Ultimate.</Bullet>
+                <Bullet>The Pro cosmetics pack (chalk themes and trail effects).</Bullet>
+            </Section>
+
+            <Section title="Try before you buy">
+                <p>
+                    Every new player gets the core game free for 7 days — no card
+                    details required to start. The Daily Challenge stays free
+                    forever, purchase or not.
+                </p>
+            </Section>
+
+            <Section title="How buying works">
+                <p>
+                    Purchases happen in the app: open the Me tab and choose
+                    Unlock. Checkout is handled on a secure page by our payment
+                    provider, Airwallex, and accepts major payment methods
+                    including Visa, Mastercard, American Express, UnionPay,
+                    Apple Pay, and Google Pay. Access is granted to your account
+                    immediately after payment.
+                </p>
+            </Section>
+
+            <Section title="Refunds">
+                <p>
+                    Every purchase is covered by a 14-day, no-questions refund
+                    policy — the full policy is at{' '}
+                    <a href="/refund" className="underline text-[var(--color-gold)]/70">
+                        mathchallenge.app/refund
+                    </a>. Questions before buying: <Email />.
+                </p>
+            </Section>
+        </>
+    );
+}
+
 // ── Reusable bits ─────────────────────────────────────────────────────────────
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -408,17 +495,19 @@ interface FooterRowProps {
     current?: LegalDocId;
     /** Click handler for navigation. The parent decides routing strategy. */
     onNavigate?: (doc: LegalDocId) => void;
-    /** @deprecated Refund is no longer in the row at all (owner call
-     *  2026-07-16 — it's linked from inside the Terms instead; the /refund
-     *  page itself stays live for stores/support). Kept so old call sites
-     *  compile; has no effect. */
+    /** @deprecated Kept so old call sites compile; has no effect. */
     omitRefund?: boolean;
 }
 
 /**
- * Shared "Refund · Privacy · Terms" link row. Exported so the Paywall
- * (during checkout) and the MePage footer (always-visible discovery)
- * can both render it without duplicating markup.
+ * Shared "Pricing · Privacy · Terms · Refund" link row. Exported so the
+ * Paywall (during checkout), the Me tab, and the Settings sheet can all
+ * render it without duplicating markup.
+ *
+ * Refund + Pricing were restored to the row 2026-07-21: Airwallex rejected
+ * the payment application on website requirements, which demand a
+ * discoverable refund policy and public pricing (this reverses the
+ * 2026-07-16 owner call that tucked Refund inside the Terms).
  *
  * Uses plain <a href> so direct navigation works for SEO, browser
  * history, and right-click "Open in new tab" — but also accepts an
@@ -426,10 +515,11 @@ interface FooterRowProps {
  * not to hit a full reload.
  */
 export function LegalFooterRow({ current, onNavigate }: FooterRowProps) {
-    // Refund deliberately absent — it lives inside the Terms (owner call).
     const items = ([
+        { id: 'pricing', label: 'Pricing' },
         { id: 'privacy', label: 'Privacy' },
         { id: 'terms', label: 'Terms' },
+        { id: 'refund', label: 'Refund' },
     ] as { id: LegalDocId; label: string }[]);
 
     return (
@@ -455,6 +545,33 @@ export function LegalFooterRow({ current, onNavigate }: FooterRowProps) {
                     )}
                 </span>
             ))}
+        </div>
+    );
+}
+
+/**
+ * Business identification block — company name, registration number, and
+ * contact details, clearly displayed as card networks / Airwallex require.
+ * Purely factual (proper nouns + ids), so it stays locale-invariant and
+ * doesn't go through i18n. Rendered under the footer row on every legal
+ * page and at the bottom of the Me tab.
+ */
+export function BusinessBlock() {
+    const parts = [
+        BUSINESS.company,
+        BUSINESS.uen,
+        BUSINESS.address,
+        BUSINESS.phone,
+    ].filter(Boolean);
+
+    return (
+        <div className="text-center text-[10px] ui leading-relaxed text-[rgb(var(--color-fg))]/30">
+            <p>{parts.join(' · ')}</p>
+            <p>
+                <a href={`mailto:${BUSINESS.email}`} className="hover:text-[rgb(var(--color-fg))]/60 transition-colors">
+                    {BUSINESS.email}
+                </a>
+            </p>
         </div>
     );
 }

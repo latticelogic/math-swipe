@@ -24,6 +24,7 @@ preparation.
 ## Pages
 
 - [Home / app](https://mathchallenge.app/): the game itself (JavaScript SPA)
+- [Pricing](https://mathchallenge.app/pricing): US$3.14 one-time lifetime purchase, what it unlocks
 - [Privacy policy](https://mathchallenge.app/privacy)
 - [Terms](https://mathchallenge.app/terms)
 - [Refund policy](https://mathchallenge.app/refund): 14-day no-questions refund

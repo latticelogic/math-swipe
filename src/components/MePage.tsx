@@ -14,6 +14,7 @@ import { RANKS, getRank, getMastery, rankLabel } from '../domains/math/ranks';
 import { TrialCountdownChip } from './TrialModals';
 import { SettingsSheet } from './SettingsSheet';
 import { InstallPill } from './InstallPrompt';
+import { LegalFooterRow, BusinessBlock } from './LegalPages';
 import { RankIcon } from './RankIcon';
 import { TrailIcon } from './TrailIcon';
 import { FlameIcon, TargetIcon, CheckIcon, CalendarIcon, LockIcon } from './icons';
@@ -612,6 +613,16 @@ export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCo
                     {t('me.sectionUltimate')}
                 </div>
                 <ModeAchievementGrid achievements={ULTIMATE_ACHIEVEMENTS} cols="grid-cols-3" unlocked={unlocked} />
+            </div>
+
+            {/* Legal + business identification footer. Payment-provider
+                onboarding (Airwallex) requires policies and the company's
+                identity to be discoverable without opening the Settings
+                sheet, so the row lives at the bottom of the page scroll
+                too, not only inside Settings. */}
+            <div className="w-full max-w-sm mt-8 mb-2 space-y-3">
+                <LegalFooterRow />
+                <BusinessBlock />
             </div>
 
             {/* Rank list modal */}

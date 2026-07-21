@@ -199,12 +199,12 @@ function App() {
   const [bootDailyRequested] = useState<boolean>(() =>
     new URLSearchParams(window.location.search).get('daily') === '1',
   );
-  // Static legal pages — Refund / Privacy / Terms. Reachable directly
-  // via /refund, /privacy, /terms; also linked from the Paywall footer
-  // and the Me-tab footer. Same pathname-router pattern as profile +
-  // admin above.
+  // Static legal pages — Refund / Privacy / Terms / Pricing. Reachable
+  // directly via /refund, /privacy, /terms, /pricing; also linked from the
+  // Paywall footer and the Me-tab footer. Same pathname-router pattern as
+  // profile + admin above.
   const [legalRoute, setLegalRoute] = useState<LegalDocId | null>(() => {
-    const m = window.location.pathname.match(/^\/(refund|privacy|terms)\/?$/);
+    const m = window.location.pathname.match(/^\/(refund|privacy|terms|pricing)\/?$/);
     return m ? (m[1] as LegalDocId) : null;
   });
   const [challengeId, setChallengeId] = useState<string | null>(() =>
