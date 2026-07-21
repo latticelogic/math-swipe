@@ -18,7 +18,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PushOptIn } from './PushOptIn';
-import { LegalFooterRow } from './LegalPages';
+import { LegalFooterRow, BusinessBlock } from './LegalPages';
 import { RecaptchaNotice } from './RecaptchaNotice';
 import { t, getLocale, setLocale, SHIPPED_LOCALES } from '../i18n';
 import { isSoundOn, setSoundOn, soundCorrect } from '../utils/sound';
@@ -213,8 +213,11 @@ export function SettingsSheet({ open, onClose, uid, themeMode, onToggleTheme, ti
                             {versionLabel}
                         </button>
 
-                        {/* ── Legal ── */}
+                        {/* ── Legal + company identification ── */}
                         <LegalFooterRow />
+                        <div className="mt-3">
+                            <BusinessBlock />
+                        </div>
                         <RecaptchaNotice />
                     </motion.div>
                 </>

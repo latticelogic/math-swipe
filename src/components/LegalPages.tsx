@@ -45,7 +45,9 @@ const TITLES: Record<LegalDocId, string> = {
 // Airwallex (and card-network) onboarding requires the company name,
 // registration number, and contact details to be clearly displayed on the
 // site — not buried in a terms clause. Rendered by <BusinessBlock /> at the
-// bottom of every legal page and the Me tab.
+// bottom of every legal page and in the Settings sheet (NOT the Me tab
+// proper — company details next to personal stats read oddly; owner call
+// 2026-07-21).
 // `phone` is optional and renders nothing while empty.
 const BUSINESS = {
     company: 'Lattice Logic Pte. Ltd.',
@@ -541,7 +543,7 @@ export function LegalFooterRow({ current, onNavigate }: FooterRowProps) {
  * contact details, clearly displayed as card networks / Airwallex require.
  * Purely factual (proper nouns + ids), so it stays locale-invariant and
  * doesn't go through i18n. Rendered under the footer row on every legal
- * page and at the bottom of the Me tab.
+ * page and inside the Settings sheet.
  */
 export function BusinessBlock() {
     const parts = [
