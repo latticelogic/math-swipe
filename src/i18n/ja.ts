@@ -230,6 +230,7 @@ export const ja: Record<MsgKey, string> = {
     'common.gotIt': 'わかった',
     'error.title': '問題が発生しました',
     'error.body': 'どこかをタップして再読み込み',
+    'error.retry': 'もう一度',
     'paywall.checkoutError': '購入手続きを開始できませんでした。少し待って再度お試しを。',
     'league.title': 'リーグ',
     'league.subtitle': '世界ランキング',

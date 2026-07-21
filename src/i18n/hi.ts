@@ -238,6 +238,7 @@ export const hi: Record<MsgKey, string> = {
 
     'error.title': 'कुछ गड़बड़ हो गई',
     'error.body': 'फिर से लोड करने के लिए कहीं भी टैप करें',
+    'error.retry': 'फिर से आज़माएँ',
 
     'paywall.checkoutError': 'चेकआउट शुरू नहीं हो सका। थोड़ी देर में फिर कोशिश करें।',
 

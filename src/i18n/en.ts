@@ -259,6 +259,7 @@ export const en = {
     'common.gotIt': 'Got it',
     'error.title': 'Something went wrong',
     'error.body': 'Tap anywhere to reload',
+    'error.retry': 'Try again',
 
     // ── Paywall (checkout error) ──
     'paywall.checkoutError': 'Could not start checkout. Try again in a moment.',

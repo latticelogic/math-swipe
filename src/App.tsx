@@ -17,6 +17,7 @@ import { OfflineBanner } from './components/OfflineBanner';
 import { ReloadPrompt } from './components/ReloadPrompt';
 import { MilestoneBurst } from './components/MilestoneBurst';
 import { DailyFlourish } from './components/DailyFlourish';
+import { TabErrorBoundary } from './components/ErrorBoundary';
 import { AchievementBadge } from './components/AchievementBadge';
 import { hapticMilestone } from './utils/haptics';
 import { useFirstCorrectFlourish } from './hooks/useFirstCorrectFlourish';
@@ -820,7 +821,7 @@ function App() {
   if (profileSlug) {
     return (
       <BlackboardLayout>
-        <Suspense fallback={<TabSkeleton variant="generic" />}>
+        <TabErrorBoundary><Suspense fallback={<TabSkeleton variant="generic" />}>
           <ProfilePage
             slug={profileSlug}
             onChallenge={(id, targetTimeMs) => {
@@ -839,7 +840,7 @@ function App() {
               window.history.replaceState({}, '', '/');
             }}
           />
-        </Suspense>
+        </Suspense></TabErrorBoundary>
       </BlackboardLayout>
     );
   }
@@ -1316,13 +1317,13 @@ function App() {
         {/* Non-game tabs (no wrapper — each page scrolls independently) */}
         {activeTab === 'league' && (
           <motion.div className="flex-1 flex flex-col min-h-0" onPanEnd={handleTabSwipe}>
-            <Suspense fallback={<TabSkeleton variant="league" />}><LeaguePage userXP={stats.totalXP} userStreak={Math.max(stats.bestStreak, stats.hardModeBestStreak, stats.timedModeBestStreak, stats.ultimateBestStreak)} uid={uid} displayName={user?.displayName ?? t('common.you')} activeThemeId={activeThemeId as string} activeCostume={activeCostume as string} bestSpeedrunTime={stats.bestSpeedrunTime} speedrunHardMode={stats.speedrunHardMode} /></Suspense>
+            <TabErrorBoundary><Suspense fallback={<TabSkeleton variant="league" />}><LeaguePage userXP={stats.totalXP} userStreak={Math.max(stats.bestStreak, stats.hardModeBestStreak, stats.timedModeBestStreak, stats.ultimateBestStreak)} uid={uid} displayName={user?.displayName ?? t('common.you')} activeThemeId={activeThemeId as string} activeCostume={activeCostume as string} bestSpeedrunTime={stats.bestSpeedrunTime} speedrunHardMode={stats.speedrunHardMode} /></Suspense></TabErrorBoundary>
           </motion.div>
         )}
 
         {activeTab === 'me' && (
           <motion.div className="flex-1 flex flex-col min-h-0" onPanEnd={handleTabSwipe}>
-            <Suspense fallback={<TabSkeleton variant="me" />}><MePage
+            <TabErrorBoundary><Suspense fallback={<TabSkeleton variant="me" />}><MePage
               stats={stats}
               accuracy={accuracy}
               sessionScore={score}
@@ -1355,13 +1356,13 @@ function App() {
               onToggleTheme={toggleThemeMode}
               timedSecs={safeTimedSecs}
               onTimedSecsChange={setTimedSecs}
-            /></Suspense>
+            /></Suspense></TabErrorBoundary>
           </motion.div>
         )}
 
         {activeTab === 'magic' && (
           <motion.div className="flex-1 flex flex-col min-h-0" onPanEnd={!isMagicLessonActive ? handleTabSwipe : undefined}>
-            <Suspense fallback={<TabSkeleton variant="tricks" />}><TricksPage onLessonActive={setIsMagicLessonActive} hasPro={hasPro} onProLocked={requestPro} /></Suspense>
+            <TabErrorBoundary><Suspense fallback={<TabSkeleton variant="tricks" />}><TricksPage onLessonActive={setIsMagicLessonActive} hasPro={hasPro} onProLocked={requestPro} /></Suspense></TabErrorBoundary>
           </motion.div>
         )}
 

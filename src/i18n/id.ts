@@ -231,6 +231,7 @@ export const id: Record<MsgKey, string> = {
     'common.gotIt': 'Mengerti',
     'error.title': 'Ada yang salah',
     'error.body': 'Ketuk di mana saja untuk muat ulang',
+    'error.retry': 'Coba lagi',
     'paywall.checkoutError': 'Tidak bisa memulai pembayaran. Coba sebentar lagi.',
     'league.title': 'Liga',
     'league.subtitle': 'Papan skor global',
