@@ -18,7 +18,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PushOptIn } from './PushOptIn';
-import { LegalFooterRow, BusinessBlock } from './LegalPages';
+import { LegalFooterRow } from './LegalPages';
 import { RecaptchaNotice } from './RecaptchaNotice';
 import { t, getLocale, setLocale, SHIPPED_LOCALES } from '../i18n';
 import { isSoundOn, setSoundOn, soundCorrect } from '../utils/sound';
@@ -213,11 +213,11 @@ export function SettingsSheet({ open, onClose, uid, themeMode, onToggleTheme, ti
                             {versionLabel}
                         </button>
 
-                        {/* ── Legal + company identification ── */}
+                        {/* ── Legal ── Company identification deliberately NOT
+                            here — apps don't put registry details in Settings
+                            (owner call 2026-07-21). It lives on the legal pages
+                            only, one tap away via this row. */}
                         <LegalFooterRow />
-                        <div className="mt-3">
-                            <BusinessBlock />
-                        </div>
                         <RecaptchaNotice />
                     </motion.div>
                 </>
