@@ -275,6 +275,26 @@ export default {
         const url = new URL(request.url);
         const profileMatch = url.pathname.match(/^\/u\/([^/]+)\/?$/);
 
+        // Hashed-asset guard. Pages' SPA 200-rewrite serves index.html for
+        // any missing file — including a missing /assets/*.js. At that path
+        // the HTML inherits the 1-year `immutable` Cache-Control from
+        // public/_headers, and the edge caches the wrong body against the
+        // asset URL for a year. That poisoned-cache combination took down
+        // the League + Profile chunks in prod on 2026-07-21. An /assets/
+        // path must NEVER serve HTML: a miss is an uncacheable 404, which
+        // the client's chunk-reload recovery (ErrorBoundary) can handle.
+        if (url.pathname.startsWith('/assets/')) {
+            const res = await env.ASSETS.fetch(request);
+            const ct = res.headers.get('content-type') ?? '';
+            if (ct.includes('text/html')) {
+                return new Response('Not found', {
+                    status: 404,
+                    headers: { 'cache-control': 'no-store', 'content-type': 'text/plain' },
+                });
+            }
+            return res;
+        }
+
         if (!profileMatch) {
             // Everything else: pass through to the static assets
             return env.ASSETS.fetch(request);
