@@ -398,3 +398,19 @@ Soft-launch posture:
    2 weeks of clean data before any marketing push.
 - ☐ Watch refund rate: >5% means the paywall is mis-tuned, pause and fix
 - ☐ Watch conversion rate: <0.1% means the value prop isn't landing
+
+## Firestore backups (pre-launch)
+
+No backup schedule exists yet. One-time setup (needs a fresh `gcloud auth
+login tim@latticelogic.app` — tokens expire and the schedule create is the
+only step that needs them):
+
+```bash
+gcloud firestore backups schedules create \
+  --database='(default)' --recurrence=daily --retention=7d \
+  --project=math-swipe-prod --account=tim@latticelogic.app
+```
+
+Verify with `gcloud firestore backups schedules list --database='(default)' --project=math-swipe-prod`.
+Protects entitlements (real money post-launch) against a bad rules deploy
+or a mass-write bug. Restore: `gcloud firestore databases restore`.
