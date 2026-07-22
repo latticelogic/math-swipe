@@ -294,11 +294,19 @@ non-trivial. The `expect` recipe above is proven; start there.
 
 - **Org (company) dev account skips the 20-tester gate** that personal
   accounts have. Already enrolled + verified for Lattice Logic — reuse it.
-- **Creating the app**: name · **App (not Game)** · Free with in-app purchases.
-  For a kids'/education app, **App (not Game)** + target audience **9–12 and
-  13+ (NOT 5–8)** keeps you out of early-reader grading you'd fail (text-dense
-  lessons) while still triggering Families review + Teacher Approved
-  eligibility. Package set at create (`app.<name>.twa`).
+- **Creating the app**: name · **Game → category "Educational"** · Free with
+  in-app purchases. (App #1's notes originally said "App not Game" — **corrected
+  2026-07-22**: a mental-math game *is* a game. File it as one so it lands in
+  the **Games** tab and is peer-grouped against games, not utilities; the
+  **Educational** game category still gets Families review + Teacher Approved
+  eligibility, and it matches the "this is a game, not an ed-product" pricing
+  positioning.) **Target audience 9–12 and 13+ (NOT 5–8)** — keeps you out of
+  early-reader grading you'd fail with text-dense lessons, and ticking 5–8 adds
+  stricter Families scrutiny; the store copy's stated age must match (say "9 and
+  up", not "8+"). **Tags** (up to 5): subject + benefit + genre — Mathematics,
+  Brain training, Brain teaser, Logic puzzle, Educational — to steer the peer
+  group toward educational/brain games (avoid Trivia/Puzzle-generic). Package
+  set at create (`app.<name>.twa`).
 - **The in-app product page is gated behind a Google Payments merchant
   account** (business/bank KYC, web-only, separate from the dev account). Set
   this up early — it also gates the RTDN console link-up. Product id must match
@@ -328,6 +336,72 @@ non-trivial. The `expect` recipe above is proven; start there.
   the Android app**, so the Airwallex path must never render there. The client
   channel-routes: web → Airwallex, TWA → Play Billing. Entitlement stays
   source-agnostic.
+
+### Store listing + content declarations (clickwork, full of gotchas)
+
+- **App icon must be exactly 512×512 PNG.** App #1's `public/icon-512.png` was
+  secretly a **640×640 JPEG** (browsers scale it, so the PWA never noticed) —
+  Play rejects it. Produce a true 512×512 PNG (PIL/ffmpeg resize).
+- **Screenshots: capture NATIVE, don't upscale or letterbox.** Screenshot the
+  live app in a headless browser at a **high-DPR phone viewport** (e.g.
+  `412×732 @ DPR 3` → crisp 1236×2196), then normalize to **exactly 1080×1920
+  (9:16)**. That one set satisfies **phone, 7", 10", and Chromebook**. The trap:
+  **10" tablet + Chromebook strictly enforce 9:16** — a tall modern-phone 9:20
+  shot (e.g. 1080×2399) is accepted for phone/7" but **rejected for 10"**. Don't
+  pad with side-bars (reads cheap) and don't upscale a 412px source (soft). To
+  populate a good "profile/stats" screenshot, auto-play: the game answers to
+  **arrow keys dispatched on `document`** (include `keyCode`), so a small script
+  can solve N problems and build a real streak/rank first.
+- **Data safety has a CSV import** (export the template, edit the "Response
+  value" column, re-import). Gotchas: the **"processed ephemerally?" row needs
+  an explicit `false`** for every *collected* type — blank fails with "Response
+  missing"; reuse the **exact exported template** so Question/Response IDs match.
+  For a game: **User IDs, Email (optional), Purchase history (optional), App
+  interactions, Crash logs, Diagnostics, Device IDs (push, optional)** — all
+  **Collected, not Shared** (Firebase/CDN/PSP are processors, an explicit
+  "sharing" exemption), purposes App functionality (+ Account management for
+  identity/commerce). **Never tick Analytics/Advertising** with no ad-tech.
+- **App access / account creation methods**: OAuth (Google/Apple) + "Username
+  and other authentication" (email magic-link = passwordless one-time code). No
+  password. "All functionality available without special access" (anon-first).
+- **Financial features**: a game selling only its own unlock = **"no financial
+  features"** (Play Billing is not a payments *feature*). Keeps it out of the
+  financial-review queue.
+- **Delete-account URL is required** — must name app/developer, show the
+  deletion steps, and state what's deleted/kept + retention. The SPA legal-pages
+  pattern works: add a `/delete-account` route (one URL serves both the "delete
+  account" and "delete data" fields) and link it from Settings.
+- **Developer verification / package registration** (Android's Sept-2026
+  requirement): an **org account auto-satisfies** it — the package just shows
+  "Registered", nothing to submit.
+- **Play Integrity API: skip at launch.** Entitlement is server-verified (Play
+  Billing token → Publisher API), so a tampered client can't forge access; the
+  API mainly blocks emulators/root and can false-positive on real devices. Same
+  "registered but not enforced" stance as web App Check.
+
+### Reviewing a brand-new app / "item not found" on internal test
+
+- **Internal testing is review-free and independent** — but a **brand-new,
+  never-reviewed app shows "item not found"** in the Play Store for hours
+  (sometimes ~a day) after the first release, while Google runs its initial
+  processing. The opt-in page saying **"You're a tester"** confirms setup is
+  fine; the catalog entry just isn't live yet. The tester's **Play Store app
+  must be signed into a listed tester email** (not merely the browser); the
+  public `/store/apps/details?id=` URL 404s by design (no public listing).
+- **"Send app for review" is disabled when your only release is Internal
+  testing** (it never gets reviewed). To force Google to process/review a new
+  app **without going public**: **promote the internal release → Closed testing
+  → Publishing overview → "Send for review".** Closed stays private to your
+  testers; review typically completes ≤7 days and flips the "(unreviewed)"
+  temporary app name to the real one (and generally unblocks the internal
+  catalog too).
+- **Promote, don't recreate.** Creating a fresh closed/production release with
+  no bundle errors ("This release does not add or remove any app bundles" +
+  "doesn't allow existing users to upgrade"). **Promote release** from the
+  internal track carries the existing bundle across cleanly (nested hover menu:
+  Promote → Closed testing → *your track*). Then Publishing overview →
+  "Submit N changes for review" bundles the release + listing + all app-content
+  declarations in one submission.
 
 ---
 
@@ -380,12 +454,21 @@ non-trivial. The `expect` recipe above is proven; start there.
 **Google Play (additive, after web is earning):**
 - [ ] Bootstrap keystore → 3 secrets → **vault the keystore**
 - [ ] `expect`-driven Bubblewrap CI (copy §4 recipe), `minSdkVersion` ≥ 23
-- [ ] Create app (App-not-Game, Free w/ IAP, target 9–12 & 13+)
+- [ ] Create app (**Game → Educational category**, Free w/ IAP, target 9–12 &
+      13+, 5 tags, "no financial features")
 - [ ] Google Payments merchant profile (gates products + RTDN) + 15% fee tier
 - [ ] Compute-SA invite (view info + financial + orders), RTDN topic/IAM
 - [ ] Upload `.aab` → app-signing SHA → assetlinks (both SHAs) → verify no URL
       bar → license-tester purchase → Console refund → RTDN revoke
-- [ ] Store listing (1024×500 feature graphic from live app, pedagogy in copy)
+- [ ] Store listing: name + short/full desc (pedagogy named), **512×512 PNG
+      icon**, 1024×500 feature graphic from live app, **native 1080×1920 (9:16)
+      screenshots** reused across phone/7"/10"/Chromebook
+- [ ] App content: content rating (IARC), **Data safety via CSV import**
+      (ephemeral=`false`), App access, ads=No, **delete-account URL**
+      (`/delete-account` route), health/gov/financial = No
+- [ ] **Get it reviewed:** promote internal → **Closed testing** → Publishing
+      overview → Send for review (stays private; flips "(unreviewed)" name,
+      unblocks the catalog). Don't recreate an empty release — promote.
 
 **Apple: deferred/last by standing rule** (enroll as Lattice Logic w/ DUNS,
 $99/yr, 1–3 week verification; external-link entitlement to route purchases
