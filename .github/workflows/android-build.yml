@@ -129,19 +129,30 @@ jobs:
           BUBBLEWRAP_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           BUBBLEWRAP_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
+          # Bubblewrap is interactive-only: its prompt lib needs a real TTY and
+          # discards buffered pipe input between prompts (piping "yes" either
+          # EOF'd mid-install → exit 130, or flooded the log until truncation).
+          # `expect` gives it a pseudo-TTY and answers each prompt precisely.
+          sudo apt-get update -qq && sudo apt-get install -y -qq expect
           npm install -g @bubblewrap/cli
-          # Bubblewrap is interactive-only; CI has no TTY. Run `update` first:
-          # ALL of its prompts legitimately want "yes" (install its own JDK +
-          # Android SDK, accept SDK licenses, sync the project from
-          # twa-manifest.json + write the manifest checksum). It has NO
-          # "regenerate?" loop, so `yes` (an infinite stream) is safe here and
-          # — unlike a bounded stream — stays open across the slow JDK/SDK
-          # installs (a bounded stream EOF'd mid-install → exit 130). Bubblewrap
-          # closes stdin when done; `yes` dying on SIGPIPE doesn't fail the step.
-          yes | bubblewrap update
-          # After update the toolchain is present and the checksum exists, so
-          # `build` has no prompts. Feed it EOF so any unexpected prompt fails
-          # fast instead of hanging the runner.
+          # `update` first: installs its own JDK + Android SDK, accepts the SDK
+          # terms, and syncs the project from twa-manifest.json (writes the
+          # manifest checksum). All prompts here legitimately want "yes".
+          expect <<'EXP'
+          set timeout 900
+          spawn bubblewrap update
+          expect {
+            -re "install the JDK"          { send -- "y\r"; exp_continue }
+            -re "install the Android SDK"  { send -- "y\r"; exp_continue }
+            -re "terms and conditions"     { send -- "y\r"; exp_continue }
+            timeout { puts "\n[expect] timed out waiting for a bubblewrap prompt"; exit 1 }
+            eof
+          }
+          catch wait result
+          exit [lindex $result 3]
+          EXP
+          # Toolchain + checksum now present, so `build` has no prompts. EOF
+          # guards against any surprise prompt hanging the runner.
           bubblewrap build --skipPwaValidation < /dev/null
 
       - name: Print assetlinks fingerprint block
