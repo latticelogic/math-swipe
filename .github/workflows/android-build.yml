@@ -151,6 +151,12 @@ jobs:
           catch wait result
           exit [lindex $result 3]
           EXP
+          # Gradle refuses to run when two SDK env vars point at different SDKs:
+          # bubblewrap installed its own at $ANDROID_HOME while the runner still
+          # exports ANDROID_SDK_ROOT=/usr/local/lib/android/sdk. Bubblewrap
+          # drives Gradle via ANDROID_HOME (its own SDK), so drop the runner's
+          # conflicting ANDROID_SDK_ROOT.
+          unset ANDROID_SDK_ROOT
           # Toolchain + checksum now present, so `build` has no prompts. EOF
           # guards against any surprise prompt hanging the runner.
           bubblewrap build --skipPwaValidation < /dev/null
