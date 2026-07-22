@@ -28,11 +28,11 @@ to put a hard ceiling on what that can cost.
 | 1 | Firebase Blaze plan upgrade | ✅ | 2026-05-12 | `math-swipe-prod` is on Blaze (confirmed via console badge) |
 | 2 | Budget alert at $50/mo on `math-swipe-prod` | ✅ | 2026-07-22 | Verified via `gcloud billing budgets list`: SGD 10/mo budget exists on the project with 50%/90%/100% threshold alerts (emails go to billing admins by default). Tighter than the planned $50 — kept deliberately; raise it when real revenue makes SGD 10 too noisy. |
 | 3 | Hard quota caps on Functions + Firestore | ☐ | | gcloud |
-| 4 | Second payment method on Cloud Billing | ☐ | | **web only** |
+| 4 | Second payment method on Cloud Billing | ✅ | 2026-07-22 | Backup Mastercard (…4462) added behind the primary Visa (…4900) on the billing account — confirmed in the console by the owner. |
 | 5 | Stripe account verified (identity + bank) | ☐ | | **web only** |
 | 6 | Stripe Test mode flow exercised end-to-end | ☐ | | stripe CLI + firebase CLI |
 | 7 | Refund policy visible in app | ✅ | 2026-05-12 | `LegalFooterRow` renders Refund / Privacy / Terms in Paywall + Me tab footer (PR #44, #46) |
-| 8 | `help@latticelogic.app` support inbox tested | ☐ | | mail provider |
+| 8 | `support@latticelogic.app` support inbox tested | ✅ | 2026-07-22 | Inbound delivery confirmed (owner test from external Gmail). NOTE: the working address is **support@**, not the `help@` this doc originally assumed — app + docs updated to match. |
 | 9 | Beta with 5-10 friends on the trial UX | ☐ | | human |
 | 10 | App Check enabled on Firestore | ☐ | | firebase CLI |
 
@@ -274,33 +274,28 @@ the Paywall footer (the moment of payment) and the Me-tab footer
 (always-discoverable). Component at `src/components/LegalPages.tsx`.
 
 The Refund page (`/refund`) displays a 14-day no-questions
-refund commitment routed to `help@latticelogic.app`. Body is a DRAFT
-under the yellow banner — replace with lawyer-reviewed copy before
-launch (see "Lawyer-reviewed legal copy" in CLAUDE.md's pre-launch
-state section).
+refund commitment routed to `support@latticelogic.app`. (The legal
+pages went LIVE 2026-07-15 — the draft banner is gone; an optional
+counsel review remains a business call, not a blocker.)
 
 Why this matters in payment-processing terms: a stated refund policy
-visible to the customer reduces chargeback rates and helps in Stripe
+visible to the customer reduces chargeback rates and helps in payment
 dispute resolution. \"We have a stated policy and they didn't ask for
 a refund\" reads materially better than silence when a bank reviews
 the case.
 
-## 8. Support email `help@latticelogic.app` — mail provider CLI
+## 8. Support email `support@latticelogic.app` — ✅ DONE 2026-07-22
 
-Lattice Logic uses Google Workspace per CLAUDE.md. Add the alias via
-`gcloud` if you've enabled the Workspace Admin SDK, otherwise
-through the Workspace admin console. Quickest path:
+Inbound delivery confirmed by an owner test from an external Gmail
+account (subject "bug in math app", 2026-07-22). The live address is
+`support@latticelogic.app` — the app's legal pages and this doc were
+updated from the originally-assumed `help@` to match.
 
-```bash
-# Check current aliases on tim@latticelogic.app
-gcloud admin users get tim@latticelogic.app --format="value(aliases)" 2>/dev/null \
-  || echo "Use admin.google.com → Users → tim → Aliases → Add help@"
-```
-
-Test the inbox after creation:
+If the address ever changes, update `BUSINESS.email` and the `Email()`
+component in `src/components/LegalPages.tsx`, then re-test:
 
 ```bash
-echo "Hello from CLI" | mail -s "Test" help@latticelogic.app
+echo "Hello from CLI" | mail -s "Test" support@latticelogic.app
 # (or send via your usual mail client)
 ```
 

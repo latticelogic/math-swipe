@@ -52,7 +52,7 @@ const TITLES: Record<LegalDocId, string> = {
 const BUSINESS = {
     company: 'Lattice Logic Pte. Ltd.',
     uen: 'UEN 202610912N',
-    email: 'help@latticelogic.app',
+    email: 'support@latticelogic.app',
     address: '77 High Street, #10-12B High Street Plaza, Singapore 179433',
     phone: '',
 };
@@ -469,10 +469,10 @@ function Bullet({ children }: { children: React.ReactNode }) {
 function Email() {
     return (
         <a
-            href="mailto:help@latticelogic.app"
+            href="mailto:support@latticelogic.app"
             className="text-[var(--color-gold)] hover:underline"
         >
-            help@latticelogic.app
+            support@latticelogic.app
         </a>
     );
 }
