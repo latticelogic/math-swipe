@@ -157,6 +157,19 @@ jobs:
           # drives Gradle via ANDROID_HOME (its own SDK), so drop the runner's
           # conflicting ANDROID_SDK_ROOT.
           unset ANDROID_SDK_ROOT
+
+          # The committed project targets build-tools;35 + platforms;android-36,
+          # but bubblewrap's freshly-installed SDK lacks them and their licenses.
+          # Accept all licenses in bubblewrap's SDK and install what Gradle needs
+          # so the build doesn't fail on "licences have not been accepted".
+          BW_SDK="$HOME/.bubblewrap/android_sdk"
+          SDKMGR="$(find "$BW_SDK" -name sdkmanager -type f 2>/dev/null | head -1)"
+          if [ -n "$SDKMGR" ]; then
+            yes | "$SDKMGR" --sdk_root="$BW_SDK" --licenses >/dev/null 2>&1 || true
+            "$SDKMGR" --sdk_root="$BW_SDK" \
+              "platform-tools" "build-tools;35.0.0" "platforms;android-36" >/dev/null 2>&1 || true
+          fi
+
           # Toolchain + checksum now present, so `build` has no prompts. EOF
           # guards against any surprise prompt hanging the runner.
           bubblewrap build --skipPwaValidation < /dev/null
