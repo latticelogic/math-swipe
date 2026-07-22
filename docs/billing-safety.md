@@ -26,7 +26,7 @@ to put a hard ceiling on what that can cost.
 | # | Item | Done? | When | Notes |
 |---|------|:-:|---|---|
 | 1 | Firebase Blaze plan upgrade | ✅ | 2026-05-12 | `math-swipe-prod` is on Blaze (confirmed via console badge) |
-| 2 | Budget alert at $50/mo on `math-swipe-prod` | ☐ | | gcloud |
+| 2 | Budget alert at $50/mo on `math-swipe-prod` | ✅ | 2026-07-22 | Verified via `gcloud billing budgets list`: SGD 10/mo budget exists on the project with 50%/90%/100% threshold alerts (emails go to billing admins by default). Tighter than the planned $50 — kept deliberately; raise it when real revenue makes SGD 10 too noisy. |
 | 3 | Hard quota caps on Functions + Firestore | ☐ | | gcloud |
 | 4 | Second payment method on Cloud Billing | ☐ | | **web only** |
 | 5 | Stripe account verified (identity + bank) | ☐ | | **web only** |
