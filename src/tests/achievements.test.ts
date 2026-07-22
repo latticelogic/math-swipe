@@ -186,9 +186,9 @@ describe('achievements.ts', () => {
         expect(unlocked).toContain('quick-fifty');
     });
 
-    it('a casual 14-day-trial player earns 5+ achievements (regression guard)', () => {
-        // Simulates a user who played ~5 problems/day for 10 of 14 days,
-        // tried 3 topics, completed one daily, hit a few short streaks,
+    it('a casual trial player earns 5+ achievements (regression guard)', () => {
+        // Simulates a user who solved ~50 problems across the 7-day trial,
+        // tried 3 topics, completed some dailies, hit a few short streaks,
         // ~85% accuracy. This is the median trial-period engagement
         // profile we're optimising for — they should feel like the app
         // is actually rewarding them, not silent.

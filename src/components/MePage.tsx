@@ -47,7 +47,7 @@ interface Props {
     activeTeacherId: string;
     onTeacherChange: (id: string) => void;
     uid: string | null;
-    /** 14-day-trial state. When 'trial', a small countdown chip renders
+    /** 7-day-trial state. When 'trial', a small countdown chip renders
      *  below the profile area so users always know where they stand.
      *  'paid' and 'expired' both render no chip (paid: no chrome cost,
      *  expired: the paywall is already taking over the surface). */
@@ -57,8 +57,8 @@ interface Props {
      *  a locked one opens the upsell. */
     hasPro?: boolean;
     onRequestPro?: () => void;
-    /** Called when the user taps the countdown chip → triggers unlock
-     *  flow (mock in dev, Stripe Checkout in Phase 4). */
+    /** Called when the user taps the countdown chip → triggers the unlock
+     *  flow via startCheckout() (mock grant in dev). */
     onUnlock?: () => void;
     /** Dark/light mode — surfaced as a Settings row (the on-board toggle was
      *  removed 2026-07-17; dark is the default). */
@@ -191,7 +191,7 @@ export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCo
             </div>
 
 
-            {/* Trial countdown chip — only renders during the 14-day window.
+            {/* Trial countdown chip — only renders during the trial window.
                 Tappable to open the unlock flow directly. */}
             {entitlementStatus && entitlementDaysLeft !== undefined && (
                 <div className="flex justify-center">

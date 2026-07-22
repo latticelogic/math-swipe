@@ -1,7 +1,7 @@
 /**
  * Paywall.tsx
  *
- * The Day-15+ full-screen gate. Shown ONLY when the user's 14-day trial
+ * The post-trial full-screen gate. Shown ONLY when the user's 7-day trial
  * has expired and they haven't purchased. Renders above ALL other UI —
  * z-index above the bottom nav, the session summary, the share sheet.
  *
@@ -48,8 +48,9 @@ interface PaywallProps {
      *  the paywall. Zeros are tolerated and render gracefully ("you
      *  played for a bit" rather than "you played 0 problems"). */
     progress: PaywallProgress;
-    /** Called when the user taps "Keep playing". Fires Stripe Checkout
-     *  in production, mockGrantAccess in DEV. */
+    /** Called when the user taps "Keep playing". Routes through
+     *  startCheckout() in production (Airwallex on web, Play Billing in
+     *  the Android app), mockGrantAccess in DEV. */
     onUnlock: () => void;
     /** Whether the unlock action is in flight. Disables the button +
      *  shows a quiet "..." state. */

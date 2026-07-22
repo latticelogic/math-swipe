@@ -26,7 +26,7 @@ describe('entitlement helpers', () => {
             expect(daysIntoTrial(T0, T0 + DAY)).toBe(1);
         });
 
-        it('returns 14 on day 15 (boundary where paywall fires)', () => {
+        it('returns elapsed days uncapped by trial length (14 on day 15)', () => {
             expect(daysIntoTrial(T0, T0 + 14 * DAY)).toBe(14);
         });
 

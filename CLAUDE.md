@@ -28,7 +28,7 @@ generic ("Sharp." > "AMAZING! 🎉").
 | Magic tricks | 36 | `src/utils/mathTricks.ts` (lessons + practice generators) |
 | Achievements | 28 math + share + early-trial ladder | `src/utils/achievements.ts` (base engine) + `src/domains/math/mathAchievements.ts` (math-specific list, includes the 6-rung early-trial ladder + `spread-the-word` share achievement) |
 | Paywall + trial UX | 7-day demo → \$3.14 lifetime | `src/components/Paywall.tsx`, `src/components/TrialModals.tsx`, `src/hooks/useEntitlement.ts`, `src/utils/entitlement.ts` (incl. `shouldFirePaywall` rule) |
-| Stripe Checkout integration | callable + webhook | `functions/src/stripe.ts` (Cloud Functions) + `src/utils/checkout.ts` (client wrapper) |
+| Airwallex checkout integration | callable + webhook | `functions/src/airwallex.ts` (Cloud Functions) + `src/utils/checkout.ts` (channel-aware client wrapper: Airwallex on web, Play Billing in the TWA) |
 | Legal pages | 4 LIVE | `src/components/LegalPages.tsx` — Privacy / Terms / Refund / Pricing (no draft banner since 2026-07-15; Pricing + `BusinessBlock` added 2026-07-21 for Airwallex website requirements); routed at `/privacy`, `/terms`, `/refund`, `/pricing`. Footer row shows Pricing · Privacy · Terms; Refund is linked from inside Terms (owner call, reaffirmed 2026-07-21). |
 | Billing safety runbook | CLI-first | `docs/billing-safety.md` (gcloud / firebase / stripe commands for budget alerts, quota caps, App Check) |
 | Paywall e2e regression | manual checklist | `docs/paywall-e2e.md` (MCP-driven visual e2e) + `src/tests/paywallTrigger.test.ts` (truth-table unit test) |
@@ -71,8 +71,8 @@ production should be owned by the company account, not Tim's personal.**
 | Firebase project (production) | `math-swipe-prod` | Owned by `tim@latticelogic.app`. Org id `138884922843`. Created 2026-05-11. |
 | Firebase project (legacy / shared) | `scribble-math-prod` | DO NOT deploy to this. Hosts another company's classroom app with 80+ functions. A naive deploy would delete them all. |
 | GitHub | `latticelogic` org | Repo at `github.com/latticelogic/math-swipe`. Owner admin: `njytim-cyber` (renamed legacy account). Transferred 2026-05-11. |
-| Cloudflare Pages | `tim@latticelogic.app`, account id `00e07444cae65d675a140f8560429fad` | Project `math-swipe`, production URL `https://mathchallenge.app`. Production branch `master`. Env vars `FIREBASE_PROJECT_ID`, `PUBLIC_ORIGIN`, `NODE_VERSION` set on both production + preview configs. Custom domain not yet attached (pending product name decision). |
-| Stripe | code wired, account verification pending | Cloud Functions in `functions/src/stripe.ts` ready to deploy. Secrets needed: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID`, `PUBLIC_ORIGIN` — set via `firebase functions:secrets:set`. Webhook endpoint to register: `https://us-central1-math-swipe-prod.cloudfunctions.net/stripeWebhook` listening for `checkout.session.completed`. |
+| Cloudflare Pages | `tim@latticelogic.app`, account id `00e07444cae65d675a140f8560429fad` | Project `math-swipe`, production URL `https://mathchallenge.app`. Production branch `master`. Env vars `FIREBASE_PROJECT_ID`, `PUBLIC_ORIGIN`, `NODE_VERSION` set on both production + preview configs. Custom domain `mathchallenge.app` attached (live). |
+| Airwallex | code wired, KYB pending | Payments are Airwallex-only (Stripe removed 2026-07-15). Cloud Functions in `functions/src/airwallex.ts` ready to deploy. Secrets needed: `AIRWALLEX_CLIENT_ID`, `AIRWALLEX_API_KEY`, `AIRWALLEX_WEBHOOK_SECRET`, `PUBLIC_ORIGIN` — set via `firebase functions:secrets:set`. Full runbook: `docs/airwallex.md`. |
 | Apple Developer | not yet enrolled | Must enroll as Lattice Logic with company DUNS, $99/yr. 1-3 week verification window. Deliberately LAST of the three channels. |
 | Google Play Console | **enrolled (org), verified** 2026-07-15 | Lattice Logic organization account — company + representative verified (org accounts skip the 20-tester gate). Package `app.mathchallenge.twa`. Code complete (#74): TWA via Bubblewrap, CI `.aab` build (`android-build.yml`), Play Billing (Digital Goods API) + `verifyPlayPurchase`/`playRtdn` functions. Remaining: Console clickwork per `docs/google-play-launch.md`. |
 
@@ -120,7 +120,7 @@ project's normal deploy path doesn't need local wrangler at all.
 | Static SPA hosting + global CDN | Cloudflare Pages | Best-in-class CDN, generous free tier, edge Workers for OG meta |
 | Edge HTML rewriting (per-profile OG tags at `/u/<slug>`) | Cloudflare Pages Worker (`dist/_worker.js`, source in `edge/`) | <10ms edge compute beats 1-3s Cloud Function cold start |
 | Auth + Firestore + Cloud Functions + FCM | Firebase | Anonymous + Google + email-link auth, offline-first sync, FCM is Firebase-native |
-| Payments | Stripe (TBD) | Only serious option for web payments |
+| Payments | Airwallex (web) + Play Billing (Android TWA) | Replaced Stripe 2026-07-15; hosted-checkout callable + webhook in `functions/src/airwallex.ts` |
 
 **Why both Cloudflare and Firebase**: see the architecture section in
 `README.md` (TBD) — short version: Cloudflare wins on CDN + edge, Firebase
@@ -217,19 +217,19 @@ modify the rule, modify the test in the same change.
 
 ### Hybrid distribution (web-first, native deferred)
 
-Web PWA + Stripe Checkout is canonical — keeps ~$2.75 of every $3.14
-(Stripe takes 2.9% + $0.30). Native apps (when shipped *after* web has
-60+ days of clean revenue data) will use external-link entitlement to
-route purchases back to Stripe, bypassing Apple/Google's 15-30% rake.
-The entitlement schema is source-agnostic via `source: 'stripe' |
-'apple' | 'google' | 'promo'` so the client gate logic doesn't change.
+Web PWA + Airwallex hosted checkout is canonical — card-processing fees
+are a fraction of the 15-30% app-store rake. The Android TWA uses Play
+Billing (Google Play policy forbids external payment flows in-app; see
+`src/utils/checkout.ts` for the channel routing). The entitlement schema
+is source-agnostic via `source: 'airwallex' | 'apple' | 'google' |
+'promo'` so the client gate logic doesn't change per channel.
 
 ### Pre-launch checklist
 
 The CLI-first runbook at `docs/billing-safety.md` covers the 10 steps
 needed before any paid user touches the app: Firebase Blaze upgrade,
 budget alert at \$50/mo, quota caps via `gcloud alpha services quota
-update`, Stripe verification + webhook registration, refund policy +
+update`, payment-provider verification + webhook registration, refund policy +
 support email, App Check, beta with 5-10 friends. Three steps are
 web-only (Blaze upgrade, card entry, KYC) — everything else is CLI.
 
@@ -252,9 +252,9 @@ business call, not a code blocker.
 ## Conventions
 
 - **Prefer CLI over web dashboards** for all infra ops (GitHub, Cloudflare,
-  Firebase, Stripe, DNS, etc.). Reasons: reproducible, auditable in shell
+  Firebase, DNS, etc.). Reasons: reproducible, auditable in shell
   history, scriptable, and AI assistants can execute it directly. Use
-  `gh`, `wrangler`, `firebase`, `stripe`, `flarectl`, etc. If a step truly
+  `gh`, `wrangler`, `firebase`, `flarectl`, etc. If a step truly
   requires a browser (OAuth consent, granting a GitHub App access to an
   org, accepting an invite as a different account), call that out
   explicitly — don't silently route around it.
@@ -356,7 +356,7 @@ What's **done in code** (no further blockers to launch from the codebase side):
 - Theatrical achievement unlock toast with badge SVG + sparkles
 - 8 teacher voices, each with documented persona; full content audit + polish
 - Hand-drawn SVG icons throughout (no emoji in user-facing copy except share-card decorative emoji-rain)
-- **Monetization model**: 7-day demo + $3.14 lifetime paywall, value-anchored trigger, Stripe Checkout callable + webhook, mock helpers for dev testing
+- **Monetization model**: 7-day demo + $3.14 lifetime paywall, value-anchored trigger, Airwallex checkout callable + webhook (+ Play Billing in the TWA), mock helpers for dev testing
 - **Trial UX**: WelcomeModal + Day 4 / 6 reminders + countdown chip, all session-start-gated, all rendering nothing for paid users
 - **Daily-Challenge-free-forever** carve-out (`shouldFirePaywall` exempts `questionType === 'daily'`)
 - **6 early-trial achievements** to fill the dopamine gap (streak-3, daily-1, topic-explorer, three-day, accuracy-early, quick-fifty)
@@ -374,9 +374,9 @@ What's **blocking commercial launch** (operational, not code):
 - App Store enrollment — defer per the hybrid-distribution rule (Apple is last).
 
 What's **deferred** (not blocking):
-- Sound effects (intentional v1 decision — see Conventions)
+- Sound *assets* — sound itself shipped 2026-07-16 as opt-in synthesized Web Audio tones (see Conventions); `.mp3`/`.wav` files remain out
 - Tablet-optimized layout (mobile-only v1 is fine)
 - Real player base for league (3 fake entries + you currently — content problem, not code)
-- A/B testing scaffolding (premature without conversion data)
+- Live A/B experiments — the scaffolding exists (`src/utils/experiments.ts`, see Conventions); running experiments waits for conversion data
 - Family / classroom seat tiers (no demand signal yet)
 - Native app shells (per hybrid-distribution rule)

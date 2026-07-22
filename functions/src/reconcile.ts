@@ -7,7 +7,7 @@
  * use, Firebase switches them to the PRE-EXISTING account (a different uid).
  * Their anonymous uid's entitlement (paid state + trial clock) would be
  * orphaned: a paid user could lose access, and — worse — an EXPIRED user would
- * land on a fresh 14-day trial (a re-runnable paywall bypass).
+ * land on a fresh 7-day trial (a re-runnable paywall bypass).
  *
  * SECURITY: we can't trust a client-supplied "fromUid" — that would let anyone
  * copy a paid/high-stat account onto their own. Instead the client passes the
@@ -26,7 +26,7 @@
  *     cases; this handles cross-device / cleared-storage sign-ins.
  *
  * Deploys with the go-live function bundle (needs the DRS invoker exception,
- * same as claimReferral / the Stripe callables).
+ * same as claimReferral / the Airwallex callables).
  */
 
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
