@@ -135,14 +135,21 @@ jobs:
           # `expect` gives it a pseudo-TTY and answers each prompt precisely.
           sudo apt-get update -qq && sudo apt-get install -y -qq expect
           npm install -g @bubblewrap/cli
-          # `update` first: installs its own JDK + Android SDK, accepts the SDK
-          # terms, and syncs the project from twa-manifest.json (writes the
-          # manifest checksum). All prompts here legitimately want "yes".
-          expect <<'EXP'
+          # `update` first: configures the toolchain, accepts the SDK terms, and
+          # syncs the project from twa-manifest.json (writes the manifest
+          # checksum). Answer "No" to the JDK install and hand it the runner's
+          # pre-installed JDK 17 — Bubblewrap's own ~180MB JDK mirror download
+          # proved flaky (two consecutive failures mid-download). Keep "yes" for
+          # its Android SDK (that download has been reliable, and its own SDK
+          # avoids the runner-SDK version/license drift). Retry the whole update
+          # up to 3 times to ride out residual network flakes.
+          run_update() {
+            expect <<'EXP'
           set timeout 900
           spawn bubblewrap update
           expect {
-            -re "install the JDK"          { send -- "y\r"; exp_continue }
+            -re "install the JDK"          { send -- "n\r"; exp_continue }
+            -re "(?i)path to.*jdk"         { send -- "$env(JAVA_HOME)\r"; exp_continue }
             -re "install the Android SDK"  { send -- "y\r"; exp_continue }
             -re "terms and conditions"     { send -- "y\r"; exp_continue }
             timeout { puts "\n[expect] timed out waiting for a bubblewrap prompt"; exit 1 }
@@ -151,6 +158,13 @@ jobs:
           catch wait result
           exit [lindex $result 3]
           EXP
+          }
+          for attempt in 1 2 3; do
+            echo "=== bubblewrap update attempt $attempt ==="
+            if run_update; then break; fi
+            if [ "$attempt" = 3 ]; then echo "update failed after 3 attempts"; exit 1; fi
+            sleep 20
+          done
           # Gradle refuses to run when two SDK env vars point at different SDKs:
           # bubblewrap installed its own at $ANDROID_HOME while the runner still
           # exports ANDROID_SDK_ROOT=/usr/local/lib/android/sdk. Bubblewrap
