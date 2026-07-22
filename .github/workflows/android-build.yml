@@ -130,14 +130,20 @@ jobs:
           BUBBLEWRAP_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           npm install -g @bubblewrap/cli
-          # Every bubblewrap command opens an interactive "install the JDK?"
-          # prompt on first run; in CI (no TTY) that hung and died with exit
-          # 130, and it rejected the runner's own JDK/SDK ("isn't correct").
-          # Let bubblewrap manage its OWN toolchain and auto-answer the setup
-          # prompts with "yes" (installs its JDK + Android SDK under ~/.bubblewrap).
-          # `--skipPwaValidation` avoids the network PWA fetch. Signing is
-          # non-interactive via the BUBBLEWRAP_*_PASSWORD env vars above.
-          yes | bubblewrap build --skipPwaValidation
+          # Bubblewrap is interactive-only and CI has no TTY. Two prompt groups:
+          #  1) toolchain setup (install its own JDK + Android SDK, accept SDK
+          #     licenses) — every answer is "yes";
+          #  2) `build` alone also asks "regenerate project? (no checksum file)"
+          #     — piping "yes" there wrongly regenerates and loops forever.
+          # So run `update` first (ALL its prompts want yes: install toolchain,
+          # accept licenses, sync the project from twa-manifest.json + write the
+          # checksum), then `build` runs with the toolchain present and no
+          # checksum prompt. `printf` a bounded answer stream (not infinite
+          # `yes`, which floods the log) — enough for the setup prompts, then
+          # EOF so any unexpected prompt fails fast instead of hanging.
+          ANS="$(printf 'y\n%.0s' $(seq 1 20))"
+          echo "$ANS" | bubblewrap update
+          echo "$ANS" | bubblewrap build --skipPwaValidation
 
       - name: Print assetlinks fingerprint block
         if: steps.mode.outputs.mode == 'build'
