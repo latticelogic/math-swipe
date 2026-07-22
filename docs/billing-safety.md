@@ -27,7 +27,7 @@ to put a hard ceiling on what that can cost.
 |---|------|:-:|---|---|
 | 1 | Firebase Blaze plan upgrade | ✅ | 2026-05-12 | `math-swipe-prod` is on Blaze (confirmed via console badge) |
 | 2 | Budget alert at $50/mo on `math-swipe-prod` | ✅ | 2026-07-22 | Verified via `gcloud billing budgets list`: SGD 10/mo budget exists on the project with 50%/90%/100% threshold alerts (emails go to billing admins by default). Tighter than the planned $50 — kept deliberately; raise it when real revenue makes SGD 10 too noisy. |
-| 3 | Hard quota caps on Functions + Firestore | ☐ | | gcloud |
+| 3 | Hard quota caps on Functions + Firestore | ✅ | 2026-07-22 | Resolved as-possible: Google **rejects** consumer overrides on Firestore read/write ops (`COMMON_QUOTA_CONSUMER_OVERRIDE_FOR_FIXED_LIMIT` — self-serve daily caps were removed platform-wide) and Cloud Functions exposes no invocations quota. The real bounds in place instead: every function sets `maxInstances` (1-10), budget alert (#2), App Check (#10). See section 3. |
 | 4 | Second payment method on Cloud Billing | ✅ | 2026-07-22 | Backup Mastercard (…4462) added behind the primary Visa (…4900) on the billing account — confirmed in the console by the owner. |
 | 5 | Stripe account verified (identity + bank) | ☐ | | **web only** |
 | 6 | Stripe Test mode flow exercised end-to-end | ☐ | | stripe CLI + firebase CLI |
@@ -107,6 +107,23 @@ gcloud alpha monitoring channels create \
 ```
 
 ## 3. Hard quota caps — via gcloud
+
+> **Outcome (2026-07-22): the commands below no longer work.** All three
+> were attempted against `math-swipe-prod`. The runbook's metric names
+> don't exist; with the correct ones
+> (`firestore.googleapis.com/read_operations_per_project`, `…/write_operations_per_project`)
+> the API returns `COMMON_QUOTA_CONSUMER_OVERRIDE_FOR_FIXED_LIMIT` —
+> Firestore daily read/write quotas are **fixed limits** that projects can
+> no longer lower (Google removed self-serve spending caps), and
+> `cloudfunctions.googleapis.com` exposes only admin-API quotas, not an
+> invocations quota. The runaway-cost bounds that ARE in place:
+> **every Cloud Function sets `maxInstances` (1-10)** — the effective
+> compute ceiling; the **budget alert** (#2) for detection; **App Check**
+> (#10) to bound who can send traffic at all. A billing kill-switch
+> (budget Pub/Sub → disable billing) exists as a Google-documented pattern
+> but is deliberately NOT wired — it hard-kills the whole project and is
+> worse than the disease at this app's scale. Commands kept below for
+> historical reference.
 
 The budget alert is informational only — it doesn't *stop* spending.
 For the hard ceiling, set per-service quotas. The most expensive
