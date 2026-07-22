@@ -21,14 +21,19 @@
  * the Android Publisher API accepts it once that SA is granted access in Play
  * Console. Setup steps (one-time, dashboard — see docs/google-play-launch.md):
  *
- *   TODO(play): Play Console → Users and permissions → invite
- *     math-swipe-prod@appspot.gserviceaccount.com   (or the gen2 default
- *     compute SA) with "View financial data" + "Manage orders" permissions,
- *     scoped to the Math Challenge app.
- *   TODO(play): create the in-app product `pro_lifetime` at $3.14 (one-time).
- *   TODO(play): Play Console → Monetize → Monetization setup → RTDN → point at
- *     the Pub/Sub topic `play-rtdn` in math-swipe-prod (create the topic first:
- *     `gcloud pubsub topics create play-rtdn --project math-swipe-prod`).
+ *   Play Console → Users and permissions → invite
+ *     122552558583-compute@developer.gserviceaccount.com   ← the GEN2 runtime
+ *     SA these functions actually run as (CONFIRMED via `gcloud run services
+ *     describe verifyplaypurchase` 2026-07-22). NOT the appspot SA — Gen2
+ *     Cloud Run functions default to the compute SA, and GoogleAuth/ADC below
+ *     resolves to whatever the function runs as. Grant "View financial data"
+ *     (Purchases API access) + "Manage orders and subscriptions", scoped to
+ *     the Math Challenge app. [Invite done 2026-07-22.]
+ *   create the in-app product `pro_lifetime` at $3.14 (one-time) — gated on
+ *     the Google Payments merchant account being set up first.
+ *   Play Console → Monetize → Monetization setup → RTDN → point at the Pub/Sub
+ *     topic `play-rtdn` in math-swipe-prod (topic + publisher IAM done
+ *     2026-07-22; the console link-up is gated on the merchant account).
  *
  * Nothing here can grant access until those steps are done — verification
  * fails closed (the Publisher API rejects the unauthorized SA).

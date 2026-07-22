@@ -53,15 +53,23 @@ boot-time `restorePlayPurchases()`.
    `https://mathchallenge.app/.well-known/assetlinks.json` and
    Google's checker:
    `https://digitalassetlinks.googleapis.com/v1/statements:list?source.web.site=https://mathchallenge.app&relation=delegate_permission/common.handle_all_urls`
-4. **In-app product**: *Monetize → Products → In-app products → Create*:
+4. **In-app product**: *Monetize → Products → One-time products → Create*:
    id `pro_lifetime` (must match `PLAY_SKU` in `src/utils/checkout.ts`),
    one-time, **$3.14 USD**, name "Lifetime unlock". Activate.
+   ⚠️ **Gated:** this page requires a **Google Payments merchant account**
+   ("Set up a merchant account" — business + bank KYC). Do that first;
+   until then the product page is locked.
 5. **Service account for verification**: *Users and permissions → Invite
-   user* → `math-swipe-prod@appspot.gserviceaccount.com` → grant
-   **View app information**, **Manage orders** (finance view) — scoped to
-   this app. (This is what lets `verifyPlayPurchase` call the Android
-   Publisher API; until then it fails closed.)
-6. **RTDN (refund revocation)**:
+   user* → **`122552558583-compute@developer.gserviceaccount.com`** → grant
+   **View app information**, **View financial data**, **Manage orders and
+   subscriptions** — scoped to this app. [Done 2026-07-22.]
+   ⚠️ Use the **Gen2 compute SA above**, NOT `…@appspot.gserviceaccount.com`.
+   These functions are Gen2 (Cloud Run) and run as the compute SA — confirmed
+   via `gcloud run services describe verifyplaypurchase --region=us-central1`.
+   `GoogleAuth`/ADC in `playBilling.ts` resolves to the runtime SA, so the
+   appspot account would fail closed. No email acceptance for service accounts
+   — access is live on invite.
+6. **RTDN (refund revocation)** — topic + publisher IAM DONE 2026-07-22:
    ```bash
    gcloud pubsub topics create play-rtdn --project math-swipe-prod
    gcloud pubsub topics add-iam-policy-binding play-rtdn --project math-swipe-prod \
@@ -69,9 +77,9 @@ boot-time `restorePlayPurchases()`.
      --role roles/pubsub.publisher
    ```
    Then *Monetize → Monetization setup → Real-time developer notifications* →
-   topic `projects/math-swipe-prod/topics/play-rtdn`. Deploy functions
-   (`verifyPlayPurchase`, `playRtdn`) with
-   `firebase deploy --only functions --project math-swipe-prod --account tim@latticelogic.app`.
+   topic `projects/math-swipe-prod/topics/play-rtdn`. (This console step is
+   also gated on the merchant account.) Functions already deployed
+   (`verifyPlayPurchase`, `playRtdn` live as of 2026-07-22).
 7. **App content declarations** (*Policy → App content*): privacy policy
    `https://mathchallenge.app/privacy` · ads: **No** · **Target audience:
    9-12 and 13+** (see Part B rationale — do NOT tick 5-8) · Families
