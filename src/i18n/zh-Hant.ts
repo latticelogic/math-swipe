@@ -612,7 +612,7 @@ export const zhHant: Record<MsgKey, string> = {
     'gen.yes': '是',
     'gen.no': '否',
     'gen.lastDigit': '末位數字:{expr}',
-    'gen.lastDigitOf': '末位數字:',
+    'gen.lastDigitOf': '末位數字',
 
     'share.daily': 'Math Challenge 每日 · {date} — {xp} pts,{accuracy}%',
     'share.speedrun': '在 Math Challenge 用 {time} 完成 10 題',
