@@ -36,6 +36,7 @@ describe('achievements.ts', () => {
         ultimatePerfects: 0,
         sharesSent: 0,
         referralCount: 0,
+        referralConversions: 0,
     };
 
     it('awards streak-20 when best streak hits 20', () => {
@@ -75,6 +76,19 @@ describe('achievements.ts', () => {
         const unlocked = checkMathAchievements({ ...baseStats, referralCount: 3 }, new Set());
         expect(unlocked).toEqual(expect.arrayContaining(['brought-a-friend', 'connector']));
         expect(unlocked).not.toContain('ambassador'); // needs 5
+    });
+
+    it('awards beacon-lit on the first referral CONVERSION (a friend bought)', () => {
+        const unlocked = checkMathAchievements({ ...baseStats, referralConversions: 1 }, new Set());
+        expect(unlocked).toContain('beacon-lit');
+    });
+
+    it('does NOT award beacon-lit for play-only referrals (no purchase)', () => {
+        // Five friends joined and played — none bought. The Beacon stays dark;
+        // referralCount and referralConversions are independent signals.
+        const unlocked = checkMathAchievements({ ...baseStats, referralCount: 5 }, new Set());
+        expect(unlocked).toContain('ambassador');
+        expect(unlocked).not.toContain('beacon-lit');
     });
 
     it('awards mastery achievements derived from totalXP past max rank', () => {

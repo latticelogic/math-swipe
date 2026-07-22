@@ -246,6 +246,7 @@ export const en = {
     'summary.headToHead.won': 'You {mine} · them {theirs} — send it back',
     'summary.headToHead.lost': 'You {mine} · them {theirs} — run it again?',
     'summary.shareResult': 'Share Result',
+    'summary.beaconHint': 'Shares carry your invite. A friend who unlocks the full game earns you the Beacon trail.',
     'summary.tapContinue': 'tap to continue',
 
     // ── Reload / offline / error / common ──
@@ -414,6 +415,8 @@ export const en = {
     'trail.fire': 'Hellfire',
     'trail.lightning': 'Static Shock',
     'trail.pro-comet': 'Comet',
+    'trail.beacon': 'Beacon',
+    'trail.beaconLockedHint': 'The Beacon lights when a friend you invited unlocks the full game.',
 
     // ── Chalk theme names (chalkThemes.ts; keyed by theme id via themeLabel) ──
     'theme.classic': 'Classic White',
@@ -492,6 +495,8 @@ export const en = {
     'ach.connector.desc': 'Three friends in, all playing. You have a following now.',
     'ach.ambassador.name': 'Ambassador',
     'ach.ambassador.desc': 'Five players owe their streak to you.',
+    'ach.beacon-lit.name': 'Beacon Lit',
+    'ach.beacon-lit.desc': 'A friend you invited unlocked the whole game. The Beacon trail is yours.',
     'ach.kilo.name': 'Kilo Club',
     'ach.kilo.desc': 'A thousand problems. Four figures now.',
     'ach.iron-mind.name': 'Iron Mind',

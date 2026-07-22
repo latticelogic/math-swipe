@@ -115,5 +115,6 @@ export function buildSharePayloadFromArgs(a: SharePayloadArgs): { text: string; 
     return buildSharePayload(
         a.xp, a.streak, a.accuracy, a.history, a.questionType,
         a.hardMode, a.timedMode, a.speedrunTime, a.profileUrl,
+        a.referrerUid,
     );
 }

@@ -54,6 +54,27 @@ describe('buildSharePayload', () => {
         expect(a.url).toBe(b.url);
     });
 
+    it('appends ?r=<uid> to a clean profile URL (invite enters circulation)', () => {
+        const profile = 'https://mathchallenge.app/u/EpicEagle4-uIgC';
+        const { url } = buildSharePayload(10, 2, 90, WIN, 'add', false, false, null, profile, 'abc123');
+        expect(url).toBe(`${profile}?r=abc123`);
+    });
+
+    it('appends &r=<uid> when the URL already has a query (challenge fallback)', () => {
+        const { url } = buildSharePayload(10, 2, 90, WIN, 'add', false, false, null, null, 'abc123');
+        expect(url).toContain('?c=');
+        expect(url).toMatch(/&r=abc123$/);
+    });
+
+    it('omits the referrer param without a uid, and the args overload passes it through', () => {
+        expect(buildSharePayload(10, 2, 90, WIN, 'add').url).not.toContain('r=');
+        const viaArgs = buildSharePayloadFromArgs({
+            xp: 10, streak: 2, accuracy: 90, history: WIN, questionType: 'add',
+            profileUrl: 'https://mathchallenge.app/u/x-y', referrerUid: 'zz9',
+        });
+        expect(viaArgs.url).toBe('https://mathchallenge.app/u/x-y?r=zz9');
+    });
+
     it('mode tags surface in the headline (HARD / TIMED / ULTIMATE)', () => {
         expect(buildSharePayload(50, 3, 90, WIN, 'add', true, false).text).toContain('HARD');
         expect(buildSharePayload(50, 3, 90, WIN, 'add', false, true).text).toContain('TIMED');
