@@ -29,14 +29,23 @@ The surrounding scaffolding is in place and **auto-activates the moment
 So the whole remaining job is: provision the key, set the env var, deploy,
 watch metrics, enforce.
 
-## 1. Register the web app with reCAPTCHA v3 (console)
+## 1. Register the web app with reCAPTCHA (console)
 
-Firebase console → **App Check** → **Apps** → select the web app → **reCAPTCHA v3**.
-Accept the reCAPTCHA terms; Firebase provisions a site key. Copy it.
+> **Reality update 2026-07-22:** Google's reCAPTCHA console no longer
+> issues classic v3 site/secret pairs — new keys are **project-based
+> (Enterprise)** keys attached to the GCP project. A score-based key
+> (label `math-challenge`, domain `mathchallenge.app`) was created on
+> `math-swipe-prod`, and the client uses `ReCaptchaEnterpriseProvider`
+> (`src/utils/firebase.ts`). Free tier: 10K assessments/month; with token
+> auto-refresh, assessment volume roughly tracks play sessions.
 
-Add the production origin(s) to the reCAPTCHA allowed domains:
-`mathchallenge.app` (+ any custom domain, + `localhost` if you want v3
-to work locally instead of the debug-token path below).
+DONE 2026-07-22: registered in Firebase console → App Check → Apps →
+web app → **reCAPTCHA Enterprise** provider, site key
+`6Lec5F4tAAAAAKFuSA0p0DUzfcITdD-Q8q10S6uF`, token TTL 1 hour (the
+default; editable on the registration if assessment volume ever gets
+close to the free tier — longer TTL = fewer assessments, slightly
+staler attestation). The plain "reCAPTCHA" provider form wants a classic
+secret key and is NOT what this key type uses.
 
 ## 2. Set the site key
 
