@@ -126,9 +126,23 @@ jobs:
       - name: Point Bubblewrap at the runner's JDK + Android SDK
         if: steps.mode.outputs.mode == 'build'
         run: |
+          # Recent runner images set ANDROID_SDK_ROOT but not always ANDROID_HOME,
+          # which made Bubblewrap receive an empty androidSdkPath ("isn't correct").
+          # Resolve with a fallback chain and verify before writing the config.
+          SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          if [ ! -d "$SDK/build-tools" ] || [ ! -d "$SDK/platform-tools" ]; then
+            echo "::error::Android SDK invalid at '$SDK' (ANDROID_HOME='$ANDROID_HOME' ANDROID_SDK_ROOT='$ANDROID_SDK_ROOT')"
+            ls -la "$SDK" 2>/dev/null || true
+            exit 1
+          fi
+          echo "Using Android SDK at: $SDK"
+          # Ensure the components Bubblewrap needs are present (idempotent).
+          yes | "$SDK"/cmdline-tools/latest/bin/sdkmanager --licenses >/dev/null 2>&1 || true
+          "$SDK"/cmdline-tools/latest/bin/sdkmanager \
+            "platform-tools" "build-tools;34.0.0" "platforms;android-34" >/dev/null 2>&1 || true
           mkdir -p ~/.bubblewrap
           cat > ~/.bubblewrap/config.json <<EOF
-          { "jdkPath": "$JAVA_HOME", "androidSdkPath": "$ANDROID_HOME" }
+          { "jdkPath": "$JAVA_HOME", "androidSdkPath": "$SDK" }
           EOF
 
       - name: Build .aab + .apk with Bubblewrap
