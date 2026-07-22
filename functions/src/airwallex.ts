@@ -153,7 +153,10 @@ interface AirwallexEvent {
 
 export const airwallexWebhook = onRequest(
     {
-        secrets: [AIRWALLEX_WEBHOOK_SECRET],
+        // CLIENT_ID/API_KEY are needed for the payment-link lookup in
+        // resolveUidForIntent — see the note there (learned from the first
+        // real purchase, 2026-07-22).
+        secrets: [AIRWALLEX_WEBHOOK_SECRET, AIRWALLEX_CLIENT_ID, AIRWALLEX_API_KEY],
         cors: false,
         maxInstances: 10,
     },
@@ -200,11 +203,11 @@ export const airwallexWebhook = onRequest(
         // refund lifecycle is received → accepted → settled; there is no
         // 'refund.succeeded'. We subscribe to exactly these two:
         if (event.name === 'payment_intent.succeeded') {
-            await grant(resolveUid(obj), String(obj.id ?? ''), res);
+            await grant(await resolveUidForIntent(obj), String(obj.id ?? ''), res);
             return;
         }
         if (event.name === 'refund.settled') {
-            await revoke(resolveUid(obj), res);
+            await revoke(await resolveUidForRefund(obj), res);
             return;
         }
         logger.info(`[airwallexWebhook] ignoring event ${event.name}`);
@@ -223,6 +226,48 @@ function resolveUid(obj: Record<string, unknown>): string | null {
         if (parts.length >= 3) return parts.slice(1, -1).join('_');
     }
     return null;
+}
+
+/** LEARNED FROM THE FIRST REAL PURCHASE (2026-07-22): when a customer pays a
+ *  hosted Payment Link, the resulting payment INTENT does NOT inherit the
+ *  link's `metadata` or `merchant_order_id` — the intent's merchant_order_id
+ *  is the link TITLE, and there is no metadata field at all. The event DOES
+ *  carry `payment_link_id`, and our key has Payment Links read scope, so we
+ *  fetch the link and read the uid off it. */
+async function resolveUidForIntent(obj: Record<string, unknown>): Promise<string | null> {
+    const direct = resolveUid(obj);
+    if (direct) return direct;
+    const linkId = obj.payment_link_id;
+    if (typeof linkId !== 'string' || !linkId) return null;
+    try {
+        const token = await airwallexToken();
+        const res = await fetch(`${AIRWALLEX_BASE}/api/v1/pa/payment_links/${linkId}`, {
+            headers: { authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) {
+            logger.error('[airwallexWebhook] payment_link lookup failed', res.status, await res.text());
+            return null;
+        }
+        const link = (await res.json()) as Record<string, unknown>;
+        return resolveUid(link);
+    } catch (err) {
+        logger.error('[airwallexWebhook] payment_link lookup threw', err);
+        return null;
+    }
+}
+
+/** Refund objects carry neither metadata nor our order id, but they do carry
+ *  `payment_intent_id` — and grant() stores that intent id on the entitlement
+ *  as originalTransactionId. Look the uid up in our own data; no extra
+ *  Airwallex API scope needed. */
+async function resolveUidForRefund(obj: Record<string, unknown>): Promise<string | null> {
+    const direct = resolveUid(obj);
+    if (direct) return direct;
+    const intentId = obj.payment_intent_id;
+    if (typeof intentId !== 'string' || !intentId) return null;
+    const hits = await admin.firestore().collection('entitlements')
+        .where('originalTransactionId', '==', intentId).limit(1).get();
+    return hits.empty ? null : hits.docs[0].id;
 }
 
 type WebhookResponse = { status: (n: number) => { send: (s: string) => void } };
