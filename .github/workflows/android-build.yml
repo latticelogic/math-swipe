@@ -130,20 +130,19 @@ jobs:
           BUBBLEWRAP_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           npm install -g @bubblewrap/cli
-          # Bubblewrap is interactive-only and CI has no TTY. Two prompt groups:
-          #  1) toolchain setup (install its own JDK + Android SDK, accept SDK
-          #     licenses) — every answer is "yes";
-          #  2) `build` alone also asks "regenerate project? (no checksum file)"
-          #     — piping "yes" there wrongly regenerates and loops forever.
-          # So run `update` first (ALL its prompts want yes: install toolchain,
-          # accept licenses, sync the project from twa-manifest.json + write the
-          # checksum), then `build` runs with the toolchain present and no
-          # checksum prompt. `printf` a bounded answer stream (not infinite
-          # `yes`, which floods the log) — enough for the setup prompts, then
-          # EOF so any unexpected prompt fails fast instead of hanging.
-          ANS="$(printf 'y\n%.0s' $(seq 1 20))"
-          echo "$ANS" | bubblewrap update
-          echo "$ANS" | bubblewrap build --skipPwaValidation
+          # Bubblewrap is interactive-only; CI has no TTY. Run `update` first:
+          # ALL of its prompts legitimately want "yes" (install its own JDK +
+          # Android SDK, accept SDK licenses, sync the project from
+          # twa-manifest.json + write the manifest checksum). It has NO
+          # "regenerate?" loop, so `yes` (an infinite stream) is safe here and
+          # — unlike a bounded stream — stays open across the slow JDK/SDK
+          # installs (a bounded stream EOF'd mid-install → exit 130). Bubblewrap
+          # closes stdin when done; `yes` dying on SIGPIPE doesn't fail the step.
+          yes | bubblewrap update
+          # After update the toolchain is present and the checksum exists, so
+          # `build` has no prompts. Feed it EOF so any unexpected prompt fails
+          # fast instead of hanging the runner.
+          bubblewrap build --skipPwaValidation < /dev/null
 
       - name: Print assetlinks fingerprint block
         if: steps.mode.outputs.mode == 'build'
