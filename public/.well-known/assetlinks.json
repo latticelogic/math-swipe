@@ -5,8 +5,8 @@
       "namespace": "android_app",
       "package_name": "app.mathchallenge.twa",
       "sha256_cert_fingerprints": [
-        "REPLACE_WITH_PLAY_APP_SIGNING_SHA256_FROM_PLAY_CONSOLE_APP_INTEGRITY",
-        "REPLACE_WITH_UPLOAD_KEY_SHA256_FROM_CI_BUILD_SUMMARY"
+        "08:04:51:EA:CF:C3:2F:84:5C:DA:72:F2:21:42:D5:D3:C5:A6:FD:65:0A:45:53:07:A4:76:8F:52:B1:58:21:E4",
+        "B7:11:26:6C:27:CA:17:5E:11:A7:DF:BA:1B:03:72:2E:7A:D2:FD:AC:F6:CA:E4:0B:93:28:B7:F3:DA:E9:A6:FA"
       ]
     }
   }
