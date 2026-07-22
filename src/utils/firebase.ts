@@ -93,7 +93,10 @@ export function getFirebase(): Promise<FirebaseBundle> {
             // console — see docs/app-check.md.
             const appCheckSiteKey = (import.meta.env as Record<string, string | undefined>).VITE_APPCHECK_SITE_KEY;
             if (appCheckSiteKey) {
-                const { initializeAppCheck, ReCaptchaV3Provider } = await import('firebase/app-check');
+                // Enterprise provider: the key is a project-based reCAPTCHA key
+                // on math-swipe-prod (created 2026-07-22 — Google's console no
+                // longer issues classic v3 site/secret pairs).
+                const { initializeAppCheck, ReCaptchaEnterpriseProvider } = await import('firebase/app-check');
                 // In dev, register a debug token so localhost (not a registered
                 // reCAPTCHA domain) still passes. The token is printed to the
                 // console on first load; add it under App Check → Debug tokens.
@@ -101,7 +104,7 @@ export function getFirebase(): Promise<FirebaseBundle> {
                     (self as unknown as { FIREBASE_APPCHECK_DEBUG_TOKEN?: boolean }).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
                 }
                 initializeAppCheck(app, {
-                    provider: new ReCaptchaV3Provider(appCheckSiteKey),
+                    provider: new ReCaptchaEnterpriseProvider(appCheckSiteKey),
                     isTokenAutoRefreshEnabled: true,
                 });
             }
