@@ -76,13 +76,14 @@ interface PaywallProps {
 export function Paywall({ progress, onUnlock, busy, mode = 'expired', onClose, purchaseUnavailable, onDevReset }: PaywallProps) {
     const isPro = mode === 'pro';
     function maybeLater() {
-        // Pro upsell: just dismiss — the user isn't blocked, they declined.
-        if (onClose) { onClose(); return; }
-        // Post-trial gate: close the app per the monetization model rules.
-        // window.close() works for tabs the script opened; otherwise navigate
-        // away so the paywall doesn't snap back on re-render.
-        try { window.close(); } catch { /* fallthrough */ }
-        window.location.href = 'about:blank';
+        // Both modes hand control back to the app via onClose; the app decides
+        // where to land (pro → just dismiss; expired → drop onto the free
+        // Daily). We deliberately DON'T window.close()/about:blank here: both
+        // are broken in a TWA / installed PWA — window.close() is a no-op on a
+        // window the script didn't open, so it fell through to about:blank and
+        // stranded the user on a blank page. It also contradicted "the Daily
+        // Challenge is free forever" (an expired user should still reach it).
+        onClose?.();
     }
 
     // Pick the 2-4 most impressive of the user's numbers to surface as
