@@ -6,10 +6,23 @@ payment and returns a redirect URL; a signed webhook writes `paidAt` on
 `entitlements/{uid}` on a successful payment and clears it on a refund. Code is
 in `functions/src/airwallex.ts` + `src/utils/checkout.ts`.
 
-> **Status: scaffold.** It's written against Airwallex's documented REST API
-> without a live account to test, and is **inert until the secrets are set**. The
-> `TODO(airwallex)` markers in `airwallex.ts` are the handful of things to
-> confirm against the current API reference before the first real charge.
+> **Status: LIVE and QA-verified (2026-07-22).** KYB approved; scoped API key
+> `math-swipe-functions` (Payment Links R/W only) + webhook
+> `math-swipe-entitlements` (payment_intent.succeeded, refund.settled; API
+> version 2026-02-27) registered; all four secrets set; functions deployed
+> with public invokers (project-scoped DRS exception applied). Every former
+> `TODO(airwallex)` is confirmed against the live account — including two
+> real bug fixes (#135): the refund event is `refund.settled` (no
+> `refund.succeeded` exists) and `x-timestamp` is **milliseconds**. The
+> money-free QA loop passed end-to-end: auth → payment-link create (201,
+> real hosted URL) → signed grant delivery → idempotent re-delivery →
+> refund.settled revoke → stale-replay + bad-signature both rejected;
+> grant/revoke verified in `entitlements/`. REMAINING before launch: card
+> methods finish "activation in progress" (Airwallex emails), then ONE real
+> $3.14 purchase through the UI + Console-refund revoke as the final gate.
+> Note: an official `airwallex-cli` exists (beta, macOS/Linux only — use the
+> REST API via curl/node on Windows); it covers payments ops but NOT API-key
+> or webhook management, which stay dashboard-only behind 2FA.
 
 ## Website requirements (application rejected 2026-07-21)
 
