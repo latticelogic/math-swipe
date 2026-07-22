@@ -38,9 +38,10 @@ const AIRWALLEX_API_KEY = defineSecret('AIRWALLEX_API_KEY');
 const AIRWALLEX_WEBHOOK_SECRET = defineSecret('AIRWALLEX_WEBHOOK_SECRET');
 const PUBLIC_ORIGIN = defineSecret('PUBLIC_ORIGIN');
 
-// Production host. Airwallex's sandbox is https://api-demo.airwallex.com — swap
-// for local/staging testing. TODO(airwallex): confirm the region host for your
-// account (some accounts use a regional base).
+// Production host — CONFIRMED 2026-07-22: the Lattice Logic account lives on
+// the global www.airwallex.com dashboard, so the API base is the global
+// api.airwallex.com (no regional base). Airwallex's sandbox is
+// https://api-demo.airwallex.com — swap for local/staging testing.
 const AIRWALLEX_BASE = 'https://api.airwallex.com';
 
 const PRICE = { amount: 3.14, currency: 'USD' }; // Airwallex amounts are decimal major units (not cents)
@@ -175,10 +176,11 @@ export const airwallexWebhook = onRequest(
 
         // Anti-replay: the timestamp is covered by the signature, so a replayed
         // delivery carries an old (still-valid) one. Reject anything more than
-        // 5 minutes from now. TODO(airwallex): confirm x-timestamp is seconds
-        // (not ms) for your account; divide accordingly.
+        // 5 minutes from now. Magnitude-sniff seconds vs milliseconds rather
+        // than trusting either — current Airwallex API versions send ms.
         const tsNum = Number(ts);
-        if (!Number.isFinite(tsNum) || Math.abs(Date.now() / 1000 - tsNum) > 300) {
+        const tsSecs = tsNum > 1e12 ? tsNum / 1000 : tsNum;
+        if (!Number.isFinite(tsNum) || Math.abs(Date.now() / 1000 - tsSecs) > 300) {
             logger.warn('[airwallexWebhook] stale/invalid timestamp');
             res.status(400).send('Stale timestamp');
             return;
@@ -193,14 +195,15 @@ export const airwallexWebhook = onRequest(
         }
 
         const obj = event.data?.object ?? {};
-        // TODO(airwallex): confirm exact event names. Common ones:
-        //   payment success → 'payment_intent.succeeded'
-        //   refund          → 'refund.succeeded' / 'payment_attempt.refund.succeeded'
+        // Event names CONFIRMED 2026-07-22 against the live event catalog
+        // (webhook 'math-swipe-entitlements', API version 2026-02-27). The
+        // refund lifecycle is received → accepted → settled; there is no
+        // 'refund.succeeded'. We subscribe to exactly these two:
         if (event.name === 'payment_intent.succeeded') {
             await grant(resolveUid(obj), String(obj.id ?? ''), res);
             return;
         }
-        if (event.name && /refund/.test(event.name) && /succeeded|processed/.test(event.name)) {
+        if (event.name === 'refund.settled') {
             await revoke(resolveUid(obj), res);
             return;
         }
