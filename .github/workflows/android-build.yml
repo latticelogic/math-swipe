@@ -129,23 +129,15 @@ jobs:
           BUBBLEWRAP_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           BUBBLEWRAP_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
-          set -x
-          # Recent runner images set ANDROID_SDK_ROOT but not always ANDROID_HOME.
-          SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
-          echo "Resolved Android SDK: $SDK"; ls "$SDK" || true
-          SDKMGR="$SDK/cmdline-tools/latest/bin/sdkmanager"
-          yes | "$SDKMGR" --licenses || true
-          "$SDKMGR" "platform-tools" "build-tools;34.0.0" "platforms;android-34" || true
-
           npm install -g @bubblewrap/cli
-          bubblewrap --version || true
-          # Write the config via the CLI so it matches the installed schema
-          # (hand-written config.json was rejected as "androidSdk isn't correct").
-          bubblewrap updateConfig --jdkPath="$JAVA_HOME" --androidSdkPath="$SDK" || true
-          echo "=== ~/.bubblewrap/config.json ==="; cat ~/.bubblewrap/config.json || true
-          echo "=== bubblewrap doctor ==="; bubblewrap doctor || true
-
-          bubblewrap build --skipPwaValidation
+          # Every bubblewrap command opens an interactive "install the JDK?"
+          # prompt on first run; in CI (no TTY) that hung and died with exit
+          # 130, and it rejected the runner's own JDK/SDK ("isn't correct").
+          # Let bubblewrap manage its OWN toolchain and auto-answer the setup
+          # prompts with "yes" (installs its JDK + Android SDK under ~/.bubblewrap).
+          # `--skipPwaValidation` avoids the network PWA fetch. Signing is
+          # non-interactive via the BUBBLEWRAP_*_PASSWORD env vars above.
+          yes | bubblewrap build --skipPwaValidation
 
       - name: Print assetlinks fingerprint block
         if: steps.mode.outputs.mode == 'build'
