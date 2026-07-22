@@ -200,8 +200,41 @@ target audience). Corrections and the plan:
 - **No parental gate** — not required for our surfaces today (no ads, no
   external non-legal links, purchases go through Play's own approval).
   Revisit only if the Families review asks.
-- **No Play Console API automation** — the Console steps are one-time
-  clickwork; scripting them costs more than it saves.
+- **Console API limits** — policy declarations (Data Safety, Content Rating, Target Audience) and account-level License Testing emails are intentionally excluded from Google's `androidpublisher` v3 API for legal/policy reasons. They are completed via the 10-minute web clickwork checklist below.
+
+---
+
+## CLI & Verification Quick-Reference
+
+Run these commands during verification and testing:
+
+```bash
+# 1. Verify Digital Asset Links (assetlinks.json)
+curl -s "https://digitalassetlinks.googleapis.com/v1/statements:list?source.web.site=https://mathchallenge.app&relation=delegate_permission/common.handle_all_urls"
+
+# 2. Watch RTDN Cloud Function logs in real time
+gcloud functions logs read playRtdn --region=us-central1 --limit=30
+
+# 3. Sideload signed APK to connected Android device via ADB
+adb install app-release-signed.apk
+adb shell am start -n app.mathchallenge.twa/app.mathchallenge.twa.MainActivity
+```
+
+---
+
+## Remaining Web Clickwork Checklist (for Account Owner)
+
+- [ ] **Data Safety & Declarations** (*Play Console → Policy → App content*):
+  - Privacy policy: `https://mathchallenge.app/privacy`
+  - Ads: Select **No**
+  - Target audience: Select **9-12** and **13+** (do NOT tick 5-8)
+  - Content rating: Complete IARC questionnaire (Educational → Everyone)
+  - Data safety form: App activity (stats/XP), Diagnostics (RUM), Device IDs (Firebase UID), optional Email.
+- [ ] **License Testing** (*Play Console → Settings → Account details → License testing*):
+  - Add developer/tester emails to the license testers list so test purchases don't charge.
+- [ ] **Internal Track QA**:
+  - Install via internal testing link on physical phone; verify no URL bar appears.
+  - Complete license-test purchase (`source: 'google'`), then refund in Console and verify RTDN revocation in Cloud logs.
 
 ---
 
@@ -217,3 +250,4 @@ target audience). Corrections and the plan:
 - [ ] Data safety form answers match the privacy policy wording
 - [ ] Store listing copy passes the content tone bar (warm, restrained,
       specific)
+
