@@ -28,6 +28,7 @@ export const SwipeTrail = memo(function SwipeTrail({ streak, activeTrailId, base
         if (activeTrailId === 'fire') return 'fire';
         if (activeTrailId === 'lightning') return 'lightning';
         if (activeTrailId === 'pro-comet') return '#ffe9a8'; // Pro pack — pale-gold comet
+        if (activeTrailId === 'beacon') return 'beacon'; // Referral-conversion exclusive — warm lantern glow
 
         // Default: react to streak
         if (streak >= 10) return '#FF00FF';
@@ -144,6 +145,13 @@ export const SwipeTrail = memo(function SwipeTrail({ streak, activeTrailId, base
                     ctx.strokeStyle = '#aaeeff';
                     ctx.shadowBlur = 22;
                     ctx.shadowColor = '#00ccff';
+                } else if (color === 'beacon') {
+                    // Beacon: near-white lantern core with a wide warm halo —
+                    // reads as light itself, distinct from fire's orange lick
+                    // and the comet's flat pale gold.
+                    ctx.strokeStyle = '#fff6d8';
+                    ctx.shadowBlur = 26;
+                    ctx.shadowColor = '#ffc94d';
                 } else {
                     if (color === 'var(--color-gold)') ctx.strokeStyle = '#fbbc04';
                     else ctx.strokeStyle = color;

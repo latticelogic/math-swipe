@@ -392,6 +392,20 @@ const Friends = ({ size = 48, unlocked }: BadgeProps) => (
     </svg>
 );
 
+/** Lantern tower with rays — Beacon Lit (a referred friend bought the game) */
+const BeaconLit = ({ size = 48, unlocked }: BadgeProps) => (
+    <svg viewBox="0 0 48 48" width={size} height={size} style={{ color: unlocked ? 'var(--color-gold)' : 'var(--color-locked)' }}>
+        <path d="M20 42l1.6-20h4.8L28 42z" {...S} strokeWidth="2.5" />
+        <line x1="16" y1="42" x2="32" y2="42" {...S} strokeWidth="2.5" />
+        <circle cx="24" cy="15" r="4" {...S} strokeWidth="2.5" />
+        <line x1="24" y1="4" x2="24" y2="8" {...S} strokeWidth="2" opacity="0.7" />
+        <line x1="14" y1="8" x2="17.5" y2="10.8" {...S} strokeWidth="2" opacity="0.7" />
+        <line x1="34" y1="8" x2="30.5" y2="10.8" {...S} strokeWidth="2" opacity="0.7" />
+        <line x1="10" y1="16" x2="16" y2="15.4" {...S} strokeWidth="2" opacity="0.45" />
+        <line x1="38" y1="16" x2="32" y2="15.4" {...S} strokeWidth="2" opacity="0.45" />
+    </svg>
+);
+
 /** Rosette — generic fallback so no achievement ever renders blank */
 const DefaultBadge = ({ size = 48, unlocked }: BadgeProps) => (
     <svg viewBox="0 0 48 48" width={size} height={size} style={{ color: unlocked ? 'var(--color-gold)' : 'var(--color-locked)' }}>
@@ -452,6 +466,7 @@ const BADGE_MAP: Record<string, React.FC<BadgeProps>> = {
     'brought-a-friend': Friends,
     'connector': Friends,
     'ambassador': Friends,
+    'beacon-lit': BeaconLit,
 };
 
 interface Props {

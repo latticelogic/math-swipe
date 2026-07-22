@@ -47,7 +47,7 @@ import { useStats } from './hooks/useStats';
 import type { QuestionType } from './utils/questionTypes';
 import { EVERY_ACHIEVEMENT, loadUnlocked, saveUnlocked, checkAchievements, restoreUnlockedFromCloud } from './utils/achievements';
 import { EVERY_MATH_ACHIEVEMENT, achName } from './domains/math/mathAchievements';
-import { capturePendingReferrer, maybeClaimReferral, fetchReferralCount } from './utils/referral';
+import { capturePendingReferrer, maybeClaimReferral, fetchReferralCount, fetchReferralConversions } from './utils/referral';
 import { SessionSummary } from './components/SessionSummary';
 import { WeeklyRecap } from './components/WeeklyRecap';
 import { CHALK_THEMES, applyTheme, getThemeDisplayColor, type ChalkTheme } from './utils/chalkThemes';
@@ -300,10 +300,15 @@ function App() {
   // (server-verified; feeds referral achievements). The redeem effect below
   // credits the person who invited *us*, once we've played enough to be real.
   const [referralCount, setReferralCount] = useState(0);
+  // referralConversions = how many of those invitees went on to BUY the game
+  // (server-verified `referralStats/{uid}.converted`). Gates the exclusive
+  // Beacon trail + the beacon-lit achievement.
+  const [referralConversions, setReferralConversions] = useState(0);
   useEffect(() => {
-    if (!uid) { setReferralCount(0); return; }
+    if (!uid) { setReferralCount(0); setReferralConversions(0); return; }
     let cancelled = false;
     fetchReferralCount(uid).then(c => { if (!cancelled) setReferralCount(c); });
+    fetchReferralConversions(uid).then(c => { if (!cancelled) setReferralConversions(c); });
     return () => { cancelled = true; };
   }, [uid]);
   const referralTriedRef = useRef(false);
@@ -565,6 +570,7 @@ function App() {
       totalSolved: stats.totalSolved + totalAnswered,
       totalCorrect: stats.totalCorrect + totalCorrect,
       referralCount,
+      referralConversions,
     };
     const fresh = checkAchievements(EVERY_MATH_ACHIEVEMENT, snap, unlockedRef.current);
     if (fresh.length > 0) {
@@ -583,7 +589,7 @@ function App() {
         setAchievementQueue(q => [...q, ...items]);
       }
     }
-  }, [stats, bestStreak, totalAnswered, totalCorrect, uid, referralCount]);
+  }, [stats, bestStreak, totalAnswered, totalCorrect, uid, referralCount, referralConversions]);
 
   // ── Paywall trigger (value-anchored, post-expiry) ──
   // Fires the paywall AFTER the user completes their first problem in a
@@ -730,10 +736,11 @@ function App() {
         history: answerHistory, questionType,
         hardMode: effectiveHard, timedMode: effectiveTimed,
         speedrunTime: speedrunFinalTime, profileUrl,
+        referrerUid: uid,
       });
     }
     if (lastSession) {
-      return buildSharePayloadFromArgs({ ...lastSession, profileUrl });
+      return buildSharePayloadFromArgs({ ...lastSession, profileUrl, referrerUid: uid });
     }
     return null;
   }, [uid, user?.displayName, claimedHandle, totalAnswered, score, bestStreak, totalCorrect, answerHistory, questionType, effectiveHard, effectiveTimed, speedrunFinalTime, lastSession]);
@@ -1373,6 +1380,7 @@ function App() {
               onToggleTheme={toggleThemeMode}
               timedSecs={safeTimedSecs}
               onTimedSecsChange={setTimedSecs}
+              referralConversions={referralConversions}
             /></Suspense></TabErrorBoundary>
           </motion.div>
         )}
@@ -1424,6 +1432,7 @@ function App() {
           challengeTarget={challengeTarget}
           totalXP={stats.totalXP}
           onShared={recordShare}
+          showBeaconHint={referralConversions === 0}
         />
 
         {/* ── End-run confirm (free play + tab leave) ──
@@ -1541,6 +1550,7 @@ function App() {
             challengeTarget={null}
             totalXP={stats.totalXP}
             onShared={recordShare}
+            showBeaconHint={referralConversions === 0}
           />
         )}
 

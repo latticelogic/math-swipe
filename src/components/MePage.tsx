@@ -8,7 +8,7 @@ import { achName, achDesc } from '../domains/math/mathAchievements';
 import { AchievementBadge } from './AchievementBadge';
 import { StreakGarden } from './StreakGarden';
 import { CHALK_THEMES, themeLabel, type ChalkTheme } from '../utils/chalkThemes';
-import { SWIPE_TRAILS, trailLabel } from '../utils/trails';
+import { SWIPE_TRAILS, trailLabel, isReferralTrailUnlocked } from '../utils/trails';
 import { TEACHERS, DEFAULT_TEACHER_ID, teacherName, teacherTagline } from '../domains/math/teachers';
 import { RANKS, getRank, getMastery, rankLabel } from '../domains/math/ranks';
 import { TrialCountdownChip } from './TrialModals';
@@ -67,6 +67,10 @@ interface Props {
     /** Timed-mode countdown, seconds (one of TIMED_DURATION_PRESETS). */
     timedSecs: number;
     onTimedSecsChange: (secs: number) => void;
+    /** Server-verified count of invited friends who BOUGHT the game
+     *  (`referralStats/{uid}.converted`). Gates the exclusive Beacon trail —
+     *  the referral-conversion reward, never purchasable and never Pro. */
+    referralConversions?: number;
 }
 
 // A proper toothed cog for the settings gear, computed once. 8 trapezoidal
@@ -106,7 +110,7 @@ function ModeAchievementGrid({ achievements, cols, unlocked }: {
     );
 }
 
-export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCostume, onCostumeChange, activeTheme, onThemeChange, activeTrailId, onTrailChange, displayName, onDisplayNameChange, isAnonymous, onLinkGoogle, onLinkApple, onSendEmailLink, authMessage, onClearAuthMessage, ageBand, activeTeacherId, onTeacherChange, uid, entitlementStatus, entitlementDaysLeft, onUnlock, hasPro = true, onRequestPro, themeMode, onToggleTheme, timedSecs, onTimedSecsChange }: Props) {
+export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCostume, onCostumeChange, activeTheme, onThemeChange, activeTrailId, onTrailChange, displayName, onDisplayNameChange, isAnonymous, onLinkGoogle, onLinkApple, onSendEmailLink, authMessage, onClearAuthMessage, ageBand, activeTeacherId, onTeacherChange, uid, entitlementStatus, entitlementDaysLeft, onUnlock, hasPro = true, onRequestPro, themeMode, onToggleTheme, timedSecs, onTimedSecsChange, referralConversions = 0 }: Props) {
     const [showRanks, setShowRanks] = useState(false);
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [editingName, setEditingName] = useState(false);
@@ -526,11 +530,18 @@ export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCo
                 <div className="flex justify-center gap-2.5 flex-wrap">
                     {SWIPE_TRAILS.map(trail => {
                         const rankIdx = RANKS.findIndex(r => r.name === rank.name);
+                        // The Beacon is the referral-conversion exclusive: it
+                        // unlocks ONLY when an invited friend buys the game —
+                        // not purchasable, not Pro-gated, so tapping it locked
+                        // never opens the upsell (the hint line below the row
+                        // explains how it's earned instead).
+                        const isReferralReward = !!trail.referralConversionsMin;
                         // Free tier = the default chalk-dust trail only (owner
                         // call 2026-07-16); the rest is Pro, with progression
                         // gates still applying for paid users.
-                        const isUnlocked =
-                            (hasPro || trail.id === 'chalk-dust') &&
+                        const isUnlocked = isReferralReward
+                            ? isReferralTrailUnlocked(trail, referralConversions)
+                            : (hasPro || trail.id === 'chalk-dust') &&
                             (!trail.minLevel || rankIdx >= trail.minLevel - 1) &&
                             (!trail.minStreak || stats.bestStreak >= trail.minStreak) &&
                             (!trail.hardModeOnly || stats.hardModeSessions > 0) &&
@@ -542,8 +553,10 @@ export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCo
                         return (
                             <button
                                 key={trail.id}
-                                onClick={() => { if (isUnlocked) onTrailChange(trail.id); else if (!hasPro && trail.id !== 'chalk-dust') onRequestPro?.(); }}
-                                title={isUnlocked ? trailLabel(trail.id) : t('cosmetic.lockedTitle', { name: trailLabel(trail.id) })}
+                                onClick={() => { if (isUnlocked) onTrailChange(trail.id); else if (!isReferralReward && !hasPro && trail.id !== 'chalk-dust') onRequestPro?.(); }}
+                                title={isUnlocked ? trailLabel(trail.id)
+                                    : isReferralReward ? t('trail.beaconLockedHint')
+                                        : t('cosmetic.lockedTitle', { name: trailLabel(trail.id) })}
                                 className={`w-12 h-12 flex items-center justify-center rounded-xl border-2 transition-all 
                                     ${isActive ? 'border-[var(--color-gold)] bg-[var(--color-gold)]/10 scale-105' :
                                         isUnlocked ? 'border-[rgb(var(--color-fg))]/20 hover:border-[rgb(var(--color-fg))]/40' :
@@ -557,6 +570,13 @@ export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCo
                         );
                     })}
                 </div>
+                {/* Beacon locked-state line — the trail money can't buy needs one
+                    quiet sentence saying how it's earned. Gone once it's lit. */}
+                {referralConversions < 1 && (
+                    <div className="text-[10px] ui text-[rgb(var(--color-fg))]/30 text-center mt-2">
+                        {t('trail.beaconLockedHint')}
+                    </div>
+                )}
             </div>
 
             {/* Achievements — after the customizations (owner call) */}

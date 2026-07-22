@@ -47,12 +47,16 @@ interface Props {
      *  OR clipboard write succeeded OR modal share confirmed). Drives the
      *  "Spread the Word" first-share achievement. */
     onShared?: () => void;
+    /** Show the one-line Beacon note under the share button — shares carry
+     *  the sender's invite link, and a converted invite earns the Beacon
+     *  trail. App passes false once the reward is already earned. */
+    showBeaconHint?: boolean;
 }
 
 export const SessionSummary = memo(function SessionSummary({
     solved, bestStreak: streak, accuracy, xpEarned, answerHistory, questionType, visible, onDismiss,
     hardMode, timedMode, speedrunFinalTime, isNewSpeedrunRecord,
-    displayName, uid, claimedHandle, challengeTarget, onShared,
+    displayName, uid, claimedHandle, challengeTarget, onShared, showBeaconHint,
 }: Props) {
     const [isSharing, setIsSharing] = useState(false);
 
@@ -91,6 +95,7 @@ export const SessionSummary = memo(function SessionSummary({
         const { text, url: challengeUrl } = buildSharePayload(
             xpEarned, streak, accuracy, answerHistory, questionType,
             hardMode, timedMode, speedrunFinalTime, profileUrl,
+            uid, // shares carry the invite — see utils/referral.ts
         );
         try {
             if (typeof navigator.share === 'function') {
@@ -338,6 +343,15 @@ export const SessionSummary = memo(function SessionSummary({
                             </svg>
                             <span>{copied ? t('rail.resultCopied') : t('summary.shareResult')}</span>
                         </motion.button>
+
+                        {/* One quiet line: shares double as invites, and a
+                            converted invite earns the Beacon trail. Hidden
+                            once the reward is already lit. */}
+                        {showBeaconHint && !!uid && (
+                            <div className="text-[10px] ui text-[rgb(var(--color-fg))]/30 mb-3 -mt-1">
+                                {t('summary.beaconHint')}
+                            </div>
+                        )}
 
                         {/* ("Challenge a Friend" removed 2026-07-16 — owner call
                             after testing: it duplicated Share Result while implying

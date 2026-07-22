@@ -224,6 +224,7 @@ export const hi: Record<MsgKey, string> = {
     'summary.headToHead.won': 'आप {mine} · वे {theirs} — जवाब दें',
     'summary.headToHead.lost': 'आप {mine} · वे {theirs} — फिर कोशिश?',
     'summary.shareResult': 'परिणाम साझा करें',
+    'summary.beaconHint': 'आपके शेयर में आपका निमंत्रण होता है। कोई दोस्त पूरा गेम अनलॉक करे, तो दीपस्तंभ ट्रेल आपको मिलती है।',
     'summary.tapContinue': 'जारी रखने के लिए टैप करें',
 
     'reload.title': 'नया संस्करण उपलब्ध',
@@ -382,6 +383,8 @@ export const hi: Record<MsgKey, string> = {
     'trail.fire': 'नरकाग्नि',
     'trail.lightning': 'बिजली की चमक',
     'trail.pro-comet': 'धूमकेतु',
+    'trail.beacon': 'दीपस्तंभ',
+    'trail.beaconLockedHint': 'जब आपका आमंत्रित दोस्त पूरा गेम अनलॉक करता है, तो दीपस्तंभ जल उठता है।',
 
     'theme.classic': 'क्लासिक सफ़ेद',
     'theme.sky': 'आसमानी नीला',
@@ -456,6 +459,8 @@ export const hi: Record<MsgKey, string> = {
     'ach.connector.desc': 'तीन दोस्त जुड़े, सब खेल रहे हैं। अब आपके चाहने वाले हैं।',
     'ach.ambassador.name': 'दूत',
     'ach.ambassador.desc': 'पाँच खिलाड़ियों की स्ट्रीक का श्रेय आपको जाता है।',
+    'ach.beacon-lit.name': 'दीपस्तंभ जला',
+    'ach.beacon-lit.desc': 'आपके आमंत्रित दोस्त ने पूरा गेम अनलॉक किया। दीपस्तंभ ट्रेल अब आपकी है।',
     'ach.kilo.name': 'किलो क्लब',
     'ach.kilo.desc': 'एक हज़ार सवाल। अब चार अंक हो गए।',
     'ach.iron-mind.name': 'लौह मन',

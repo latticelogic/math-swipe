@@ -45,6 +45,10 @@ export interface MathAchievementStats {
     sharesSent: number;
     /** Players this user has successfully invited (server-verified). */
     referralCount: number;
+    /** Invited players who went on to BUY the game (server-verified —
+     *  `referralStats/{uid}.converted`, written only by Cloud Functions).
+     *  Drives the Beacon trail + its achievement. */
+    referralConversions: number;
 }
 
 // ── Achievement lists ─────────────────────────────────────────────────────────
@@ -180,6 +184,15 @@ const CORE_ACHIEVEMENTS: Achievement<MathAchievementStats>[] = [
         name: 'Ambassador',
         desc: 'Five players owe their streak to you.',
         check: s => s.referralCount >= 5,
+    },
+    // ── Referral conversion — a friend went all the way and bought it ──
+    // Pairs with the exclusive Beacon swipe trail (utils/trails.ts) — the
+    // one cosmetic money can't buy. Server-verified; see creditReferralConversion.
+    {
+        id: 'beacon-lit',
+        name: 'Beacon Lit',
+        desc: 'A friend you invited unlocked the whole game. The Beacon trail is yours.',
+        check: s => s.referralConversions >= 1,
     },
 ];
 

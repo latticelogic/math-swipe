@@ -59,6 +59,21 @@ export function TrailIcon({ id, size = 24, className }: Props) {
                     <path d="M13.5 3 L 6.5 13 L 11 13 L 9.5 21 L 17.5 10.5 L 12.7 10.5 Z" />
                 </svg>
             );
+        case 'beacon':
+            // Beacon — a small lantern tower, light rays fanning out.
+            // Referral-conversion exclusive (see utils/trails.ts).
+            return (
+                <svg {...p}>
+                    <path d="M10 20 L 10.8 10 L 13.2 10 L 14 20 Z" />
+                    <line x1="8" y1="20" x2="16" y2="20" />
+                    <circle cx="12" cy="7.5" r="1.8" />
+                    <line x1="12" y1="3" x2="12" y2="4.6" opacity="0.7" />
+                    <line x1="7.2" y1="5" x2="8.9" y2="6.3" opacity="0.7" />
+                    <line x1="16.8" y1="5" x2="15.1" y2="6.3" opacity="0.7" />
+                    <line x1="5.5" y1="9" x2="8.2" y2="8.4" opacity="0.45" />
+                    <line x1="18.5" y1="9" x2="15.8" y2="8.4" opacity="0.45" />
+                </svg>
+            );
         case 'pro-comet':
             // Comet — head + streaking tail
             return (
