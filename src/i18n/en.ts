@@ -158,6 +158,7 @@ export const en = {
 
     // ── Settings sheet ──
     'settings.title': 'Settings',
+    'settings.deleteAccount': 'Delete my account & data',
     'settings.gearAria': 'Open settings',
     'settings.done': 'Done',
     'settings.language': 'Language',

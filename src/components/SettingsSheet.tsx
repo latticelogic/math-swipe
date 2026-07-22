@@ -213,6 +213,18 @@ export function SettingsSheet({ open, onClose, uid, themeMode, onToggleTheme, ti
                             {versionLabel}
                         </button>
 
+                        {/* ── Account deletion ── Discoverable in-app path to the
+                            data-deletion page (also the URL on the Play listing's
+                            Data-safety section). Plain <a href> → full navigation,
+                            same pattern as the legal footer row below. Subtle, not
+                            a primary action. */}
+                        <a
+                            href="/delete-account"
+                            className="block text-center text-[10px] ui tracking-wide text-[rgb(var(--color-fg))]/30 hover:text-[rgb(var(--color-fg))]/55 transition-colors mb-3"
+                        >
+                            {t('settings.deleteAccount')}
+                        </a>
+
                         {/* ── Legal ── Company identification deliberately NOT
                             here — apps don't put registry details in Settings
                             (owner call 2026-07-21). It lives on the legal pages

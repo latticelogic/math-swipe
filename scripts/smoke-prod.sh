@@ -76,7 +76,7 @@ done
 [ "$fail" = 0 ] && echo "All $total assets serve correctly."
 
 # ── 3. Key routes respond 200. ──
-for path in / /pricing /privacy /terms /refund; do
+for path in / /pricing /privacy /terms /refund /delete-account; do
   code=$(curl -s -o /dev/null -w '%{http_code}' "$ORIGIN$path")
   if [ "$code" != "200" ]; then
     echo "BAD  $code  $path"

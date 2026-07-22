@@ -138,6 +138,7 @@ export const ja: Record<MsgKey, string> = {
     'paywall.maybeLater': 'あとで',
 
     'settings.title': '設定',
+    'settings.deleteAccount': 'アカウントとデータを削除',
     'settings.gearAria': '設定を開く',
     'settings.done': '完了',
     'settings.language': '言語',

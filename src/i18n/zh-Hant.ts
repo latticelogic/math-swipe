@@ -138,6 +138,7 @@ export const zhHant: Record<MsgKey, string> = {
     'paywall.maybeLater': '以後再說',
 
     'settings.title': '設定',
+    'settings.deleteAccount': '刪除我的帳號和資料',
     'settings.gearAria': '開啟設定',
     'settings.done': '完成',
     'settings.language': '語言',

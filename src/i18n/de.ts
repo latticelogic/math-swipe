@@ -138,6 +138,7 @@ export const de: Record<MsgKey, string> = {
     'paywall.maybeLater': 'Später',
 
     'settings.title': 'Einstellungen',
+    'settings.deleteAccount': 'Konto und Daten löschen',
     'settings.gearAria': 'Einstellungen öffnen',
     'settings.done': 'Fertig',
     'settings.language': 'Sprache',
