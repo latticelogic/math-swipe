@@ -14,7 +14,9 @@
   <link rel="manifest" href="/manifest.json" />
   <meta name="theme-color" content="#1b1b1b" id="meta-theme-color" />
   <link rel="icon" type="image/svg+xml" href="/icon.svg" />
-  <link rel="apple-touch-icon" href="/icon.svg" />
+  <!-- iOS ignores SVG apple-touch-icons — a real 180×180 PNG is required for a
+       crisp home-screen icon on "Add to Home Screen" (and the future iOS shell). -->
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Math Challenge" />
@@ -58,7 +60,7 @@
     "applicationSubCategory": "EducationalApplication",
     "operatingSystem": "Web, iOS, Android",
     "browserRequirements": "Requires JavaScript.",
-    "inLanguage": ["en", "es", "pt-BR"],
+    "inLanguage": ["en", "es", "pt-BR", "fr", "de", "it", "id", "ko", "zh-Hans", "zh-Hant", "ja", "hi"],
     "audience": {
       "@type": "EducationalAudience",
       "educationalRole": "student",
