@@ -138,6 +138,7 @@ export const hi: Record<MsgKey, string> = {
     'paywall.maybeLater': 'शायद बाद में',
 
     'settings.title': 'सेटिंग्स',
+    'settings.deleteAccount': 'मेरा खाता और डेटा हटाएँ',
     'settings.gearAria': 'सेटिंग्स खोलें',
     'settings.done': 'हो गया',
     'settings.language': 'भाषा',

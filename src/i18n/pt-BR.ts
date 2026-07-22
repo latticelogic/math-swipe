@@ -137,6 +137,7 @@ export const ptBR: Record<MsgKey, string> = {
     'paywall.maybeLater': 'Talvez depois',
 
     'settings.title': 'Ajustes',
+    'settings.deleteAccount': 'Excluir minha conta e dados',
     'settings.gearAria': 'Abrir ajustes',
     'settings.done': 'Pronto',
     'settings.language': 'Idioma',

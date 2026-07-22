@@ -139,6 +139,7 @@ export const id: Record<MsgKey, string> = {
     'paywall.maybeLater': 'Nanti saja',
 
     'settings.title': 'Pengaturan',
+    'settings.deleteAccount': 'Hapus akun & data saya',
     'settings.gearAria': 'Buka pengaturan',
     'settings.done': 'Selesai',
     'settings.language': 'Bahasa',

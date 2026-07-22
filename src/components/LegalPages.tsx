@@ -27,7 +27,7 @@
 import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 
-type LegalDocId = 'refund' | 'privacy' | 'terms' | 'pricing';
+type LegalDocId = 'refund' | 'privacy' | 'terms' | 'pricing' | 'delete-account';
 
 interface Props {
     doc: LegalDocId;
@@ -39,6 +39,7 @@ const TITLES: Record<LegalDocId, string> = {
     privacy: 'Privacy Policy',
     terms: 'Terms of Service',
     pricing: 'Pricing',
+    'delete-account': 'Delete Your Account',
 };
 
 // ── Business identification ───────────────────────────────────────────────────
@@ -91,6 +92,7 @@ export function LegalPage({ doc, onBack }: Props) {
                     {doc === 'privacy' && <PrivacyBody />}
                     {doc === 'terms' && <TermsBody />}
                     {doc === 'pricing' && <PricingBody />}
+                    {doc === 'delete-account' && <DeleteAccountBody />}
                 </div>
 
                 <div className="mt-12 pt-6 border-t border-[rgb(var(--color-fg))]/8 space-y-4">
@@ -442,6 +444,75 @@ function PricingBody() {
                 </p>
             </Section>
 
+        </>
+    );
+}
+
+// Data-deletion page. Required by Google Play's Data-safety "Delete account
+// URL" (must name the app/developer, show the steps to request deletion, and
+// state what's deleted vs kept + retention). Also linked from Settings so the
+// path is discoverable in-app. Written against the real data practices in
+// PrivacyBody + the entitlement/stats schema.
+function DeleteAccountBody() {
+    return (
+        <>
+            <Section title="Deleting your Math Challenge account">
+                <p>Math Challenge is operated by Lattice Logic Pte. Ltd. This page
+                    explains how to ask us to delete your account and the data tied
+                    to it, and exactly what we delete or keep.</p>
+            </Section>
+
+            <Section title="How to request deletion">
+                <p>Email <Email /> with the subject <strong>"Delete my account"</strong>.</p>
+                <Bullet>If you signed in with Google or email, send the request from
+                    that address (or tell us the address) so we can find your
+                    account.</Bullet>
+                <Bullet>If you play anonymously (no sign-in), just say so. You can
+                    also remove your local account right away by clearing this
+                    site's browser data or uninstalling the app — the anonymous
+                    record on our side is then pruned automatically.</Bullet>
+                <p>We confirm and complete deletion within 30 days, usually much
+                    sooner. We may verify the request first so that no one else can
+                    delete your account.</p>
+            </Section>
+
+            <Section title="Deleting only some of your data">
+                <p>You don't have to delete your whole account. Email us at the same
+                    address and tell us what to remove — for example your linked
+                    email, your push-notification subscription, or your display
+                    name — and we'll delete just that while keeping your account and
+                    the rest of your progress.</p>
+            </Section>
+
+            <Section title="What gets deleted">
+                <Bullet>Your account — the Firebase Auth record and its identifier.</Bullet>
+                <Bullet>Your display name and gameplay data: problems solved,
+                    accuracy, streaks, achievements, and mode preferences.</Bullet>
+                <Bullet>Any linked Google or email association.</Bullet>
+                <Bullet>Your push-notification subscription, if you enabled one.</Bullet>
+                <Bullet>Referral data tied to your account.</Bullet>
+                <Bullet>Your lifetime entitlement (purchased access).</Bullet>
+            </Section>
+
+            <Section title="What we keep, and for how long">
+                <Bullet><strong>Purchase and transaction records.</strong> If you
+                    ever bought lifetime access, we keep the transaction reference
+                    (never your card number — we never see it) for as long as
+                    Singapore tax and accounting law requires, up to five years. Our
+                    payment providers (Airwallex, and Google Play on Android) keep
+                    their own records under their policies.</Bullet>
+                <Bullet><strong>Error and performance logs.</strong> These carry no
+                    account identifier and are deleted automatically within 90 days.</Bullet>
+                <Bullet><strong>Aggregated, anonymised counts</strong> that can no
+                    longer be linked back to you may be retained.</Bullet>
+            </Section>
+
+            <Section title="Questions">
+                <p>Anything about this process: <Email />. This page is part of our{' '}
+                    <a href="/privacy" className="underline text-[var(--color-gold)]/70">
+                        Privacy Policy
+                    </a>.</p>
+            </Section>
         </>
     );
 }

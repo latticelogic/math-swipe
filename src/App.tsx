@@ -208,7 +208,7 @@ function App() {
   // Paywall footer and the Me-tab footer. Same pathname-router pattern as
   // profile + admin above.
   const [legalRoute, setLegalRoute] = useState<LegalDocId | null>(() => {
-    const m = window.location.pathname.match(/^\/(refund|privacy|terms|pricing)\/?$/);
+    const m = window.location.pathname.match(/^\/(refund|privacy|terms|pricing|delete-account)\/?$/);
     return m ? (m[1] as LegalDocId) : null;
   });
   const [challengeId, setChallengeId] = useState<string | null>(() =>

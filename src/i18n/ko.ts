@@ -140,6 +140,7 @@ export const ko: Record<MsgKey, string> = {
     'paywall.maybeLater': '나중에',
 
     'settings.title': '설정',
+    'settings.deleteAccount': '내 계정 및 데이터 삭제',
     'settings.gearAria': '설정 열기',
     'settings.done': '완료',
     'settings.language': '언어',

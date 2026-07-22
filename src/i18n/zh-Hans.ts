@@ -138,6 +138,7 @@ export const zhHans: Record<MsgKey, string> = {
     'paywall.maybeLater': '以后再说',
 
     'settings.title': '设置',
+    'settings.deleteAccount': '删除我的账号和数据',
     'settings.gearAria': '打开设置',
     'settings.done': '完成',
     'settings.language': '语言',
