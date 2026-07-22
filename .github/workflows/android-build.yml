@@ -135,23 +135,27 @@ jobs:
           # `expect` gives it a pseudo-TTY and answers each prompt precisely.
           sudo apt-get update -qq && sudo apt-get install -y -qq expect
           npm install -g @bubblewrap/cli
-          # `update` first: configures the toolchain, accepts the SDK terms, and
-          # syncs the project from twa-manifest.json (writes the manifest
-          # checksum). Answer "No" to the JDK install and hand it the runner's
-          # pre-installed JDK 17 — Bubblewrap's own ~180MB JDK mirror download
-          # proved flaky (two consecutive failures mid-download). Keep "yes" for
-          # its Android SDK (that download has been reliable, and its own SDK
-          # avoids the runner-SDK version/license drift). Retry the whole update
-          # up to 3 times to ride out residual network flakes.
+          # `update` first: lets Bubblewrap install and manage its own JDK +
+          # Android SDK (avoids runner-SDK version/license drift), accepts the
+          # SDK terms, and syncs the project from twa-manifest.json (writes the
+          # manifest checksum). Answer "yes" to every setup prompt. (An earlier
+          # "use your own JDK" variant hung: answering No opens a "Path to your
+          # existing JDK" prompt, and expect's exp_continue re-fired the prior
+          # match and typed stray answers into it → 45-min timeout. Yes-to-all
+          # is the known-good path that previously reached Gradle.) The whole
+          # update is retried up to 3x to ride out the one flaky SDK download.
+          # `expect_before` clears the accumulated buffer after each match so a
+          # prior prompt's text can't re-trigger its handler.
           run_update() {
             expect <<'EXP'
-          set timeout 900
+          set timeout 600
           spawn bubblewrap update
+          # Every setup prompt ends in "(Y/n)" or "(y/N)" and we want "yes" for
+          # all of them (install JDK, install SDK, accept terms). Match only the
+          # prompt suffix and answer y; expect advances past each match so a
+          # prompt can't re-fire. After setup, update proceeds with no prompts.
           expect {
-            -re "install the JDK"          { send -- "n\r"; exp_continue }
-            -re "(?i)path to.*jdk"         { send -- "$env(JAVA_HOME)\r"; exp_continue }
-            -re "install the Android SDK"  { send -- "y\r"; exp_continue }
-            -re "terms and conditions"     { send -- "y\r"; exp_continue }
+            -re {\(Y/n\)|\(y/N\)} { send -- "y\r"; exp_continue }
             timeout { puts "\n[expect] timed out waiting for a bubblewrap prompt"; exit 1 }
             eof
           }
