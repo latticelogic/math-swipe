@@ -56,9 +56,9 @@ export interface MathAchievementStats {
 
 const CORE_ACHIEVEMENTS: Achievement<MathAchievementStats>[] = [
     // ── First-week ladder ──
-    // Each rung is reachable by a casual player in their 14-day trial.
-    // Designed so a player who plays ~5 problems/day for ~10 days of the
-    // trial earns 5-7 of these, building visible momentum before the
+    // Each rung is reachable by a casual player in their 7-day trial.
+    // Designed so a player who plays a handful of problems most days of
+    // the trial earns 5+ of these, building visible momentum before the
     // paywall lands. See monetization_model.md for the habit-formation
     // rationale.
     {

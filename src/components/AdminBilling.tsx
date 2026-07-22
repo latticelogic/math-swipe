@@ -310,7 +310,7 @@ export function AdminBilling({ onBackToGame }: Props) {
                 </div>
                 <p className="text-[10px] ui text-[rgb(var(--color-fg))]/30 mb-8 leading-relaxed">
                     A new trial = a new <code>entitlements/</code> doc (one per anonymous device/install).
-                    Trial-farming (clear data → fresh 14 days) shows up as new-trial volume that runs ahead of
+                    Trial-farming (clear data → fresh 7 days) shows up as new-trial volume that runs ahead of
                     installs + conversions. Bounded by the most-recent-500 read, so accurate for recent days at
                     launch scale.
                 </p>

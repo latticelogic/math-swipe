@@ -1,13 +1,13 @@
 /**
  * TrialModals.tsx
  *
- * The three warm-toned touchpoints that make the 14-day demo feel
+ * The three warm-toned touchpoints that make the 7-day demo feel
  * announced rather than ambushed:
  *
  *   1. WelcomeModal           — shown once on Day 1 (first session per uid)
- *                                "Free for 14 days, then $3.14 lifetime"
- *   2. TrialReminderModal     — shown once each on Day 7, Day 10, and Day 13
- *                                "N days left. $3.14 keeps it forever."
+ *                                "Free for 7 days, then $3.14 lifetime"
+ *   2. TrialReminderModal     — shown once each on Day 4 and Day 6
+ *                                ("N days left" + a quiet unlock offer)
  *   3. TrialCountdownChip     — persistent subtle "N days left" pill,
  *                                lives in the Me tab (rendered there directly)
  *

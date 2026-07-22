@@ -9,8 +9,9 @@
  *
  * The model (from memory/monetization_model.md):
  *   - First session ever: trialStartedAt = serverTimestamp
- *   - Days 1-14 (i.e. daysIntoTrial < 14): full access
- *   - Day 15+ without purchase: paywall blocks everything
+ *   - Days 1-7 (i.e. daysIntoTrial < TRIAL_DAYS): full access to the core
+ *   - Day 8+ without purchase: paywall blocks the paid surfaces (the
+ *     Daily Challenge stays free — see shouldFirePaywall)
  *   - After purchase: paidAt set, hasAccess() returns true forever
  */
 
@@ -52,8 +53,9 @@ export function blankEntitlement(): Entitlement {
 }
 
 /** Days elapsed since trial start. Returns 0 if trial hasn't started yet.
- *  Floors to whole days so "day 1" is the first 24h, "day 14" is the last
- *  full day of free access, and `>= 14` means the paywall fires. */
+ *  Floors to whole days so "day 1" is the first 24h, day TRIAL_DAYS is the
+ *  last full day of free access, and `>= TRIAL_DAYS` means the paywall
+ *  fires. */
 export function daysIntoTrial(trialStartedAt: number, now: number = Date.now()): number {
     if (!trialStartedAt || trialStartedAt > now) return 0;
     return Math.floor((now - trialStartedAt) / 86_400_000);

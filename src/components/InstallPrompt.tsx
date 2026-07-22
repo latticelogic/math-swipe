@@ -20,7 +20,7 @@
  *
  * Why this exists (from the conversion-funnel perspective):
  *   - An installed PWA holds engagement materially better than a browser
- *     tab — kids don't bookmark, they remember icons. For a 14-day
+ *     tab — kids don't bookmark, they remember icons. For a 7-day
  *     trial, every day a user comes back is a chance to form a habit,
  *     and an icon on the home screen makes "come back" a single tap.
  *   - The single biggest install-flow gap is iOS, where there is no
