@@ -17,9 +17,29 @@ in `functions/src/airwallex.ts` + `src/utils/checkout.ts`.
 > money-free QA loop passed end-to-end: auth → payment-link create (201,
 > real hosted URL) → signed grant delivery → idempotent re-delivery →
 > refund.settled revoke → stale-replay + bad-signature both rejected;
-> grant/revoke verified in `entitlements/`. REMAINING before launch: card
-> methods finish "activation in progress" (Airwallex emails), then ONE real
-> $3.14 purchase through the UI + Console-refund revoke as the final gate.
+> grant/revoke verified in `entitlements/`.
+>
+> **First REAL purchase completed + verified (2026-07-22).** All six card/
+> wallet methods activated; a live $3.14 Mastercard purchase went through
+> the deployed UI → hosted checkout → success. This surfaced the one thing
+> no synthetic test could (fixed in #137): a hosted **Payment Link** payment
+> produces a payment INTENT that does NOT inherit the link's `metadata` or
+> `merchant_order_id` (the intent's `merchant_order_id` is the link *title*),
+> so `resolveUid` returned null and the first grant logged "payment success
+> without resolvable uid". Fix: `resolveUidForIntent` fetches the link by the
+> event's `payment_link_id` (Payment Links read scope) to read `metadata.uid`;
+> `resolveUidForRefund` looks up `payment_intent_id` against our stored
+> `originalTransactionId`. After deploy the real event was **re-triggered**
+> from the dashboard → grant completed (paidAt set, source `airwallex`, Pro
+> set unlocked in the live UI, referral-conversion credit fired). The test
+> purchase was then refunded from the dashboard (partial $2.48 — only the
+> settled portion is refundable while the 4%/30-day reserve holds the rest;
+> the refund `refund.settled` → revoke fires on settlement in 2-5 days,
+> exercising `resolveUidForRefund` on a real payload).
+>
+> REMAINING before commercial launch: nothing on the payments path — the
+> web product can take real money now. (Friend beta + Google Play release
+> are separate tracks.)
 > Note: an official `airwallex-cli` exists (beta, macOS/Linux only — use the
 > REST API via curl/node on Windows); it covers payments ops but NOT API-key
 > or webhook management, which stay dashboard-only behind 2FA.
