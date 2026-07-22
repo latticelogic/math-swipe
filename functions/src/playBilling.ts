@@ -75,7 +75,7 @@ interface ProductPurchase {
 // ── verifyPlayPurchase ────────────────────────────────────────────────────────
 
 export const verifyPlayPurchase = onCall(
-    { maxInstances: 10 }, // bound fan-out (see docs/billing-safety.md)
+    { maxInstances: 10 }, // bound fan-out (runaway-cost guard; see next-app-playbook.md §3)
     async (request) => {
         const uid = request.auth?.uid;
         if (!uid) {

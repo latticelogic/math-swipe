@@ -1,11 +1,16 @@
 # Google Play launch — runbook + strategy
 
-Status (2026-07-16): **code complete** (#74) — TWA packaging, CI `.aab` build,
-channel-aware Play Billing, refund revocation. What remains is Play Console
-clickwork (this doc, Part A) and the strategy calls for Teacher Approved /
-Play Pass (Part B). Play developer account: **enrolled as Lattice Logic
-(organization), fully verified** — the 20-tester personal-account gate does
-not apply to us.
+Status (2026-07-22): **signed `.aab` builds green** and much of the Console is
+done. Complete: app created (`app.mathchallenge.twa`, App-not-Game, Free w/
+IAP), verification service account invited (the Gen2 **compute** SA — see
+§A2.5), Google Payments merchant account + 15% service-fee tier, listing
+assets (`store-assets/` — feature graphic + copy + screenshots). Remaining:
+upload the `.aab` to the internal track, create the `pro_lifetime` product,
+grab the app-signing SHA-256 → wire `assetlinks.json`, content declarations +
+Data safety, RTDN console link-up, internal-track QA. Strategy (Teacher
+Approved / Play Pass) is Part B. The full CI build recipe (it took ~10
+iterations) is in `next-app-playbook.md` §4. Play dev account: enrolled as
+Lattice Logic (org), verified — the 20-tester personal gate doesn't apply.
 
 Architecture recap (three channels, one product):
 

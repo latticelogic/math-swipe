@@ -30,7 +30,7 @@ generic ("Sharp." > "AMAZING! 🎉").
 | Paywall + trial UX | 7-day demo → \$3.14 lifetime | `src/components/Paywall.tsx`, `src/components/TrialModals.tsx`, `src/hooks/useEntitlement.ts`, `src/utils/entitlement.ts` (incl. `shouldFirePaywall` rule) |
 | Airwallex checkout integration | callable + webhook | `functions/src/airwallex.ts` (Cloud Functions) + `src/utils/checkout.ts` (channel-aware client wrapper: Airwallex on web, Play Billing in the TWA) |
 | Legal pages | 4 LIVE | `src/components/LegalPages.tsx` — Privacy / Terms / Refund / Pricing (no draft banner since 2026-07-15; Pricing + `BusinessBlock` added 2026-07-21 for Airwallex website requirements); routed at `/privacy`, `/terms`, `/refund`, `/pricing`. Footer row shows Pricing · Privacy · Terms; Refund is linked from inside Terms (owner call, reaffirmed 2026-07-21). |
-| Billing safety runbook | CLI-first | `docs/billing-safety.md` (gcloud / firebase / stripe commands for budget alerts, quota caps, App Check) |
+| Next-app playbook | reference | `docs/next-app-playbook.md` — reusable lessons from v1 (payments, infra, Bubblewrap/TWA CI, Play) for the next app on the same accounts |
 | Paywall e2e regression | manual checklist | `docs/paywall-e2e.md` (MCP-driven visual e2e) + `src/tests/paywallTrigger.test.ts` (truth-table unit test) |
 | Teachers (companion characters) | 8 | `src/domains/math/teachers/*.tsx` — each has a documented voice persona |
 | Streak milestone tiers | 5 | `MilestoneBurst.tsx` at 3/5/10/25/50 — sparkle → flame → bolt → crown → trophy |
@@ -72,7 +72,7 @@ production should be owned by the company account, not Tim's personal.**
 | Firebase project (legacy / shared) | `scribble-math-prod` | DO NOT deploy to this. Hosts another company's classroom app with 80+ functions. A naive deploy would delete them all. |
 | GitHub | `latticelogic` org | Repo at `github.com/latticelogic/math-swipe`. Owner admin: `njytim-cyber` (renamed legacy account). Transferred 2026-05-11. |
 | Cloudflare Pages | `tim@latticelogic.app`, account id `00e07444cae65d675a140f8560429fad` | Project `math-swipe`, production URL `https://mathchallenge.app`. Production branch `master`. Env vars `FIREBASE_PROJECT_ID`, `PUBLIC_ORIGIN`, `NODE_VERSION` set on both production + preview configs. Custom domain `mathchallenge.app` attached (live). |
-| Airwallex | code wired, KYB pending | Payments are Airwallex-only (Stripe removed 2026-07-15). Cloud Functions in `functions/src/airwallex.ts` ready to deploy. Secrets needed: `AIRWALLEX_CLIENT_ID`, `AIRWALLEX_API_KEY`, `AIRWALLEX_WEBHOOK_SECRET`, `PUBLIC_ORIGIN` — set via `firebase functions:secrets:set`. Full runbook: `docs/airwallex.md`. |
+| Airwallex | **LIVE 2026-07-22** | Payments are Airwallex-only (Stripe removed 2026-07-15). KYB approved, all 6 methods active, real purchase+refund verified. Functions `functions/src/airwallex.ts` deployed; secrets `AIRWALLEX_CLIENT_ID/API_KEY/WEBHOOK_SECRET`, `PUBLIC_ORIGIN` set. Webhook events: `payment_intent.succeeded` + `refund.settled`. Config record: code comments in `airwallex.ts`; reusable playbook: `next-app-playbook.md` §2. |
 | Apple Developer | not yet enrolled | Must enroll as Lattice Logic with company DUNS, $99/yr. 1-3 week verification window. Deliberately LAST of the three channels. |
 | Google Play Console | **enrolled (org), verified** 2026-07-15 | Lattice Logic organization account — company + representative verified (org accounts skip the 20-tester gate). Package `app.mathchallenge.twa`. Code complete (#74): TWA via Bubblewrap, CI `.aab` build (`android-build.yml`), Play Billing (Digital Goods API) + `verifyPlayPurchase`/`playRtdn` functions. Remaining: Console clickwork per `docs/google-play-launch.md`. |
 
@@ -224,18 +224,19 @@ Billing (Google Play policy forbids external payment flows in-app; see
 is source-agnostic via `source: 'airwallex' | 'apple' | 'google' |
 'promo'` so the client gate logic doesn't change per channel.
 
-### Pre-launch checklist
+### Pre-launch checklist — DONE (2026-07-22)
 
-The CLI-first runbook at `docs/billing-safety.md` covers the 10 steps
-needed before any paid user touches the app: Firebase Blaze upgrade,
-budget alert at \$50/mo, quota caps via `gcloud alpha services quota
-update`, payment-provider verification + webhook registration, refund policy +
-support email, App Check, beta with 5-10 friends. Three steps are
-web-only (Blaze upgrade, card entry, KYC) — everything else is CLI.
+All 10 pre-launch billing-safety steps are resolved: Firebase Blaze,
+budget alert, quota caps (resolved as-possible — Google removed
+self-serve caps; `maxInstances` + budget + App Check are the real
+bounds), Airwallex verification + webhook, refund policy + support inbox,
+App Check registered (enforcement pending metrics), friend beta. The
+reusable version of this checklist + all the gotchas is in
+`docs/next-app-playbook.md` (§3 infra, §7 checklist).
 
-When Airwallex goes live, the go-live QA section of `docs/airwallex.md`
-walks the full purchase → grant → refund → revoke loop, sandbox first,
-then once with live keys as the real launch gate.
+Payments went live end-to-end: the purchase → grant → refund → revoke
+loop was verified money-free AND with a real $3.14 purchase. The reusable
+QA-loop steps live in `next-app-playbook.md` §2.
 
 ### Legal pages (LIVE since 2026-07-15)
 
@@ -364,13 +365,12 @@ What's **done in code** (no further blockers to launch from the codebase side):
 - **PWA install prompt** in Me tab + iOS end-of-first-session prompt inside SessionSummary (`InstallPrompt.tsx`)
 - **Admin billing dashboard** at /admin/billing (`AdminBilling.tsx`) — gated by `isAdmin` custom claim, surfaces trial/paid/expired counts + conversion % + refund rate
 - **Truth-table tests** for the paywall fire rule (`shouldFirePaywall`), plus a manual e2e runbook for visual regressions (`docs/paywall-e2e.md`)
-- **Payments go-live QA** — the sandbox→live loop in `docs/airwallex.md` (web) + the license-tester loop in `docs/google-play-launch.md` (Android)
+- **Payments LIVE** — Airwallex web (`airwallex.ts`) + Play Billing in the TWA (`playBilling.ts`); source-agnostic entitlement so buy-on-web unlocks Android on sign-in
 
-What's **blocking commercial launch** (operational, not code):
-- **Airwallex payments: DONE 2026-07-22.** All six methods activated; a real $3.14 purchase completed through the deployed UI → hosted checkout → grant (verified: paidAt set, Pro unlocked, referral credit fired) → dashboard refund. The one real-payload gap (Payment-Link intents don't carry our metadata) was found and fixed (#137, `resolveUidForIntent`/`resolveUidForRefund`). Full record: status block in `docs/airwallex.md`. The web product can take real money now. (4%/30-day rolling reserve applies to early settlements.)
-- **Pre-launch billing safety steps** — see status table at top of `docs/billing-safety.md`. Done: Blaze, budget alert, backup card, support inbox, App Check (enforcement pending metrics), quota caps (resolved as-possible — Google fixed-limits). Remaining: friend beta.
-- (RESOLVED 2026-07-15 — no longer blocking) legal copy is LIVE, COPPA stance = mixed-audience/PDPA-first, governing law = Singapore, custom domain `mathchallenge.app` is attached.
-- **Google Play release** — owner enrolled a verified org account 2026-07-15 (supersedes the old "defer until 60 days" rule for Play; Apple remains deferred/last). Code is done (#74); what's left is Play Console clickwork + internal-track QA — the full runbook with checkboxes is `docs/google-play-launch.md`.
+What's **left for a full multi-channel launch** (web is DONE and earning):
+- **Airwallex payments: DONE 2026-07-22.** KYB approved, all six methods active; a real $3.14 purchase → grant (verified: paidAt, Pro unlocked, referral credit) → dashboard refund. The Payment-Link-intent-has-no-metadata gap was found and fixed (#137, `resolveUidForIntent`/`resolveUidForRefund`). Merchant info saved (ASCII-only — em-dash was rejected). 4%/30-day rolling reserve on early settlements. The web product takes real money now.
+- **Pre-launch billing safety: all 10 steps DONE** (see "Pre-launch checklist" above; reusable version in `next-app-playbook.md` §7). Only App Check *enforcement* is a deliberate future flip (when metrics show ~100% verified traffic).
+- **Google Play: signed `.aab` builds green** (2026-07-22, after the Bubblewrap CI odyssey — recipe in `next-app-playbook.md` §4). App created, service account invited (Gen2 **compute** SA, not appspot), Google Payments merchant account + 15% fee tier done, listing assets ready (`store-assets/`). Remaining Console clickwork + internal-track QA: `docs/google-play-launch.md`.
 - App Store enrollment — defer per the hybrid-distribution rule (Apple is last).
 
 What's **deferred** (not blocking):

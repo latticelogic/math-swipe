@@ -73,7 +73,7 @@ function requestId(uid: string): string {
 export const createAirwallexPayment = onCall(
     {
         secrets: [AIRWALLEX_CLIENT_ID, AIRWALLEX_API_KEY, PUBLIC_ORIGIN],
-        maxInstances: 10, // bound fan-out (see docs/billing-safety.md)
+        maxInstances: 10, // bound fan-out (runaway-cost guard; see next-app-playbook.md §3)
     },
     async (request) => {
         const uid = request.auth?.uid;

@@ -89,8 +89,9 @@ export function getFirebase(): Promise<FirebaseBundle> {
             // leaderboard-integrity and write-spam gaps (rules alone can't stop
             // a determined script; App Check can). Env-gated: with no site key
             // set (local dev / preview before provisioning) it's a no-op, so
-            // nothing breaks. Enforcement is toggled per-service in the Firebase
-            // console — see docs/app-check.md.
+            // nothing breaks. Registered via reCAPTCHA Enterprise; enforcement
+            // is toggled per-service in the Firebase console once App Check
+            // metrics show ~100% verified traffic (see next-app-playbook.md §3).
             const appCheckSiteKey = (import.meta.env as Record<string, string | undefined>).VITE_APPCHECK_SITE_KEY;
             if (appCheckSiteKey) {
                 // Enterprise provider: the key is a project-based reCAPTCHA key
