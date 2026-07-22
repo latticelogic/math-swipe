@@ -7,13 +7,11 @@ their findings ship (the git history keeps them); what lives here is either a
 
 | Doc | Type | What it's for | Status |
 |---|---|---|---|
+| [next-app-playbook.md](next-app-playbook.md) | playbook | Every reusable lesson from shipping v1 — PWA architecture, the Airwallex payments sequence, GCP/Firebase infra, the full Bubblewrap/TWA CI recipe, Play Console, process — for the next app on the same company/accounts | Reference |
 | [release-sync.md](release-sync.md) | decision/runbook | How one deploy updates web + Google Play + (future) iOS simultaneously; what actually needs a store release; versioning + rollback + the do-not-break invariants | Live |
-| [google-play-launch.md](google-play-launch.md) | runbook | Everything left to ship on Google Play: CI `.aab` build flow, every Play Console step (product, service-account, RTDN, assetlinks, Data safety), rollout sequence, plus the Teacher Approved / Play Pass strategy | **Active — next up** |
-| [airwallex.md](airwallex.md) | runbook | Wiring the sole payment provider when KYB clears: secrets, deploy, webhook registration, `TODO(airwallex)` confirmations, sandbox→live go-live QA | Waiting on KYB (~days) |
-| [billing-safety.md](billing-safety.md) | runbook | Pre-launch billing safety: budget alerts, quota caps, App Check, support email, beta — CLI-first with a status table at top | Partially done (Blaze ✅) |
-| [app-check.md](app-check.md) | runbook | Turning on App Check: reCAPTCHA v3 key provisioning (console-only), env var, debug tokens, metrics-then-enforce ordering | Code wired; not enabled |
+| [google-play-launch.md](google-play-launch.md) | runbook | Google Play: the `.aab` build flow + Play Console steps (product, service-account, RTDN, assetlinks, Data safety), rollout sequence, and the Teacher Approved / Play Pass strategy | **Active — final Console steps** |
 | [difficulty-curves.md](difficulty-curves.md) | spec | What Easy/Medium/Hard means per topic — the contract `mathGenerator.ts` + its discrimination tests implement | Live spec |
-| [i18n.md](i18n.md) | decision/spec | Localization: which languages + wave plan, char budgets, edge cases (decimals, gcd/lcm names, fonts), how to add a locale | Live (en/es/pt-BR) |
+| [i18n.md](i18n.md) | decision/spec | Localization: which languages + wave plan, char budgets, edge cases (decimals, gcd/lcm names, fonts), how to add a locale | Live (12 locales) |
 | [paywall-e2e.md](paywall-e2e.md) | runbook | Manual visual e2e checklist for the 7-day trial/paywall UX (complements the `shouldFirePaywall` truth-table unit tests) | Run before releases |
 
 ## Sharing decisions (2026-07-16, owner calls after tester sessions)
@@ -39,3 +37,12 @@ Deleted (in git history if ever needed): `audit-2026-05-11.md` and
 `og-card-image.md` (superseded by the no-image sharing decision above),
 `legal-review-brief.md` (legal pages went live 2026-07-15; the optional
 counsel review is a business decision, not a doc to maintain).
+
+Deleted at v1 wrap-up (2026-07-22 — all three were completed pre-launch
+runbooks; their reusable lessons are consolidated into
+`next-app-playbook.md`, their live config lives in the code +
+`CLAUDE.md`): `billing-safety.md` (10-step checklist, all resolved),
+`airwallex.md` (payment wiring — done; the integration is live and
+documented in `functions/src/airwallex.ts`), `app-check.md` (App Check
+registered; enforcement flip when metrics show ~100% verified traffic is
+noted in CLAUDE.md).
