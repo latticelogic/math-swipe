@@ -123,35 +123,28 @@ jobs:
             node -e "const f='twa-manifest.json',m=require('./'+f);m.appVersionName='${{ github.event.inputs.versionName }}';require('fs').writeFileSync(f,JSON.stringify(m,null,2)+'\n')"
           fi
 
-      - name: Point Bubblewrap at the runner's JDK + Android SDK
-        if: steps.mode.outputs.mode == 'build'
-        run: |
-          # Recent runner images set ANDROID_SDK_ROOT but not always ANDROID_HOME,
-          # which made Bubblewrap receive an empty androidSdkPath ("isn't correct").
-          # Resolve with a fallback chain and verify before writing the config.
-          SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
-          if [ ! -d "$SDK/build-tools" ] || [ ! -d "$SDK/platform-tools" ]; then
-            echo "::error::Android SDK invalid at '$SDK' (ANDROID_HOME='$ANDROID_HOME' ANDROID_SDK_ROOT='$ANDROID_SDK_ROOT')"
-            ls -la "$SDK" 2>/dev/null || true
-            exit 1
-          fi
-          echo "Using Android SDK at: $SDK"
-          # Ensure the components Bubblewrap needs are present (idempotent).
-          yes | "$SDK"/cmdline-tools/latest/bin/sdkmanager --licenses >/dev/null 2>&1 || true
-          "$SDK"/cmdline-tools/latest/bin/sdkmanager \
-            "platform-tools" "build-tools;34.0.0" "platforms;android-34" >/dev/null 2>&1 || true
-          mkdir -p ~/.bubblewrap
-          cat > ~/.bubblewrap/config.json <<EOF
-          { "jdkPath": "$JAVA_HOME", "androidSdkPath": "$SDK" }
-          EOF
-
       - name: Build .aab + .apk with Bubblewrap
         if: steps.mode.outputs.mode == 'build'
         env:
           BUBBLEWRAP_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           BUBBLEWRAP_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
+          set -x
+          # Recent runner images set ANDROID_SDK_ROOT but not always ANDROID_HOME.
+          SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          echo "Resolved Android SDK: $SDK"; ls "$SDK" || true
+          SDKMGR="$SDK/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$SDKMGR" --licenses || true
+          "$SDKMGR" "platform-tools" "build-tools;34.0.0" "platforms;android-34" || true
+
           npm install -g @bubblewrap/cli
+          bubblewrap --version || true
+          # Write the config via the CLI so it matches the installed schema
+          # (hand-written config.json was rejected as "androidSdk isn't correct").
+          bubblewrap updateConfig --jdkPath="$JAVA_HOME" --androidSdkPath="$SDK" || true
+          echo "=== ~/.bubblewrap/config.json ==="; cat ~/.bubblewrap/config.json || true
+          echo "=== bubblewrap doctor ==="; bubblewrap doctor || true
+
           bubblewrap build --skipPwaValidation
 
       - name: Print assetlinks fingerprint block
