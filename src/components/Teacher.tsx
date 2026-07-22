@@ -186,6 +186,7 @@ export const Teacher = memo(function Teacher({
         <motion.div
             className={displayState === 'streak' ? 'on-fire' : ''}
             animate={displayState === 'idle' ? (gesture ?? ANIMS.idle) : ANIMS[displayState]}
+            role="img"
             aria-label={teacherName(teacher.id)}
         >
             <AnimatePresence mode="wait">
