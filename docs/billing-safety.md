@@ -29,12 +29,12 @@ to put a hard ceiling on what that can cost.
 | 2 | Budget alert at $50/mo on `math-swipe-prod` | ✅ | 2026-07-22 | Verified via `gcloud billing budgets list`: SGD 10/mo budget exists on the project with 50%/90%/100% threshold alerts (emails go to billing admins by default). Tighter than the planned $50 — kept deliberately; raise it when real revenue makes SGD 10 too noisy. |
 | 3 | Hard quota caps on Functions + Firestore | ✅ | 2026-07-22 | Resolved as-possible: Google **rejects** consumer overrides on Firestore read/write ops (`COMMON_QUOTA_CONSUMER_OVERRIDE_FOR_FIXED_LIMIT` — self-serve daily caps were removed platform-wide) and Cloud Functions exposes no invocations quota. The real bounds in place instead: every function sets `maxInstances` (1-10), budget alert (#2), App Check (#10). See section 3. |
 | 4 | Second payment method on Cloud Billing | ✅ | 2026-07-22 | Backup Mastercard (…4462) added behind the primary Visa (…4900) on the billing account — confirmed in the console by the owner. |
-| 5 | Stripe account verified (identity + bank) | ☐ | | **web only** |
-| 6 | Stripe Test mode flow exercised end-to-end | ☐ | | stripe CLI + firebase CLI |
+| 5 | Payment provider verified (identity + bank) | ✅ | 2026-07-22 | Airwallex KYB approved (Stripe removed). Six card/wallet methods activated. |
+| 6 | Payment flow exercised end-to-end | ✅ | 2026-07-22 | Money-free QA loop + one real $3.14 purchase → grant → dashboard refund, all verified. See `docs/airwallex.md`. |
 | 7 | Refund policy visible in app | ✅ | 2026-05-12 | `LegalFooterRow` renders Refund / Privacy / Terms in Paywall + Me tab footer (PR #44, #46) |
 | 8 | `support@latticelogic.app` support inbox tested | ✅ | 2026-07-22 | Inbound delivery confirmed (owner test from external Gmail). NOTE: the working address is **support@**, not the `help@` this doc originally assumed — app + docs updated to match. |
-| 9 | Beta with 5-10 friends on the trial UX | ☐ | | human |
-| 10 | App Check enabled on Firestore | ☐ | | firebase CLI |
+| 9 | Beta with 5-10 friends on the trial UX | ✅ | 2026-07-22 | Owner-confirmed complete. |
+| 10 | App Check enabled on Firestore | 🟡 | 2026-07-22 | Registered (reCAPTCHA Enterprise) + wired in client/CI; **enforcement** stays OFF until App Check metrics show ~100% verified traffic (flip per-service in console then). See `docs/app-check.md`. |
 
 ---
 
@@ -319,7 +319,7 @@ echo "Hello from CLI" | mail -s "Test" support@latticelogic.app
 Without this, the first refund request becomes a chargeback (cost: $15
 in dispute fees) instead of a friendly reply (cost: $0).
 
-## 9. Beta with 5-10 friends
+## 9. Beta with 5-10 friends — ✅ DONE 2026-07-22
 
 This is a human step — no CLI for "ask your friends to use the app".
 
