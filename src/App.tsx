@@ -150,6 +150,17 @@ function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Re-probe the purchase channel whenever the paywall opens. The boot check
+  // can run before Play Billing's Digital Goods service has connected — very
+  // likely right after launch, and for longer on a freshly-published app whose
+  // product hasn't propagated — and resolve to 'none'. Without this re-check
+  // that stale 'none' would hide the purchase path for the whole session even
+  // once billing is ready; re-probing on open lets it flip to 'play'.
+  useEffect(() => {
+    if (!paywallOpen) return;
+    getPurchaseChannel().then(setPurchaseChannel).catch(() => { /* keep prior value */ });
+  }, [paywallOpen]);
+
   // Airwallex checkout success redirect handler. Airwallex sends the user back
   // to /?paywall=ok&session_id=... after a successful payment; the webhook
   // has already written paidAt by then, but we still need to nudge the
@@ -1604,7 +1615,21 @@ function App() {
             busy={paywallBusy}
             mode={paywallMode}
             purchaseUnavailable={purchaseChannel === 'none'}
-            onClose={paywallMode === 'pro' ? () => setPaywallOpen(false) : undefined}
+            onClose={() => {
+              setPaywallOpen(false);
+              // Expired gate: instead of leaving the user on the now-locked
+              // non-daily surface (which just re-fires the gate) — or the old
+              // blank-page behavior — bank the run and drop them on the
+              // free-forever Daily. shouldFirePaywall exempts 'daily' and the
+              // game tab isn't the magic gate, so neither paywall effect
+              // re-fires. Pro mode just dismisses (the block-nothing case).
+              if (paywallMode === 'expired') {
+                bankCurrentRun();
+                resetSession();
+                setQuestionType('daily');
+                setActiveTab('game');
+              }
+            }}
             onUnlock={async () => {
               setPaywallBusy(true);
               try {

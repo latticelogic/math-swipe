@@ -48,14 +48,23 @@ type DGWindow = Window & {
     getDigitalGoodsService?: (method: string) => Promise<DigitalGoodsService>;
 };
 
-async function getPlayService(): Promise<DigitalGoodsService | null> {
+async function getPlayService(retries = 3): Promise<DigitalGoodsService | null> {
     const w = window as DGWindow;
     if (typeof w.getDigitalGoodsService !== 'function') return null;
-    try {
-        return await w.getDigitalGoodsService(PLAY_BILLING_METHOD);
-    } catch {
-        return null; // API exists but Play Billing isn't available in this context
+    for (let attempt = 0; attempt < retries; attempt++) {
+        try {
+            return await w.getDigitalGoodsService(PLAY_BILLING_METHOD);
+        } catch {
+            // The API is present but the Play Billing service isn't connected
+            // yet — this is transient right after launch (and lasts longer for a
+            // freshly-published app whose product hasn't propagated). Retry a
+            // few times before giving up on THIS call; the caller also re-probes
+            // when the paywall opens, so a slow connect doesn't strand the
+            // session at 'none'.
+            if (attempt < retries - 1) await new Promise(r => setTimeout(r, 400));
+        }
     }
+    return null;
 }
 
 /**
