@@ -306,6 +306,8 @@ export const zhHant: Record<MsgKey, string> = {
     'recap.dayStreak': '連續天數',
     'recap.cta': '開始吧!',
     'me.editNameAria': '編輯名字',
+    'me.lifetimeBadge': '永久使用權',
+    'me.signedInAs': '已登入為 {email}',
     'me.onDeviceSummary': '你的 {streak} 天連擊、{xp} XP 和 {achievements} 只存在這台裝置上。',
     'me.achievementCount.one': '{count} 個成就',
     'me.achievementCount.other': '{count} 個成就',

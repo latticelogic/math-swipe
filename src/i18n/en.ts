@@ -347,6 +347,8 @@ export const en = {
 
     // ── Me tab (chrome: sections, mastery, ranks, on-device summary) ──
     'me.editNameAria': 'Edit name',
+    'me.lifetimeBadge': 'Lifetime access',
+    'me.signedInAs': 'Signed in as {email}',
     'me.onDeviceSummary': 'Your {streak}-day streak, {xp} XP, and {achievements} live only on this device.',
     'me.achievementCount.one': '{count} achievement',
     'me.achievementCount.other': '{count} achievements',

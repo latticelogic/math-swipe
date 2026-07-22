@@ -308,6 +308,8 @@ export const ko: Record<MsgKey, string> = {
     'recap.dayStreak': '일 연속',
     'recap.cta': '시작해요!',
     'me.editNameAria': '이름 수정',
+    'me.lifetimeBadge': '평생 이용',
+    'me.signedInAs': '{email}(으)로 로그인됨',
     'me.onDeviceSummary': '{streak}일 연속, {xp} XP, {achievements}이 이 기기에만 있어요.',
     'me.achievementCount.one': '업적 {count}개',
     'me.achievementCount.other': '업적 {count}개',

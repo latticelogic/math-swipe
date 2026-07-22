@@ -36,6 +36,10 @@ interface Props {
     displayName: string;
     onDisplayNameChange: (name: string) => Promise<void>;
     isAnonymous: boolean;
+    /** The linked account's email — shown as a quiet "Signed in as …" line so
+     *  a signed-in user knows which account holds their progress + purchase.
+     *  null/absent for anonymous users (nothing renders). */
+    email?: string | null;
     onLinkGoogle: () => Promise<void>;
     onLinkApple?: () => Promise<void>;
     onSendEmailLink: (email: string) => Promise<void>;
@@ -110,7 +114,7 @@ function ModeAchievementGrid({ achievements, cols, unlocked }: {
     );
 }
 
-export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCostume, onCostumeChange, activeTheme, onThemeChange, activeTrailId, onTrailChange, displayName, onDisplayNameChange, isAnonymous, onLinkGoogle, onLinkApple, onSendEmailLink, authMessage, onClearAuthMessage, ageBand, activeTeacherId, onTeacherChange, uid, entitlementStatus, entitlementDaysLeft, onUnlock, hasPro = true, onRequestPro, themeMode, onToggleTheme, timedSecs, onTimedSecsChange, referralConversions = 0 }: Props) {
+export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCostume, onCostumeChange, activeTheme, onThemeChange, activeTrailId, onTrailChange, displayName, onDisplayNameChange, isAnonymous, email, onLinkGoogle, onLinkApple, onSendEmailLink, authMessage, onClearAuthMessage, ageBand, activeTeacherId, onTeacherChange, uid, entitlementStatus, entitlementDaysLeft, onUnlock, hasPro = true, onRequestPro, themeMode, onToggleTheme, timedSecs, onTimedSecsChange, referralConversions = 0 }: Props) {
     const [showRanks, setShowRanks] = useState(false);
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [editingName, setEditingName] = useState(false);
@@ -194,6 +198,31 @@ export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCo
                 )}
             </div>
 
+            {/* Account + ownership affirmations. A paid user gets a persistent
+                "Lifetime access" badge — the positive counterpart to the trial
+                chip (which renders nothing once paid), so the purchase they made
+                stays visible. A linked user sees which account holds their
+                progress + purchase, so they know how to restore it elsewhere.
+                Both are absent for an anonymous, unpaid player. */}
+            {(entitlementStatus === 'paid' || (!isAnonymous && email)) && (
+                <div className="flex flex-col items-center gap-1.5 mb-1">
+                    {entitlementStatus === 'paid' && (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[var(--color-gold)]/40 bg-[var(--color-gold)]/10 text-[11px] ui text-[var(--color-gold)]">
+                            {/* Checkmark — reads as "owned / confirmed", mirrors the
+                                small inline-icon treatment of the trial chip. */}
+                            <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                                <path d="M4 12 L 10 18 L 20 5" />
+                            </svg>
+                            <span>{t('me.lifetimeBadge')}</span>
+                        </span>
+                    )}
+                    {!isAnonymous && email && (
+                        <span className="block max-w-[16rem] truncate text-[11px] ui text-[rgb(var(--color-fg))]/40" title={email}>
+                            {t('me.signedInAs', { email })}
+                        </span>
+                    )}
+                </div>
+            )}
 
             {/* Trial countdown chip — only renders during the trial window.
                 Tappable to open the unlock flow directly. */}

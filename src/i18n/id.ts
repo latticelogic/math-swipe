@@ -307,6 +307,8 @@ export const id: Record<MsgKey, string> = {
     'recap.dayStreak': 'rentetan hari',
     'recap.cta': 'Ayo!',
     'me.editNameAria': 'Ubah nama',
+    'me.lifetimeBadge': 'Akses seumur hidup',
+    'me.signedInAs': 'Masuk sebagai {email}',
     'me.onDeviceSummary': 'Rentetan {streak} harimu, {xp} XP, dan {achievements} hanya ada di perangkat ini.',
     'me.achievementCount.one': '{count} pencapaian',
     'me.achievementCount.other': '{count} pencapaian',

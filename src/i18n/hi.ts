@@ -321,6 +321,8 @@ export const hi: Record<MsgKey, string> = {
     'recap.cta': 'चलो!',
 
     'me.editNameAria': 'नाम बदलें',
+    'me.lifetimeBadge': 'आजीवन एक्सेस',
+    'me.signedInAs': '{email} के रूप में साइन इन',
     'me.onDeviceSummary': 'आपकी {streak}-दिन स्ट्रीक, {xp} XP, और {achievements} सिर्फ़ इसी डिवाइस पर हैं।',
     'me.achievementCount.one': '{count} उपलब्धि',
     'me.achievementCount.other': '{count} उपलब्धियाँ',
