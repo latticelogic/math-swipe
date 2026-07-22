@@ -33,6 +33,7 @@ dist-ssr
 *.png
 !public/*.png
 !src/assets/**/*.png
+!store-assets/*.png
 
 # Cloud Functions build artifacts + nested deps
 functions/lib/
