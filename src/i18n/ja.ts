@@ -306,6 +306,8 @@ export const ja: Record<MsgKey, string> = {
     'recap.dayStreak': '連続日数',
     'recap.cta': 'いくよ!',
     'me.editNameAria': '名前を編集',
+    'me.lifetimeBadge': '永久アクセス',
+    'me.signedInAs': '{email} でログイン中',
     'me.onDeviceSummary': '{streak} 日連続、{xp} XP、{achievements} はこの端末だけに保存されています。',
     'me.achievementCount.one': '{count} 個の実績',
     'me.achievementCount.other': '{count} 個の実績',

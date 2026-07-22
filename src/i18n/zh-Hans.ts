@@ -306,6 +306,8 @@ export const zhHans: Record<MsgKey, string> = {
     'recap.dayStreak': '连续天数',
     'recap.cta': '开始吧!',
     'me.editNameAria': '编辑名字',
+    'me.lifetimeBadge': '永久访问',
+    'me.signedInAs': '已登录为 {email}',
     'me.onDeviceSummary': '你的 {streak} 天连击、{xp} XP 和 {achievements} 都只存在于这台设备上。',
     'me.achievementCount.one': '{count} 个成就',
     'me.achievementCount.other': '{count} 个成就',

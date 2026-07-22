@@ -306,6 +306,8 @@ export const de: Record<MsgKey, string> = {
     'recap.dayStreak': 'Tage-Serie',
     'recap.cta': "Los geht's!",
     'me.editNameAria': 'Name ändern',
+    'me.lifetimeBadge': 'Lebenslanger Zugang',
+    'me.signedInAs': 'Angemeldet als {email}',
     'me.onDeviceSummary': 'Deine {streak}-Tage-Serie, {xp} XP und {achievements} gibt es nur auf diesem Gerät.',
     'me.achievementCount.one': '{count} Erfolg',
     'me.achievementCount.other': '{count} Erfolge',

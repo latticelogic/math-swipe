@@ -305,6 +305,8 @@ export const ptBR: Record<MsgKey, string> = {
     'recap.dayStreak': 'dias seguidos',
     'recap.cta': 'Vamos!',
     'me.editNameAria': 'Editar nome',
+    'me.lifetimeBadge': 'Acesso vitalício',
+    'me.signedInAs': 'Conectado como {email}',
     'me.onDeviceSummary': 'Sua sequência de {streak} dias, {xp} XP e {achievements} vivem só neste aparelho.',
     'me.achievementCount.one': '{count} conquista',
     'me.achievementCount.other': '{count} conquistas',

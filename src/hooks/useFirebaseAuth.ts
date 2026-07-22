@@ -16,6 +16,10 @@ export interface FirebaseUser {
     uid: string;
     displayName: string;
     isAnonymous: boolean;
+    /** The linked account's email (Google/email-link/Apple). null when the
+     *  user is still anonymous or the provider withheld it (e.g. Apple's
+     *  hide-my-email). Powers the "Signed in as" affirmation on the Me tab. */
+    email: string | null;
 }
 
 // Stash for the anon account's ID token across a redirect-based sign-in (the
@@ -132,6 +136,7 @@ export function useFirebaseAuth() {
                         uid: fbUser.uid,
                         displayName: tempName,
                         isAnonymous: fbUser.isAnonymous,
+                        email: fbUser.email ?? null,
                     });
                     setLoading(false);
 
@@ -216,7 +221,7 @@ export function useFirebaseAuth() {
                     try {
                         // Happy path: link in place — same uid, progress preserved.
                         await linkWithCredential(currentUser, credential);
-                        setUser(prev => prev ? { ...prev, isAnonymous: false } : null);
+                        setUser(prev => prev ? { ...prev, isAnonymous: false, email } : null);
                         await setDoc(doc(db, 'users', currentUser.uid), { isAnonymous: false, updatedAt: serverTimestamp() }, { merge: true });
                         setAuthMessage('Signed in — progress saved.');
                     } catch (linkErr) {
@@ -308,7 +313,7 @@ export function useFirebaseAuth() {
                 const result = await linkWithPopup(currentUser, provider);
                 const displayName = result.user.displayName || user?.displayName || randomName();
                 localStorage.setItem('math-swipe-displayName', displayName);
-                setUser(prev => prev ? { ...prev, displayName, isAnonymous: false } : null);
+                setUser(prev => prev ? { ...prev, displayName, isAnonymous: false, email: result.user.email ?? prev.email } : null);
                 await setDoc(doc(db, 'users', currentUser.uid), { displayName, isAnonymous: false, updatedAt: serverTimestamp() }, { merge: true });
                 setAuthMessage('Signed in — progress saved.');
             } else {

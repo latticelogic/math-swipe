@@ -1362,6 +1362,7 @@ function App() {
               displayName={user?.displayName ?? ''}
               onDisplayNameChange={setDisplayName}
               isAnonymous={user?.isAnonymous ?? true}
+              email={user?.email ?? null}
               onLinkGoogle={linkGoogle}
               onLinkApple={linkApple}
               onSendEmailLink={sendEmailLink}
