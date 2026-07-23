@@ -67,6 +67,8 @@ import { FlameIcon, ShieldIcon, BoltIcon } from './components/icons';
 import { Paywall } from './components/Paywall';
 import { PurchaseCelebration } from './components/PurchaseCelebration';
 import { markFunnel, touchFunnelActive } from './utils/funnel';
+import { PushNudge } from './components/PushNudge';
+import { getPushStatus } from './utils/push';
 import { WelcomeModal, TrialReminderModal } from './components/TrialModals';
 import { LegalPage, type LegalDocId } from './components/LegalPages';
 import { TabSkeleton } from './components/TabSkeleton';
@@ -133,6 +135,8 @@ function App() {
   const [paywallBusy, setPaywallBusy] = useState(false);
   const [paywallOpen, setPaywallOpen] = useState(false);
   const [celebrateOpen, setCelebrateOpen] = useState(false);
+  const [pushNudgeOpen, setPushNudgeOpen] = useState(false);
+  const pushNudgePendingRef = useRef(false);
   // Web checkout returns the user to the app (via ?paywall=ok, or manually if
   // the hosted page didn't redirect). While we re-read the entitlement to catch
   // the webhook's grant, show a brief "Payment received — unlocking…" state so
@@ -699,6 +703,24 @@ function App() {
   useEffect(() => {
     if (uid && paywallOpen) markFunnel(uid, 'paywallView');
   }, [uid, paywallOpen]);
+
+  // ── Well-timed push nudge (PushNudge) ── Ask ONCE, after an engaged session,
+  // and only between sessions (never mid-play or on launch). Qualify when the
+  // summary appears; show after it's dismissed so nothing stacks.
+  useEffect(() => {
+    if (!showSummary || !uid) return;
+    try { if (localStorage.getItem('mc-push-nudged') === uid) return; } catch { return; }
+    if (stats.totalSolved < 10) return;   // only ask someone who's actually engaged
+    getPushStatus(uid).then(st => {
+      if (st.available && !st.granted && !st.prefs?.dailyEnabled) pushNudgePendingRef.current = true;
+    }).catch(() => { /* ignore */ });
+  }, [showSummary, uid, stats.totalSolved]);
+  useEffect(() => {
+    if (showSummary || paywallOpen || celebrateOpen || !pushNudgePendingRef.current || !uid) return;
+    pushNudgePendingRef.current = false;
+    try { localStorage.setItem('mc-push-nudged', uid); } catch { /* ignore */ }
+    setPushNudgeOpen(true);
+  }, [showSummary, paywallOpen, celebrateOpen, uid]);
 
   // Pro gate: paid unlocks the Pro set (advanced modes, full Magic Tricks, Pro
   // cosmetics) even during the trial. Tapping a locked Pro thing opens the
@@ -1765,6 +1787,13 @@ function App() {
         <AnimatePresence>
           {celebrateOpen && (
             <PurchaseCelebration onClose={() => setCelebrateOpen(false)} />
+          )}
+        </AnimatePresence>
+
+        {/* ── Push nudge ── Soft, well-timed daily-reminder prompt (once). */}
+        <AnimatePresence>
+          {pushNudgeOpen && uid && (
+            <PushNudge uid={uid} dayStreak={stats.dayStreak} onClose={() => setPushNudgeOpen(false)} />
           )}
         </AnimatePresence>
 

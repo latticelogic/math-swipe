@@ -366,6 +366,11 @@ export const hi: Record<MsgKey, string> = {
     'push.beatenLabel': 'कोई आपसे आगे निकला',
     'push.beatenSub': 'जब कोई लीडरबोर्ड पर आपसे आगे निकले',
 
+    'push.nudgeTitleStreak': "अपनी {days}-दिन की लकीर बनाए रखें?",
+    'push.nudgeTitleNew': "इसे रोज़ की आदत बनाएँ?",
+    'push.nudgeBody': "अगर आपने नहीं खेला तो दिन में एक हल्की याद, बस इतना ही। सेटिंग्स में कभी भी बंद कर सकते हैं।",
+    'push.nudgeYes': "रिमाइंडर चालू करें",
+    'push.nudgeNo': "अभी नहीं",
     'install.pill': 'ऐप इंस्टॉल करें',
     'install.hideAria': 'इंस्टॉल संकेत छिपाएँ',
     'install.notNow': 'अभी नहीं',
