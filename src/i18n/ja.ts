@@ -145,6 +145,7 @@ export const ja: Record<MsgKey, string> = {
     'celebrate.unlockModes': "ハード・タイム・アルティメットモード",
     'celebrate.unlockCosmetics': "プロのテーマと彗星のトレイル",
     'celebrate.cta': "つづける",
+    'celebrate.confirming': "お支払いを確認しました。すべてを解放しています…",
     'settings.title': '設定',
     'settings.deleteAccount': 'アカウントとデータを削除',
     'settings.gearAria': '設定を開く',

@@ -145,6 +145,7 @@ export const zhHant: Record<MsgKey, string> = {
     'celebrate.unlockModes': "困難、限時和終極模式",
     'celebrate.unlockCosmetics': "專業主題和彗星軌跡",
     'celebrate.cta': "繼續遊戲",
+    'celebrate.confirming': "已收到付款——正在解鎖全部…",
     'settings.title': '設定',
     'settings.deleteAccount': '刪除我的帳號和資料',
     'settings.gearAria': '開啟設定',

@@ -131,6 +131,11 @@ function App() {
   const [paywallBusy, setPaywallBusy] = useState(false);
   const [paywallOpen, setPaywallOpen] = useState(false);
   const [celebrateOpen, setCelebrateOpen] = useState(false);
+  // Web checkout returns the user to the app (via ?paywall=ok, or manually if
+  // the hosted page didn't redirect). While we re-read the entitlement to catch
+  // the webhook's grant, show a brief "Payment received — unlocking…" state so
+  // the return is a clear moment, not a confusing blank.
+  const [confirmingPayment, setConfirmingPayment] = useState(false);
   // 'expired' = post-trial hard gate; 'pro' = dismissible early upsell shown
   // when a locked Pro feature is tapped during the trial.
   const [paywallMode, setPaywallMode] = useState<'expired' | 'pro'>('expired');
@@ -174,14 +179,36 @@ function App() {
     if (paywallStatus !== 'ok' && paywallStatus !== 'cancelled') return;
     // Always clear the URL so subsequent reloads don't re-trigger this.
     window.history.replaceState({}, '', window.location.pathname);
-    if (paywallStatus === 'ok') {
-      // Best-effort refresh — if it fails the next render still picks up
-      // the new paidAt on its own. Don't block the UI on this.
+    if (paywallStatus !== 'ok') return;
+    // Payment succeeded on the hosted page. The webhook writes paidAt, but it
+    // can lag a beat — show "Payment received — unlocking…" and poll a few
+    // times so the celebration fires without a reload. The paid effect clears
+    // this state + fires the celebration.
+    setConfirmingPayment(true);
+    let tries = 0;
+    const timer = setInterval(() => {
+      tries += 1;
       entitlement.refresh().catch(() => { /* silent */ });
-    }
+      if (tries >= 8) { clearInterval(timer); setConfirmingPayment(false); }
+    }, 1500);
+    return () => clearInterval(timer);
   // Intentional: run once on mount (the URL is the source of truth)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Returning to the app from an external payment tab (e.g. the Airwallex
+  // hosted page didn't auto-redirect and the user came back manually) — re-read
+  // the entitlement so a completed payment lands the celebration instead of a
+  // stale paywall.
+  useEffect(() => {
+    if (entitlement.status === 'paid') return;
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') entitlement.refresh().catch(() => { /* silent */ });
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entitlement.status]);
 
   const [activeTab, setActiveTab] = useState<Tab>('game');
   const [isMagicLessonActive, setIsMagicLessonActive] = useState(false);
@@ -645,6 +672,7 @@ function App() {
   useEffect(() => {
     if (entitlement.status !== 'paid') return;
     if (paywallOpen) setPaywallOpen(false);
+    setConfirmingPayment(false);
     if (!uid) return;
     try {
       if (localStorage.getItem('mc-purchase-celebrated') !== uid) {
@@ -1673,6 +1701,31 @@ function App() {
               : undefined}
           />
         )}
+
+        {/* ── Payment confirming ── Bridge between "paid on the hosted page"
+            and "unlocked in the app": a calm, worded moment while we re-read
+            the entitlement, instead of the old confusing return-to-a-paywall. */}
+        <AnimatePresence>
+          {confirmingPayment && entitlement.status !== 'paid' && (
+            <motion.div
+              className="fixed inset-0 z-[55] flex flex-col items-center justify-center px-8 text-center bg-[rgb(var(--color-board))]/95"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              role="status" aria-live="polite"
+            >
+              <motion.div
+                className="text-[var(--color-gold)] mb-5"
+                animate={{ opacity: [0.4, 1, 0.4], scale: [0.96, 1, 0.96] }}
+                transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
+              >
+                <svg viewBox="0 0 100 100" width="64" height="64" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M50 12 L 57 43 L 88 50 L 57 57 L 50 88 L 43 57 L 12 50 L 43 43 Z" />
+                  <circle cx="50" cy="50" r="4.5" fill="currentColor" stroke="none" />
+                </svg>
+              </motion.div>
+              <p className="ui text-base text-[rgb(var(--color-fg))]/80">{t('celebrate.confirming')}</p>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* ── Purchase celebration ── Fires once when the lifetime unlock lands
             (any channel). Renders above the paywall (z-60); the person just

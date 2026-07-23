@@ -145,6 +145,7 @@ export const hi: Record<MsgKey, string> = {
     'celebrate.unlockModes': "हार्ड, टाइम्ड और अल्टिमेट मोड",
     'celebrate.unlockCosmetics': "प्रो थीम और कॉमेट ट्रेल",
     'celebrate.cta': "खेलते रहें",
+    'celebrate.confirming': "भुगतान मिल गया — सब कुछ अनलॉक हो रहा है…",
     'settings.title': 'सेटिंग्स',
     'settings.deleteAccount': 'मेरा खाता और डेटा हटाएँ',
     'settings.gearAria': 'सेटिंग्स खोलें',

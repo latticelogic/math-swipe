@@ -145,6 +145,7 @@ export const fr: Record<MsgKey, string> = {
     'celebrate.unlockModes': "Modes Difficile, Chrono et Ultime",
     'celebrate.unlockCosmetics': "Thèmes Pro et la traînée Comète",
     'celebrate.cta': "Continuer à jouer",
+    'celebrate.confirming': "Paiement reçu — déverrouillage en cours…",
     'settings.title': 'Réglages',
     'settings.deleteAccount': 'Supprimer mon compte et mes données',
     'settings.gearAria': 'Ouvrir les réglages',

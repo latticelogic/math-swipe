@@ -164,6 +164,7 @@ export const en = {
     'celebrate.unlockCosmetics': 'Pro themes and the Comet trail',
     'celebrate.cta': 'Keep playing',
 
+    'celebrate.confirming': "Payment received — unlocking everything…",
     // ── Settings sheet ──
     'settings.title': 'Settings',
     'settings.deleteAccount': 'Delete my account & data',

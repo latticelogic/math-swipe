@@ -145,6 +145,7 @@ export const de: Record<MsgKey, string> = {
     'celebrate.unlockModes': "Modi Schwer, Zeit und Ultimativ",
     'celebrate.unlockCosmetics': "Pro-Designs und die Kometen-Spur",
     'celebrate.cta': "Weiterspielen",
+    'celebrate.confirming': "Zahlung erhalten — alles wird freigeschaltet…",
     'settings.title': 'Einstellungen',
     'settings.deleteAccount': 'Konto und Daten löschen',
     'settings.gearAria': 'Einstellungen öffnen',

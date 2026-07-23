@@ -146,6 +146,7 @@ export const id: Record<MsgKey, string> = {
     'celebrate.unlockModes': "Mode Sulit, Waktu, dan Ultimate",
     'celebrate.unlockCosmetics': "Tema Pro dan jejak Komet",
     'celebrate.cta': "Terus bermain",
+    'celebrate.confirming': "Pembayaran diterima — membuka semuanya…",
     'settings.title': 'Pengaturan',
     'settings.deleteAccount': 'Hapus akun & data saya',
     'settings.gearAria': 'Buka pengaturan',
