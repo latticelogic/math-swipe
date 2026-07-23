@@ -370,6 +370,10 @@ non-trivial. The `expect` recipe above is proven; start there.
   your client's SKU constant exactly (`pro_lifetime`), one-time, price set.
   *Note:* "Google Merchant Center" is a **different** product (retail shopping
   listings) — you don't need it; the Payments **profile** is the right thing.
+  *FOREX gotcha:* you set only the **USD base**; Play auto-converts + rounds it
+  to a local price per country (a tester in another currency may see e.g. $3.99
+  for a $3.14 base). That converted price is expected, NOT a mispriced product
+  — don't "fix" it.
 - **Enroll in the 15% service-fee tier** — a notification in the bell menu; a
   short form that halves Google's cut on the first $1M. Do it.
 - **Service account for purchase verification**: invite the **Gen2 compute
