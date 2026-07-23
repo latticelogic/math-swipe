@@ -61,6 +61,14 @@ server-side). Consume with `useExperiment(id, uid)` and branch.
 ## Ideation backlog (unprioritised — pull into experiments/build as traffic informs)
 
 **Acquisition**
+- **Promotional Content / LiveOps** (Grow → Store presence) — free Play promo
+  surface for time-bound cards (Events / Offers / Major updates) that Google may
+  feature on the listing, Play home, Events tab + re-engagement notifs. Strong
+  fit: the **Daily Challenge** is naturally-fresh daily content + we already have
+  the `?daily=1` deep link; major-update cards map to launch/feature moments.
+  Likely unlocks only once the app is **published** (post-2007 review). Recurring
+  content-ops (needs a card image + copy per event; Google reviews each). Also a
+  retention lever (pulls lapsed users back). *Activate once live.*
 - Localized listings (staged) → measure per-market install-conversion lift.
 - Promo video; refreshed screenshots that show the *swipe* + streak moment.
 - ASO keyword pass on the full description (times tables, multiplication, mental
