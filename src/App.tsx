@@ -670,17 +670,14 @@ function App() {
     }
   }, [entitlement.status, questionType, totalAnswered, paywallOpen]);
 
-  // Post-trial gate for the Magic tricks tab. The answer-flow trigger above
-  // only guards the game; the tricks tab is premium content too (only the
-  // Daily Challenge stays free after the trial), so an expired user opening it
-  // gets the paywall. Closes the enforcement gap between "everything but daily
-  // is paid" and a gate that previously only fired on the game surface.
-  useEffect(() => {
-    if (entitlement.status === 'expired' && activeTab === 'magic' && !paywallOpen) {
-      setPaywallMode('expired');
-      setPaywallOpen(true);
-    }
-  }, [entitlement.status, activeTab, paywallOpen]);
+  // NB: the Magic tab is NOT walled on entry. Opening it always shows the
+  // tricks list — the free starter set (isFreeTrick) is playable by everyone
+  // (trial, expired, or paid, mirroring the always-free Daily), and the Pro
+  // tricks render locked. The paywall is value-anchored: it fires only when a
+  // user taps a *locked* Pro trick (TricksPage → onProLocked → requestPro), not
+  // on tab entry. A previous effect here hard-walled the whole tab for expired
+  // users, so they never saw a single trick — the opposite of the free-starter
+  // intent, and a paywall-before-value we explicitly avoid. Removed 2026-07-23.
 
   // Auto-close the paywall the instant the user has paid, and celebrate the
   // unlock ONCE. The webhook/verify has written paidAt by now; this fires on
