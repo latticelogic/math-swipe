@@ -4,16 +4,16 @@
          there's no white flash before the WebView loads. ComponentActivity
          works with a plain Material theme (no AppCompat dependency needed).
 
-         Bars are transparent + the window draws edge-to-edge: the web app is
-         built with viewport-fit=cover and env(safe-area-inset-*), so it lays
-         out its own content under the status/nav bars correctly. Solid bar
-         colours would double up with the web app's safe-area padding. -->
+         Solid chalkboard system bars (NOT edge-to-edge). The app background is a
+         uniform near-black, so a solid bar and a transparent one look identical
+         — but a solid bar lets Android inset the WebView content below the status
+         bar, which avoids the header/toast riding up into it (Android WebView
+         doesn't feed env(safe-area-inset-top) reliably). -->
     <style name="Theme.MathChallenge" parent="@android:style/Theme.Material.NoActionBar">
         <item name="android:windowBackground">@color/board</item>
-        <item name="android:statusBarColor">@android:color/transparent</item>
-        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:statusBarColor">@color/board</item>
+        <item name="android:navigationBarColor">@color/board</item>
         <item name="android:colorBackground">@color/board</item>
-        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
     </style>
 
     <!-- Launch (cold-start) theme. installSplashScreen() shows this, then swaps

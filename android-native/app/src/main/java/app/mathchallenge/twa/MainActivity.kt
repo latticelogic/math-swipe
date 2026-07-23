@@ -2,7 +2,6 @@ package app.mathchallenge.twa
 
 import android.annotation.SuppressLint
 import android.content.Intent
-import android.os.Build
 import android.os.Bundle
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
@@ -13,8 +12,6 @@ import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsControllerCompat
 import androidx.webkit.ServiceWorkerControllerCompat
 import androidx.webkit.WebViewFeature
 import com.google.firebase.messaging.FirebaseMessaging
@@ -57,20 +54,11 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         splashScreen.setKeepOnScreenCondition { !contentRendered }
 
-        // Draw edge-to-edge behind the transparent system bars. The web app is
-        // built with viewport-fit=cover + env(safe-area-inset-*), so it insets
-        // its own content correctly; solid native bars would double the padding.
-        WindowCompat.setDecorFitsSystemWindows(window, false)
-        WindowInsetsControllerCompat(window, window.decorView).apply {
-            // Dark chalkboard background → light (white) status/nav-bar icons.
-            isAppearanceLightStatusBars = false
-            isAppearanceLightNavigationBars = false
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            // Stop the system drawing its own scrim behind the transparent bars.
-            window.isStatusBarContrastEnforced = false
-            window.isNavigationBarContrastEnforced = false
-        }
+        // NOT edge-to-edge: the theme's solid chalkboard system bars let Android
+        // inset the WebView content below the status bar, so the app header /
+        // achievement toast never ride up into it. (Android WebView doesn't feed
+        // env(safe-area-inset-top) reliably, so drawing behind the bars caused
+        // collisions; the uniform dark bg means a solid bar looks identical.)
 
         webView = WebView(this)
         setContentView(webView)
