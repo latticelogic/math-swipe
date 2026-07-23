@@ -319,10 +319,16 @@ export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCo
                                             {t('me.apple')}
                                         </button>
                                     )}
+                                    {/* Email link is a web fallback. On native Android nearly every
+                                        device has a Google account and Credential Manager makes Google
+                                        one-tap, so the clunky email-link flow is needless clutter —
+                                        hide it there (owner call 2026-07-23). */}
+                                    {!isNativeAndroid() && (
                                     <button onClick={() => setShowEmailInput(true)} className={`${btn} border-[rgb(var(--color-fg))]/20 text-[rgb(var(--color-fg))]/85 hover:border-[rgb(var(--color-fg))]/35`}>
                                         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M3 7l9 6 9-6" /></svg>
                                         {t('me.email')}
                                     </button>
+                                    )}
                                 </div>
                             </>
                         )}

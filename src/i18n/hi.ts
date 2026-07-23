@@ -168,6 +168,8 @@ export const hi: Record<MsgKey, string> = {
     'me.checkEmail': 'अपना ईमेल देखें',
     'me.checkEmailHint': 'पूरा करने के लिए अभी भेजा गया मैजिक लिंक टैप करें।',
     'me.google': 'Google से जारी रखें',
+    'signin.saveTitle': 'अपनी प्रगति सहेजें?',
+    'signin.saveBody': 'किसी भी डिवाइस पर अपनी स्ट्रीक और आँकड़े रखने के लिए साइन इन करें — एक टैप, कोई पासवर्ड नहीं।',
     'me.apple': 'Apple से जारी रखें',
     'me.email': 'ईमेल से जारी रखें',
     'me.statStreak': 'स्ट्रीक',

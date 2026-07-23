@@ -70,6 +70,7 @@ import { markFunnel, touchFunnelActive } from './utils/funnel';
 import { PushNudge } from './components/PushNudge';
 import { getPushStatus } from './utils/push';
 import { WelcomeModal, TrialReminderModal } from './components/TrialModals';
+import { SignInPrompt } from './components/SignInPrompt';
 import { LegalPage, type LegalDocId } from './components/LegalPages';
 import { TabSkeleton } from './components/TabSkeleton';
 import { PersonalBestRibbon } from './components/PersonalBestRibbon';
@@ -1712,6 +1713,17 @@ function App() {
           inSession={activeTab === 'game' && totalAnswered > 0}
           displayName={user?.displayName ?? ''}
           onDisplayNameChange={setDisplayName}
+        />
+        {/* Native-Android-only early sign-in ask — one-tap Google there, so a
+            soft dismissible "save your progress" prompt is low-friction. No-op
+            on web/PWA (sign-in stays a quiet Me-tab option). Shows once, after
+            the welcome, never mid-session. See SignInPrompt.tsx. */}
+        <SignInPrompt
+          uid={uid}
+          isAnonymous={!!user?.isAnonymous}
+          entitlementLoading={entitlement.loading}
+          inSession={activeTab === 'game' && totalAnswered > 0}
+          onSignIn={linkGoogle}
         />
         <TrialReminderModal
           uid={uid}

@@ -168,6 +168,8 @@ export const zhHant: Record<MsgKey, string> = {
     'me.checkEmail': '查看你的信箱',
     'me.checkEmailHint': '點擊我們剛寄出的魔法連結完成登入。',
     'me.google': '使用 Google 繼續',
+    'signin.saveTitle': '儲存你的進度？',
+    'signin.saveBody': '登入後即可在任何裝置上保留連勝和統計——輕點一下，無需密碼。',
     'me.apple': '使用 Apple 繼續',
     'me.email': '使用電子郵件繼續',
     'me.statStreak': '連擊',

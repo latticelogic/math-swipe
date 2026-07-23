@@ -168,6 +168,8 @@ export const ja: Record<MsgKey, string> = {
     'me.checkEmail': 'メールを確認',
     'me.checkEmailHint': '今送ったマジックリンクをタップして完了。',
     'me.google': 'Google で続ける',
+    'signin.saveTitle': '進捗を保存しますか？',
+    'signin.saveBody': 'サインインすれば、どの端末でもストリークと統計を引き継げます。ワンタップ、パスワード不要。',
     'me.apple': 'Apple で続ける',
     'me.email': 'メールで続ける',
     'me.statStreak': '連続',

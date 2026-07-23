@@ -168,6 +168,8 @@ export const it: Record<MsgKey, string> = {
     'me.checkEmail': "Controlla l'e-mail",
     'me.checkEmailHint': 'Tocca il link magico appena inviato per finire.',
     'me.google': 'Continua con Google',
+    'signin.saveTitle': 'Salvare i tuoi progressi?',
+    'signin.saveBody': 'Accedi per conservare serie e statistiche su ogni dispositivo: un tocco, nessuna password.',
     'me.apple': 'Continua con Apple',
     'me.email': 'Continua con e-mail',
     'me.statStreak': 'serie',

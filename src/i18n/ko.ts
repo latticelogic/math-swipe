@@ -170,6 +170,8 @@ export const ko: Record<MsgKey, string> = {
     'me.checkEmail': '이메일을 확인하세요',
     'me.checkEmailHint': '방금 보낸 매직 링크를 눌러 완료하세요.',
     'me.google': 'Google로 계속',
+    'signin.saveTitle': '진행 상황을 저장할까요?',
+    'signin.saveBody': '로그인하면 어느 기기에서든 연속 기록과 통계를 유지할 수 있어요. 한 번의 탭, 비밀번호 없이.',
     'me.apple': 'Apple로 계속',
     'me.email': '이메일로 계속',
     'me.statStreak': '연속',
