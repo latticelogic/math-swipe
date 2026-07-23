@@ -29,6 +29,7 @@ import { PRICE_USD } from '../utils/entitlement';
 import { LegalFooterRow } from './LegalPages';
 import { getLastChannelDiagnostic, formatChannelDiagnostic } from '../utils/checkout';
 import { t, tCount } from '../i18n';
+import { useExperiment } from '../utils/experiments';
 
 /** USD product price everywhere in v1 — see docs/i18n.md on currency. */
 const PRICE_LABEL = `$${PRICE_USD.toFixed(2)}`;
@@ -83,10 +84,15 @@ interface PaywallProps {
     purchaseUnavailable?: boolean;
     /** Optional dev-only "reset trial" button — hidden in production. */
     onDevReset?: () => void;
+    /** For A/B assignment (paywall-cta experiment). */
+    uid?: string | null;
 }
 
-export function Paywall({ progress, onUnlock, busy, mode = 'expired', onClose, purchaseUnavailable, onDevReset }: PaywallProps) {
+export function Paywall({ progress, onUnlock, busy, mode = 'expired', onClose, purchaseUnavailable, onDevReset, uid = null }: PaywallProps) {
     const isPro = mode === 'pro';
+    // A/B: post-trial CTA wording. Control = the soft "Keep playing"; 'bold' =
+    // an explicit "Unlock the full game". Only affects the expired-gate CTA.
+    const ctaVariant = useExperiment('paywall-cta', uid);
     function maybeLater() {
         // Both modes hand control back to the app via onClose; the app decides
         // where to land (pro → just dismiss; expired → drop onto the free
@@ -288,7 +294,7 @@ export function Paywall({ progress, onUnlock, busy, mode = 'expired', onClose, p
                     disabled={busy}
                     className="w-full py-3.5 rounded-2xl bg-[var(--color-gold)] text-[var(--color-board)] text-base ui font-semibold hover:bg-[var(--color-gold)]/90 transition-colors active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                    {busy ? t('paywall.busy') : isPro ? t('paywall.proTitle') : t('paywall.ctaExpired')}
+                    {busy ? t('paywall.busy') : isPro ? t('paywall.proTitle') : (ctaVariant === 'bold' ? t('paywall.ctaExpiredBold') : t('paywall.ctaExpired'))}
                 </button>
 
                 {/* Sub-line clarifies what "keep playing" means without baking

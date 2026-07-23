@@ -48,9 +48,13 @@ export interface Experiment {
  */
 export const EXPERIMENTS: readonly Experiment[] = [
     {
+        // Post-trial paywall CTA wording. control = "Keep playing" (soft
+        // continuation); bold = "Unlock the full game" (explicit value). Wired
+        // in Paywall.tsx (expired-gate CTA only). Armed 2026-07-23 to learn from
+        // day-1 traffic; see docs/growth.md.
         id: 'paywall-cta',
         variants: [{ id: 'control', weight: 1 }, { id: 'bold', weight: 1 }],
-        active: false,
+        active: true,
     },
 ];
 

@@ -134,6 +134,7 @@ export const es: Record<MsgKey, string> = {
     'paywall.unavailable': 'Las compras no están disponibles en esta versión de la app. Si ya desbloqueaste Math Challenge, inicia sesión y tu compra te acompaña.',
     'paywall.busy': 'Un segundo…',
     'paywall.ctaExpired': 'Seguir jugando',
+    'paywall.ctaExpiredBold': 'Desbloquea el juego completo',
     'paywall.lifetime': 'Acceso de por vida · Sin suscripción',
     'paywall.maybeLater': 'Quizás luego',
 

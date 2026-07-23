@@ -134,6 +134,7 @@ export const hi: Record<MsgKey, string> = {
     'paywall.unavailable': 'इस संस्करण में खरीद उपलब्ध नहीं है। अगर आपने Math Challenge पहले अनलॉक किया है, तो साइन इन करें और अनलॉक आपके साथ आएगा।',
     'paywall.busy': 'बस एक पल…',
     'paywall.ctaExpired': 'खेलते रहें',
+    'paywall.ctaExpiredBold': 'पूरा गेम अनलॉक करें',
     'paywall.lifetime': 'आजीवन पहुँच · कोई सदस्यता नहीं',
     'paywall.maybeLater': 'शायद बाद में',
 

@@ -134,6 +134,7 @@ export const de: Record<MsgKey, string> = {
     'paywall.unavailable': 'Käufe sind in dieser Version nicht möglich. Wenn du Math Challenge schon freigeschaltet hast, melde dich an und dein Zugang kommt mit.',
     'paywall.busy': 'Einen Moment…',
     'paywall.ctaExpired': 'Weiterspielen',
+    'paywall.ctaExpiredBold': 'Das ganze Spiel freischalten',
     'paywall.lifetime': 'Lebenslanger Zugang · Kein Abo',
     'paywall.maybeLater': 'Später',
 
