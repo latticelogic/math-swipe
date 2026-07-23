@@ -42,7 +42,42 @@ boot-time `restorePlayPurchases()`.
    `math-challenge-android` artifact: `app-release-bundle.aab` (Play upload)
    + `app-release-signed.apk` (sideload testing).
 4. Version bumps for later releases: run with `versionCode` input
-   (must strictly increase; `versionName` free-form).
+   (must strictly increase; `versionName` free-form). Or bump
+   `appVersionCode`/`appVersionName` in `android/twa-manifest.json` and run
+   with no input.
+5. **targetSdk override is automatic** — the build force-patches the generated
+   `app/build.gradle` to `targetSdkVersion 36` (Bubblewrap hardcodes 35) and
+   fails the run if the patch doesn't take. See `next-app-playbook.md` §4.
+
+### A1b. CI auto-upload to the internal track (no manual Console upload)
+
+`android-build.yml` publishes the built `.aab` straight to the Play **internal**
+track when the `PLAY_SERVICE_ACCOUNT_JSON` secret is present (else it just
+stores the artifact and logs a notice). One-time setup:
+
+1. **Give the service account release rights.** In Play Console → *Users and
+   permissions*, the invited SA (`122552558583-compute@developer.gserviceaccount.com`)
+   currently has view/orders perms only — add **"Release to testing tracks"**
+   (app-scoped). Uploading needs it; the verification functions don't.
+2. **Export a JSON key** for that SA (there's no key today — the Cloud
+   Functions use ADC, not a file):
+   ```bash
+   gcloud iam service-accounts keys create play-ci-key.json \
+     --iam-account=122552558583-compute@developer.gserviceaccount.com
+   ```
+   (Or create a dedicated `play-publisher` SA to keep upload creds separate
+   from the runtime SA — cleaner, optional.)
+3. **Store it as a repo secret**, then delete the local file:
+   ```bash
+   gh secret set PLAY_SERVICE_ACCOUNT_JSON < play-ci-key.json && rm play-ci-key.json
+   ```
+4. **First upload is manual, once.** The Play Developer API rejects the very
+   first bundle for a package; `versionCode 1` was already uploaded via the
+   Console, so the API takes over from `versionCode 2`.
+
+After this, every `android-build` run lands on the internal track
+automatically. Promoting **internal → production stays a deliberate owner
+action** (never automated).
 
 ### A2. Play Console app setup (~1 hour of clickwork)
 

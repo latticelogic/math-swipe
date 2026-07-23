@@ -272,6 +272,40 @@ Key points:
 - Signing is non-interactive via the `BUBBLEWRAP_*_PASSWORD` env vars; don't
   prompt for it.
 
+### Play's annual compliance flags — targetSdk + Billing Library (the 2026 pair)
+Google raises two moving bars every year; both hit TWAs specifically because
+the app's real dependencies come from Bubblewrap + `androidbrowserhelper`, not
+from you. Both only reject **updates** after the deadline (they don't block the
+initial listing), and Google offers a short **extension** — but check them
+*before* you launch so your first update isn't dead-on-arrival.
+- **targetSdk** — Bubblewrap's app template **hardcodes `targetSdkVersion`**
+  (was 35 in v1.24.1) even when `compileSdkVersion` is newer. Play required 36
+  by Aug 31 2026. There's no committed `build.gradle`, so patch the *generated*
+  one in CI after `bubblewrap update`, before `bubblewrap build`:
+  `sed -i -E 's/targetSdkVersion[[:space:]]+[0-9]+/targetSdkVersion 36/' app/build.gradle`
+  then **grep-verify and `exit 1` if it didn't take** — a template bump must
+  not silently regress you. Install the matching `platforms;android-<N>` in the
+  SDK step.
+- **Play Billing Library** — this one you often **can't fix yourself**. Every
+  TWA's billing comes from `com.google.androidbrowserhelper:billing`, which
+  pins `com.android.billingclient:billing` in *its* version catalog. In Jul
+  2026 the latest release (2.7.2) + `main` still pinned **7.1.1** while Google
+  required **8.0.0** by Aug 31. Forcing `billing:8` yourself breaks their
+  7.x-era delegate (PBL 8 deleted APIs it calls). The only real fix is to wait
+  for Google to bump `android-browser-helper`, then rebuild. **Check the
+  upstream version catalog** (`gradle/libs.versions.toml`, key `billing`) to
+  know where you stand; take Google's extension if upstream is late.
+
+### Publish to Play from CI, not the Console
+After the **first** bundle is uploaded once via the Console (a one-time API
+limitation), automate every subsequent upload. Add a step after the build:
+`r0adkll/upload-google-play` (SHA-pinned), `track: internal`, `status:
+completed`, gated on a `PLAY_SERVICE_ACCOUNT_JSON` secret (service-account key
+with "Release to testing tracks"). Keep it to the **internal** track —
+internal→production stays a human decision. Gate the step on a job-level
+`env: PLAY_SA_PRESENT: ${{ secrets.X != '' }}` so the build still succeeds
+(artifact + notice) before the secret exists.
+
 ### The two SHA-256s you'll need for assetlinks
 - **Upload-key SHA-256**: printed in the bootstrap run summary (also
   `keytool -list -v -keystore …`).
