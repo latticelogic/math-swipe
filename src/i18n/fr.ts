@@ -134,6 +134,7 @@ export const fr: Record<MsgKey, string> = {
     'paywall.unavailable': "Les achats ne sont pas disponibles dans cette version. Si tu as déjà débloqué Math Challenge, connecte-toi et ton accès te suit.",
     'paywall.busy': 'Un instant…',
     'paywall.ctaExpired': 'Continuer',
+    'paywall.ctaExpiredBold': 'Débloquer tout le jeu',
     'paywall.lifetime': 'Accès à vie · Sans abonnement',
     'paywall.maybeLater': 'Plus tard',
 

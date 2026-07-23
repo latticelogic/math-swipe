@@ -135,6 +135,7 @@ export const id: Record<MsgKey, string> = {
     'paywall.unavailable': 'Pembelian tidak tersedia di versi ini. Jika sudah membuka Math Challenge, masuk dan aksesmu ikut.',
     'paywall.busy': 'Sebentar…',
     'paywall.ctaExpired': 'Terus main',
+    'paywall.ctaExpiredBold': 'Buka game lengkap',
     'paywall.lifetime': 'Akses seumur hidup · Tanpa langganan',
     'paywall.maybeLater': 'Nanti saja',
 

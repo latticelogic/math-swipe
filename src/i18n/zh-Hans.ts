@@ -134,6 +134,7 @@ export const zhHans: Record<MsgKey, string> = {
     'paywall.unavailable': '此版本应用无法购买。如果你已解锁 Math Challenge,登录后即可同步。',
     'paywall.busy': '稍等…',
     'paywall.ctaExpired': '继续游戏',
+    'paywall.ctaExpiredBold': '解锁完整游戏',
     'paywall.lifetime': '永久使用 · 无订阅',
     'paywall.maybeLater': '以后再说',
 

@@ -6,10 +6,9 @@ import { getVariant, stableId, EXPERIMENTS } from '../utils/experiments';
  * respect the active kill-switch, and split roughly by weight. These are the
  * invariants a real experiment's validity depends on.
  *
- * The registry ships with `paywall-cta` INACTIVE, so we test against a
- * synthetic active experiment by temporarily flipping a copy — assignment is a
- * pure function of the registry entry, so we exercise it via getVariant with
- * known ids and assert the guarantees that hold regardless of registry state.
+ * `paywall-cta` is ARMED (active:true) as of 2026-07-23. Assignment is a pure
+ * function of the registry entry, so tests that need a specific active state
+ * flip the entry around the assertion (mutable registry) and restore it.
  */
 
 describe('getVariant — determinism + kill switch', () => {
@@ -18,10 +17,17 @@ describe('getVariant — determinism + kill switch', () => {
     });
 
     it('returns control while the experiment is inactive (kill switch)', () => {
-        // paywall-cta ships active:false
-        const seen = new Set<string>();
-        for (let i = 0; i < 50; i++) seen.add(getVariant('paywall-cta', `user-${i}`));
-        expect([...seen]).toEqual(['control']);
+        // Temporarily disable paywall-cta to exercise the kill switch.
+        const exp = EXPERIMENTS.find(e => e.id === 'paywall-cta')!;
+        const original = exp.active;
+        (exp as { active: boolean }).active = false;
+        try {
+            const seen = new Set<string>();
+            for (let i = 0; i < 50; i++) seen.add(getVariant('paywall-cta', `user-${i}`));
+            expect([...seen]).toEqual(['control']);
+        } finally {
+            (exp as { active: boolean }).active = original;
+        }
     });
 
     it('is stable: the same uid always maps to the same variant', () => {

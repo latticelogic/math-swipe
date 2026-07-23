@@ -134,6 +134,7 @@ export const ja: Record<MsgKey, string> = {
     'paywall.unavailable': 'このバージョンでは購入できません。すでに Math Challenge を解除済みなら、サインインすれば引き継げます。',
     'paywall.busy': '少々お待ちを…',
     'paywall.ctaExpired': '続ける',
+    'paywall.ctaExpiredBold': 'ゲーム全体をアンロック',
     'paywall.lifetime': '永久アクセス · サブスクなし',
     'paywall.maybeLater': 'あとで',
 

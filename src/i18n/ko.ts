@@ -136,6 +136,7 @@ export const ko: Record<MsgKey, string> = {
     'paywall.unavailable': '이 버전에서는 구매할 수 없어요. 이미 Math Challenge를 잠금 해제했다면 로그인하면 함께 따라와요.',
     'paywall.busy': '잠시만요…',
     'paywall.ctaExpired': '계속하기',
+    'paywall.ctaExpiredBold': '전체 게임 잠금 해제',
     'paywall.lifetime': '평생 이용 · 구독 없음',
     'paywall.maybeLater': '나중에',
 

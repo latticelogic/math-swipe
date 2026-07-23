@@ -1747,6 +1747,7 @@ function App() {
             }}
             busy={paywallBusy}
             mode={paywallMode}
+            uid={uid}
             purchaseUnavailable={purchaseChannel === 'none'}
             onClose={() => {
               setPaywallOpen(false);

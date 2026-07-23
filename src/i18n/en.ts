@@ -153,6 +153,7 @@ export const en = {
     'paywall.unavailable': "Purchases aren't available in this version of the app. If you've already unlocked Math Challenge, sign in and your unlock comes with you.",
     'paywall.busy': 'Just a sec…',
     'paywall.ctaExpired': 'Keep playing',
+    'paywall.ctaExpiredBold': 'Unlock the full game',
     'paywall.lifetime': 'Lifetime access · No subscription',
     'paywall.maybeLater': 'Maybe later',
 
