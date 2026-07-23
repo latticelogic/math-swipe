@@ -39,6 +39,11 @@ jobs:
   android:
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    # Presence flag for the Play publishing service account, computed without
+    # exposing the secret. The upload step gates on this so the workflow still
+    # builds (and uploads the artifact) when the secret isn't configured yet.
+    env:
+      PLAY_SA_PRESENT: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON != '' }}
     defaults:
       run:
         working-directory: android
@@ -188,6 +193,19 @@ jobs:
               "platform-tools" "build-tools;35.0.0" "platforms;android-36" >/dev/null 2>&1 || true
           fi
 
+          # Google Play requires targetSdk 36 (Android 16) for app updates from
+          # Aug 31 2026. Bubblewrap v1.24.1's app template still hardcodes
+          # `targetSdkVersion 35` (compileSdkVersion is already 36, and we
+          # installed platforms;android-36 above), so force 36 in the freshly
+          # generated project. Fail loudly if the value we expected to replace
+          # isn't there — a future Bubblewrap template bump that changes this
+          # line must not silently ship a non-compliant target.
+          test -f app/build.gradle || { echo "app/build.gradle missing after bubblewrap update"; exit 1; }
+          sed -i -E 's/targetSdkVersion[[:space:]]+[0-9]+/targetSdkVersion 36/' app/build.gradle
+          grep -qE 'targetSdkVersion[[:space:]]+36' app/build.gradle \
+            || { echo "ERROR: targetSdkVersion 36 not set in app/build.gradle"; grep -n 'targetSdk' app/build.gradle || true; exit 1; }
+          echo "targetSdkVersion forced to 36 (Play Aug-31-2026 requirement) ✓"
+
           # Toolchain + checksum now present, so `build` has no prompts. EOF
           # guards against any surprise prompt hanging the runner.
           bubblewrap build --skipPwaValidation < /dev/null
@@ -223,3 +241,26 @@ jobs:
             android/app-release-bundle.aab
             android/app-release-signed.apk
           retention-days: 14
+
+      # Publish straight to the Play *internal* track via the Google Play
+      # Developer API — no manual Console upload. Deliberately internal, never
+      # production: promoting internal -> production stays an owner decision.
+      # Requires repo secret PLAY_SERVICE_ACCOUNT_JSON (a service-account key
+      # with "Release to testing tracks" in Play Console). The very first
+      # bundle for a package must be uploaded once via the Console before the
+      # API will accept uploads; versionCode 1 already satisfies that.
+      # Action pinned to a full SHA (v1.1.5) for supply-chain safety.
+      - name: Publish .aab to Play (internal track)
+        if: steps.mode.outputs.mode == 'build' && env.PLAY_SA_PRESENT == 'true'
+        uses: r0adkll/upload-google-play@e738b9dd8f2476ea806d921b64aacd24f34515a5 # v1.1.5
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: app.mathchallenge.twa
+          releaseFiles: android/app-release-bundle.aab
+          track: internal
+          status: completed
+
+      - name: Note when Play upload is skipped
+        if: steps.mode.outputs.mode == 'build' && env.PLAY_SA_PRESENT != 'true'
+        run: |
+          echo "::notice::PLAY_SERVICE_ACCOUNT_JSON not set — .aab built and stored as an artifact but NOT auto-uploaded to Play. Add the secret (see docs/google-play-launch.md) to enable CI upload to the internal track."

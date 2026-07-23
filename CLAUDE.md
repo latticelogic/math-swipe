@@ -257,8 +257,17 @@ business call, not a code blocker.
   history, scriptable, and AI assistants can execute it directly. Use
   `gh`, `wrangler`, `firebase`, `flarectl`, etc. If a step truly
   requires a browser (OAuth consent, granting a GitHub App access to an
-  org, accepting an invite as a different account), call that out
-  explicitly — don't silently route around it.
+  org, accepting an invite as a different account, Apple/Play identity
+  verification), call that out explicitly — don't silently route around it.
+- **Play `.aab` uploads are CLI/CI-driven, NOT manual Console upload**
+  (owner call 2026-07-23). `android-build.yml` builds the bundle and then
+  publishes it straight to the Play **internal** track via the Google Play
+  Developer API (`r0adkll/upload-google-play`, SHA-pinned), gated on repo
+  secret `PLAY_SERVICE_ACCOUNT_JSON` (a service-account key with "Release to
+  testing tracks"). Promoting internal → production stays a deliberate owner
+  action. Never hand-upload a bundle when CI can; if the secret is absent the
+  build still stores the `.aab` artifact and logs a notice. Same principle as
+  the Cloudflare deploy: ship through CI, not a dashboard.
 - Don't push directly to `master`; open a PR from a short-lived feature/fix/chore branch targeting `master` (no long-lived `dev` integration branch — see README)
 - Run `npm run verify` before pushing — covers lint + tsc + tests + build + worker
 - `.env*` is gitignored (with `!.env.example` allowed through). `.env.example`
@@ -371,6 +380,7 @@ What's **left for a full multi-channel launch** (web is DONE and earning):
 - **Airwallex payments: DONE 2026-07-22.** KYB approved, all six methods active; a real $3.14 purchase → grant (verified: paidAt, Pro unlocked, referral credit) → dashboard refund. The Payment-Link-intent-has-no-metadata gap was found and fixed (#137, `resolveUidForIntent`/`resolveUidForRefund`). Merchant info saved (ASCII-only — em-dash was rejected). 4%/30-day rolling reserve on early settlements. The web product takes real money now.
 - **Pre-launch billing safety: all 10 steps DONE** (see "Pre-launch checklist" above; reusable version in `next-app-playbook.md` §7). Only App Check *enforcement* is a deliberate future flip (when metrics show ~100% verified traffic).
 - **Google Play: signed `.aab` builds green** (2026-07-22, after the Bubblewrap CI odyssey — recipe in `next-app-playbook.md` §4). App created, service account invited (Gen2 **compute** SA, not appspot), Google Payments merchant account + 15% fee tier done, listing assets ready (`store-assets/`). Remaining Console clickwork + internal-track QA: `docs/google-play-launch.md`.
+- **Play Aug-31-2026 compliance (found 2026-07-23):** two "action required" flags. (1) **targetSdk 36** — Bubblewrap templates hardcode `targetSdkVersion 35`; `android-build.yml` now force-patches the generated `app/build.gradle` to 36 with a fail-loud guard (compileSdk was already 36). (2) **Play Billing Library 8** — BLOCKED upstream: every TWA gets Play Billing via `com.google.androidbrowserhelper:billing`, whose latest release (2.7.2) + `main` still pin `com.android.billingclient:billing 7.1.1`. No fix ships until Google bumps their library; forcing 8 breaks their 7.x-era delegate. Neither flag blocks the *initial* listing (they only reject *updates* after Aug 31); Google offers an extension to **Nov 1**. Plan: monitor `android-browser-helper` for the PBL-8 bump → rebuild; take the extension if it's late. See `next-app-playbook.md` §4.
 - App Store enrollment — defer per the hybrid-distribution rule (Apple is last).
 
 What's **deferred** (not blocking):
