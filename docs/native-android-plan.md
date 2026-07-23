@@ -89,6 +89,34 @@ move native. If we want to stage: launch native without push, add the FCM
 bridge as a fast-follow (push is opt-in, not core) — but that's a regression
 for Android users, so prefer shipping it together.
 
+### 5. Auth — native Google Sign-In bridge (WebView blocks web OAuth)
+Confirmed in device QA: **Google blocks OAuth sign-in inside embedded WebViews**
+(anti-phishing) — Firebase's web Google-sign-in dead-ends on a white screen,
+and the account picker shows the raw `math-swipe-prod.firebaseapp.com` authDomain.
+This does NOT block the core loop (the tester played *and purchased* as an
+anonymous user); sign-in is only for cross-device backup.
+- **Interim (shipped):** the "Continue with Google" button is hidden in the
+  native shell when `window.AndroidAuth` is absent, so nobody hits the white
+  screen (MePage). The web app + TWA are unaffected.
+- **Fix:** an `AuthBridge` exposed as `window.AndroidAuth` (same pattern as
+  billing/FCM). `signInWithGoogle()` runs the **native** Google flow via
+  **Credential Manager** (`androidx.credentials` + `com.google.android.libraries.identity.googleid`),
+  gets a Google **ID token**, and calls back into JS (`window.__mcOnGoogleToken`
+  / `__mcOnGoogleError`). The web side then does Firebase
+  `signInWithCredential(GoogleAuthProvider.credential(idToken))`. Native picker =
+  correct branding, no WebView OAuth.
+- **One owner input needed:** the project's **Web OAuth client ID** (the
+  "Web client (auto created by Google Service)" from Firebase Console → Project
+  settings, or GCP → APIs & Services → Credentials) for
+  `GetGoogleIdOption.setServerClientId(...)`. Store as a repo variable /
+  BuildConfig (like the WIF vars). Without it the native Google flow can't be
+  built.
+- **Branding polish:** a **custom auth domain** (`auth.mathchallenge.app`) fixes
+  the `firebaseapp.com` label on any remaining web auth surface.
+- **Email-link** sign-in also needs care in a WebView (the magic link opens the
+  external browser, not the shell); handle via app-link deep-back or route it
+  through the same native path. Verify during the Auth-bridge build.
+
 ## Build / CI
 - New Gradle project at `android-native/` (kept separate from `android/` so the
   working TWA keeps building until native is proven — don't break what works).
