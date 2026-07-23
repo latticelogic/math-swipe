@@ -34,6 +34,7 @@ dist-ssr
 !public/*.png
 !src/assets/**/*.png
 !store-assets/*.png
+!android-native/**/*.png
 
 # Cloud Functions build artifacts + nested deps
 functions/lib/
