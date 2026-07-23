@@ -92,7 +92,21 @@ server-side). Consume with `useExperiment(id, uid)` and branch.
 - Pro-lock upsell framing ("unlock everything" vs benefit-led/social-proof).
 - Paywall headline / value-anchor variants (lead with the player's own numbers).
 
+## Monitoring (passive telemetry — LIVE)
+
+- **`growthDigest`** (functions/index.ts, deployed) — scheduled **Mondays 09:00
+  UTC**. Aggregates entitlements + funnel + the live `paywall-cta` A/B, stores
+  weekly snapshots in `opsDigests/` for week-over-week deltas + anomaly flags
+  (conversion drop, install surge, paid-count drop), and **pushes a one-glance
+  summary to admins → /admin/funnel**. Flip cron to daily once traffic ramps.
+- Complements: `errorSpike` (error alert), uptime probe + smoke check, Play
+  Console health emails (crash/ANR/policy), Firebase budget alert.
+- On-demand dashboards: `/admin/funnel`, `/admin/billing`, `/admin/errors`,
+  `/admin/push`. **To receive the digest push**, sign in as an admin (`isAdmin`
+  claim) with PWA notifications on — it logs + stores regardless.
+
 ## Log
 
 - **2026-07-23** — Doc created. App submitted to production review (build 2007, all
-  177 markets). Growth framing + order set; `paywall-cta` chosen as the first A/B.
+  177 markets). Growth framing + order set; `paywall-cta` A/B armed (#196);
+  LiveOps calendar drafted (#198); `growthDigest` weekly monitoring deployed (#199).
