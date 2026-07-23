@@ -20,12 +20,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install XcodeGen
-        run: brew install xcodegen
+      # The runner image preinstalls XcodeGen, but new XcodeGen emits the
+      # Xcode-16 project format (objectVersion 7x) which the image's DEFAULT
+      # Xcode 15 cannot read ("Unable to read project") — select the newest
+      # installed Xcode before generating/building.
+      - name: Select latest Xcode
+        run: |
+          LATEST=$(ls -d /Applications/Xcode*.app | sort -V | tail -1)
+          echo "Selecting $LATEST"
+          sudo xcode-select -s "$LATEST"
+          xcodebuild -version
+
+      - name: Install XcodeGen (if missing)
+        run: which xcodegen || brew install xcodegen || true
 
       - name: Generate Xcode project
         working-directory: ios-native
-        run: xcodegen generate
+        run: |
+          xcodegen --version
+          xcodegen generate
+          head -8 MathChallenge.xcodeproj/project.pbxproj || true
 
       - name: Resolve SPM packages + build (no signing)
         working-directory: ios-native
