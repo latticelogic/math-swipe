@@ -44,6 +44,30 @@ async function runAccountReconcile(fromIdToken: string): Promise<void> {
     }
 }
 
+// ── Native Android auth bridge (window.AndroidAuth) ─────────────────────────
+// The native WebView shell exposes a native Google Sign-In (Credential Manager)
+// because Google blocks OAuth inside embedded WebViews. AuthBridge.signInWith
+// Google() fires and reports the Google ID token back via these globals.
+interface NativeAuthWindow {
+    AndroidAuth?: { signInWithGoogle?: () => void };
+    __mcOnGoogleToken?: (idToken: string) => void;
+    __mcOnGoogleError?: (message: string) => void;
+}
+function nativeGoogleAuth(): (() => void) | null {
+    const b = (window as NativeAuthWindow).AndroidAuth;
+    return b && typeof b.signInWithGoogle === 'function' ? () => b.signInWithGoogle!() : null;
+}
+/** Fire the native Google flow and await its ID token (one call at a time). */
+function awaitNativeGoogleToken(trigger: () => void): Promise<string> {
+    return new Promise<string>((resolve, reject) => {
+        const w = window as NativeAuthWindow;
+        const cleanup = () => { delete w.__mcOnGoogleToken; delete w.__mcOnGoogleError; };
+        w.__mcOnGoogleToken = (t) => { cleanup(); if (t) resolve(t); else reject(new Error('No ID token')); };
+        w.__mcOnGoogleError = (m) => { cleanup(); reject(new Error(m || 'Sign-in cancelled')); };
+        try { trigger(); } catch (e) { cleanup(); reject(e instanceof Error ? e : new Error(String(e))); }
+    });
+}
+
 /** Firebase codes meaning "this credential already belongs to another account"
  *  — the trigger to switch into that account and merge the anon one across. */
 function isCredentialInUse(code?: string): boolean {
@@ -262,7 +286,7 @@ export function useFirebaseAuth() {
         const sanitized = name
             .normalize('NFC')                          // Collapse Unicode homoglyph variations
             // eslint-disable-next-line no-control-regex
-            .replace(/[ -]/g, '')     // Strip control chars
+            .replace(/[-]/g, '')     // Strip control chars
             .replace(/<[^>]*>/g, '')                   // Strip any HTML-ish tags
             .replace(/[^\w\s\-_.!]/g, '')              // ASCII-friendly allow-list
             .replace(/\s+/g, ' ')                      // Collapse internal whitespace
@@ -288,9 +312,50 @@ export function useFirebaseAuth() {
         const [{ auth, db }, fbAuth, { doc, setDoc, serverTimestamp }] = await Promise.all([
             getFirebase(), import('firebase/auth'), import('firebase/firestore'),
         ]);
-        const { GoogleAuthProvider, OAuthProvider, signInWithPopup, linkWithPopup, signInWithRedirect, linkWithRedirect } = fbAuth;
+        const { GoogleAuthProvider, OAuthProvider, signInWithPopup, linkWithPopup, signInWithRedirect, linkWithRedirect, linkWithCredential, signInWithCredential } = fbAuth;
         const currentUser = auth.currentUser;
         if (!currentUser) return;
+
+        // ── Native Android: Google via Credential Manager (no WebView OAuth) ──
+        const fireNativeGoogle = kind === 'google' ? nativeGoogleAuth() : null;
+        if (fireNativeGoogle) {
+            const wasAnonN = currentUser.isAnonymous;
+            const anonTokenN = wasAnonN ? await currentUser.getIdToken().catch(() => '') : '';
+            try {
+                const idToken = await awaitNativeGoogleToken(fireNativeGoogle);
+                const credential = GoogleAuthProvider.credential(idToken);
+                if (wasAnonN) {
+                    try {
+                        // Link in place — same uid, progress preserved.
+                        const result = await linkWithCredential(currentUser, credential);
+                        const displayName = result.user.displayName || user?.displayName || randomName();
+                        localStorage.setItem('math-swipe-displayName', displayName);
+                        setUser(prev => prev ? { ...prev, displayName, isAnonymous: false, email: result.user.email ?? prev.email } : null);
+                        await setDoc(doc(db, 'users', currentUser.uid), { displayName, isAnonymous: false, updatedAt: serverTimestamp() }, { merge: true });
+                        setAuthMessage('Signed in — progress saved.');
+                    } catch (linkErr) {
+                        if (isCredentialInUse((linkErr as { code?: string }).code)) {
+                            // Google account already on another uid — switch to it,
+                            // merge the anonymous progress across (proven by token).
+                            const res = await signInWithCredential(auth, credential);
+                            if (anonTokenN) await runAccountReconcile(anonTokenN);
+                            setUser(prev => prev ? { ...prev, isAnonymous: false, email: res.user.email ?? prev.email } : null);
+                            setAuthMessage('Welcome back — your progress was merged.');
+                        } else {
+                            throw linkErr;
+                        }
+                    }
+                } else {
+                    const res = await signInWithCredential(auth, credential);
+                    setUser(prev => prev ? { ...prev, isAnonymous: false, email: res.user.email ?? prev.email } : null);
+                    setAuthMessage('Signed in.');
+                }
+            } catch (err) {
+                console.warn('Native Google sign-in failed:', err);
+                setAuthMessage('Sign-in didn\'t complete. Please try again.');
+            }
+            return;
+        }
 
         let provider;
         if (kind === 'apple') {

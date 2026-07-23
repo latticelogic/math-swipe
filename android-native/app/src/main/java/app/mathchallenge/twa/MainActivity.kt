@@ -66,11 +66,20 @@ class MainActivity : ComponentActivity() {
 
         // The billing bridge. It needs the activity (to launch the flow) and a
         // way to call results back into JS (window.__mcOnPurchase / __mcOnPurchaseError).
-        billing = BillingBridge(
-            activity = this,
-            evaluateJs = { script -> webView.post { webView.evaluateJavascript(script, null) } },
-        )
+        val postJs: (String) -> Unit = { script -> webView.post { webView.evaluateJavascript(script, null) } }
+        billing = BillingBridge(activity = this, evaluateJs = postJs)
         webView.addJavascriptInterface(billing, "AndroidBilling")
+
+        // Native Google Sign-In bridge (window.AndroidAuth) — Credential Manager
+        // yields a Google ID token; the web app finishes via Firebase
+        // signInWithCredential. Web OAuth client ID from BuildConfig (CI injects
+        // it from the GOOGLE_WEB_CLIENT_ID repo variable).
+        val auth = AuthBridge(
+            activity = this,
+            webClientId = BuildConfig.GOOGLE_WEB_CLIENT_ID,
+            evaluateJs = postJs,
+        )
+        webView.addJavascriptInterface(auth, "AndroidAuth")
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
