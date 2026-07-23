@@ -261,60 +261,113 @@ function AddIcon() {
     );
 }
 
-// ── iOS first-session install prompt ──────────────────────────────────────────
+// ── Session-end install prompt (all platforms) ────────────────────────────────
 
 const SESSION_PROMPT_DISMISS_KEY = 'math-swipe-ios-session-install-dismissed';
 
-interface IosSessionEndPromptProps {
+interface SessionEndInstallPromptProps {
     /** True iff the parent (SessionSummary) is currently visible. We
      *  only render anything while the parent modal is open. */
     visible: boolean;
+    /** Problems solved in the session just finished. Used for the
+     *  good-session gate — we don't pitch install after a 1-question
+     *  bounce, only after the player has actually felt the loop. */
+    solved: number;
+    /** Best streak in the session just finished — the other half of the
+     *  good-session signal (a hot streak is worth saving even if short). */
+    streak: number;
+}
+
+/** A session worth saving: a handful of problems, or a real streak.
+ *  Below this we stay quiet — an install ask after one tapped answer
+ *  reads as pushy and converts badly. */
+function isGoodSession(solved: number, streak: number): boolean {
+    return solved >= 5 || streak >= 3;
 }
 
 /**
- * End-of-first-session install nudge, **iOS only**. Renders a small
- * row inside the SessionSummary saying "Save Math Challenge to your home
- * screen — you won't lose your progress." When tapped, opens the same
- * 2-step illustrated instructions modal that the Me-tab InstallPill uses.
+ * End-of-session install nudge, **all platforms**. Renders a small row
+ * inside the SessionSummary — "Save Math Challenge to your home screen —
+ * you won't lose your progress." When tapped:
+ *   • Android / desktop Chromium (a deferred `beforeinstallprompt` is in
+ *     hand) → fires the native install prompt directly.
+ *   • iOS Safari (no prompt API) → opens the 2-step illustrated Share →
+ *     Add to Home Screen guide.
  *
  * Why this exists separately from InstallPill:
  *   - InstallPill is discovery-mode chrome on the Me tab. A user has
  *     to navigate to Me to see it. Many casual users never do.
  *   - SessionSummary is the highest-attention moment in the app — the
  *     user just earned XP and is about to share or close. Putting the
- *     install pitch HERE catches them at peak engagement.
+ *     install pitch HERE catches them at peak engagement, right after a
+ *     session good enough to be worth saving.
  *
- * Visibility rules — all four must be true:
+ * Timing, not interruption: it never pops on launch. It appears only
+ * after a *good* session (see isGoodSession) so the ask lands on pride,
+ * not on a cold open.
+ *
+ * Visibility rules — all must hold:
  *   1. SessionSummary modal is open (parent is rendering us)
- *   2. We're on iOS Safari (other browsers get InstallPill and native
- *      prompts; this surface would be redundant noise)
+ *   2. The session just finished was a good one (solved/streak gate)
  *   3. The app is NOT already installed (not standalone)
  *   4. The user has NOT permanently dismissed THIS prompt
+ *   5. There's a way forward: iOS Safari, OR a captured native prompt
  *
  * Dismissal is independent of the InstallPill dismissal — a user who
  * tapped "not now" on the Me-tab pill might still appreciate the
  * session-end reminder when they actually have a streak worth saving.
  */
-export function IosSessionEndPrompt({ visible }: IosSessionEndPromptProps) {
+export function SessionEndInstallPrompt({ visible, solved, streak }: SessionEndInstallPromptProps) {
     const [modalOpen, setModalOpen] = useState(false);
     const [dismissed, setDismissed] = useState(() => !!safeGetItem(SESSION_PROMPT_DISMISS_KEY));
     const [installed, setInstalled] = useState(() => isStandalone());
+    const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
 
     useEffect(() => {
+        const onBeforeInstall = (e: Event) => {
+            e.preventDefault();
+            setDeferredPrompt(e as BeforeInstallPromptEvent);
+        };
         const onInstalled = () => setInstalled(true);
+        window.addEventListener('beforeinstallprompt', onBeforeInstall);
         window.addEventListener('appinstalled', onInstalled);
-        return () => window.removeEventListener('appinstalled', onInstalled);
+        return () => {
+            window.removeEventListener('beforeinstallprompt', onBeforeInstall);
+            window.removeEventListener('appinstalled', onInstalled);
+        };
     }, []);
 
+    const ios = isIos();
+    const canPrompt = !!deferredPrompt;
     if (!visible) return null;
     if (installed) return null;
     if (dismissed) return null;
-    if (!isIos()) return null;
+    if (!isGoodSession(solved, streak)) return null;
+    // Nothing to offer: not iOS and no native prompt captured.
+    if (!ios && !canPrompt) return null;
 
     function dismiss() {
         safeSetItem(SESSION_PROMPT_DISMISS_KEY, String(Date.now()));
         setDismissed(true);
         setModalOpen(false);
+    }
+
+    async function handleAction() {
+        if (deferredPrompt) {
+            // Android / desktop Chromium: fire the real install prompt.
+            await deferredPrompt.prompt();
+            try {
+                await deferredPrompt.userChoice;
+            } catch {
+                /* some browsers reject userChoice — non-fatal */
+            }
+            // One-shot: the event can't be reused. Clear it either way;
+            // appinstalled will hide us on accept.
+            setDeferredPrompt(null);
+            return;
+        }
+        // iOS: open the illustrated Share → Add to Home Screen guide.
+        setModalOpen(true);
     }
 
     return (
@@ -340,10 +393,11 @@ export function IosSessionEndPrompt({ visible }: IosSessionEndPromptProps) {
                     </div>
                 </div>
                 <button
-                    onClick={() => setModalOpen(true)}
+                    onClick={handleAction}
                     className="shrink-0 text-[10px] ui font-semibold text-[var(--color-gold)] px-2 py-1 rounded-lg bg-[var(--color-gold)]/10 hover:bg-[var(--color-gold)]/20 transition-colors active:scale-95"
                 >
-                    {t('install.showMe')}
+                    {/* iOS opens a how-to; Chromium fires the native prompt. */}
+                    {ios ? t('install.showMe') : t('install.pill')}
                 </button>
                 <button
                     onClick={dismiss}
