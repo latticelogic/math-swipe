@@ -6,6 +6,8 @@
     <uses-permission android:name="com.android.vending.BILLING" />
     <!-- Android 13+ runtime notification permission for native FCM. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Native haptics for the swipe (HapticsBridge). -->
+    <uses-permission android:name="android.permission.VIBRATE" />
 
     <application
         android:allowBackup="true"
@@ -26,7 +28,35 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
+            <!-- Verified App Links: installed users who tap an https://mathchallenge.app
+                 link (a shared /?r= invite, a /u/<slug> profile) land in the app
+                 instead of the browser. Verified against the assetlinks.json already
+                 served at /.well-known/ (same package + Play App Signing cert). -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="mathchallenge.app" />
+            </intent-filter>
+
+            <!-- Long-press the launcher icon → jump straight to the Daily. -->
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
         </activity>
+
+        <!-- Home-screen streak widget. -->
+        <receiver
+            android:name=".StreakWidget"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_streak_info" />
+        </receiver>
 
         <!-- Native FCM: token registration + notification display. -->
         <service

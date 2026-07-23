@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Long-press the launcher icon → straight into today's Daily Challenge.
+         Routes through MainActivity as an in-scope deep link; the web app reads
+         ?go=daily on load and opens the Daily. -->
+    <shortcut
+        android:shortcutId="daily"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_daily_short"
+        android:shortcutLongLabel="@string/shortcut_daily_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="app.mathchallenge.twa"
+            android:targetClass="app.mathchallenge.twa.MainActivity"
+            android:data="https://mathchallenge.app/?src=android-native&amp;go=daily" />
+    </shortcut>
+</shortcuts>
