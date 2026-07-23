@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "122552558583",
+    "project_id": "math-swipe-prod",
+    "storage_bucket": "math-swipe-prod.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:122552558583:android:f7b39ae67df2bedccfc4f2",
+        "android_client_info": {
+          "package_name": "app.mathchallenge.twa"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "122552558583-snpgf9f8tve2oc1fq2fptkrnu24mkmsh.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDPZP4vKCrD9In7_CmBdnLn964_nFDnc7I"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "122552558583-snpgf9f8tve2oc1fq2fptkrnu24mkmsh.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
