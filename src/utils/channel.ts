@@ -59,6 +59,31 @@ export function isAndroidApp(): boolean {
  * native shell we must NEVER fall back to the web/Airwallex path — Google Play
  * policy forbids external payment inside the app.
  */
+/**
+ * True when running inside the NATIVE iOS shell (WKWebView + StoreKit 2 —
+ * ios-native/). The shell loads the PWA with `?src=ios-native` AND injects its
+ * bridges (window.AppleBilling / AppleShell) at document start — bridge
+ * presence is the robust signal (URL cleanup can strip the query; the injected
+ * script cannot be stripped). Same policy as Android: in the native shell we
+ * must NEVER fall back to the web/Airwallex payment path — App Store policy
+ * forbids external payment flows in-app.
+ */
+export function isNativeIOS(): boolean {
+    try {
+        if (sessionStorage.getItem(CHANNEL_KEY) === 'ios') return true;
+        const w = window as unknown as { AppleShell?: unknown; AppleBilling?: unknown };
+        const hasBridge = typeof window !== 'undefined'
+            && (typeof w.AppleShell !== 'undefined' || typeof w.AppleBilling !== 'undefined');
+        const fromParam = typeof window !== 'undefined'
+            && new URLSearchParams(window.location.search).get('src') === 'ios-native';
+        if (hasBridge || fromParam) {
+            sessionStorage.setItem(CHANNEL_KEY, 'ios');
+            return true;
+        }
+    } catch { /* storage unavailable → not the iOS shell */ }
+    return false;
+}
+
 export function isNativeAndroid(): boolean {
     try {
         if (sessionStorage.getItem(CHANNEL_KEY) === 'native') return true;

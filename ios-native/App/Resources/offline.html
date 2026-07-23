@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Math Challenge</title>
+<style>
+  :root { color-scheme: dark; }
+  html, body {
+    margin: 0; height: 100%;
+    background: #1b1b1b; color: #e8e4d8;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    -webkit-user-select: none; user-select: none;
+  }
+  .wrap {
+    height: 100%; box-sizing: border-box;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center;
+    padding: calc(env(safe-area-inset-top, 0px) + 24px) 32px calc(env(safe-area-inset-bottom, 0px) + 24px);
+  }
+  /* Hand-drawn "unplugged" mark — a broken chalk line, in the app's gold. */
+  svg { width: 68px; height: 68px; margin-bottom: 26px; opacity: 0.9; }
+  h1 { font-size: 22px; font-weight: 600; margin: 0 0 10px; color: #e8e4d8; }
+  p { font-size: 15px; line-height: 1.5; margin: 0 0 30px; color: rgba(232, 228, 216, 0.55); max-width: 280px; }
+  button {
+    appearance: none; border: 1px solid rgba(212, 175, 90, 0.4);
+    background: rgba(212, 175, 90, 0.12); color: #d4af5a;
+    font-size: 15px; font-weight: 600; font-family: inherit;
+    padding: 12px 28px; border-radius: 14px; cursor: pointer;
+    transition: background 0.15s;
+  }
+  button:active { background: rgba(212, 175, 90, 0.24); transform: scale(0.98); }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#d4af5a" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M3 3 L 21 21" />
+      <path d="M8.5 8.5 A 6 6 0 0 0 5 12" />
+      <path d="M15.5 15.5 A 6 6 0 0 1 12 19" />
+      <path d="M4 8 A 10 10 0 0 1 8 4.5" />
+      <path d="M20 16 A 10 10 0 0 1 16 19.5" />
+    </svg>
+    <h1>You're offline</h1>
+    <p>Math Challenge needs a connection to load. Check your Wi-Fi or data, then try again.</p>
+    <button id="retry" type="button">Try again</button>
+  </div>
+  <script>
+    document.getElementById('retry').addEventListener('click', function () {
+      // The native shell reloads the app URL; falls back to history if the
+      // bridge is somehow unavailable.
+      if (window.AppleShell && window.AppleShell.reload) {
+        window.AppleShell.reload();
+      } else {
+        window.location.reload();
+      }
+    });
+  </script>
+</body>
+</html>

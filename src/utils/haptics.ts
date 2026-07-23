@@ -28,7 +28,11 @@ function readPreference(): boolean {
  *  Absent in the browser / iOS, where we fall back to vibrate. */
 function nativeHaptics(): { impact(type: string): void } | null {
     try {
-        const a = (window as unknown as { AndroidHaptics?: { impact(t: string): void } }).AndroidHaptics;
+        const w = window as unknown as {
+            AndroidHaptics?: { impact(t: string): void };
+            AppleHaptics?: { impact(t: string): void };
+        };
+        const a = w.AndroidHaptics ?? w.AppleHaptics;   // same semantic types on both shells
         return a && typeof a.impact === 'function' ? a : null;
     } catch {
         return null;

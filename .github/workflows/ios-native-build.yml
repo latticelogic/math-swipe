@@ -1,0 +1,50 @@
+# iOS native shell — compile check (and later, archive/TestFlight).
+#
+# The shell is authored on Windows; this is where it actually compiles (macOS +
+# Xcode). The .xcodeproj is GENERATED from ios-native/project.yml via XcodeGen —
+# never committed. Manual dispatch only: macOS runners bill at 10× minutes, and
+# a compile check is only needed when ios-native/ changes.
+#
+# Signing/archive/TestFlight upload comes after Apple enrollment clears
+# (needs DEVELOPMENT_TEAM + certificates + an App Store Connect API key) — see
+# docs/ios-native-plan.md for that checklist.
+name: ios-native-build
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-14
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        working-directory: ios-native
+        run: xcodegen generate
+
+      - name: Resolve SPM packages + build (no signing)
+        working-directory: ios-native
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project MathChallenge.xcodeproj \
+            -scheme MathChallenge \
+            -destination 'generic/platform=iOS' \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build | xcbeautify --renderer github-actions || \
+          xcodebuild \
+            -project MathChallenge.xcodeproj \
+            -scheme MathChallenge \
+            -destination 'generic/platform=iOS' \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build
+
+      - name: Note
+        run: echo "Compile check passed. Archive/TestFlight is a follow-up gated on Apple enrollment (docs/ios-native-plan.md)."

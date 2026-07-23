@@ -24,7 +24,7 @@
  */
 
 import { getFirebase } from './firebase';
-import { isAndroidApp, isNativeAndroid } from './channel';
+import { isAndroidApp, isNativeAndroid, isNativeIOS } from './channel';
 
 /** Play Billing product id for the one-time lifetime unlock. Must match the
  *  in-app product created in Play Console → Monetize → Products. */
@@ -33,7 +33,7 @@ export const PLAY_SKU = 'pro_lifetime';
 /** The Digital Goods API payment method for Google Play. */
 const PLAY_BILLING_METHOD = 'https://play.google.com/billing';
 
-export type PurchaseChannel = 'web' | 'android-native' | 'play' | 'none';
+export type PurchaseChannel = 'web' | 'android-native' | 'ios-native' | 'play' | 'none';
 
 interface CheckoutResponse {
     url: string;
@@ -58,8 +58,23 @@ interface AndroidBillingBridge {
     /** Re-check for an existing purchase (reinstall / new device). */
     restore(sku: string): void;
 }
+// ── Native iOS billing bridge ──────────────────────────────────────────────
+// Injected by the iOS WKWebView shell (ios-native/, BridgeScript.swift) as
+// `window.AppleBilling`. StoreKit 2 under the hood. Same fire-and-report
+// callback globals as Android (__mcOnPurchase carries the signed-transaction
+// JWS instead of a Play token), plus finish(id): StoreKit transactions are
+// finished only AFTER our server verifies + grants — the analogue of
+// "no client-side acknowledge" on Play.
+interface AppleBillingBridge {
+    isReady(): boolean;
+    buy(sku: string): void;
+    restore(sku: string): void;
+    finish(transactionId: string): void;
+}
+
 type NativeWindow = Window & {
     AndroidBilling?: AndroidBillingBridge;
+    AppleBilling?: AppleBillingBridge;
     __mcOnPurchase?: (purchaseToken: string) => void;
     __mcOnPurchaseError?: (message: string) => void;
     /** Play Integrity bridge — mints a token bound to `nonce`, replies via
@@ -70,6 +85,11 @@ type NativeWindow = Window & {
 
 function nativeBilling(): AndroidBillingBridge | null {
     const b = (window as NativeWindow).AndroidBilling;
+    return b && typeof b.buy === 'function' ? b : null;
+}
+
+function appleBilling(): AppleBillingBridge | null {
+    const b = (window as NativeWindow).AppleBilling;
     return b && typeof b.buy === 'function' ? b : null;
 }
 
@@ -189,6 +209,29 @@ export async function getPurchaseChannel(): Promise<PurchaseChannel> {
         };
         return 'none';
     }
+    // Native iOS shell: StoreKit 2 via the AppleBilling bridge. Same policy as
+    // Android — inside the shell we never fall back to web/Airwallex (App
+    // Store policy forbids external payment flows in-app).
+    const apple = appleBilling();
+    if (apple) {
+        const ready = (() => { try { return apple.isReady(); } catch { return false; } })();
+        lastDiagnostic = {
+            isAndroid: false, channel: ready ? 'ios-native' : 'none',
+            dgaPresent: false, dgaError: ready ? null : 'ios billing not ready',
+            chrome: null, paymentRequest: typeof PaymentRequest === 'function',
+        };
+        // Bridge present but product still loading → still route native;
+        // startCheckout reports errors via callback (mirrors Android).
+        return 'ios-native';
+    }
+    if (isNativeIOS()) {
+        lastDiagnostic = {
+            isAndroid: false, channel: 'none', dgaPresent: false,
+            dgaError: 'ios shell: AppleBilling bridge not present',
+            chrome: null, paymentRequest: typeof PaymentRequest === 'function',
+        };
+        return 'none';
+    }
     if (!isAndroidApp()) {
         lastDiagnostic = {
             isAndroid: false, channel: 'web', dgaPresent: false,
@@ -281,12 +324,13 @@ async function startPlayPurchase(): Promise<void> {
 }
 
 /**
- * Await the native bridge's async result. addJavascriptInterface methods are
- * void, so the native side reports back via window.__mcOnPurchase(token) /
- * window.__mcOnPurchaseError(message). One in-flight call at a time (the
- * paywall is modal), so a single pair of global callbacks is sufficient.
+ * Await a native bridge's async result (Android AND iOS shells share the same
+ * callback globals). Bridge methods are void, so the native side reports back
+ * via window.__mcOnPurchase(token|jws) / window.__mcOnPurchaseError(message).
+ * One in-flight call at a time (the paywall is modal), so a single pair of
+ * global callbacks is sufficient.
  */
-function awaitNativeResult(trigger: (bridge: AndroidBillingBridge) => void, bridge: AndroidBillingBridge): Promise<string> {
+function awaitPurchaseCallback(trigger: () => void): Promise<string> {
     return new Promise<string>((resolve, reject) => {
         const w = window as NativeWindow;
         const cleanup = () => { delete w.__mcOnPurchase; delete w.__mcOnPurchaseError; };
@@ -298,8 +342,43 @@ function awaitNativeResult(trigger: (bridge: AndroidBillingBridge) => void, brid
             cleanup();
             reject(new Error(message || 'Purchase failed'));
         };
-        try { trigger(bridge); } catch (e) { cleanup(); reject(e instanceof Error ? e : new Error(String(e))); }
+        try { trigger(); } catch (e) { cleanup(); reject(e instanceof Error ? e : new Error(String(e))); }
     });
+}
+
+/** Empty-token variant for restores: resolves '' instead of rejecting, since
+ *  "nothing to restore" is a normal outcome, not an error. */
+function awaitRestoreCallback(trigger: () => void): Promise<string> {
+    return new Promise<string>((resolve, reject) => {
+        const w = window as NativeWindow;
+        const cleanup = () => { delete w.__mcOnPurchase; delete w.__mcOnPurchaseError; };
+        w.__mcOnPurchase = (token: string) => { cleanup(); resolve(token || ''); };
+        w.__mcOnPurchaseError = (message: string) => { cleanup(); reject(new Error(message || 'Restore failed')); };
+        try { trigger(); } catch (e) { cleanup(); reject(e instanceof Error ? e : new Error(String(e))); }
+    });
+}
+
+// ── Apple (StoreKit 2) verification ─────────────────────────────────────────
+
+/** Server-side verification + grant for an Apple signed-transaction JWS.
+ *  Returns the transactionId so the caller can tell StoreKit to finish it —
+ *  finishing happens ONLY after the server has granted (see BillingBridge.swift). */
+async function verifyAppleWithServer(jws: string): Promise<string> {
+    const [{ functions }, { httpsCallable }] = await Promise.all([
+        getFirebase(), import('firebase/functions'),
+    ]);
+    const call = httpsCallable<unknown, { ok?: boolean; transactionId?: string }>(functions, 'verifyAppleTransaction');
+    const res = await call({ jws });
+    return String(res.data?.transactionId ?? '');
+}
+
+/** iOS purchase: native StoreKit flow → signed JWS → server verify + grant →
+ *  finish the transaction. An unverified purchase is never finished, so
+ *  StoreKit re-delivers it for retry on next launch. */
+async function startApplePurchase(bridge: AppleBillingBridge): Promise<void> {
+    const jws = await awaitPurchaseCallback(() => bridge.buy(PLAY_SKU));
+    const txId = await verifyAppleWithServer(jws);
+    if (txId) { try { bridge.finish(txId); } catch { /* non-fatal — updates listener re-delivers */ } }
 }
 
 /**
@@ -310,7 +389,7 @@ function awaitNativeResult(trigger: (bridge: AndroidBillingBridge) => void, brid
  * silently charging the user.
  */
 async function startNativePurchase(bridge: AndroidBillingBridge): Promise<void> {
-    const token = await awaitNativeResult(b => b.buy(PLAY_SKU), bridge);
+    const token = await awaitPurchaseCallback(() => bridge.buy(PLAY_SKU));
     await verifyWithServer(token);
 }
 
@@ -321,11 +400,25 @@ async function startNativePurchase(bridge: AndroidBillingBridge): Promise<void> 
  * Returns true if a purchase was found and verified.
  */
 export async function restorePlayPurchases(): Promise<boolean> {
-    // Native shell first — the preferred Android path.
+    // iOS shell: StoreKit current-entitlements → JWS → server verify + finish.
+    const apple = appleBilling();
+    if (apple) {
+        try {
+            const jws = await awaitRestoreCallback(() => apple.restore(PLAY_SKU));
+            if (!jws) return false;
+            const txId = await verifyAppleWithServer(jws);
+            if (txId) { try { apple.finish(txId); } catch { /* non-fatal */ } }
+            return true;
+        } catch (err) {
+            console.warn('[checkout] apple restore failed (non-fatal):', err);
+            return false;
+        }
+    }
+    // Native shell — the preferred Android path.
     const bridge = nativeBilling();
     if (bridge) {
         try {
-            const token = await awaitNativeResult(b => b.restore(PLAY_SKU), bridge);
+            const token = await awaitRestoreCallback(() => bridge.restore(PLAY_SKU));
             if (!token) return false;
             await verifyWithServer(token);
             return true;
@@ -369,6 +462,12 @@ export async function startCheckout(mockGrant?: () => Promise<void>): Promise<vo
         const bridge = nativeBilling();
         if (!bridge) throw new Error('Native billing bridge unavailable');
         await startNativePurchase(bridge);
+        return;
+    }
+    if (channel === 'ios-native') {
+        const bridge = appleBilling();
+        if (!bridge) throw new Error('Apple billing bridge unavailable');
+        await startApplePurchase(bridge);
         return;
     }
     if (channel === 'play') {
