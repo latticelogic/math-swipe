@@ -77,6 +77,7 @@ import { getFirebase } from './utils/firebase';
 import { generateProblem } from './utils/mathGenerator';
 import { generateDailyChallenge, generateChallenge } from './utils/dailyChallenge';
 import { todayKey } from './utils/dateKey';
+import { maybeRequestReview, pushWidgetStats } from './utils/nativeShell';
 import type { EngineItem } from './engine/domain';
 import { DEFAULT_GAME_CONFIG, TIMED_DURATION_PRESETS } from './engine/domain';
 import { STORAGE_KEYS, FIRESTORE } from './config';
@@ -736,6 +737,19 @@ function App() {
     const timer = setTimeout(() => setRefereeBonusDays(0), 5000);
     return () => clearTimeout(timer);
   }, [refereeBonusDays]);
+
+  // Native shell only (no-ops elsewhere): ask for a Play in-app review at a
+  // genuine peak — a strong session just ended. Throttled internally to at most
+  // ~once / 45 days, and Play quota-limits the card on top of that.
+  useEffect(() => {
+    if (!showSummary) return;
+    maybeRequestReview(accuracy >= 90 && totalAnswered >= 10);
+  }, [showSummary, accuracy, totalAnswered]);
+
+  // Native shell only: keep the home-screen widget's streak + Daily state fresh.
+  useEffect(() => {
+    pushWidgetStats(stats.dayStreak, stats.lastDailyDate === todayKey());
+  }, [stats.dayStreak, stats.lastDailyDate]);
 
   // Pro gate: paid unlocks the Pro set (advanced modes, full Magic Tricks, Pro
   // cosmetics) even during the trial. Tapping a locked Pro thing opens the

@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Math Challenge</string>
+    <string name="shortcut_daily_short">Daily</string>
+    <string name="shortcut_daily_long">Daily Challenge</string>
+    <string name="widget_label">day streak</string>
+    <string name="widget_cta_play">Today\'s Daily</string>
+    <string name="widget_cta_done">Daily done</string>
+    <string name="widget_description">Your streak + today\'s Daily Challenge</string>
 </resources>

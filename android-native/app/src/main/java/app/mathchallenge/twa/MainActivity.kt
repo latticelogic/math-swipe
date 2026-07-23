@@ -1,12 +1,20 @@
 package app.mathchallenge.twa
 
 import android.annotation.SuppressLint
+import android.content.Intent
+import android.os.Build
 import android.os.Bundle
+import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.result.IntentSenderRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.webkit.ServiceWorkerControllerCompat
 import androidx.webkit.WebViewFeature
 import com.google.firebase.messaging.FirebaseMessaging
@@ -24,6 +32,16 @@ class MainActivity : ComponentActivity() {
 
     private lateinit var webView: WebView
     private lateinit var billing: BillingBridge
+    private lateinit var updater: ShellUpdater
+
+    // Flips true when the WebView paints its first frame (or a safety timeout),
+    // at which point the splash screen is allowed to dismiss.
+    private var contentRendered = false
+
+    // Result sink for the Play flexible-update consent dialog (result ignored —
+    // the flow completes via ShellUpdater's install-state listener).
+    private val updateLauncher =
+        registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { }
 
     // ?src=android-native lets the web app detect this channel and route
     // purchases through window.AndroidBilling (see src/utils/channel.ts).
@@ -32,7 +50,27 @@ class MainActivity : ComponentActivity() {
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Must be called before super.onCreate(). Shows the branded splash on
+        // cold start; we hold it until the WebView paints so there's no white
+        // flash and no blank WebView between the two.
+        val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
+        splashScreen.setKeepOnScreenCondition { !contentRendered }
+
+        // Draw edge-to-edge behind the transparent system bars. The web app is
+        // built with viewport-fit=cover + env(safe-area-inset-*), so it insets
+        // its own content correctly; solid native bars would double the padding.
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        WindowInsetsControllerCompat(window, window.decorView).apply {
+            // Dark chalkboard background → light (white) status/nav-bar icons.
+            isAppearanceLightStatusBars = false
+            isAppearanceLightNavigationBars = false
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            // Stop the system drawing its own scrim behind the transparent bars.
+            window.isStatusBarContrastEnforced = false
+            window.isNavigationBarContrastEnforced = false
+        }
 
         webView = WebView(this)
         setContentView(webView)
@@ -58,10 +96,38 @@ class MainActivity : ComponentActivity() {
         // (legal/external links, share targets) in the system browser.
         webView.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
-                val host = request.url.host ?: return false
+                val url = request.url
+                val scheme = url.scheme?.lowercase()
+                // Non-web schemes (mailto:, tel:, market:, intent: …) must go to
+                // the system — a WebView can't render them and would error out.
+                if (scheme != null && scheme != "http" && scheme != "https") {
+                    return try {
+                        startActivity(Intent(Intent.ACTION_VIEW, url))
+                        true
+                    } catch (e: Exception) {
+                        true // no handler installed — swallow rather than break the WebView
+                    }
+                }
+                val host = url.host ?: return false
                 if (host == appHost || host.endsWith(".$appHost")) return false
-                startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, request.url))
+                startActivity(Intent(Intent.ACTION_VIEW, url))
                 return true
+            }
+
+            // First real paint — release the splash.
+            override fun onPageCommitVisible(view: WebView, url: String) {
+                contentRendered = true
+            }
+
+            // Main-frame load failure (offline, DNS, connection refused) → show
+            // the branded offline page bundled in assets, with a Retry that
+            // reloads via the AndroidShell bridge. Sub-resource errors are
+            // ignored (the PWA/service worker handles those).
+            override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
+                if (request.isForMainFrame) {
+                    contentRendered = true // don't let the splash hang on a failed load
+                    view.loadUrl("file:///android_asset/offline.html")
+                }
             }
         }
 
@@ -91,13 +157,33 @@ class MainActivity : ComponentActivity() {
         }
         webView.addJavascriptInterface(PushBridge(this), "AndroidPush")
 
+        // Shell utilities (window.AndroidShell.reload) — used by the offline page.
+        webView.addJavascriptInterface(ShellBridge(webView, startUrl), "AndroidShell")
+
+        // Play In-App Review (window.AndroidReview.requestReview()).
+        webView.addJavascriptInterface(ReviewBridge(this), "AndroidReview")
+
+        // Native haptics (window.AndroidHaptics.impact(type)) for the swipe.
+        webView.addJavascriptInterface(HapticsBridge(this), "AndroidHaptics")
+
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 if (webView.canGoBack()) webView.goBack() else finish()
             }
         })
 
-        if (savedInstanceState == null) webView.loadUrl(startUrl)
+        // Play In-App Updates — quietly download a newer shell in the background;
+        // it installs at the next launch. Inert when no update is available.
+        updater = ShellUpdater(this)
+        updater.start(updateLauncher)
+
+        // Safety net: never let the splash outlive a usable app, even if
+        // onPageCommitVisible somehow never fires (odd WebView builds).
+        webView.postDelayed({ contentRendered = true }, 6000)
+
+        // Cold start: honour an incoming App Link (e.g. a shared /?r= invite or
+        // /u/<slug> profile) so it opens in-app; otherwise the default start URL.
+        if (savedInstanceState == null) webView.loadUrl(resolveStartUrl(intent))
     }
 
     override fun onStart() {
@@ -110,7 +196,29 @@ class MainActivity : ComponentActivity() {
         billing.refreshPurchases()  // catch out-of-app purchases / restores
     }
 
+    // A new App Link arrived while we're already running (singleTask). Navigate
+    // the WebView to it so a tapped invite/profile link lands in-app.
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        if (intent.data != null) webView.loadUrl(resolveStartUrl(intent))
+    }
+
+    /** The URL to load: an in-scope App Link if the intent carries one (with the
+     *  native channel param preserved), otherwise the default start URL. */
+    private fun resolveStartUrl(intent: Intent?): String {
+        val data = intent?.data ?: return startUrl
+        val host = data.host ?: return startUrl
+        if (host != appHost && !host.endsWith(".$appHost")) return startUrl
+        // Preserve the deep-linked path + query; ensure the channel param so the
+        // web app knows it's the native shell.
+        val builder = data.buildUpon()
+        if (data.getQueryParameter("src") == null) builder.appendQueryParameter("src", "android-native")
+        return builder.build().toString()
+    }
+
     override fun onDestroy() {
+        updater.dispose()
         billing.dispose()
         webView.destroy()
         super.onDestroy()
