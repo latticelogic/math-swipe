@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>122552558583-m5ts707vamfl517mpfpao87inlfb813u.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.122552558583-m5ts707vamfl517mpfpao87inlfb813u</string>
+	<key>ANDROID_CLIENT_ID</key>
+	<string>122552558583-7m5gav2up679mqp4flv95ncthgdsi6ng.apps.googleusercontent.com</string>
+	<key>API_KEY</key>
+	<string>AIzaSyDArqs0dH8FLg-xchOSVuFDtjlgZO2rNE8</string>
+	<key>GCM_SENDER_ID</key>
+	<string>122552558583</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>app.mathchallenge.ios</string>
+	<key>PROJECT_ID</key>
+	<string>math-swipe-prod</string>
+	<key>STORAGE_BUCKET</key>
+	<string>math-swipe-prod.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:122552558583:ios:86de9ea53a7a0a92cfc4f2</string>
+</dict>
+</plist>

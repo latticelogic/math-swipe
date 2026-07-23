@@ -58,7 +58,8 @@ export function isPushConfigured(): boolean {
 // doc (with fcmToken/platform), and the server sends to it via Firebase Admin.
 interface NativePushBridge { getFcmToken?: () => string; requestNotificationPermission?: () => void }
 function nativePush(): NativePushBridge | null {
-    const b = (window as { AndroidPush?: NativePushBridge }).AndroidPush;
+    const w = window as { AndroidPush?: NativePushBridge; ApplePush?: NativePushBridge };
+    const b = w.AndroidPush ?? w.ApplePush;   // iOS shell exposes the same shape (FCM via APNs)
     return b && typeof b.getFcmToken === 'function' ? b : null;
 }
 

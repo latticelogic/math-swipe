@@ -1771,11 +1771,11 @@ function App() {
                 // Play Billing completes IN PLACE (no redirect, unlike the
                 // Airwallex hosted page) — the server has written paidAt by
                 // now, so refresh the gate and close the paywall right here.
-                // BOTH Android billing channels complete in place: the legacy
-                // TWA Digital Goods ('play') and the native BillingClient
-                // bridge ('android-native'). Missing 'android-native' here left
-                // a paid native user still staring at the paywall.
-                if (purchaseChannel === 'play' || purchaseChannel === 'android-native') {
+                // ALL store-billing channels complete in place: the legacy TWA
+                // Digital Goods ('play'), the native BillingClient bridge
+                // ('android-native'), and StoreKit 2 ('ios-native'). Missing a
+                // channel here leaves a paid user staring at the paywall.
+                if (purchaseChannel === 'play' || purchaseChannel === 'android-native' || purchaseChannel === 'ios-native') {
                   await entitlement.refresh().catch(() => { /* next read catches up */ });
                   setPaywallOpen(false);
                 }

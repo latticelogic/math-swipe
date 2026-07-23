@@ -1,0 +1,64 @@
+# XcodeGen project definition — the iOS native shell.
+#
+# Why XcodeGen: .xcodeproj files are unmergeable machine-generated soup; this
+# YAML is the source of truth, authorable from any OS. On a Mac (or the macOS
+# CI runner): `brew install xcodegen && xcodegen generate` → MathChallenge.xcodeproj.
+#
+# Mirrors the Android shell (android-native/): a WKWebView renders the live PWA
+# (mathchallenge.app) with native bridges for the four things the web cannot do
+# in a WebView — StoreKit 2 payments, Sign in with Apple, APNs/FCM push, and
+# crisp haptics. See docs/ios-native-plan.md.
+name: MathChallenge
+options:
+  bundleIdPrefix: app.mathchallenge
+  deploymentTarget:
+    iOS: "15.0"        # StoreKit 2 floor
+  createIntermediateGroups: true
+
+packages:
+  Firebase:
+    url: https://github.com/firebase/firebase-ios-sdk
+    from: 11.0.0
+
+targets:
+  MathChallenge:
+    type: application
+    platform: iOS
+    sources:
+      - path: App/Sources
+      - path: App/Resources
+        type: folder        # GoogleService-Info.plist, offline.html copied into the bundle
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: Math Challenge
+        CFBundleShortVersionString: "1.0.0"
+        CFBundleVersion: "1"
+        UILaunchStoryboardName: LaunchScreen
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        UIBackgroundModes: [remote-notification]
+        # The PWA is our UI — no status-bar surprises; dark chalkboard chrome.
+        UIUserInterfaceStyle: Dark
+        UIViewControllerBasedStatusBarAppearance: true
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: false
+        FirebaseAppDelegateProxyEnabled: true
+    entitlements:
+      path: App/MathChallenge.entitlements
+      properties:
+        aps-environment: production
+        com.apple.developer.applesignin: [Default]
+    dependencies:
+      - package: Firebase
+        product: FirebaseMessaging
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.mathchallenge.ios   # must match the Firebase iOS app + (later) App Store Connect
+        SWIFT_VERSION: "5.9"
+        TARGETED_DEVICE_FAMILY: "1"                        # iPhone (mobile-only v1, same as Android)
+        MARKETING_VERSION: "1.0.0"
+        CURRENT_PROJECT_VERSION: "1"
+        # Signing is configured on the Mac / release CI once Apple enrollment
+        # clears (DEVELOPMENT_TEAM + certs). The compile-check CI builds with
+        # CODE_SIGNING_ALLOWED=NO.
+        CODE_SIGN_STYLE: Automatic

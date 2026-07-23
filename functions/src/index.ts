@@ -43,6 +43,7 @@ export { createAirwallexPayment, airwallexWebhook } from './airwallex';
 // analogue of the Airwallex webhook. Inert until the one-time TODO(play)
 // Play Console steps in ./playBilling.ts are done.
 export { verifyPlayPurchase, playRtdn } from './playBilling';
+export { verifyAppleTransaction, appleNotifications } from './appleBilling';
 
 // Leaderboard cache rebuilder — see ./leaderboard.ts for the 60s cron
 // that pre-aggregates the top-20 score and top-10 speedrun cache docs

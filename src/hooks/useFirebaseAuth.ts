@@ -68,6 +68,34 @@ function awaitNativeGoogleToken(trigger: () => void): Promise<string> {
     });
 }
 
+// ── Native iOS auth bridge (window.AppleAuth) ───────────────────────────────
+// The iOS WKWebView shell exposes native Sign in with Apple (ASAuthorization)
+// because OAuth dead-ends inside embedded WebViews there too. AuthBridge.swift
+// reports the Apple identity token + the raw nonce it was bound to; Firebase
+// verifies token-nonce == sha256(rawNonce) in signInWithCredential.
+interface NativeAppleAuthWindow {
+    AppleAuth?: { signInWithApple?: () => void };
+    __mcOnAppleToken?: (idToken: string, rawNonce: string) => void;
+    __mcOnAppleError?: (message: string) => void;
+}
+function nativeAppleAuth(): (() => void) | null {
+    const b = (window as NativeAppleAuthWindow).AppleAuth;
+    return b && typeof b.signInWithApple === 'function' ? () => b.signInWithApple!() : null;
+}
+/** Fire the native Apple flow and await its token + nonce (one call at a time). */
+function awaitNativeAppleToken(trigger: () => void): Promise<{ idToken: string; rawNonce: string }> {
+    return new Promise((resolve, reject) => {
+        const w = window as NativeAppleAuthWindow;
+        const cleanup = () => { delete w.__mcOnAppleToken; delete w.__mcOnAppleError; };
+        w.__mcOnAppleToken = (idToken, rawNonce) => {
+            cleanup();
+            if (idToken) resolve({ idToken, rawNonce }); else reject(new Error('No identity token'));
+        };
+        w.__mcOnAppleError = (m) => { cleanup(); reject(new Error(m || 'Sign-in cancelled')); };
+        try { trigger(); } catch (e) { cleanup(); reject(e instanceof Error ? e : new Error(String(e))); }
+    });
+}
+
 /** Firebase codes meaning "this credential already belongs to another account"
  *  — the trigger to switch into that account and merge the anon one across. */
 function isCredentialInUse(code?: string): boolean {
@@ -352,6 +380,47 @@ export function useFirebaseAuth() {
                 }
             } catch (err) {
                 console.warn('Native Google sign-in failed:', err);
+                setAuthMessage('Sign-in didn\'t complete. Please try again.');
+            }
+            return;
+        }
+
+        // ── Native iOS: Sign in with Apple (no WebView OAuth) ──
+        const fireNativeApple = kind === 'apple' ? nativeAppleAuth() : null;
+        if (fireNativeApple) {
+            const wasAnonA = currentUser.isAnonymous;
+            const anonTokenA = wasAnonA ? await currentUser.getIdToken().catch(() => '') : '';
+            try {
+                const { idToken, rawNonce } = await awaitNativeAppleToken(fireNativeApple);
+                const credential = new OAuthProvider('apple.com').credential({ idToken, rawNonce });
+                if (wasAnonA) {
+                    try {
+                        // Link in place — same uid, progress preserved.
+                        const result = await linkWithCredential(currentUser, credential);
+                        const displayName = result.user.displayName || user?.displayName || randomName();
+                        localStorage.setItem('math-swipe-displayName', displayName);
+                        setUser(prev => prev ? { ...prev, displayName, isAnonymous: false, email: result.user.email ?? prev.email } : null);
+                        await setDoc(doc(db, 'users', currentUser.uid), { displayName, isAnonymous: false, updatedAt: serverTimestamp() }, { merge: true });
+                        setAuthMessage('Signed in — progress saved.');
+                    } catch (linkErr) {
+                        if (isCredentialInUse((linkErr as { code?: string }).code)) {
+                            // Apple ID already on another uid — switch to it,
+                            // merge the anonymous progress across (proven by token).
+                            const res = await signInWithCredential(auth, credential);
+                            if (anonTokenA) await runAccountReconcile(anonTokenA);
+                            setUser(prev => prev ? { ...prev, isAnonymous: false, email: res.user.email ?? prev.email } : null);
+                            setAuthMessage('Welcome back — your progress was merged.');
+                        } else {
+                            throw linkErr;
+                        }
+                    }
+                } else {
+                    const res = await signInWithCredential(auth, credential);
+                    setUser(prev => prev ? { ...prev, isAnonymous: false, email: res.user.email ?? prev.email } : null);
+                    setAuthMessage('Signed in.');
+                }
+            } catch (err) {
+                console.warn('Native Apple sign-in failed:', err);
                 setAuthMessage('Sign-in didn\'t complete. Please try again.');
             }
             return;

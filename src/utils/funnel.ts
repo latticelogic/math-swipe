@@ -13,7 +13,7 @@
  * server-side rollup (funnelStats/{date}); the client contract stays the same.
  */
 import { getFirebase } from './firebase';
-import { isAndroidApp, isNativeAndroid } from './channel';
+import { isAndroidApp, isNativeAndroid, isNativeIOS } from './channel';
 
 export type FunnelStep = 'firstOpen' | 'firstPlay' | 'paywallView' | 'purchase';
 
@@ -25,7 +25,7 @@ const STEP_FIELD: Record<FunnelStep, string> = {
 };
 
 function platformLabel(): string {
-    return isNativeAndroid() ? 'android-native' : isAndroidApp() ? 'twa' : 'web';
+    return isNativeAndroid() ? 'android-native' : isNativeIOS() ? 'ios-native' : isAndroidApp() ? 'twa' : 'web';
 }
 
 /** Mark a funnel milestone (set-once per device). Fire-and-forget. */
