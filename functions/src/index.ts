@@ -86,7 +86,9 @@ const DIGEST_EMAIL_FROM = 'Math Challenge <onboarding@resend.dev>';
 async function sendDigestEmail(subject: string, html: string): Promise<boolean> {
     let key: string | undefined;
     try { key = RESEND_API_KEY.value(); } catch { key = undefined; }
-    if (!key) return false;
+    // 'unset' is the deploy-unblocking placeholder (secrets can't be empty);
+    // treat it as not-configured so we don't fire doomed requests weekly.
+    if (!key || key === 'unset') return false;
     try {
         const res = await fetch('https://api.resend.com/emails', {
             method: 'POST',
