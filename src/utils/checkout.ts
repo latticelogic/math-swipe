@@ -33,10 +33,40 @@ export const PLAY_SKU = 'pro_lifetime';
 /** The Digital Goods API payment method for Google Play. */
 const PLAY_BILLING_METHOD = 'https://play.google.com/billing';
 
-export type PurchaseChannel = 'web' | 'play' | 'none';
+export type PurchaseChannel = 'web' | 'android-native' | 'play' | 'none';
 
 interface CheckoutResponse {
     url: string;
+}
+
+// ── Native Android billing bridge ──────────────────────────────────────────
+// Injected by the native WebView shell (docs/native-android-plan.md) via
+// addJavascriptInterface as `window.AndroidBilling`. It wraps
+// com.android.billingclient:billing:8 directly — no Digital Goods API, no
+// android-browser-helper dependency, no Chrome-version gate. This is the
+// preferred Android path; the Digital Goods ('play') path below stays only for
+// the legacy TWA build until the native shell is device-proven.
+//
+// addJavascriptInterface methods can't return async values, so buy()/restore()
+// fire-and-report: the native side calls back into window.__mcOnPurchase(token)
+// on success or window.__mcOnPurchaseError(message) on failure/cancel.
+interface AndroidBillingBridge {
+    /** Billing service connected AND the product is loaded — safe to buy. */
+    isReady(): boolean;
+    /** Launch the native Play purchase flow for PLAY_SKU. Result via callbacks. */
+    buy(sku: string): void;
+    /** Re-check for an existing purchase (reinstall / new device). */
+    restore(sku: string): void;
+}
+type NativeWindow = Window & {
+    AndroidBilling?: AndroidBillingBridge;
+    __mcOnPurchase?: (purchaseToken: string) => void;
+    __mcOnPurchaseError?: (message: string) => void;
+};
+
+function nativeBilling(): AndroidBillingBridge | null {
+    const b = (window as NativeWindow).AndroidBilling;
+    return b && typeof b.buy === 'function' ? b : null;
 }
 
 // ── Digital Goods API (not yet in lib.dom) ─────────────────────────────────
@@ -124,6 +154,22 @@ async function getPlayService(): Promise<DigitalGoodsService | null> {
  * Records a ChannelDiagnostic as a side effect (see getLastChannelDiagnostic).
  */
 export async function getPurchaseChannel(): Promise<PurchaseChannel> {
+    // Preferred Android path: the native WebView shell's billing bridge. It's
+    // synchronous to detect and doesn't depend on Chrome/Digital Goods at all.
+    const native = nativeBilling();
+    if (native) {
+        const ready = (() => { try { return native.isReady(); } catch { return false; } })();
+        lastDiagnostic = {
+            isAndroid: true, channel: ready ? 'android-native' : 'none',
+            dgaPresent: false, dgaError: ready ? null : 'native billing not ready',
+            chrome: chromeVersion(), paymentRequest: typeof PaymentRequest === 'function',
+        };
+        // If the bridge is present but not yet connected, still return the
+        // native channel — startCheckout awaits readiness and the bridge
+        // reports errors via callback. Returning 'none' here would wrongly
+        // show "unavailable" during a transient connect.
+        return 'android-native';
+    }
     if (!isAndroidApp()) {
         lastDiagnostic = {
             isAndroid: false, channel: 'web', dgaPresent: false,
@@ -132,6 +178,7 @@ export async function getPurchaseChannel(): Promise<PurchaseChannel> {
         };
         return 'web';
     }
+    // Legacy TWA build (no native bridge): Digital Goods API.
     const probe = await probePlayService();
     const channel: PurchaseChannel = probe.service ? 'play' : 'none';
     lastDiagnostic = {
@@ -175,12 +222,59 @@ async function startPlayPurchase(): Promise<void> {
 }
 
 /**
+ * Await the native bridge's async result. addJavascriptInterface methods are
+ * void, so the native side reports back via window.__mcOnPurchase(token) /
+ * window.__mcOnPurchaseError(message). One in-flight call at a time (the
+ * paywall is modal), so a single pair of global callbacks is sufficient.
+ */
+function awaitNativeResult(trigger: (bridge: AndroidBillingBridge) => void, bridge: AndroidBillingBridge): Promise<string> {
+    return new Promise<string>((resolve, reject) => {
+        const w = window as NativeWindow;
+        const cleanup = () => { delete w.__mcOnPurchase; delete w.__mcOnPurchaseError; };
+        w.__mcOnPurchase = (token: string) => {
+            cleanup();
+            if (token) resolve(token); else reject(new Error('No purchase token'));
+        };
+        w.__mcOnPurchaseError = (message: string) => {
+            cleanup();
+            reject(new Error(message || 'Purchase failed'));
+        };
+        try { trigger(bridge); } catch (e) { cleanup(); reject(e instanceof Error ? e : new Error(String(e))); }
+    });
+}
+
+/**
+ * Native Play Billing purchase via the WebView bridge (BillingClient 8).
+ * The native side must NOT acknowledge the purchase — verifyPlayPurchase
+ * acknowledges server-side (same as the DGA path), so a failed verification
+ * lets Play auto-refund the unacknowledged purchase within 3 days rather than
+ * silently charging the user.
+ */
+async function startNativePurchase(bridge: AndroidBillingBridge): Promise<void> {
+    const token = await awaitNativeResult(b => b.buy(PLAY_SKU), bridge);
+    await verifyWithServer(token);
+}
+
+/**
  * Restore prior Play purchases (reinstall, new device, or Play Pass grant).
  * Called once at boot inside the Android app. Best-effort: any hit is
  * verified server-side, which writes paidAt → useEntitlement picks it up.
  * Returns true if a purchase was found and verified.
  */
 export async function restorePlayPurchases(): Promise<boolean> {
+    // Native shell first — the preferred Android path.
+    const bridge = nativeBilling();
+    if (bridge) {
+        try {
+            const token = await awaitNativeResult(b => b.restore(PLAY_SKU), bridge);
+            if (!token) return false;
+            await verifyWithServer(token);
+            return true;
+        } catch (err) {
+            console.warn('[checkout] native restore failed (non-fatal):', err);
+            return false;
+        }
+    }
     if (!isAndroidApp()) return false;
     try {
         const service = await getPlayService();
@@ -212,6 +306,12 @@ export async function startCheckout(mockGrant?: () => Promise<void>): Promise<vo
 
     const channel = await getPurchaseChannel();
 
+    if (channel === 'android-native') {
+        const bridge = nativeBilling();
+        if (!bridge) throw new Error('Native billing bridge unavailable');
+        await startNativePurchase(bridge);
+        return;
+    }
     if (channel === 'play') {
         await startPlayPurchase();
         return;
