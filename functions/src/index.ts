@@ -70,6 +70,39 @@ const VAPID_PUBLIC = defineSecret('VAPID_PUBLIC');
 const VAPID_PRIVATE = defineSecret('VAPID_PRIVATE');
 const VAPID_SUBJECT = defineSecret('VAPID_SUBJECT');
 
+// Resend transactional email — used to email the weekly growth digest.
+const RESEND_API_KEY = defineSecret('RESEND_API_KEY');
+// Recipient + sender. FROM uses Resend's shared domain so it works with ZERO DNS
+// setup; TO must be the Resend account's own email UNLESS latticelogic.app is
+// verified in Resend (then FROM can be branded + TO can be anyone). One-line
+// change + redeploy to update either.
+const DIGEST_EMAIL_TO = 'support@latticelogic.app';
+const DIGEST_EMAIL_FROM = 'Math Challenge <onboarding@resend.dev>';
+
+/** Best-effort digest email via Resend. Never throws — a mail failure must not
+ *  break the digest (which also pushes + stores the snapshot). No-ops if the
+ *  RESEND_API_KEY secret isn't set yet. */
+async function sendDigestEmail(subject: string, html: string): Promise<boolean> {
+    let key: string | undefined;
+    try { key = RESEND_API_KEY.value(); } catch { key = undefined; }
+    if (!key) return false;
+    try {
+        const res = await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ from: DIGEST_EMAIL_FROM, to: [DIGEST_EMAIL_TO], subject, html }),
+        });
+        if (!res.ok) {
+            logger.warn('growthDigest: email send failed', { status: res.status, body: (await res.text()).slice(0, 200) });
+            return false;
+        }
+        return true;
+    } catch (e) {
+        logger.warn('growthDigest: email error', { err: String(e) });
+        return false;
+    }
+}
+
 function configurePush() {
     webpush.setVapidDetails(
         VAPID_SUBJECT.value(),
@@ -410,7 +443,7 @@ export const growthDigest = onSchedule(
     {
         schedule: '0 9 * * 1',
         timeZone: 'Etc/UTC',
-        secrets: [VAPID_PUBLIC, VAPID_PRIVATE, VAPID_SUBJECT],
+        secrets: [VAPID_PUBLIC, VAPID_PRIVATE, VAPID_SUBJECT, RESEND_API_KEY],
         maxInstances: 1,
     },
     async () => {
@@ -500,6 +533,25 @@ export const growthDigest = onSchedule(
         const body = bodyParts.join(' | ').slice(0, 240) || 'Open the funnel dashboard.';
 
         logger.info('growthDigest', { ...snapshot, at: now, anomalies });
+
+        // Email the digest (the reliable weekly channel). Best-effort; no-ops
+        // until RESEND_API_KEY is set.
+        const emailHtml = `
+            <div style="font-family:system-ui,sans-serif;max-width:520px">
+              <h2 style="margin:0 0 12px">Math Challenge — weekly growth digest</h2>
+              <ul style="line-height:1.7;padding-left:18px">
+                <li><b>Paid:</b> ${paid} (${newPaid} new this week) · Trial: ${trial} · Expired: ${expired}</li>
+                <li><b>Trial→paid conversion:</b> ${conversionPct}%${convDelta != null ? ` (${convDelta >= 0 ? '+' : ''}${convDelta}pts vs last week)` : ''}</li>
+                <li><b>New trials this week:</b> ${newTrials}</li>
+                <li><b>Funnel:</b> ${fOpen} open → ${fPlay} play → ${fPaywall} paywall → ${fPurchase} purchase</li>
+                <li><b>A/B paywall-cta:</b> ${abLines.length ? abLines.join(' · ') : '— (no exposures yet)'}</li>
+                ${anomalies.length ? `<li style="color:#b00"><b>Flags:</b> ${anomalies.join('; ')}</li>` : ''}
+              </ul>
+              <p><a href="https://mathchallenge.app/admin/funnel">Open the funnel dashboard →</a></p>
+              <p style="color:#888;font-size:12px">Automated weekly digest · growthDigest</p>
+            </div>`;
+        const emailed = await sendDigestEmail(title, emailHtml);
+        logger.info('growthDigest: email', { emailed, to: DIGEST_EMAIL_TO });
 
         const { users } = await admin.auth().listUsers(1000);
         const adminUids = users.filter(u => u.customClaims?.isAdmin === true).map(u => u.uid);
