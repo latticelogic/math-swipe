@@ -124,14 +124,26 @@ jobs:
           KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
         run: echo "$KEYSTORE_B64" | base64 -d > android.keystore
 
-      - name: Bump version (optional inputs)
+      - name: Set version (monotonic versionCode from run number)
         if: steps.mode.outputs.mode == 'build'
+        env:
+          IN_VC: ${{ github.event.inputs.versionCode }}
+          IN_VN: ${{ github.event.inputs.versionName }}
+          RUN_NUMBER: ${{ github.run_number }}
         run: |
-          if [ -n "${{ github.event.inputs.versionCode }}" ]; then
-            node -e "const f='twa-manifest.json',m=require('./'+f);m.appVersionCode=parseInt('${{ github.event.inputs.versionCode }}',10);require('fs').writeFileSync(f,JSON.stringify(m,null,2)+'\n')"
-          fi
-          if [ -n "${{ github.event.inputs.versionName }}" ]; then
-            node -e "const f='twa-manifest.json',m=require('./'+f);m.appVersionName='${{ github.event.inputs.versionName }}';require('fs').writeFileSync(f,JSON.stringify(m,null,2)+'\n')"
+          # Play requires a STRICTLY-INCREASING versionCode per upload. Bubblewrap
+          # auto-increments at build time but CI never persists that back, so a
+          # committed constant rebuilds the SAME versionCode every run and
+          # collides after the first upload. Derive it from the monotonic
+          # workflow run_number instead (offset well above any hand-set value):
+          # unique + always-increasing, zero manual bumping. Explicit dispatch
+          # input still wins for a one-off. Inputs are read from env (not
+          # interpolated into the script) to avoid shell/JS injection.
+          VC="${IN_VC:-$((1000 + RUN_NUMBER))}"
+          VC="$VC" node -e "const f='twa-manifest.json',m=require('./'+f);m.appVersionCode=parseInt(process.env.VC,10);require('fs').writeFileSync(f,JSON.stringify(m,null,2)+'\n')"
+          echo "appVersionCode set to $VC (Bubblewrap may +1 at build; still monotonic & unique)"
+          if [ -n "$IN_VN" ]; then
+            node -e "const f='twa-manifest.json',m=require('./'+f);m.appVersionName=process.env.IN_VN;require('fs').writeFileSync(f,JSON.stringify(m,null,2)+'\n')"
           fi
 
       - name: Build .aab + .apk with Bubblewrap
