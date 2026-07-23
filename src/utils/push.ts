@@ -52,6 +52,16 @@ export function isPushConfigured(): boolean {
         && 'Notification' in window;
 }
 
+// ── Native Android push (window.AndroidPush, injected by the WebView shell) ──
+// Web push doesn't work in a WebView, so the native shell provides an FCM token
+// + a permission prompt. We register the token into the SAME pushSubscriptions
+// doc (with fcmToken/platform), and the server sends to it via Firebase Admin.
+interface NativePushBridge { getFcmToken?: () => string; requestNotificationPermission?: () => void }
+function nativePush(): NativePushBridge | null {
+    const b = (window as { AndroidPush?: NativePushBridge }).AndroidPush;
+    return b && typeof b.getFcmToken === 'function' ? b : null;
+}
+
 /** Convert the URL-safe base64 VAPID public key into the Uint8Array
  *  PushManager.subscribe() expects. The buffer is freshly-allocated as an
  *  ArrayBuffer (not SharedArrayBuffer) so it satisfies the BufferSource
@@ -78,6 +88,18 @@ async function ensureSwRegistration(): Promise<ServiceWorkerRegistration | null>
 }
 
 export async function getPushStatus(uid: string | null): Promise<PushStatus> {
+    // Native shell: available via the bridge (no VAPID/browser push needed).
+    if (nativePush()) {
+        let prefs: PushPreferences | null = null;
+        if (uid) {
+            try {
+                const { db } = await getFirebase();
+                const snap = await getDoc(doc(db, 'pushSubscriptions', uid));
+                if (snap.exists()) prefs = snap.data() as PushPreferences;
+            } catch { /* non-fatal */ }
+        }
+        return { available: true, granted: !!prefs, prefs };
+    }
     if (!isPushConfigured()) return { available: false, granted: false, prefs: null };
     const granted = Notification.permission === 'granted';
     let prefs: PushPreferences | null = null;
@@ -97,6 +119,29 @@ export async function getPushStatus(uid: string | null): Promise<PushStatus> {
  *  Returns the resulting status. Throws only on programmer errors;
  *  user-side denials resolve with `granted: false`. */
 export async function enablePush(uid: string, prefs: PushPreferences): Promise<PushStatus> {
+    // Native shell: prompt for POST_NOTIFICATIONS + register the FCM token
+    // (which may take a beat to be ready — poll briefly).
+    const native = nativePush();
+    if (native) {
+        native.requestNotificationPermission?.();
+        let token = '';
+        for (let i = 0; i < 12 && !token; i++) {
+            token = native.getFcmToken?.() || '';
+            if (!token) await new Promise(r => setTimeout(r, 300));
+        }
+        if (!token) return { available: true, granted: false, prefs: null };
+        const { db } = await getFirebase();
+        await setDoc(doc(db, 'pushSubscriptions', uid), {
+            fcmToken: token,
+            platform: 'android',
+            userAgent: navigator.userAgent.slice(0, 200),
+            dailyEnabled: !!prefs.dailyEnabled,
+            pingsEnabled: !!prefs.pingsEnabled,
+            timezone: resolveTimezone(),
+            updatedAt: serverTimestamp(),
+        }, { merge: true });
+        return { available: true, granted: true, prefs };
+    }
     if (!isPushConfigured() || !VAPID_KEY) {
         return { available: false, granted: false, prefs: null };
     }
