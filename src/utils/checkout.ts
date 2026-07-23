@@ -48,33 +48,98 @@ type DGWindow = Window & {
     getDigitalGoodsService?: (method: string) => Promise<DigitalGoodsService>;
 };
 
-async function getPlayService(retries = 3): Promise<DigitalGoodsService | null> {
+// ── Channel diagnostics (TEMP — internal Play Billing debugging) ────────────
+// When the TWA reports "Purchases aren't available", we need to know WHY:
+// is the Digital Goods API missing entirely (device Chrome/WebView too old),
+// or present-but-not-connecting (Play Billing propagation / product config)?
+// probePlayService records that distinction so the paywall can show it during
+// internal testing. REMOVE (or gate off) `SHOW_CHANNEL_DIAG` in Paywall.tsx
+// before promoting to production — see the note there.
+export interface ChannelDiagnostic {
+    isAndroid: boolean;
+    channel: PurchaseChannel;
+    /** window.getDigitalGoodsService is a function (API injected by Chrome). */
+    dgaPresent: boolean;
+    /** Error from getDigitalGoodsService(billing) if it threw every retry. */
+    dgaError: string | null;
+    /** Chrome/Chromium major.version from the UA (DGA needs ~101+). */
+    chrome: string | null;
+    paymentRequest: boolean;
+}
+
+let lastDiagnostic: ChannelDiagnostic | null = null;
+export function getLastChannelDiagnostic(): ChannelDiagnostic | null {
+    return lastDiagnostic;
+}
+
+function chromeVersion(): string | null {
+    const m = /Chrom(?:e|ium)\/([\d.]+)/.exec(navigator.userAgent);
+    return m ? m[1] : null;
+}
+
+/** One-line readout of the last channel probe, for on-screen diagnostics. */
+export function formatChannelDiagnostic(d: ChannelDiagnostic | null): string {
+    if (!d) return 'channel: not probed yet';
+    const parts = [
+        d.isAndroid ? 'twa' : 'web',
+        `ch:${d.channel}`,
+        `DGA:${d.isAndroid ? (d.dgaPresent ? 'present' : 'ABSENT') : 'n/a'}`,
+    ];
+    if (d.dgaError) parts.push(`err:${d.dgaError}`);
+    parts.push(`Chrome:${d.chrome ?? '?'}`, `PR:${d.paymentRequest ? 'y' : 'n'}`);
+    return parts.join(' · ');
+}
+
+async function probePlayService(retries = 3): Promise<{ service: DigitalGoodsService | null; present: boolean; error: string | null }> {
     const w = window as DGWindow;
-    if (typeof w.getDigitalGoodsService !== 'function') return null;
+    if (typeof w.getDigitalGoodsService !== 'function') {
+        // API not injected at all → Chrome/WebView too old, or not a verified TWA.
+        return { service: null, present: false, error: null };
+    }
+    let lastErr: string | null = null;
     for (let attempt = 0; attempt < retries; attempt++) {
         try {
-            return await w.getDigitalGoodsService(PLAY_BILLING_METHOD);
-        } catch {
+            const svc = await w.getDigitalGoodsService(PLAY_BILLING_METHOD);
+            return { service: svc, present: true, error: null };
+        } catch (e) {
             // The API is present but the Play Billing service isn't connected
-            // yet — this is transient right after launch (and lasts longer for a
-            // freshly-published app whose product hasn't propagated). Retry a
-            // few times before giving up on THIS call; the caller also re-probes
-            // when the paywall opens, so a slow connect doesn't strand the
-            // session at 'none'.
+            // yet — transient right after launch (longer for a freshly-published
+            // app whose product hasn't propagated). Retry a few times; the
+            // caller also re-probes when the paywall opens.
+            lastErr = e instanceof Error ? `${e.name}: ${e.message}` : String(e);
             if (attempt < retries - 1) await new Promise(r => setTimeout(r, 400));
         }
     }
-    return null;
+    return { service: null, present: true, error: lastErr };
+}
+
+async function getPlayService(): Promise<DigitalGoodsService | null> {
+    return (await probePlayService()).service;
 }
 
 /**
  * Resolve which purchase flow this session must use. Cached per call site is
  * unnecessary — the check is cheap and the answer can change (e.g. service
  * worker update mid-session is a non-event, but keep it simple and honest).
+ * Records a ChannelDiagnostic as a side effect (see getLastChannelDiagnostic).
  */
 export async function getPurchaseChannel(): Promise<PurchaseChannel> {
-    if (!isAndroidApp()) return 'web';
-    return (await getPlayService()) ? 'play' : 'none';
+    if (!isAndroidApp()) {
+        lastDiagnostic = {
+            isAndroid: false, channel: 'web', dgaPresent: false,
+            dgaError: null, chrome: chromeVersion(),
+            paymentRequest: typeof PaymentRequest === 'function',
+        };
+        return 'web';
+    }
+    const probe = await probePlayService();
+    const channel: PurchaseChannel = probe.service ? 'play' : 'none';
+    lastDiagnostic = {
+        isAndroid: true, channel, dgaPresent: probe.present,
+        dgaError: probe.error, chrome: chromeVersion(),
+        paymentRequest: typeof PaymentRequest === 'function',
+    };
+    return channel;
 }
 
 /** Server-side verification + grant. Throws if the function rejects. */
