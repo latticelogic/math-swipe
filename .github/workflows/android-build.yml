@@ -39,11 +39,17 @@ jobs:
   android:
     runs-on: ubuntu-latest
     timeout-minutes: 45
-    # Presence flag for the Play publishing service account, computed without
-    # exposing the secret. The upload step gates on this so the workflow still
-    # builds (and uploads the artifact) when the secret isn't configured yet.
+    # Keyless publish to Play via Workload Identity Federation — the org blocks
+    # exported SA keys (constraints/iam.disableServiceAccountKeyCreation), and
+    # WIF is the better practice regardless. `id-token: write` lets the runner
+    # mint the GitHub OIDC token the auth step exchanges for GCP creds. HAS_WIF
+    # gates the upload so the build still succeeds (artifact + notice) before
+    # the WIF repo variables are configured.
+    permissions:
+      contents: read
+      id-token: write
     env:
-      PLAY_SA_PRESENT: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON != '' }}
+      HAS_WIF: ${{ vars.PLAY_WIF_PROVIDER != '' }}
     defaults:
       run:
         working-directory: android
@@ -242,25 +248,53 @@ jobs:
             android/app-release-signed.apk
           retention-days: 14
 
-      # Publish straight to the Play *internal* track via the Google Play
-      # Developer API — no manual Console upload. Deliberately internal, never
-      # production: promoting internal -> production stays an owner decision.
-      # Requires repo secret PLAY_SERVICE_ACCOUNT_JSON (a service-account key
-      # with "Release to testing tracks" in Play Console). The very first
-      # bundle for a package must be uploaded once via the Console before the
-      # API will accept uploads; versionCode 1 already satisfies that.
-      # Action pinned to a full SHA (v1.1.5) for supply-chain safety.
-      - name: Publish .aab to Play (internal track)
-        if: steps.mode.outputs.mode == 'build' && env.PLAY_SA_PRESENT == 'true'
-        uses: r0adkll/upload-google-play@e738b9dd8f2476ea806d921b64aacd24f34515a5 # v1.1.5
+      # Publish straight to the Play *internal* track via the Play Developer
+      # API — no manual Console upload, and NO exported key (keyless WIF).
+      # Deliberately internal, never production: internal -> production stays
+      # an owner decision. The play-publisher SA must also be a Play Console
+      # user with "Release to testing tracks". The first bundle for a package
+      # must be uploaded once via the Console before the API accepts uploads;
+      # versionCode 1 already satisfies that. auth action SHA-pinned (v3).
+      - name: Authenticate to Google Cloud (keyless, WIF)
+        if: steps.mode.outputs.mode == 'build' && env.HAS_WIF == 'true'
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
         with:
-          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
-          packageName: app.mathchallenge.twa
-          releaseFiles: android/app-release-bundle.aab
-          track: internal
-          status: completed
+          workload_identity_provider: ${{ vars.PLAY_WIF_PROVIDER }}
+          service_account: ${{ vars.PLAY_PUBLISHER_SA }}
+
+      - name: Publish .aab to Play internal track
+        if: steps.mode.outputs.mode == 'build' && env.HAS_WIF == 'true'
+        env:
+          PACKAGE: app.mathchallenge.twa
+        run: |
+          pip install --quiet google-api-python-client google-auth
+          python - <<'PY'
+          import os
+          import google.auth
+          from googleapiclient.discovery import build
+          pkg = os.environ['PACKAGE']
+          # ADC comes from the WIF auth step (external_account creds file).
+          creds, _ = google.auth.default(
+              scopes=['https://www.googleapis.com/auth/androidpublisher'])
+          svc = build('androidpublisher', 'v3', credentials=creds,
+                      cache_discovery=False)
+          edit = svc.edits().insert(packageName=pkg, body={}).execute()
+          eid = edit['id']
+          up = svc.edits().bundles().upload(
+              packageName=pkg, editId=eid,
+              media_body='app-release-bundle.aab',
+              media_mime_type='application/octet-stream').execute()
+          vc = up['versionCode']
+          print(f'uploaded versionCode {vc}')
+          svc.edits().tracks().update(
+              packageName=pkg, editId=eid, track='internal',
+              body={'releases': [{'versionCodes': [vc],
+                                  'status': 'completed'}]}).execute()
+          svc.edits().commit(packageName=pkg, editId=eid).execute()
+          print(f'committed versionCode {vc} to the internal track')
+          PY
 
       - name: Note when Play upload is skipped
-        if: steps.mode.outputs.mode == 'build' && env.PLAY_SA_PRESENT != 'true'
+        if: steps.mode.outputs.mode == 'build' && env.HAS_WIF != 'true'
         run: |
-          echo "::notice::PLAY_SERVICE_ACCOUNT_JSON not set — .aab built and stored as an artifact but NOT auto-uploaded to Play. Add the secret (see docs/google-play-launch.md) to enable CI upload to the internal track."
+          echo "::notice::WIF not configured (repo var PLAY_WIF_PROVIDER empty) — .aab built and stored as an artifact but NOT auto-uploaded to Play. See docs/google-play-launch.md §A1b."

@@ -259,15 +259,19 @@ business call, not a code blocker.
   requires a browser (OAuth consent, granting a GitHub App access to an
   org, accepting an invite as a different account, Apple/Play identity
   verification), call that out explicitly — don't silently route around it.
-- **Play `.aab` uploads are CLI/CI-driven, NOT manual Console upload**
-  (owner call 2026-07-23). `android-build.yml` builds the bundle and then
-  publishes it straight to the Play **internal** track via the Google Play
-  Developer API (`r0adkll/upload-google-play`, SHA-pinned), gated on repo
-  secret `PLAY_SERVICE_ACCOUNT_JSON` (a service-account key with "Release to
-  testing tracks"). Promoting internal → production stays a deliberate owner
-  action. Never hand-upload a bundle when CI can; if the secret is absent the
-  build still stores the `.aab` artifact and logs a notice. Same principle as
-  the Cloudflare deploy: ship through CI, not a dashboard.
+- **Play `.aab` uploads are CI-driven and KEYLESS, NOT manual Console upload**
+  (owner call 2026-07-23). `android-build.yml` builds the bundle and publishes
+  it to the Play **internal** track via the Play Developer API, authenticated
+  by **Workload Identity Federation** — no exported SA key (the org enforces
+  `iam.disableServiceAccountKeyCreation`, and keyless is best practice). A
+  dedicated zero-role SA `play-publisher@math-swipe-prod` is bound to the repo
+  via WIF pool `github-pool`; config lives in repo *variables*
+  `PLAY_WIF_PROVIDER` / `PLAY_PUBLISHER_SA` (not secrets). The SA must also be a
+  Play Console user with "Release to testing tracks". Promoting internal →
+  production stays a deliberate owner action. Never hand-upload when CI can; if
+  WIF vars are absent the build still stores the `.aab` artifact + logs a
+  notice. Setup + reproduction: `google-play-launch.md §A1b`,
+  `next-app-playbook.md §4`.
 - Don't push directly to `master`; open a PR from a short-lived feature/fix/chore branch targeting `master` (no long-lived `dev` integration branch — see README)
 - Run `npm run verify` before pushing — covers lint + tsc + tests + build + worker
 - `.env*` is gitignored (with `!.env.example` allowed through). `.env.example`

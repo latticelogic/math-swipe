@@ -296,15 +296,38 @@ initial listing), and Google offers a short **extension** — but check them
   upstream version catalog** (`gradle/libs.versions.toml`, key `billing`) to
   know where you stand; take Google's extension if upstream is late.
 
-### Publish to Play from CI, not the Console
+### Publish to Play from CI, keylessly (Workload Identity Federation)
 After the **first** bundle is uploaded once via the Console (a one-time API
-limitation), automate every subsequent upload. Add a step after the build:
-`r0adkll/upload-google-play` (SHA-pinned), `track: internal`, `status:
-completed`, gated on a `PLAY_SERVICE_ACCOUNT_JSON` secret (service-account key
-with "Release to testing tracks"). Keep it to the **internal** track —
-internal→production stays a human decision. Gate the step on a job-level
-`env: PLAY_SA_PRESENT: ${{ secrets.X != '' }}` so the build still succeeds
-(artifact + notice) before the secret exists.
+limitation), automate every subsequent upload. **Don't use an exported SA key**
+— many orgs enforce `constraints/iam.disableServiceAccountKeyCreation` (ours
+does), and keyless is best practice anyway. Recipe:
+1. **Dedicated zero-role SA** `play-publisher` (no GCP project IAM roles — its
+   only power comes from the Play Console grant, so a compromise can't touch
+   GCP). `gcloud iam service-accounts create play-publisher`.
+2. **WIF pool + GitHub OIDC provider**, locked down:
+   ```bash
+   gcloud iam workload-identity-pools create github-pool --location=global
+   gcloud iam workload-identity-pools providers create-oidc github \
+     --workload-identity-pool=github-pool --location=global \
+     --issuer-uri=https://token.actions.githubusercontent.com \
+     --attribute-mapping="google.subject=assertion.sub,attribute.repository=assertion.repository,attribute.repository_owner=assertion.repository_owner" \
+     --attribute-condition="assertion.repository_owner == '<org>'"   # REQUIRED — or any repo can impersonate
+   gcloud iam service-accounts add-iam-policy-binding play-publisher@<proj>.iam.gserviceaccount.com \
+     --role=roles/iam.workloadIdentityUser \
+     --member="principalSet://iam.googleapis.com/projects/<projnum>/locations/global/workloadIdentityPools/github-pool/attribute.repository/<org>/<repo>"
+   ```
+3. Enable `androidpublisher.googleapis.com`; store `PLAY_WIF_PROVIDER` +
+   `PLAY_PUBLISHER_SA` as repo **variables** (not secrets — not sensitive).
+4. **Invite the SA email into Play Console** → Users and permissions →
+   "Release to testing tracks" (Play perms are separate from GCP IAM).
+5. Workflow: job `permissions: { id-token: write, contents: read }`, then
+   `google-github-actions/auth@<sha>` (WIF) → a short Python step
+   (`google-api-python-client`) that does edits.insert → bundles.upload →
+   tracks.update(track=internal, status=completed) → commit, using
+   `google.auth.default(scopes=[androidpublisher])`. Gate on
+   `env: HAS_WIF: ${{ vars.PLAY_WIF_PROVIDER != '' }}` so the build still
+   succeeds (artifact + notice) before WIF is wired. Keep it to **internal**;
+   internal→production stays a human decision.
 
 ### The two SHA-256s you'll need for assetlinks
 - **Upload-key SHA-256**: printed in the bootstrap run summary (also
