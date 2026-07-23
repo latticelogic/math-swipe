@@ -62,9 +62,17 @@ export function isAndroidApp(): boolean {
 export function isNativeAndroid(): boolean {
     try {
         if (sessionStorage.getItem(CHANNEL_KEY) === 'native') return true;
+        // Most robust signal: the native shell always injects its JS bridges
+        // (addJavascriptInterface). Unlike `?src=android-native`, they can't be
+        // stripped by boot URL cleanup and don't depend on call ordering — so
+        // this catches the shell even if a caller runs after the query string
+        // has been rewritten.
+        const w = window as unknown as { AndroidShell?: unknown; AndroidBilling?: unknown };
+        const hasBridge = typeof window !== 'undefined'
+            && (typeof w.AndroidShell !== 'undefined' || typeof w.AndroidBilling !== 'undefined');
         const fromParam = typeof window !== 'undefined'
             && new URLSearchParams(window.location.search).get('src') === 'android-native';
-        if (fromParam) {
+        if (hasBridge || fromParam) {
             sessionStorage.setItem(CHANNEL_KEY, 'native');
             return true;
         }

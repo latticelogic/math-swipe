@@ -52,17 +52,17 @@ export function ReloadPrompt({ suppress = false }: ReloadPromptProps) {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 60 }}
                     transition={{ duration: 0.3 }}
-                    className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[999] bg-[var(--color-overlay)] border border-[var(--color-gold)]/30 rounded-2xl px-5 py-3 flex items-center gap-3 shadow-lg backdrop-blur-sm"
+                    className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[999] w-[min(92vw,380px)] bg-[var(--color-overlay)] border border-[var(--color-gold)]/30 rounded-2xl px-5 py-3 flex items-center gap-3 shadow-lg backdrop-blur-sm"
                 >
                     {/* Sparkle — hand-drawn, replaces ✨ emoji */}
-                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="text-[var(--color-gold)]">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="shrink-0 text-[var(--color-gold)]">
                         <path d="M12 3 L 13.5 10.5 L 21 12 L 13.5 13.5 L 12 21 L 10.5 13.5 L 3 12 L 10.5 10.5 Z" />
                     </svg>
                     <div className="flex-1 min-w-0">
                         <div className="text-xs ui text-[rgb(var(--color-fg))]/60">{t('reload.title')}</div>
                         <div className="text-sm chalk text-[var(--color-chalk)]">{t('reload.body')}</div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 shrink-0">
                         <button
                             onClick={close}
                             className="text-xs ui text-[rgb(var(--color-fg))]/40 px-2 py-1 rounded-lg active:bg-white/5 transition-colors"
