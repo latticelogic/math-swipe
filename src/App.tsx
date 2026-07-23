@@ -1521,7 +1521,7 @@ function App() {
 
         {activeTab === 'magic' && (
           <motion.div className="flex-1 flex flex-col min-h-0" onPanEnd={!isMagicLessonActive ? handleTabSwipe : undefined}>
-            <TabErrorBoundary><Suspense fallback={<TabSkeleton variant="tricks" />}><TricksPage onLessonActive={setIsMagicLessonActive} hasPro={hasPro} onProLocked={requestPro} /></Suspense></TabErrorBoundary>
+            <TabErrorBoundary><Suspense fallback={<TabSkeleton variant="tricks" />}><TricksPage onLessonActive={setIsMagicLessonActive} hasPro={hasPro} hasAccess={entitlement.hasAccess} onProLocked={requestPro} /></Suspense></TabErrorBoundary>
           </motion.div>
         )}
 
