@@ -154,6 +154,10 @@ class MainActivity : ComponentActivity() {
         // Native haptics (window.AndroidHaptics.impact(type)) for the swipe.
         webView.addJavascriptInterface(HapticsBridge(this), "AndroidHaptics")
 
+        // Play Integrity (window.AndroidIntegrity.requestToken) — token attached
+        // to purchases; server decodes + logs the verdict (log-only for now).
+        webView.addJavascriptInterface(IntegrityBridge(this, postJs), "AndroidIntegrity")
+
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 if (webView.canGoBack()) webView.goBack() else finish()

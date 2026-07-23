@@ -54,10 +54,52 @@ const PACKAGE_NAME = 'app.mathchallenge.twa';
 const VALID_SKUS = new Set(['pro_lifetime']);
 
 const ANDROID_PUBLISHER_BASE = 'https://androidpublisher.googleapis.com/androidpublisher/v3';
+const PLAY_INTEGRITY_BASE = 'https://playintegrity.googleapis.com/v1';
 
 const auth = new GoogleAuth({
     scopes: ['https://www.googleapis.com/auth/androidpublisher'],
 });
+/** Separate scope for the Play Integrity decode endpoint (log-only for now). */
+const integrityAuth = new GoogleAuth({
+    scopes: ['https://www.googleapis.com/auth/playintegrity'],
+});
+
+/**
+ * Play Integrity — LOG-ONLY, deliberately NOT enforced yet.
+ *
+ * The native shell attaches an integrity token to each purchase; here we decode
+ * it (Google-managed, via the Play Integrity API) and log the device/app
+ * verdict. This lets us see whether real traffic passes BEFORE we ever gate on
+ * it — the same staged approach used for App Check. It must NEVER throw into the
+ * grant path: a bad, absent, or unverifiable token can never block a legitimate
+ * purchase (that would be the worst possible monetization failure). Flipping to
+ * enforcement (reject grants whose device/app verdict fails) is a later,
+ * metrics-gated decision. See next-app-playbook.md.
+ */
+async function logIntegrityVerdict(uid: string, integrityToken: string, expectedNonce: string): Promise<void> {
+    try {
+        const client = await integrityAuth.getClient();
+        const url = `${PLAY_INTEGRITY_BASE}/${PACKAGE_NAME}:decodeIntegrityToken`;
+        const res = await client.request<{
+            tokenPayloadExternal?: {
+                requestDetails?: { nonce?: string };
+                appIntegrity?: { appRecognitionVerdict?: string };
+                deviceIntegrity?: { deviceRecognitionVerdict?: string[] };
+                accountDetails?: { appLicensingVerdict?: string };
+            };
+        }>({ url, method: 'POST', data: { integrity_token: integrityToken } });
+        const p = res.data.tokenPayloadExternal ?? {};
+        logger.info('[integrity] verdict (LOG-ONLY, not enforced)', {
+            uid,
+            app: p.appIntegrity?.appRecognitionVerdict,           // PLAY_RECOGNIZED | UNRECOGNIZED_VERSION | ...
+            device: p.deviceIntegrity?.deviceRecognitionVerdict,  // [MEETS_DEVICE_INTEGRITY, ...]
+            licensing: p.accountDetails?.appLicensingVerdict,     // LICENSED | UNLICENSED
+            nonceOk: p.requestDetails?.nonce === expectedNonce,
+        });
+    } catch (err) {
+        logger.warn('[integrity] decode failed (log-only, non-fatal)', { uid, err: String(err) });
+    }
+}
 
 /** Hash tokens before using them as doc ids — purchase tokens are long,
  *  contain unsafe chars, and shouldn't sit raw in doc ids anyway. */
@@ -132,6 +174,16 @@ export const verifyPlayPurchase = onCall(
         // If this buyer was referred, credit the referrer's conversion count
         // (guarded — never throws into the grant path).
         await creditReferralConversion(uid);
+
+        // Play Integrity (LOG-ONLY): decode + log the device/app verdict for the
+        // token the native shell attached. Never blocks the grant. The nonce the
+        // client requested is base64url(sha256(purchaseToken)); we recompute it
+        // to log whether it round-trips.
+        const integrityToken = String(request.data?.integrityToken ?? '');
+        if (integrityToken && integrityToken.length < 8192) {
+            const expectedNonce = createHash('sha256').update(purchaseToken).digest('base64url');
+            await logIntegrityVerdict(uid, integrityToken, expectedNonce);
+        }
 
         // 4) Acknowledge (idempotent; skip if already done). MUST happen or
         //    Play refunds the purchase automatically after 3 days.
