@@ -4,7 +4,8 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Play Billing. -->
     <uses-permission android:name="com.android.vending.BILLING" />
-    <!-- (Deferred with FCM: android.permission.POST_NOTIFICATIONS) -->
+    <!-- Android 13+ runtime notification permission for native FCM. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:allowBackup="true"
@@ -26,6 +27,17 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <!-- Native FCM (PushService + messaging meta-data) returns as a fast-follow. -->
+
+        <!-- Native FCM: token registration + notification display. -->
+        <service
+            android:name=".PushService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="daily_reminders" />
     </application>
 </manifest>

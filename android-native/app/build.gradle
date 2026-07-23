@@ -1,9 +1,9 @@
 plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
-    // FCM (com.google.gms.google-services + firebase-messaging) is a deliberate
-    // fast-follow — see android-native/README.md. Deferred so the first build
-    // doesn't need google-services.json; billing is what we're testing first.
+    // FCM: reads android-native/app/google-services.json (committed — client
+    // config, same class as the public web Firebase config).
+    id 'com.google.gms.google-services'
 }
 
 android {
@@ -68,6 +68,8 @@ dependencies {
     implementation 'androidx.credentials:credentials-play-services-auth:1.3.0'
     implementation 'com.google.android.libraries.identity.googleid:googleid:1.1.1'
     implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.8.7'
-    // FCM deferred (see plugins block): platform('com.google.firebase:firebase-bom')
-    // + 'com.google.firebase:firebase-messaging-ktx' come back with PushService.
+    // Native FCM (web push doesn't work in a WebView) — register the token into
+    // pushSubscriptions so the existing server send-logic can target the device.
+    implementation platform('com.google.firebase:firebase-bom:33.7.0')
+    implementation 'com.google.firebase:firebase-messaging-ktx'
 }

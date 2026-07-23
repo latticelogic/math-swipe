@@ -9,6 +9,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.webkit.ServiceWorkerControllerCompat
 import androidx.webkit.WebViewFeature
+import com.google.firebase.messaging.FirebaseMessaging
 
 /**
  * The native shell. A full-screen WebView renders the live PWA
@@ -80,6 +81,15 @@ class MainActivity : ComponentActivity() {
             evaluateJs = postJs,
         )
         webView.addJavascriptInterface(auth, "AndroidAuth")
+
+        // Native FCM: ensure the reminders channel exists + cache the token so
+        // the web push opt-in can register it into pushSubscriptions.
+        PushService.ensureChannel(this)
+        FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
+            getSharedPreferences(PushService.PREFS, MODE_PRIVATE).edit()
+                .putString(PushService.KEY_TOKEN, token).apply()
+        }
+        webView.addJavascriptInterface(PushBridge(this), "AndroidPush")
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
