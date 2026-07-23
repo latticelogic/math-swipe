@@ -9,9 +9,14 @@ import { t } from '../i18n';
 
 interface Props {
     onLessonActive: (active: boolean) => void;
-    /** Most of the Magic Tricks library is Pro. When false, only the free
-     *  starter set opens; the rest show a lock and route to the upsell. */
+    /** Paid (lifetime). Gates the Pro tricks — the whole library minus the free
+     *  starter set. */
     hasPro?: boolean;
+    /** Trial-or-paid. Gates the FREE starter set: playable during the trial (and
+     *  once paid), but locked once the trial expires — post-trial the only free
+     *  surface is the Daily. Everyone still SEES the full list (locked tricks
+     *  show a padlock and route to the value-anchored upsell on tap). */
+    hasAccess?: boolean;
     onProLocked?: () => void;
 }
 
@@ -33,7 +38,7 @@ function DifficultyDots({ difficulty }: { difficulty: number }) {
     );
 }
 
-export function TricksPage({ onLessonActive, hasPro = true, onProLocked }: Props) {
+export function TricksPage({ onLessonActive, hasPro = true, hasAccess = true, onProLocked }: Props) {
     const [selectedTrick, setSelectedTrick] = useState<MagicTrick | null>(null);
     const [mastered, setMastered] = useState(() => loadMastered());
     const [previewTrick, setPreviewTrick] = useState<MagicTrick | null>(null);
@@ -69,7 +74,14 @@ export function TricksPage({ onLessonActive, hasPro = true, onProLocked }: Props
 
     // Open a trick — but if it's a Pro (non-free) trick and the user hasn't
     // paid, route to the upsell instead of the lesson.
-    const trickLocked = useCallback((trick: MagicTrick) => !hasPro && !isFreeTrick(trick.id), [hasPro]);
+    //   • Free starter trick → needs trial-or-paid (hasAccess); locks at expiry.
+    //   • Pro trick          → needs paid (hasPro).
+    // Expired users therefore see every trick locked (only the Daily stays free
+    // post-trial); a tap routes to the value-anchored upsell.
+    const trickLocked = useCallback(
+        (trick: MagicTrick) => isFreeTrick(trick.id) ? !hasAccess : !hasPro,
+        [hasPro, hasAccess],
+    );
     const openTrick = useCallback((trick: MagicTrick) => {
         if (trickLocked(trick)) { onProLocked?.(); return; }
         setSelectedTrick(trick);
