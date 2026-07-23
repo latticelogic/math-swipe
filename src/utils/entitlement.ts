@@ -38,6 +38,10 @@ export interface Entitlement {
     originalTransactionId: string | null;
     /** ms since epoch — last write, used as a sanity check. */
     updatedAt: number;
+    /** Bonus days added to the base trial. Set server-side when the user
+     *  arrives via a referral and claims it (double-sided referral — the
+     *  referee gets extra trial time). Defaults to 0; never negative. */
+    trialBonusDays?: number;
 }
 
 /** Empty record used when a user has no entitlement doc yet — happens for
@@ -62,15 +66,16 @@ export function daysIntoTrial(trialStartedAt: number, now: number = Date.now()):
 }
 
 /** Whole days remaining in the trial, never negative. Used by the
- *  countdown chip and reminder copy. */
-export function trialDaysLeft(trialStartedAt: number, now: number = Date.now()): number {
-    return Math.max(0, TRIAL_DAYS - daysIntoTrial(trialStartedAt, now));
+ *  countdown chip and reminder copy. `bonusDays` extends the window (referral). */
+export function trialDaysLeft(trialStartedAt: number, now: number = Date.now(), bonusDays = 0): number {
+    return Math.max(0, TRIAL_DAYS + Math.max(0, bonusDays) - daysIntoTrial(trialStartedAt, now));
 }
 
-/** True if the user is currently inside the free-access window. */
-export function isTrialActive(trialStartedAt: number, now: number = Date.now()): boolean {
+/** True if the user is currently inside the free-access window. `bonusDays`
+ *  (referral referee reward) lengthens the effective trial. */
+export function isTrialActive(trialStartedAt: number, now: number = Date.now(), bonusDays = 0): boolean {
     if (!trialStartedAt) return false;
-    return daysIntoTrial(trialStartedAt, now) < TRIAL_DAYS;
+    return daysIntoTrial(trialStartedAt, now) < TRIAL_DAYS + Math.max(0, bonusDays);
 }
 
 /** Single source of truth for "is the app unlocked for this user".
@@ -78,7 +83,7 @@ export function isTrialActive(trialStartedAt: number, now: number = Date.now()):
 export function hasAccess(e: Entitlement | null, now: number = Date.now()): boolean {
     if (!e) return false;
     if (e.paidAt && e.paidAt > 0) return true;
-    return isTrialActive(e.trialStartedAt, now);
+    return isTrialActive(e.trialStartedAt, now, e.trialBonusDays ?? 0);
 }
 
 /** True only once the user has PAID (lifetime unlock). This is the gate for
@@ -96,7 +101,7 @@ export type EntitlementStatus = 'paid' | 'trial' | 'expired' | 'unknown';
 export function entitlementStatus(e: Entitlement | null, now: number = Date.now()): EntitlementStatus {
     if (!e || !e.trialStartedAt) return 'unknown';
     if (e.paidAt && e.paidAt > 0) return 'paid';
-    if (isTrialActive(e.trialStartedAt, now)) return 'trial';
+    if (isTrialActive(e.trialStartedAt, now, e.trialBonusDays ?? 0)) return 'trial';
     return 'expired';
 }
 

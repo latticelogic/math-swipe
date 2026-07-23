@@ -353,6 +353,7 @@ export const id: Record<MsgKey, string> = {
     'push.nudgeBody': "Satu pengingat lembut sehari kalau kamu belum main, tidak lebih. Bisa dimatikan kapan saja di Pengaturan.",
     'push.nudgeYes': "Aktifkan pengingat",
     'push.nudgeNo': "Nanti saja",
+    'referral.welcomeBonus': "Teman mengundangmu — {days} hari ekstra, gratis.",
     'install.pill': 'Pasang aplikasi',
     'install.hideAria': 'Sembunyikan ajakan pasang',
     'install.notNow': 'nanti saja',

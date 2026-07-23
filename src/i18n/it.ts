@@ -352,6 +352,7 @@ export const it: Record<MsgKey, string> = {
     'push.nudgeBody': "Un promemoria delicato al giorno se non hai giocato, nient'altro. Disattivabile quando vuoi nelle Impostazioni.",
     'push.nudgeYes': "Attiva i promemoria",
     'push.nudgeNo': "Non ora",
+    'referral.welcomeBonus': "Un amico ti ha invitato — {days} giorni extra, offerti.",
     'install.pill': "Installa l'app",
     'install.hideAria': 'Nascondi il messaggio di installazione',
     'install.notNow': 'non ora',

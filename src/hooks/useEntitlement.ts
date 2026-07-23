@@ -256,5 +256,6 @@ function toEntitlement(data: Record<string, unknown>): Entitlement {
         source: (data.source as Entitlement['source']) ?? null,
         originalTransactionId: (data.originalTransactionId as string | null) ?? null,
         updatedAt: toMillis(data.updatedAt, 0),
+        trialBonusDays: typeof data.trialBonusDays === 'number' ? data.trialBonusDays : 0,
     };
 }

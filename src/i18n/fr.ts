@@ -352,6 +352,7 @@ export const fr: Record<MsgKey, string> = {
     'push.nudgeBody': "Un petit rappel par jour si tu n'as pas joué, rien de plus. Désactivable à tout moment dans les Réglages.",
     'push.nudgeYes': "Activer les rappels",
     'push.nudgeNo': "Plus tard",
+    'referral.welcomeBonus': "Un ami t'a invité — {days} jours de plus, offerts.",
     'install.pill': "Installer l'appli",
     'install.hideAria': "Masquer l'invite d'installation",
     'install.notNow': 'pas maintenant',
