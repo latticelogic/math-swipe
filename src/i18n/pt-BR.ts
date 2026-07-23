@@ -144,6 +144,7 @@ export const ptBR: Record<MsgKey, string> = {
     'celebrate.unlockModes': "Modos Difícil, Cronometrado e Definitivo",
     'celebrate.unlockCosmetics': "Temas Pro e o rastro Cometa",
     'celebrate.cta': "Continuar jogando",
+    'celebrate.confirming': "Pagamento recebido — desbloqueando tudo…",
     'settings.title': 'Ajustes',
     'settings.deleteAccount': 'Excluir minha conta e dados',
     'settings.gearAria': 'Abrir ajustes',
