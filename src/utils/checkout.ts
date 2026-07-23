@@ -62,6 +62,10 @@ type NativeWindow = Window & {
     AndroidBilling?: AndroidBillingBridge;
     __mcOnPurchase?: (purchaseToken: string) => void;
     __mcOnPurchaseError?: (message: string) => void;
+    /** Play Integrity bridge — mints a token bound to `nonce`, replies via
+     *  __mcOnIntegrityToken. Native shell only. */
+    AndroidIntegrity?: { requestToken(nonce: string, callbackId: string): void };
+    __mcOnIntegrityToken?: (callbackId: string, token: string | null) => void;
 };
 
 function nativeBilling(): AndroidBillingBridge | null {
@@ -204,13 +208,53 @@ export async function getPurchaseChannel(): Promise<PurchaseChannel> {
     return channel;
 }
 
+/** URL-safe base64 of raw bytes — the Play Integrity nonce format. */
+function base64url(bytes: Uint8Array): string {
+    let s = '';
+    for (const b of bytes) s += String.fromCharCode(b);
+    return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+/**
+ * Request a Play Integrity token from the native shell, bound to this purchase
+ * (nonce = base64url(sha256(purchaseToken)) — the server recomputes it). Returns
+ * null off-native, on any error, or after an 8s timeout: integrity is a
+ * best-effort signal the server LOGS, never a gate on the purchase.
+ */
+async function requestIntegrityToken(purchaseToken: string): Promise<string | null> {
+    const w = window as NativeWindow;
+    const bridge = w.AndroidIntegrity;
+    if (!bridge || typeof bridge.requestToken !== 'function') return null;
+    try {
+        const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(purchaseToken));
+        const nonce = base64url(new Uint8Array(digest));
+        const id = `itk_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+        return await new Promise<string | null>((resolve) => {
+            const done = (token: string | null) => {
+                clearTimeout(timer);
+                if (w.__mcOnIntegrityToken === handler) delete w.__mcOnIntegrityToken;
+                resolve(token);
+            };
+            const handler = (cbId: string, token: string | null) => { if (cbId === id) done(token || null); };
+            const timer = setTimeout(() => done(null), 8000);
+            w.__mcOnIntegrityToken = handler;
+            try { bridge.requestToken(nonce, id); } catch { done(null); }
+        });
+    } catch {
+        return null;
+    }
+}
+
 /** Server-side verification + grant. Throws if the function rejects. */
 async function verifyWithServer(purchaseToken: string): Promise<void> {
+    // Best-effort Play Integrity token (native shell only; null everywhere else).
+    // The server decodes + LOGS it — it never blocks the grant.
+    const integrityToken = await requestIntegrityToken(purchaseToken).catch(() => null);
     const [{ functions }, { httpsCallable }] = await Promise.all([
         getFirebase(), import('firebase/functions'),
     ]);
     const call = httpsCallable(functions, 'verifyPlayPurchase');
-    await call({ sku: PLAY_SKU, purchaseToken });
+    await call({ sku: PLAY_SKU, purchaseToken, ...(integrityToken ? { integrityToken } : {}) });
 }
 
 /** Google Play purchase via PaymentRequest + Digital Goods API. */
