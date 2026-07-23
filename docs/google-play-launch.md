@@ -49,35 +49,40 @@ boot-time `restorePlayPurchases()`.
    `app/build.gradle` to `targetSdkVersion 36` (Bubblewrap hardcodes 35) and
    fails the run if the patch doesn't take. See `next-app-playbook.md` §4.
 
-### A1b. CI auto-upload to the internal track (no manual Console upload)
+### A1b. CI auto-upload to the internal track (keyless, no manual upload)
 
 `android-build.yml` publishes the built `.aab` straight to the Play **internal**
-track when the `PLAY_SERVICE_ACCOUNT_JSON` secret is present (else it just
-stores the artifact and logs a notice). One-time setup:
+track via the Play Developer API, authenticated with **Workload Identity
+Federation (WIF)** — no exported service-account key (the org enforces
+`constraints/iam.disableServiceAccountKeyCreation`, and keyless is best practice
+anyway). If the WIF repo variable is absent the build just stores the artifact
+and logs a notice.
 
-1. **Give the service account release rights.** In Play Console → *Users and
-   permissions*, the invited SA (`122552558583-compute@developer.gserviceaccount.com`)
-   currently has view/orders perms only — add **"Release to testing tracks"**
-   (app-scoped). Uploading needs it; the verification functions don't.
-2. **Export a JSON key** for that SA (there's no key today — the Cloud
-   Functions use ADC, not a file):
-   ```bash
-   gcloud iam service-accounts keys create play-ci-key.json \
-     --iam-account=122552558583-compute@developer.gserviceaccount.com
-   ```
-   (Or create a dedicated `play-publisher` SA to keep upload creds separate
-   from the runtime SA — cleaner, optional.)
-3. **Store it as a repo secret**, then delete the local file:
-   ```bash
-   gh secret set PLAY_SERVICE_ACCOUNT_JSON < play-ci-key.json && rm play-ci-key.json
-   ```
-4. **First upload is manual, once.** The Play Developer API rejects the very
-   first bundle for a package; `versionCode 1` was already uploaded via the
-   Console, so the API takes over from `versionCode 2`.
+**Already provisioned (2026-07-23, this session):**
+- Dedicated SA **`play-publisher@math-swipe-prod.iam.gserviceaccount.com`** with
+  **zero GCP project roles** (least privilege — if compromised it can only do
+  what Play Console grants it).
+- WIF pool `github-pool` + OIDC provider `github` (issuer
+  `token.actions.githubusercontent.com`, locked to
+  `assertion.repository_owner == 'latticelogic'`), SA bound with
+  `roles/iam.workloadIdentityUser` for **`latticelogic/math-swipe` only**.
+- `androidpublisher.googleapis.com` enabled on the project.
+- Repo **variables** (not secrets): `PLAY_WIF_PROVIDER`, `PLAY_PUBLISHER_SA`.
 
-After this, every `android-build` run lands on the internal track
+**One owner step remaining — grant the SA Play Console access:** Play permissions
+are separate from GCP IAM. In Play Console → *Users and permissions → Invite
+new users*, invite **`play-publisher@math-swipe-prod.iam.gserviceaccount.com`**
+and grant **"Release to testing tracks"** (app-scoped to Math Challenge).
+Without this the API upload returns 401/403.
+
+**First upload is manual, once** — the Play API rejects the very first bundle
+for a package; versionCode 1/2 already satisfy that, so the API takes over from
+versionCode 3.
+
+After the SA invite, every `android-build` run lands on the internal track
 automatically. Promoting **internal → production stays a deliberate owner
-action** (never automated).
+action** (never automated). To reproduce the WIF setup for the next app, see
+`next-app-playbook.md` §4.
 
 ### A2. Play Console app setup (~1 hour of clickwork)
 
