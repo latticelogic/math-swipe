@@ -49,3 +49,25 @@ export function detectChannel(): Channel {
 export function isAndroidApp(): boolean {
     return detectChannel() === 'twa';
 }
+
+/**
+ * True when running inside the NATIVE Android shell (WebView + native Play
+ * Billing — docs/native-android-plan.md). The shell loads the PWA with
+ * `?src=android-native`. Kept separate from `isAndroidApp()` (which is TWA-
+ * specific) so the purchase router can tell "native shell, use the billing
+ * bridge" from "legacy TWA, use Digital Goods". Critically, when we're in the
+ * native shell we must NEVER fall back to the web/Airwallex path — Google Play
+ * policy forbids external payment inside the app.
+ */
+export function isNativeAndroid(): boolean {
+    try {
+        if (sessionStorage.getItem(CHANNEL_KEY) === 'native') return true;
+        const fromParam = typeof window !== 'undefined'
+            && new URLSearchParams(window.location.search).get('src') === 'android-native';
+        if (fromParam) {
+            sessionStorage.setItem(CHANNEL_KEY, 'native');
+            return true;
+        }
+    } catch { /* storage unavailable → not native */ }
+    return false;
+}

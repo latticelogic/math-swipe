@@ -24,7 +24,7 @@
  */
 
 import { getFirebase } from './firebase';
-import { isAndroidApp } from './channel';
+import { isAndroidApp, isNativeAndroid } from './channel';
 
 /** Play Billing product id for the one-time lifetime unlock. Must match the
  *  in-app product created in Play Console → Monetize → Products. */
@@ -110,11 +110,14 @@ function chromeVersion(): string | null {
 /** One-line readout of the last channel probe, for on-screen diagnostics. */
 export function formatChannelDiagnostic(d: ChannelDiagnostic | null): string {
     if (!d) return 'channel: not probed yet';
-    const parts = [
-        d.isAndroid ? 'twa' : 'web',
-        `ch:${d.channel}`,
-        `DGA:${d.isAndroid ? (d.dgaPresent ? 'present' : 'ABSENT') : 'n/a'}`,
-    ];
+    const shell = d.channel === 'android-native' ? 'native'
+        : d.channel === 'play' ? 'twa'
+        : d.isAndroid ? 'android' : 'web';
+    const parts = [shell, `ch:${d.channel}`];
+    // DGA only means something on the legacy TWA path.
+    if (d.channel === 'play' || (d.isAndroid && d.channel === 'none' && d.dgaError && !d.dgaError.startsWith('native shell'))) {
+        parts.push(`DGA:${d.dgaPresent ? 'present' : 'ABSENT'}`);
+    }
     if (d.dgaError) parts.push(`err:${d.dgaError}`);
     parts.push(`Chrome:${d.chrome ?? '?'}`, `PR:${d.paymentRequest ? 'y' : 'n'}`);
     return parts.join(' · ');
@@ -169,6 +172,18 @@ export async function getPurchaseChannel(): Promise<PurchaseChannel> {
         // reports errors via callback. Returning 'none' here would wrongly
         // show "unavailable" during a transient connect.
         return 'android-native';
+    }
+    if (isNativeAndroid()) {
+        // Native shell but the billing bridge isn't present/ready yet. Do NOT
+        // fall through to the web/Airwallex path — Play policy forbids external
+        // payment inside the app. A clean 'none' shows the neutral notice (and
+        // the diagnostic explains it's the native shell, not the TWA).
+        lastDiagnostic = {
+            isAndroid: true, channel: 'none', dgaPresent: false,
+            dgaError: 'native shell: AndroidBilling bridge not present',
+            chrome: chromeVersion(), paymentRequest: typeof PaymentRequest === 'function',
+        };
+        return 'none';
     }
     if (!isAndroidApp()) {
         lastDiagnostic = {
