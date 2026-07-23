@@ -1,6 +1,7 @@
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { t } from '../i18n';
+import { isNativeAndroid } from '../utils/channel';
 
 interface ReloadPromptProps {
     /** When true (e.g. user is mid-game), the toast is hidden until they navigate away */
@@ -10,6 +11,14 @@ interface ReloadPromptProps {
 /**
  * Non-intrusive toast that appears when a new version of the app is available.
  * Hidden during active gameplay. Shows on Me/League/Magic tabs or before first answer.
+ *
+ * NOT shown inside the native Android shell. There, a "new version — update"
+ * prompt is confusing: the user updates the native binary through Google Play,
+ * so a second in-app update ask reads as broken. Native apps refresh their web
+ * content silently — the waiting service worker simply activates on the next
+ * cold start (the app being killed + reopened), which is exactly how a native
+ * app is expected to feel. The toast stays for real browser/PWA users, where
+ * "reload for the new version" is the standard, expected pattern.
  */
 export function ReloadPrompt({ suppress = false }: ReloadPromptProps) {
     const {
@@ -27,7 +36,9 @@ export function ReloadPrompt({ suppress = false }: ReloadPromptProps) {
         },
     });
 
-    const visible = needRefresh && !suppress;
+    // In the native shell we never surface the toast — the update lands on the
+    // next launch. Everywhere else it behaves as before.
+    const visible = needRefresh && !suppress && !isNativeAndroid();
 
     function close() {
         setNeedRefresh(false);
