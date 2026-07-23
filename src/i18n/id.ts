@@ -138,6 +138,14 @@ export const id: Record<MsgKey, string> = {
     'paywall.lifetime': 'Akses seumur hidup · Tanpa langganan',
     'paywall.maybeLater': 'Nanti saja',
 
+
+    // —— Purchase celebration ——
+    'celebrate.title': "Kamu resmi bergabung.",
+    'celebrate.body': "Akses seumur hidup, selamanya milikmu. Terima kasih telah mendukung Math Challenge.",
+    'celebrate.unlockTricks': "Semua Trik Sulap — semua 36",
+    'celebrate.unlockModes': "Mode Sulit, Waktu, dan Ultimate",
+    'celebrate.unlockCosmetics': "Tema Pro dan jejak Komet",
+    'celebrate.cta': "Terus bermain",
     'settings.title': 'Pengaturan',
     'settings.deleteAccount': 'Hapus akun & data saya',
     'settings.gearAria': 'Buka pengaturan',

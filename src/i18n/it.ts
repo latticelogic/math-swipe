@@ -137,6 +137,14 @@ export const it: Record<MsgKey, string> = {
     'paywall.lifetime': 'Accesso a vita · Nessun abbonamento',
     'paywall.maybeLater': 'Più tardi',
 
+
+    // —— Purchase celebration ——
+    'celebrate.title': "Ci sei.",
+    'celebrate.body': "Accesso a vita, per sempre tuo. Grazie per aver sostenuto Math Challenge.",
+    'celebrate.unlockTricks': "Tutti i trucchi di magia — tutti e 36",
+    'celebrate.unlockModes': "Modalità Difficile, a Tempo e Suprema",
+    'celebrate.unlockCosmetics': "Temi Pro e la scia Cometa",
+    'celebrate.cta': "Continua a giocare",
     'settings.title': 'Impostazioni',
     'settings.deleteAccount': 'Elimina account e dati',
     'settings.gearAria': 'Apri le impostazioni',

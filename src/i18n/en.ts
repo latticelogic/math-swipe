@@ -156,6 +156,14 @@ export const en = {
     'paywall.lifetime': 'Lifetime access · No subscription',
     'paywall.maybeLater': 'Maybe later',
 
+    // ── Purchase celebration (shown once after a lifetime unlock) ──
+    'celebrate.title': "You're in.",
+    'celebrate.body': 'Lifetime access, yours for good. Thank you for supporting Math Challenge.',
+    'celebrate.unlockTricks': 'Every Magic Trick — all 36',
+    'celebrate.unlockModes': 'Hard, Timed and Ultimate modes',
+    'celebrate.unlockCosmetics': 'Pro themes and the Comet trail',
+    'celebrate.cta': 'Keep playing',
+
     // ── Settings sheet ──
     'settings.title': 'Settings',
     'settings.deleteAccount': 'Delete my account & data',

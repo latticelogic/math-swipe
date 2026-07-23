@@ -139,6 +139,14 @@ export const ko: Record<MsgKey, string> = {
     'paywall.lifetime': '평생 이용 · 구독 없음',
     'paywall.maybeLater': '나중에',
 
+
+    // —— Purchase celebration ——
+    'celebrate.title': "이제 시작이에요.",
+    'celebrate.body': "평생 이용, 영원히 당신의 것. Math Challenge를 응원해 주셔서 고마워요.",
+    'celebrate.unlockTricks': "모든 매직 트릭 — 36가지 전부",
+    'celebrate.unlockModes': "하드, 타임, 얼티밋 모드",
+    'celebrate.unlockCosmetics': "프로 테마와 혜성 자취",
+    'celebrate.cta': "계속하기",
     'settings.title': '설정',
     'settings.deleteAccount': '내 계정 및 데이터 삭제',
     'settings.gearAria': '설정 열기',

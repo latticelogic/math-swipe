@@ -137,6 +137,14 @@ export const ja: Record<MsgKey, string> = {
     'paywall.lifetime': '永久アクセス · サブスクなし',
     'paywall.maybeLater': 'あとで',
 
+
+    // —— Purchase celebration ——
+    'celebrate.title': "ようこそ。",
+    'celebrate.body': "ずっと使える買い切り。Math Challenge を応援してくれてありがとう。",
+    'celebrate.unlockTricks': "すべての計算マジック——36 種すべて",
+    'celebrate.unlockModes': "ハード・タイム・アルティメットモード",
+    'celebrate.unlockCosmetics': "プロのテーマと彗星のトレイル",
+    'celebrate.cta': "つづける",
     'settings.title': '設定',
     'settings.deleteAccount': 'アカウントとデータを削除',
     'settings.gearAria': '設定を開く',

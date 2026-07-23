@@ -136,6 +136,14 @@ export const ptBR: Record<MsgKey, string> = {
     'paywall.lifetime': 'Acesso vitalício · Sem assinatura',
     'paywall.maybeLater': 'Talvez depois',
 
+
+    // —— Purchase celebration ——
+    'celebrate.title': "Tudo liberado.",
+    'celebrate.body': "Acesso vitalício, para sempre seu. Obrigado por apoiar o Math Challenge.",
+    'celebrate.unlockTricks': "Todos os truques de mágica — os 36",
+    'celebrate.unlockModes': "Modos Difícil, Cronometrado e Definitivo",
+    'celebrate.unlockCosmetics': "Temas Pro e o rastro Cometa",
+    'celebrate.cta': "Continuar jogando",
     'settings.title': 'Ajustes',
     'settings.deleteAccount': 'Excluir minha conta e dados',
     'settings.gearAria': 'Abrir ajustes',
