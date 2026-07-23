@@ -140,13 +140,15 @@ export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCo
     }, [authMessage, onClearAuthMessage]);
 
     return (
-        <div className="flex-1 flex flex-col items-center overflow-y-auto px-6 pt-4 pb-20 relative">
+        <div className="flex-1 flex flex-col items-center overflow-y-auto px-6 pt-[calc(env(safe-area-inset-top,16px)+28px)] pb-20 relative">
             {/* Settings gear — top-right of Me (owner call: maintenance lives
-                in the sheet, the page itself is identity + progress) */}
+                in the sheet, the page itself is identity + progress). Offset by
+                the safe-area inset (+ base) to match the header, so it clears the
+                status bar like the game/League screens do. */}
             <button
                 onClick={() => setSettingsOpen(true)}
                 aria-label={t('settings.gearAria')}
-                className="absolute top-3 right-4 z-10 w-10 h-10 flex items-center justify-center text-[rgb(var(--color-fg))]/40 hover:text-[rgb(var(--color-fg))]/70 transition-colors"
+                className="absolute top-[calc(env(safe-area-inset-top,16px)+22px)] right-4 z-10 w-10 h-10 flex items-center justify-center text-[rgb(var(--color-fg))]/40 hover:text-[rgb(var(--color-fg))]/70 transition-colors"
             >
                 {/* Hand-drawn gear (a toothed cog — not the old radial-spoke
                     shape, which read as a sun). Body is a closed 8-tooth path;
