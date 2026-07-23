@@ -252,6 +252,38 @@ business call, not a code blocker.
 
 ## Conventions
 
+- **User first — the tie-breaker for every decision.** This app exists to
+  serve the player, not to extract from them. When a technical limit, a
+  business constraint, or our own convenience collides with the player's
+  experience, the player wins and we absorb the cost. This is the rule that
+  breaks ties when other principles conflict. What it means in practice:
+  - **Never present an action we can't honor.** A purchase CTA that
+    dead-ends is a broken promise at the moment of *peak trust* (a player who
+    reached for their wallet). Detect the failure *before* offering the action.
+  - **Make the paid path WORK for every user we can reach — don't settle for
+    "fail gracefully."** Conversion is a real target, not a nice-to-have.
+    Quietly dropping a willing buyer into the free tier concedes the sale and
+    fails BOTH the player who wanted to buy AND the business. When purchasing
+    breaks, the job is to *fix it* or offer a compliant recovery (e.g. detect
+    an outdated Chrome/WebView and guide the update that unlocks Play Billing —
+    updating an app via Play is allowed; steering to external payment is not),
+    NOT to shrug and hand out free. Graceful degradation to the free
+    experience is the last-resort backstop for the genuinely impossible sliver
+    — never the plan, and never a substitute for making it work for all.
+  - **Friction at the moment of intent is the most expensive failure in the
+    product.** Losing a high-intent player hurts far more than a low-intent
+    bounce, and it's what earns 1-star reviews. Treat it as a launch blocker,
+    not polish. Concretely: **in-app Play Billing must work across the real
+    device population before any Android production push** — Play policy leaves
+    no acceptable-friction alternative, so "most users can pay" is not the bar;
+    "every reachable user can pay" is.
+  - **A change that eases our ops but worsens the player's experience is the
+    wrong change.** Measure decisions from the player's journey, not ours.
+  - The value-anchored paywall, the Daily-never-gated behavior, the
+    no-possession-threat copy rules, and the warm/restrained tone bar are all
+    *expressions* of this principle — not exceptions to it. This is the
+    company posture (user-first, the way Google/Anthropic frame it), enshrined
+    here so it governs code and copy, not just intentions.
 - **Prefer CLI over web dashboards** for all infra ops (GitHub, Cloudflare,
   Firebase, DNS, etc.). Reasons: reproducible, auditable in shell
   history, scriptable, and AI assistants can execute it directly. Use
