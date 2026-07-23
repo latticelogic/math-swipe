@@ -53,7 +53,7 @@ class StreakWidget : AppWidgetProvider() {
             // Tap → open today's Daily via the in-scope deep link.
             val intent = Intent(
                 Intent.ACTION_VIEW,
-                Uri.parse("https://mathchallenge.app/?src=android-native&go=daily"),
+                Uri.parse("https://mathchallenge.app/?src=android-native&daily=1"),
             ).setClass(context, MainActivity::class.java)
             val pi = PendingIntent.getActivity(
                 context, 0, intent,

@@ -22,9 +22,33 @@ function readPreference(): boolean {
     }
 }
 
-function buzz(pattern: number | number[]): void {
+/** The native Android shell exposes crisp platform haptics (predefined tick /
+ *  click / heavy-click effects) via window.AndroidHaptics — far better than
+ *  web `navigator.vibrate`, which is coarse and curtailed in some WebViews.
+ *  Absent in the browser / iOS, where we fall back to vibrate. */
+function nativeHaptics(): { impact(type: string): void } | null {
+    try {
+        const a = (window as unknown as { AndroidHaptics?: { impact(t: string): void } }).AndroidHaptics;
+        return a && typeof a.impact === 'function' ? a : null;
+    } catch {
+        return null;
+    }
+}
+
+/** nativeType: the semantic effect for the native bridge ("light" | "medium" |
+ *  "heavy" | "success" | "warning"); pattern: the web-vibrate fallback. */
+function buzz(nativeType: string, pattern: number | number[]): void {
     if (suppressed) return;
     if (!readPreference()) return;
+    const native = nativeHaptics();
+    if (native) {
+        try {
+            native.impact(nativeType);
+            return;
+        } catch {
+            // fall through to web vibrate
+        }
+    }
     if (typeof navigator === 'undefined' || typeof navigator.vibrate !== 'function') return;
     try {
         navigator.vibrate(pattern);
@@ -35,22 +59,22 @@ function buzz(pattern: number | number[]): void {
 
 /** Brief tap on a swipe / button press. */
 export function hapticTap(): void {
-    buzz(5);
+    buzz('light', 5);
 }
 
 /** Confident "yes" pulse on a correct answer. */
 export function hapticCorrect(): void {
-    buzz(15);
+    buzz('success', 15);
 }
 
 /** Sharp "no" doublet on a wrong answer. */
 export function hapticWrong(): void {
-    buzz([20, 60, 20]);
+    buzz('warning', [20, 60, 20]);
 }
 
 /** Celebration burst — used on streak milestones. */
 export function hapticMilestone(): void {
-    buzz([15, 40, 15, 40, 30]);
+    buzz('heavy', [15, 40, 15, 40, 30]);
 }
 
 /** Test hook so vitest doesn't try to vibrate jsdom into the abyss. */

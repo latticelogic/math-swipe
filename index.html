@@ -79,13 +79,27 @@
     }
   }
   </script>
+
+  <!-- Pre-hydration boot splash: a branded chalkboard screen shown until React
+       mounts, so there's no white flash on first load (web + installed PWA).
+       React replaces #root's children on render, removing it. Inline styles are
+       allowed by the CSP (style-src 'unsafe-inline'); scripts are not, so this
+       is pure CSS. -->
+  <style>
+    #boot-splash { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: #1b1b1b; }
+    #boot-splash img { width: 76px; height: 76px; animation: boot-pulse 1.4s ease-in-out infinite; }
+    @keyframes boot-pulse { 0%, 100% { opacity: .4; transform: scale(.96); } 50% { opacity: 1; transform: scale(1); } }
+    @media (prefers-reduced-motion: reduce) { #boot-splash img { animation: none; opacity: .85; } }
+  </style>
 </head>
 
 <body>
   <!-- Prevent flash of wrong theme on load + set correct PWA theme-color.
        External file (not inline) so a strict CSP without 'unsafe-inline' for scripts can ship. -->
   <script src="/theme-bootstrap.js"></script>
-  <div id="root"></div>
+  <div id="root">
+    <div id="boot-splash"><img src="/icon.svg" alt="" /></div>
+  </div>
   <script type="module" src="/src/main.tsx"></script>
 </body>
 
