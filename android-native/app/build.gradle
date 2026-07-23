@@ -1,9 +1,9 @@
 plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
-    // Applied only if google-services.json is present (FCM). The CI writes it
-    // from a secret; local builds without it still compile (push is opt-in).
-    id 'com.google.gms.google-services'
+    // FCM (com.google.gms.google-services + firebase-messaging) is a deliberate
+    // fast-follow — see android-native/README.md. Deferred so the first build
+    // doesn't need google-services.json; billing is what we're testing first.
 }
 
 android {
@@ -51,13 +51,13 @@ android {
 
 dependencies {
     implementation 'androidx.core:core-ktx:1.13.1'
-    implementation 'androidx.appcompat:appcompat:1.7.0'
+    // ComponentActivity + OnBackPressedDispatcher.
+    implementation 'androidx.activity:activity-ktx:1.9.3'
     // WebView + ServiceWorkerController for the offline PWA.
     implementation 'androidx.webkit:webkit:1.12.1'
     // Native Play Billing — the whole point: BillingClient 8, no Digital Goods,
     // no android-browser-helper, no Chrome-version gate.
     implementation 'com.android.billingclient:billing-ktx:8.0.0'
-    // Native FCM (web push doesn't work in a WebView).
-    implementation platform('com.google.firebase:firebase-bom:33.7.0')
-    implementation 'com.google.firebase:firebase-messaging-ktx'
+    // FCM deferred (see plugins block): platform('com.google.firebase:firebase-bom')
+    // + 'com.google.firebase:firebase-messaging-ktx' come back with PushService.
 }

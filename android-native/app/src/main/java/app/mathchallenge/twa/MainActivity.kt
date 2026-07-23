@@ -7,7 +7,6 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
-import androidx.core.net.toUri
 import androidx.webkit.ServiceWorkerControllerCompat
 import androidx.webkit.WebViewFeature
 

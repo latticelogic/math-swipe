@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- No action bar; chalkboard background so first paint matches the PWA and
+         there's no white flash before the WebView loads. ComponentActivity
+         works with a plain Material theme (no AppCompat dependency needed). -->
+    <style name="Theme.MathChallenge" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/board</item>
+        <item name="android:statusBarColor">@color/board</item>
+        <item name="android:navigationBarColor">@color/board</item>
+        <item name="android:colorBackground">@color/board</item>
+    </style>
+</resources>
