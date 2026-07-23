@@ -33,7 +33,11 @@ export default defineConfig({
         // renders, so they cache on first actual use via runtimeCaching below
         // instead of downloading on every install/update on kids' data plans.
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-        globIgnores: ['**/KaTeX_*'],
+        // KaTeX fonts + non-English locale catalogs are excluded from the
+        // install-time precache: only ONE locale is ever active per session,
+        // so downloading eleven unused catalogs on every install/update wastes
+        // kids' data plans. Both cache on first actual use via runtimeCaching.
+        globIgnores: ['**/KaTeX_*', '**/locale-*.js'],
         // Avoid stale precache HTML serving the old theme-bootstrap path
         navigateFallbackDenylist: [/^\/theme-bootstrap\.js$/],
         runtimeCaching: [
@@ -43,6 +47,19 @@ export default defineConfig({
             options: {
               cacheName: 'katex-fonts',
               expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            // The active locale's catalog chunk — cached on first load so
+            // non-English users work offline from the second session on.
+            // Hashed filenames make immutable caching safe; maxEntries evicts
+            // superseded builds.
+            urlPattern: /\/assets\/locale-[^/]*\.js$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'locale-catalogs',
+              expiration: { maxEntries: 12, maxAgeSeconds: 60 * 60 * 24 * 365 },
               cacheableResponse: { statuses: [0, 200] },
             },
           },
@@ -59,9 +76,20 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          firebase: ['firebase/app', 'firebase/auth', 'firebase/firestore'],
-          'framer-motion': ['framer-motion'],
+        manualChunks(id: string) {
+          // Vendor splits (same grouping the old object form produced).
+          // Char classes accept both separators — rollup ids use '/' but keep
+          // '\\' tolerance for Windows-resolved paths.
+          if (id.includes('node_modules')) {
+            if (/[\\/](@?firebase)[\\/]/.test(id)) return 'firebase';
+            if (/[\\/]framer-motion[\\/]/.test(id)) return 'framer-motion';
+            return undefined;
+          }
+          // Each non-English catalog gets its own `locale-<id>` chunk so it
+          // can be lazy-loaded (i18n initI18n) and excluded from the precache.
+          const m = /[\\/]src[\\/]i18n[\\/](es|pt-BR|fr|de|it|id|ko|zh-Hans|zh-Hant|ja|hi)\.ts$/.exec(id);
+          if (m) return `locale-${m[1]}`;
+          return undefined;
         },
       },
     },
