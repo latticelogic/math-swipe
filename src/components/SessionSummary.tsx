@@ -1,7 +1,7 @@
 import { memo, useState, useEffect } from 'react';
 import { motion, AnimatePresence, useSpring, useMotionValueEvent } from 'framer-motion';
 import { buildProfileSlug } from '../utils/profileSlug';
-import { IosSessionEndPrompt } from './InstallPrompt';
+import { SessionEndInstallPrompt } from './InstallPrompt';
 // Share text/URL composition is shared with the game-rail share button —
 // single source of truth in utils/sharePayload.ts.
 import { buildSharePayload, formatTime } from '../utils/sharePayload';
@@ -358,13 +358,14 @@ export const SessionSummary = memo(function SessionSummary({
                             real in-game PvP that doesn't exist. Incoming ?c=/?target=
                             links still work; Share Result carries the loop.) */}
 
-                        {/* iOS-only end-of-session install nudge. Only renders on
-                            iOS Safari when the app isn't already installed and
-                            the user hasn't dismissed this specific prompt. The
-                            highest-attention moment in the app for the strongest
-                            install pitch ("save your streak"). See
-                            InstallPrompt.tsx for the rules. */}
-                        <IosSessionEndPrompt visible={visible} />
+                        {/* End-of-session install nudge, all platforms. Only
+                            after a *good* session (solved/streak gate), when the
+                            app isn't already installed and the user hasn't
+                            dismissed this prompt. Chromium fires the native
+                            install prompt; iOS opens the Share → Add to Home
+                            guide. The highest-attention moment in the app for the
+                            strongest install pitch. See InstallPrompt.tsx. */}
+                        <SessionEndInstallPrompt visible={visible} solved={solved} streak={streak} />
 
                         <button
                             onClick={onDismiss}

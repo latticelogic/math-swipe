@@ -712,7 +712,7 @@ export const en = {
     // ── Me tab ──
     'me.emailPlaceholder': 'your@email.com',
     'me.typeDetail': '{name} — {correct}/{solved} correct · {acc}%',
-    'me.typeNoData': '{name} — not tried yet',
+    'me.typeNoData': '{name} — fresh ground. Give it a go.',
     'settings.theme': 'Dark mode',
     'game.dailyChip': 'Daily {solved}/{total}',
 } as const;
