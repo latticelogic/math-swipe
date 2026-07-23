@@ -137,6 +137,14 @@ export const hi: Record<MsgKey, string> = {
     'paywall.lifetime': 'आजीवन पहुँच · कोई सदस्यता नहीं',
     'paywall.maybeLater': 'शायद बाद में',
 
+
+    // —— Purchase celebration ——
+    'celebrate.title': "आप शामिल हो गए।",
+    'celebrate.body': "आजीवन एक्सेस, हमेशा के लिए आपका। Math Challenge का साथ देने के लिए धन्यवाद।",
+    'celebrate.unlockTricks': "सभी मैजिक ट्रिक्स — पूरे 36",
+    'celebrate.unlockModes': "हार्ड, टाइम्ड और अल्टिमेट मोड",
+    'celebrate.unlockCosmetics': "प्रो थीम और कॉमेट ट्रेल",
+    'celebrate.cta': "खेलते रहें",
     'settings.title': 'सेटिंग्स',
     'settings.deleteAccount': 'मेरा खाता और डेटा हटाएँ',
     'settings.gearAria': 'सेटिंग्स खोलें',

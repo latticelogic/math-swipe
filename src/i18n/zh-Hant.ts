@@ -137,6 +137,14 @@ export const zhHant: Record<MsgKey, string> = {
     'paywall.lifetime': '永久使用 · 無訂閱',
     'paywall.maybeLater': '以後再說',
 
+
+    // —— Purchase celebration ——
+    'celebrate.title': "全部解鎖。",
+    'celebrate.body': "終身使用，永久屬於你。感謝你支持 Math Challenge。",
+    'celebrate.unlockTricks': "全部魔法技巧——36 個全解鎖",
+    'celebrate.unlockModes': "困難、限時和終極模式",
+    'celebrate.unlockCosmetics': "專業主題和彗星軌跡",
+    'celebrate.cta': "繼續遊戲",
     'settings.title': '設定',
     'settings.deleteAccount': '刪除我的帳號和資料',
     'settings.gearAria': '開啟設定',

@@ -64,6 +64,7 @@ import { EndRunDialog } from './components/EndRunDialog';
 import { nextTeacherTip, markTipSeen } from './utils/teacherTips';
 import { FlameIcon, ShieldIcon, BoltIcon } from './components/icons';
 import { Paywall } from './components/Paywall';
+import { PurchaseCelebration } from './components/PurchaseCelebration';
 import { WelcomeModal, TrialReminderModal } from './components/TrialModals';
 import { LegalPage, type LegalDocId } from './components/LegalPages';
 import { TabSkeleton } from './components/TabSkeleton';
@@ -129,6 +130,7 @@ function App() {
   const entitlement = useEntitlement(uid);
   const [paywallBusy, setPaywallBusy] = useState(false);
   const [paywallOpen, setPaywallOpen] = useState(false);
+  const [celebrateOpen, setCelebrateOpen] = useState(false);
   // 'expired' = post-trial hard gate; 'pro' = dismissible early upsell shown
   // when a locked Pro feature is tapped during the trial.
   const [paywallMode, setPaywallMode] = useState<'expired' | 'pro'>('expired');
@@ -634,12 +636,23 @@ function App() {
     }
   }, [entitlement.status, activeTab, paywallOpen]);
 
-  // Auto-close the paywall the instant the user has paid (Airwallex webhook
-  // fired and refresh() picked up the new paidAt). Without this, a paid
-  // user would still see the paywall overlay until they reloaded.
+  // Auto-close the paywall the instant the user has paid, and celebrate the
+  // unlock ONCE. The webhook/verify has written paidAt by now; this fires on
+  // every channel (native in-place, TWA, and the Airwallex web return) because
+  // it keys off the paid status, not the purchase call. Keyed on uid in
+  // localStorage so it shows exactly once per person — never again on later
+  // launches for an already-paid user.
   useEffect(() => {
-    if (entitlement.status === 'paid' && paywallOpen) setPaywallOpen(false);
-  }, [entitlement.status, paywallOpen]);
+    if (entitlement.status !== 'paid') return;
+    if (paywallOpen) setPaywallOpen(false);
+    if (!uid) return;
+    try {
+      if (localStorage.getItem('mc-purchase-celebrated') !== uid) {
+        localStorage.setItem('mc-purchase-celebrated', uid);
+        setCelebrateOpen(true);
+      }
+    } catch { /* storage unavailable → skip the celebration, not the unlock */ }
+  }, [entitlement.status, paywallOpen, uid]);
 
   // Pro gate: paid unlocks the Pro set (advanced modes, full Magic Tricks, Pro
   // cosmetics) even during the trial. Tapping a locked Pro thing opens the
@@ -1637,7 +1650,11 @@ function App() {
                 // Play Billing completes IN PLACE (no redirect, unlike the
                 // Airwallex hosted page) — the server has written paidAt by
                 // now, so refresh the gate and close the paywall right here.
-                if (purchaseChannel === 'play') {
+                // BOTH Android billing channels complete in place: the legacy
+                // TWA Digital Goods ('play') and the native BillingClient
+                // bridge ('android-native'). Missing 'android-native' here left
+                // a paid native user still staring at the paywall.
+                if (purchaseChannel === 'play' || purchaseChannel === 'android-native') {
                   await entitlement.refresh().catch(() => { /* next read catches up */ });
                   setPaywallOpen(false);
                 }
@@ -1656,6 +1673,15 @@ function App() {
               : undefined}
           />
         )}
+
+        {/* ── Purchase celebration ── Fires once when the lifetime unlock lands
+            (any channel). Renders above the paywall (z-60); the person just
+            paid, so it's a moment, not a silent flip. */}
+        <AnimatePresence>
+          {celebrateOpen && (
+            <PurchaseCelebration onClose={() => setCelebrateOpen(false)} />
+          )}
+        </AnimatePresence>
 
         {/* ── Achievement unlock toast ── Minecraft-style: slides in from the
             top-right, holds a beat, slides out. mode="wait" so a queue of
