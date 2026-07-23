@@ -169,6 +169,8 @@ export const id: Record<MsgKey, string> = {
     'me.checkEmail': 'Cek e-mail kamu',
     'me.checkEmailHint': 'Ketuk tautan ajaib yang baru dikirim untuk selesai.',
     'me.google': 'Lanjut dengan Google',
+    'signin.saveTitle': 'Simpan progresmu?',
+    'signin.saveBody': 'Masuk untuk menyimpan runtunan dan statistikmu di perangkat mana pun — satu ketukan, tanpa kata sandi.',
     'me.apple': 'Lanjut dengan Apple',
     'me.email': 'Lanjut dengan e-mail',
     'me.statStreak': 'rentetan',

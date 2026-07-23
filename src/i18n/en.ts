@@ -189,6 +189,8 @@ export const en = {
     'me.checkEmail': 'Check your email',
     'me.checkEmailHint': 'Tap the magic link we just sent to finish.',
     'me.google': 'Continue with Google',
+    'signin.saveTitle': 'Save your progress?',
+    'signin.saveBody': 'Sign in to keep your streak and stats on any device — one tap, no password.',
     'me.apple': 'Continue with Apple',
     'me.email': 'Continue with email',
     'me.statStreak': 'streak',

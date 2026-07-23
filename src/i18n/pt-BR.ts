@@ -167,6 +167,8 @@ export const ptBR: Record<MsgKey, string> = {
     'me.checkEmail': 'Confira seu e-mail',
     'me.checkEmailHint': 'Toque no link mágico que acabamos de enviar.',
     'me.google': 'Continuar com Google',
+    'signin.saveTitle': 'Salvar seu progresso?',
+    'signin.saveBody': 'Entre para manter sua sequência e estatísticas em qualquer dispositivo — um toque, sem senha.',
     'me.apple': 'Continuar com Apple',
     'me.email': 'Continuar com e-mail',
     'me.statStreak': 'sequência',
