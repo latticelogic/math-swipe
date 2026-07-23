@@ -89,13 +89,28 @@ describe('entitlements/{uid} — payment-state forgery', () => {
         }));
     });
 
-    it('lets the owner update trialStartedAt while payment fields stay unchanged', async () => {
+    it('lets the owner BACKDATE trialStartedAt (dev testing) while payment fields stay unchanged', async () => {
         await seed('entitlements/alice', {
             trialStartedAt: 1_700_000_000_000, paidAt: null, source: null,
             originalTransactionId: null, updatedAt: PAST(),
         });
         const alice = testEnv.authenticatedContext('alice').firestore();
+        // Backward = shortens the trial (mockBackdateTrial) — allowed.
         await assertSucceeds(updateDoc(doc(alice, 'entitlements', 'alice'), {
+            trialStartedAt: 1_699_999_900_000,
+            updatedAt: serverTimestamp(),
+        }));
+    });
+
+    it('REJECTS moving trialStartedAt FORWARD (the eternal-free-trial attack)', async () => {
+        await seed('entitlements/alice', {
+            trialStartedAt: 1_700_000_000_000, paidAt: null, source: null,
+            originalTransactionId: null, updatedAt: PAST(),
+        });
+        const alice = testEnv.authenticatedContext('alice').firestore();
+        // Forward = self-extended trial; a client resetting its clock daily
+        // would never expire. Hardened 2026-07-24.
+        await assertFails(updateDoc(doc(alice, 'entitlements', 'alice'), {
             trialStartedAt: 1_700_000_100_000,
             updatedAt: serverTimestamp(),
         }));
