@@ -27,10 +27,22 @@
 import { motion } from 'framer-motion';
 import { PRICE_USD } from '../utils/entitlement';
 import { LegalFooterRow } from './LegalPages';
+import { getLastChannelDiagnostic, formatChannelDiagnostic } from '../utils/checkout';
 import { t, tCount } from '../i18n';
 
 /** USD product price everywhere in v1 — see docs/i18n.md on currency. */
 const PRICE_LABEL = `$${PRICE_USD.toFixed(2)}`;
+
+/**
+ * TEMP diagnostic: when true, the "purchases unavailable" notice also shows a
+ * one-line readout of WHY the Play Billing channel resolved to 'none' (Digital
+ * Goods API absent vs present-but-not-connecting, Chrome version, etc.). Wired
+ * for internal-testing debugging of "Purchases aren't available" on the TWA.
+ * SET TO false (or delete this block + its render below) BEFORE promoting to
+ * production — end users must never see the raw diagnostic. Only visible in the
+ * already-broken 'none' state regardless.
+ */
+const SHOW_CHANNEL_DIAG = true;
 
 interface PaywallProgress {
     /** Total problems solved across the trial. */
@@ -260,9 +272,16 @@ export function Paywall({ progress, onUnlock, busy, mode = 'expired', onClose, p
                     // Play Billing). Per Google Play policy we can't sell here OR
                     // steer to an external purchase — so: a neutral notice, no
                     // price, no link. An unlock made elsewhere still syncs in.
+                    <>
                     <p className="text-sm ui text-[rgb(var(--color-fg))]/55 leading-relaxed">
                         {t('paywall.unavailable')}
                     </p>
+                    {SHOW_CHANNEL_DIAG && (
+                        <p className="mt-3 text-[10px] font-mono text-[rgb(var(--color-fg))]/40 break-all leading-snug">
+                            diag · {formatChannelDiagnostic(getLastChannelDiagnostic())}
+                        </p>
+                    )}
+                    </>
                 ) : (<>
                 <button
                     onClick={onUnlock}
