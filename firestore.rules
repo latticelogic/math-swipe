@@ -276,6 +276,21 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // ── Growth funnel (analytics) ──
+    // One doc per user: set-once milestone timestamps + lastActiveAt. Reads are
+    // admin-only (powers /admin/funnel, same isAdmin claim as errors/billing);
+    // users write only their own doc, and only the known analytics fields.
+    match /funnel/{uid} {
+      allow read: if request.auth != null && request.auth.token.isAdmin == true;
+      allow create, update: if request.auth != null
+                    && request.auth.uid == uid
+                    && request.resource.data.keys().hasOnly([
+                         'firstOpenAt', 'firstPlayAt', 'paywallViewAt', 'purchaseAt',
+                         'platform', 'lastActiveAt'
+                       ]);
+      allow delete: if false;
+    }
+
     // ── Username claims ──
     // Atomic uniqueness layer over user doc display names. The `slug` is a
     // normalized lowercase form; one-to-one with a uid. Reads are public so

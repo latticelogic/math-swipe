@@ -41,6 +41,7 @@ const ProfilePage = lazy(() => lazyRetry(() => import('./components/ProfilePage'
 const AdminPushAnalytics = lazy(() => lazyRetry(() => import('./components/AdminPushAnalytics')).then(m => ({ default: m.AdminPushAnalytics })));
 const AdminBilling = lazy(() => lazyRetry(() => import('./components/AdminBilling')).then(m => ({ default: m.AdminBilling })));
 const AdminErrors = lazy(() => lazyRetry(() => import('./components/AdminErrors')).then(m => ({ default: m.AdminErrors })));
+const AdminFunnel = lazy(() => lazyRetry(() => import('./components/AdminFunnel')).then(m => ({ default: m.AdminFunnel })));
 
 import { useGameLoop } from './hooks/useGameLoop';
 import { useStats } from './hooks/useStats';
@@ -65,6 +66,7 @@ import { nextTeacherTip, markTipSeen } from './utils/teacherTips';
 import { FlameIcon, ShieldIcon, BoltIcon } from './components/icons';
 import { Paywall } from './components/Paywall';
 import { PurchaseCelebration } from './components/PurchaseCelebration';
+import { markFunnel, touchFunnelActive } from './utils/funnel';
 import { WelcomeModal, TrialReminderModal } from './components/TrialModals';
 import { LegalPage, type LegalDocId } from './components/LegalPages';
 import { TabSkeleton } from './components/TabSkeleton';
@@ -227,11 +229,12 @@ function App() {
   // component renders below. /admin/push (push notification analytics)
   // /admin/billing (entitlement / refund-rate dashboard), and
   // /admin/errors (client crash reports — errorSpike pushes point here).
-  const [adminRoute, setAdminRoute] = useState<'push' | 'billing' | 'errors' | null>(() => {
+  const [adminRoute, setAdminRoute] = useState<'push' | 'billing' | 'errors' | 'funnel' | null>(() => {
     const p = window.location.pathname;
     if (/^\/admin\/push\/?$/.test(p)) return 'push';
     if (/^\/admin\/billing\/?$/.test(p)) return 'billing';
     if (/^\/admin\/errors\/?$/.test(p)) return 'errors';
+    if (/^\/admin\/funnel\/?$/.test(p)) return 'funnel';
     return null;
   });
   // ?c=<seed> loads a seeded challenge. ?daily=1 routes straight to today's
@@ -674,6 +677,7 @@ function App() {
     if (paywallOpen) setPaywallOpen(false);
     setConfirmingPayment(false);
     if (!uid) return;
+    markFunnel(uid, 'purchase');
     try {
       if (localStorage.getItem('mc-purchase-celebrated') !== uid) {
         localStorage.setItem('mc-purchase-celebrated', uid);
@@ -681,6 +685,20 @@ function App() {
       }
     } catch { /* storage unavailable → skip the celebration, not the unlock */ }
   }, [entitlement.status, paywallOpen, uid]);
+
+  // ── Growth funnel milestones (see utils/funnel.ts + /admin/funnel) ──
+  // Each mark is set-once per device; the admin view aggregates conversion.
+  useEffect(() => {
+    if (!uid) return;
+    markFunnel(uid, 'firstOpen');
+    touchFunnelActive(uid);
+  }, [uid]);
+  useEffect(() => {
+    if (uid && totalAnswered >= 1) markFunnel(uid, 'firstPlay');
+  }, [uid, totalAnswered]);
+  useEffect(() => {
+    if (uid && paywallOpen) markFunnel(uid, 'paywallView');
+  }, [uid, paywallOpen]);
 
   // Pro gate: paid unlocks the Pro set (advanced modes, full Magic Tricks, Pro
   // cosmetics) even during the trial. Tapping a locked Pro thing opens the
@@ -959,6 +977,20 @@ function App() {
       <BlackboardLayout>
         <Suspense fallback={<TabSkeleton variant="generic" />}>
           <AdminErrors
+            onBackToGame={() => {
+              setAdminRoute(null);
+              window.history.replaceState({}, '', '/');
+            }}
+          />
+        </Suspense>
+      </BlackboardLayout>
+    );
+  }
+  if (adminRoute === 'funnel') {
+    return (
+      <BlackboardLayout>
+        <Suspense fallback={<TabSkeleton variant="generic" />}>
+          <AdminFunnel
             onBackToGame={() => {
               setAdminRoute(null);
               window.history.replaceState({}, '', '/');
