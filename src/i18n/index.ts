@@ -21,17 +21,6 @@
  */
 
 import { en, type MsgKey } from './en';
-import { es } from './es';
-import { ptBR } from './pt-BR';
-import { fr } from './fr';
-import { de } from './de';
-import { it } from './it';
-import { id } from './id';
-import { ko } from './ko';
-import { zhHans } from './zh-Hans';
-import { zhHant } from './zh-Hant';
-import { ja } from './ja';
-import { hi } from './hi';
 
 export type { MsgKey };
 
@@ -69,20 +58,40 @@ export const PLANNED_LOCALES: ReadonlyArray<Locale> = [];
 
 const STORAGE_KEY = 'math-swipe-locale';
 
-const CATALOGS: Partial<Record<Locale, Record<MsgKey, string>>> = {
-    en,
-    es,
-    'pt-BR': ptBR,
-    fr,
-    de,
-    it,
-    id,
-    ko,
-    'zh-Hans': zhHans,
-    'zh-Hant': zhHant,
-    ja,
-    hi,
+/** Non-English catalogs are code-split and loaded ON DEMAND (perf: they are
+ *  ~440 KB of source combined and exactly one is ever active per session —
+ *  bundling all 12 into the main chunk taxed every boot with parse work for
+ *  eleven dead languages). English stays static: it's the sync fallback for
+ *  any missing key AND the majority path, which now skips the extra fetch
+ *  entirely. main.tsx awaits initI18n() before the app modules evaluate, so
+ *  the synchronous t()/tCount() contract (design decision 1) is unchanged. */
+const LOADERS: Partial<Record<Locale, () => Promise<Record<MsgKey, string>>>> = {
+    es: () => import('./es').then(m => m.es),
+    'pt-BR': () => import('./pt-BR').then(m => m.ptBR),
+    fr: () => import('./fr').then(m => m.fr),
+    de: () => import('./de').then(m => m.de),
+    it: () => import('./it').then(m => m.it),
+    id: () => import('./id').then(m => m.id),
+    ko: () => import('./ko').then(m => m.ko),
+    'zh-Hans': () => import('./zh-Hans').then(m => m.zhHans),
+    'zh-Hant': () => import('./zh-Hant').then(m => m.zhHant),
+    ja: () => import('./ja').then(m => m.ja),
+    hi: () => import('./hi').then(m => m.hi),
 };
+
+// The active catalog — English until initI18n() swaps it (en sessions never do).
+let active: Record<MsgKey, string> = en;
+
+/** Load the active locale's catalog before the app renders. Called once from
+ *  main.tsx; a failed load (offline first visit in a new locale) falls back to
+ *  English rather than blocking boot — the standard fallback posture. */
+export async function initI18n(): Promise<void> {
+    const load = LOADERS[current];
+    if (!load) return;   // en, or a declared-but-missing catalog → English
+    try {
+        active = await load();
+    } catch { /* keep English */ }
+}
 
 /** Map a BCP-47 tag from the browser onto a shipped locale. Order matters:
  *  Chinese resolves script (Hans/Hant) from the subtag or region. */
@@ -166,7 +175,7 @@ const REGIONAL_OVERRIDES: Partial<Record<MsgKey, string>> = (() => {
 
 /** Translate a key. Missing key/catalog falls back to English. */
 export function t(key: MsgKey, vars?: Record<string, string | number>): string {
-    const template = REGIONAL_OVERRIDES[key] ?? CATALOGS[current]?.[key] ?? en[key];
+    const template = REGIONAL_OVERRIDES[key] ?? active[key] ?? en[key];
     return interpolate(template, vars);
 }
 
@@ -181,7 +190,7 @@ export function tCount(baseKey: string, count: number, vars?: Record<string, str
     const category = pluralRules.select(count);
     const tryKeys = [`${baseKey}.${category}`, `${baseKey}.other`] as MsgKey[];
     for (const k of tryKeys) {
-        const template = CATALOGS[current]?.[k] ?? en[k];
+        const template = active[k] ?? en[k];
         if (template !== undefined) {
             return interpolate(template, { count: nf(count), ...vars });
         }
