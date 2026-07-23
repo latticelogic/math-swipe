@@ -79,8 +79,14 @@ function configurePush() {
 }
 
 interface PushSubscriptionDoc {
-    endpoint: string;
-    keys: { p256dh: string; auth: string };
+    /** Web Push (browser PushManager) fields. Absent for native subscribers. */
+    endpoint?: string;
+    keys?: { p256dh: string; auth: string };
+    /** Native FCM registration token (the WebView shell registers this instead
+     *  of endpoint/keys). Present → send via the Firebase Admin SDK, not web-push. */
+    fcmToken?: string;
+    /** 'android' for the native shell; absent/‘web’ for the browser. */
+    platform?: string;
     userAgent?: string;
     dailyEnabled?: boolean;
     pingsEnabled?: boolean;
@@ -117,6 +123,35 @@ async function logPushEvent(uid: string, kind: string, event: 'sent' | 'failed',
 }
 
 async function sendOne(uid: string, sub: PushSubscriptionDoc, payload: NotificationPayload): Promise<boolean> {
+    // Native subscribers (the WebView shell) carry an FCM token, not a web-push
+    // endpoint — send via the Firebase Admin SDK. Same doc/collection + prefs,
+    // so the reminder/ping selection logic above is unchanged.
+    if (sub.fcmToken) {
+        try {
+            await admin.messaging().send({
+                token: sub.fcmToken,
+                notification: { title: payload.title, body: payload.body },
+                data: { url: payload.url ?? '/', kind: payload.kind },
+                android: { notification: { channelId: 'daily_reminders' } },
+            });
+            await logPushEvent(uid, payload.kind, 'sent');
+            return true;
+        } catch (err) {
+            const code = (err as { code?: string }).code;
+            await logPushEvent(uid, payload.kind, 'failed');
+            // Dead token → clean up so we stop trying (mirrors the 404/410 path).
+            if (code === 'messaging/registration-token-not-registered' ||
+                code === 'messaging/invalid-registration-token' ||
+                code === 'messaging/invalid-argument') {
+                logger.info('FCM token invalid, removing', { uid });
+                await db.collection('pushSubscriptions').doc(uid).delete().catch(() => { /* ignore */ });
+            } else {
+                logger.warn('Native push send failed', { uid, err });
+            }
+            return false;
+        }
+    }
+    if (!sub.endpoint || !sub.keys) return false; // malformed / neither channel
     try {
         await webpush.sendNotification(
             { endpoint: sub.endpoint, keys: sub.keys },
