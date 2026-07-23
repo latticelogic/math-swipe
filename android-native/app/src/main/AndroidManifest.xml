@@ -21,7 +21,7 @@
             android:launchMode="singleTask"
             android:screenOrientation="portrait"
             android:configChanges="orientation|screenSize|keyboardHidden|uiMode|smallestScreenSize|screenLayout|density"
-            android:theme="@style/Theme.MathChallenge">
+            android:theme="@style/Theme.MathChallenge.Splash">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

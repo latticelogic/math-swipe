@@ -55,6 +55,9 @@ android {
 
 dependencies {
     implementation 'androidx.core:core-ktx:1.13.1'
+    // Android 12 SplashScreen API (backported) — a branded splash held until the
+    // WebView's first paint, so there's no white flash while the PWA boots.
+    implementation 'androidx.core:core-splashscreen:1.0.1'
     // ComponentActivity + OnBackPressedDispatcher.
     implementation 'androidx.activity:activity-ktx:1.9.3'
     // WebView + ServiceWorkerController for the offline PWA.
