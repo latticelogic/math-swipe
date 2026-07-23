@@ -386,3 +386,136 @@ export const errorSpike = onSchedule(
         logger.info('errorSpike: alerted admins', { errors: snap.size, admins: adminUids.length, sent });
     },
 );
+
+// ── 4. Weekly growth digest (ops, not user-facing) ───────────────────────────
+//
+// Turns growth telemetry from "remember to open /admin/funnel" into a passive
+// tap-on-the-shoulder. Once a week it aggregates the core numbers (entitlements,
+// funnel, the live A/B split), stores a snapshot for week-over-week deltas +
+// anomaly flags, and pushes a one-glance summary to every admin (deep-links to
+// /admin/funnel). Runs Mondays 09:00 UTC (out of the :00/:30 cron slots above).
+//
+// Reads are full-collection scans — fine at launch/weekly scale; revisit with
+// incremental aggregation if the user base grows large. maxInstances:1 + weekly
+// cadence bound the cost. TRIAL_DAYS mirrors src/utils/entitlement.ts (7).
+const DIGEST_TRIAL_DAYS = 7;
+
+function toMs(v: unknown): number {
+    if (typeof v === 'number') return v;
+    if (v && typeof v === 'object' && 'toMillis' in v) return (v as { toMillis: () => number }).toMillis();
+    return 0;
+}
+
+export const growthDigest = onSchedule(
+    {
+        schedule: '0 9 * * 1',
+        timeZone: 'Etc/UTC',
+        secrets: [VAPID_PUBLIC, VAPID_PRIVATE, VAPID_SUBJECT],
+        maxInstances: 1,
+    },
+    async () => {
+        const now = Date.now();
+        const weekAgo = now - 7 * 86_400_000;
+
+        // Entitlements: paid / trial / expired / new-this-week + conversion.
+        const entSnap = await db.collection('entitlements').get();
+        const paidUids = new Set<string>();
+        let paid = 0, trial = 0, expired = 0, newTrials = 0, newPaid = 0;
+        entSnap.forEach(d => {
+            const e = d.data();
+            const paidAt = toMs(e.paidAt);
+            if (paidAt > 0) {
+                paid++; paidUids.add(d.id);
+                if (paidAt >= weekAgo) newPaid++;
+                return;
+            }
+            const started = toMs(e.trialStartedAt);
+            const bonus = typeof e.trialBonusDays === 'number' ? e.trialBonusDays : 0;
+            if (started >= weekAgo) newTrials++;
+            const daysIn = started ? Math.floor((now - started) / 86_400_000) : 0;
+            if (started && daysIn < DIGEST_TRIAL_DAYS + bonus) trial++; else expired++;
+        });
+        const finished = paid + expired; // users whose trial resolved one way or the other
+        const conversionPct = finished > 0 ? Math.round((paid / finished) * 1000) / 10 : 0;
+
+        // Funnel: how many reached each step (set-once docs in funnel/{uid}).
+        const funnelSnap = await db.collection('funnel').get();
+        let fOpen = 0, fPlay = 0, fPaywall = 0, fPurchase = 0;
+        funnelSnap.forEach(d => {
+            const f = d.data();
+            if (f.firstOpen) fOpen++;
+            if (f.firstPlay) fPlay++;
+            if (f.paywallView) fPaywall++;
+            if (f.purchase) fPurchase++;
+        });
+
+        // Live A/B: paywall-cta exposures per variant, joined to paid for a rough
+        // conversion-per-variant read.
+        const expoSnap = await db.collection('experimentExposures')
+            .where('experimentId', '==', 'paywall-cta').get();
+        const variantUids: Record<string, Set<string>> = {};
+        expoSnap.forEach(d => {
+            const x = d.data();
+            const v = String(x.variant ?? 'control');
+            const uid = x.uid as string | undefined;
+            if (!variantUids[v]) variantUids[v] = new Set();
+            if (uid) variantUids[v].add(uid);
+        });
+        const abLines = Object.entries(variantUids).map(([v, uids]) => {
+            const total = uids.size;
+            const conv = [...uids].filter(u => paidUids.has(u)).length;
+            const pct = total ? Math.round((conv / total) * 1000) / 10 : 0;
+            return `${v} ${conv}/${total} (${pct}%)`;
+        });
+
+        // Week-over-week deltas + anomaly flags vs the last stored snapshot.
+        const latestRef = db.doc('opsDigests/latest');
+        const prev = (await latestRef.get()).data();
+        const convDelta = prev?.conversionPct != null ? Math.round((conversionPct - prev.conversionPct) * 10) / 10 : null;
+        const anomalies: string[] = [];
+        if (convDelta != null && convDelta <= -5) anomalies.push(`ALERT conversion down ${Math.abs(convDelta)}pts`);
+        if (prev?.funnel?.firstOpen != null && fOpen > prev.funnel.firstOpen * 3 && fOpen - prev.funnel.firstOpen > 50) {
+            anomalies.push(`installs surged (${prev.funnel.firstOpen}->${fOpen})`);
+        }
+        if (prev?.paid != null && paid < prev.paid) anomalies.push(`ALERT paid count dropped ${prev.paid}->${paid} (refunds?)`);
+
+        const snapshot = {
+            at: admin.firestore.FieldValue.serverTimestamp(),
+            atMs: now,
+            paid, trial, expired, newTrials, newPaid, conversionPct,
+            funnel: { firstOpen: fOpen, firstPlay: fPlay, paywallView: fPaywall, purchase: fPurchase },
+            ab: abLines,
+        };
+        await latestRef.set(snapshot);          // for next week's delta
+        await db.collection('opsDigests').add(snapshot); // history trail
+
+        // Compose + push the summary to admins (same delivery as errorSpike).
+        const title = `Weekly: ${paid} paid, ${conversionPct}% conv, ${newTrials} new trials`;
+        const bodyParts = [
+            `Funnel ${fOpen}>${fPlay}>${fPaywall}>${fPurchase}`,
+            abLines.length ? `A/B ${abLines.join(', ')}` : '',
+            convDelta != null ? `conv ${convDelta >= 0 ? '+' : ''}${convDelta}pts wow` : '',
+            ...anomalies,
+        ].filter(Boolean);
+        const body = bodyParts.join(' | ').slice(0, 240) || 'Open the funnel dashboard.';
+
+        logger.info('growthDigest', { ...snapshot, at: now, anomalies });
+
+        const { users } = await admin.auth().listUsers(1000);
+        const adminUids = users.filter(u => u.customClaims?.isAdmin === true).map(u => u.uid);
+        if (adminUids.length === 0) {
+            logger.info('growthDigest: no admins to notify (snapshot still stored)');
+            return;
+        }
+        configurePush();
+        let sent = 0;
+        for (const uid of adminUids) {
+            const subSnap = await db.collection('pushSubscriptions').doc(uid).get();
+            if (!subSnap.exists) continue;
+            const sub = subSnap.data() as PushSubscriptionDoc;
+            const ok = await sendOne(uid, sub, { title, body, url: '/admin/funnel', kind: 'generic' });
+            if (ok) sent++;
+        }
+        logger.info('growthDigest: pushed to admins', { admins: adminUids.length, sent });
+    },
+);
