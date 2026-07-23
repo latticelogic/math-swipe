@@ -394,6 +394,12 @@ export const en = {
     'push.dailySub': "Once a day if you haven't played yet",
     'push.beatenLabel': 'You got beaten',
     'push.beatenSub': 'When someone bumps you on the leaderboard',
+    // Well-timed daily-reminder nudge (shown once, between sessions)
+    'push.nudgeTitleStreak': 'Keep your {days}-day streak alive?',
+    'push.nudgeTitleNew': 'Make it a daily habit?',
+    'push.nudgeBody': "One gentle nudge a day if you haven't played — nothing else, and off anytime in Settings.",
+    'push.nudgeYes': 'Turn on reminders',
+    'push.nudgeNo': 'Not now',
 
     // ── Install prompt ──
     'install.pill': 'Install app',
