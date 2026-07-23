@@ -1,0 +1,119 @@
+# Native Android build — WebView + native Play Billing (docs/native-android-plan.md).
+# Replaces the Bubblewrap TWA (android-build.yml) once device-proven. A normal
+# Gradle Android build (no Bubblewrap, no expect, no self-managed SDK).
+#
+# Reuses the same signing secrets (ANDROID_KEYSTORE_B64 / _PASSWORD, ANDROID_KEY_
+# PASSWORD) so Play accepts it as an update to app.mathchallenge.twa, and the
+# same keyless WIF upload (repo vars PLAY_WIF_PROVIDER / PLAY_PUBLISHER_SA).
+name: android-native-build
+
+on:
+  workflow_dispatch:
+    inputs:
+      versionCode:
+        description: "Android versionCode (integer; must exceed the last upload). Blank → 2000 + run_number."
+        required: false
+        default: ""
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      HAS_WIF: ${{ vars.PLAY_WIF_PROVIDER != '' }}
+    defaults:
+      run:
+        working-directory: android-native
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Install SDK 36 (compile/target) + build-tools
+        run: yes | sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0" >/dev/null
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+
+      - name: Decode upload keystore
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+        run: echo "$KEYSTORE_B64" | base64 -d > "$GITHUB_WORKSPACE/android-native/release.jks"
+
+      - name: Set monotonic versionCode
+        env:
+          IN_VC: ${{ github.event.inputs.versionCode }}
+          RUN_NUMBER: ${{ github.run_number }}
+        run: |
+          # Must exceed the TWA's last internal upload (1018). Offset +2000 over
+          # this workflow's own run_number keeps it unique + always-increasing.
+          VC="${IN_VC:-$((2000 + RUN_NUMBER))}"
+          sed -i -E "s/versionCode [0-9]+/versionCode $VC/" app/build.gradle
+          echo "versionCode set to $VC"
+
+      - name: Build release .aab
+        env:
+          ANDROID_KEYSTORE_PATH: ${{ github.workspace }}/android-native/release.jks
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: android
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: gradle :app:bundleRelease --no-daemon --stacktrace
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: math-challenge-native
+          path: android-native/app/build/outputs/bundle/release/*.aab
+          retention-days: 14
+
+      # Keyless publish to the Play internal track (same WIF setup as the TWA).
+      - name: Authenticate to Google Cloud (keyless, WIF)
+        if: env.HAS_WIF == 'true'
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
+        with:
+          workload_identity_provider: ${{ vars.PLAY_WIF_PROVIDER }}
+          service_account: ${{ vars.PLAY_PUBLISHER_SA }}
+
+      - name: Publish .aab to Play internal track
+        if: env.HAS_WIF == 'true'
+        env:
+          PACKAGE: app.mathchallenge.twa
+        run: |
+          pip install --quiet google-api-python-client google-auth
+          AAB="$(ls "$GITHUB_WORKSPACE"/android-native/app/build/outputs/bundle/release/*.aab | head -1)"
+          echo "uploading $AAB"
+          AAB="$AAB" python - <<'PY'
+          import os
+          import google.auth
+          from googleapiclient.discovery import build
+          pkg = os.environ['PACKAGE']
+          aab = os.environ['AAB']
+          creds, _ = google.auth.default(
+              scopes=['https://www.googleapis.com/auth/androidpublisher'])
+          svc = build('androidpublisher', 'v3', credentials=creds, cache_discovery=False)
+          edit = svc.edits().insert(packageName=pkg, body={}).execute()
+          eid = edit['id']
+          up = svc.edits().bundles().upload(
+              packageName=pkg, editId=eid, media_body=aab,
+              media_mime_type='application/octet-stream').execute()
+          vc = up['versionCode']
+          print(f'uploaded versionCode {vc}')
+          svc.edits().tracks().update(
+              packageName=pkg, editId=eid, track='internal',
+              body={'releases': [{'versionCodes': [vc], 'status': 'completed'}]}).execute()
+          svc.edits().commit(packageName=pkg, editId=eid).execute()
+          print(f'committed versionCode {vc} to the internal track')
+          PY
+
+      - name: Note when Play upload is skipped
+        if: env.HAS_WIF != 'true'
+        run: echo "::notice::WIF not configured — native .aab built (artifact) but not uploaded."
