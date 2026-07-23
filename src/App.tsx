@@ -137,6 +137,7 @@ function App() {
   const [celebrateOpen, setCelebrateOpen] = useState(false);
   const [pushNudgeOpen, setPushNudgeOpen] = useState(false);
   const pushNudgePendingRef = useRef(false);
+  const [refereeBonusDays, setRefereeBonusDays] = useState(0);
   // Web checkout returns the user to the app (via ?paywall=ok, or manually if
   // the hosted page didn't redirect). While we re-read the entitlement to catch
   // the webhook's grant, show a brief "Payment received — unlocking…" state so
@@ -362,7 +363,16 @@ function App() {
   useEffect(() => {
     if (referralTriedRef.current || !uid || stats.totalSolved < 10) return;
     referralTriedRef.current = true;
-    void maybeClaimReferral(uid, stats.totalSolved);
+    maybeClaimReferral(uid, stats.totalSolved).then(bonus => {
+      if (bonus > 0) {
+        // Double-sided referral: the referee just earned extra trial days.
+        // Refresh so the extended trial reflects, and show a one-time welcome.
+        entitlement.refresh().catch(() => { /* next read catches up */ });
+        setRefereeBonusDays(bonus);
+      }
+    });
+    // referralTriedRef guards a single run; entitlement.refresh is stable enough.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uid, stats.totalSolved]);
 
   // ── Timed-mode duration (user-set in Settings; presets 5/10/15/20s) ──
@@ -721,6 +731,11 @@ function App() {
     try { localStorage.setItem('mc-push-nudged', uid); } catch { /* ignore */ }
     setPushNudgeOpen(true);
   }, [showSummary, paywallOpen, celebrateOpen, uid]);
+  useEffect(() => {
+    if (refereeBonusDays <= 0) return;
+    const timer = setTimeout(() => setRefereeBonusDays(0), 5000);
+    return () => clearTimeout(timer);
+  }, [refereeBonusDays]);
 
   // Pro gate: paid unlocks the Pro set (advanced modes, full Magic Tricks, Pro
   // cosmetics) even during the trial. Tapping a locked Pro thing opens the
@@ -1794,6 +1809,20 @@ function App() {
         <AnimatePresence>
           {pushNudgeOpen && uid && (
             <PushNudge uid={uid} dayStreak={stats.dayStreak} onClose={() => setPushNudgeOpen(false)} />
+          )}
+        </AnimatePresence>
+
+        {/* ── Referee welcome ── Double-sided referral: a friend's invite just
+            earned this new player extra trial days. Tap or auto-dismiss. */}
+        <AnimatePresence>
+          {refereeBonusDays > 0 && (
+            <motion.div
+              className="fixed top-4 left-1/2 -translate-x-1/2 z-[59] max-w-[19rem] px-4 py-3 rounded-2xl bg-[var(--color-gold)] text-[var(--color-board)] text-sm ui font-semibold text-center shadow-xl"
+              initial={{ y: -30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -30, opacity: 0 }}
+              onClick={() => setRefereeBonusDays(0)} role="status"
+            >
+              {t('referral.welcomeBonus', { days: refereeBonusDays })}
+            </motion.div>
           )}
         </AnimatePresence>
 

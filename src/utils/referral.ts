@@ -49,21 +49,26 @@ function clearPendingReferrer(): void {
  *  a uid, or enough play. A `failed-precondition` (server hasn't seen enough
  *  play yet) leaves the code in place to retry next session; any other outcome
  *  clears it so it never loops. */
-export async function maybeClaimReferral(uid: string | null, totalSolved: number): Promise<void> {
-    if (!uid) return;
+export async function maybeClaimReferral(uid: string | null, totalSolved: number): Promise<number> {
+    if (!uid) return 0;
     const referrer = pendingReferrer();
-    if (!referrer) return;
-    if (referrer === uid) { clearPendingReferrer(); return; }
-    if (totalSolved < MIN_INVITEE_SOLVED) return;
+    if (!referrer) return 0;
+    if (referrer === uid) { clearPendingReferrer(); return 0; }
+    if (totalSolved < MIN_INVITEE_SOLVED) return 0;
     try {
         const [{ functions }, { httpsCallable }] = await Promise.all([
             getFirebase(), import('firebase/functions'),
         ]);
-        await httpsCallable(functions, 'claimReferral')({ referrerUid: referrer });
+        const res = await httpsCallable<unknown, { credited?: boolean; refereeBonusDays?: number }>(
+            functions, 'claimReferral',
+        )({ referrerUid: referrer });
         clearPendingReferrer();
+        // Double-sided referral: the referee's extra trial days (0 if none).
+        return Number(res.data?.refereeBonusDays ?? 0) || 0;
     } catch (err) {
         const code = (err as { code?: string })?.code;
         if (code !== 'functions/failed-precondition') clearPendingReferrer();
+        return 0;
     }
 }
 

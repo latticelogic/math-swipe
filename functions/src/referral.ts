@@ -34,6 +34,11 @@ import * as logger from 'firebase-functions/logger';
 /** Problems an invitee must have solved before a referral credits. */
 const MIN_INVITEE_SOLVED = 10;
 
+/** Double-sided referral: extra trial days granted to the REFEREE (the new
+ *  player who arrived via ?r=). Owner-approved growth lever; set to 0 to
+ *  disable. Kept small so it doesn't undo the deliberate 7-day base trial. */
+const REFEREE_TRIAL_BONUS_DAYS = 3;
+
 export const claimReferral = onCall(
     { enforceAppCheck: true, maxInstances: 10 },
     async (request) => {
@@ -85,10 +90,12 @@ export const claimReferral = onCall(
         // the grant path ran first and found no referrals doc), also credit the
         // conversion now, so the ordering of pay-vs-play never loses a credit.
         const statsRef = db.doc(`referralStats/${referrerUid}`);
+        const inviteeEntRef = db.doc(`entitlements/${inviteeUid}`);
+        let refereeBonusDays = 0;
         await db.runTransaction(async (tx) => {
             const already = await tx.get(inviteeRef);
             if (already.exists) return; // lost a race — someone else recorded it
-            const entSnap = await tx.get(db.doc(`entitlements/${inviteeUid}`));
+            const entSnap = await tx.get(inviteeEntRef);
             const alreadyPaid = entSnap.exists && !!entSnap.get('paidAt');
             tx.set(inviteeRef, {
                 referrerUid,
@@ -106,10 +113,22 @@ export const claimReferral = onCall(
                 },
                 { merge: true },
             );
+            // Double-sided referral: the REFEREE gets extra trial days too. Only
+            // if not already paid (no point extending a paid user's trial), and
+            // once — the inviteeRef guard above blocks any re-fire. Owner-tunable
+            // via REFEREE_TRIAL_BONUS_DAYS (0 disables; a firm-trial-safe growth
+            // lever the owner approved).
+            if (!alreadyPaid && REFEREE_TRIAL_BONUS_DAYS > 0) {
+                refereeBonusDays = REFEREE_TRIAL_BONUS_DAYS;
+                tx.set(inviteeEntRef, {
+                    trialBonusDays: REFEREE_TRIAL_BONUS_DAYS,
+                    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                }, { merge: true });
+            }
         });
 
-        logger.info('referral credited', { referrerUid, inviteeUid });
-        return { credited: true };
+        logger.info('referral credited', { referrerUid, inviteeUid, refereeBonusDays });
+        return { credited: true, refereeBonusDays };
     },
 );
 

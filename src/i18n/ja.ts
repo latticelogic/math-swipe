@@ -352,6 +352,7 @@ export const ja: Record<MsgKey, string> = {
     'push.nudgeBody': "まだ遊んでいない日に、1日1回そっとお知らせします。それだけで、設定でいつでもオフにできます。",
     'push.nudgeYes': "リマインダーをオン",
     'push.nudgeNo': "あとで",
+    'referral.welcomeBonus': "友だちの招待で、{days}日おまけ。",
     'install.pill': 'アプリを追加',
     'install.hideAria': 'インストール案内を隠す',
     'install.notNow': '今はしない',

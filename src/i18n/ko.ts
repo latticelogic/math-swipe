@@ -354,6 +354,7 @@ export const ko: Record<MsgKey, string> = {
     'push.nudgeBody': "안 하신 날 하루 한 번 부드럽게 알려드려요. 그 외엔 없고, 설정에서 언제든 끌 수 있어요.",
     'push.nudgeYes': "알림 켜기",
     'push.nudgeNo': "나중에",
+    'referral.welcomeBonus': "친구가 초대했어요 — {days}일 무료로 더 드려요.",
     'install.pill': '앱 설치',
     'install.hideAria': '설치 안내 숨기기',
     'install.notNow': '지금은 아니에요',

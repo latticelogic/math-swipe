@@ -352,6 +352,7 @@ export const zhHans: Record<MsgKey, string> = {
     'push.nudgeBody': "如果当天还没玩，每天轻轻提醒一次，仅此而已，随时可在设置中关闭。",
     'push.nudgeYes': "开启提醒",
     'push.nudgeNo': "以后再说",
+    'referral.welcomeBonus': "朋友邀请了你——额外 {days} 天，我们请客。",
     'install.pill': '安装应用',
     'install.hideAria': '隐藏安装提示',
     'install.notNow': '暂不',

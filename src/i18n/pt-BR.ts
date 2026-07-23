@@ -351,6 +351,7 @@ export const ptBR: Record<MsgKey, string> = {
     'push.nudgeBody': "Um lembrete leve por dia se você não jogou, nada mais. Desative quando quiser nas Configurações.",
     'push.nudgeYes': "Ativar lembretes",
     'push.nudgeNo': "Agora não",
+    'referral.welcomeBonus': "Um amigo convidou você — {days} dias extras, por nossa conta.",
     'install.pill': 'Instalar app',
     'install.hideAria': 'Ocultar aviso de instalação',
     'install.notNow': 'agora não',

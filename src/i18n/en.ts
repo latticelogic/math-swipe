@@ -400,6 +400,8 @@ export const en = {
     'push.nudgeBody': "One gentle nudge a day if you haven't played — nothing else, and off anytime in Settings.",
     'push.nudgeYes': 'Turn on reminders',
     'push.nudgeNo': 'Not now',
+    // Double-sided referral — the referee's welcome
+    'referral.welcomeBonus': 'A friend invited you — {days} extra days, on the house.',
 
     // ── Install prompt ──
     'install.pill': 'Install app',

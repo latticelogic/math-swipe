@@ -352,6 +352,7 @@ export const zhHant: Record<MsgKey, string> = {
     'push.nudgeBody': "如果當天還沒玩，每天輕輕提醒一次，僅此而已，隨時可在設定中關閉。",
     'push.nudgeYes': "開啟提醒",
     'push.nudgeNo': "以後再說",
+    'referral.welcomeBonus': "朋友邀請了你——額外 {days} 天，我們請客。",
     'install.pill': '安裝應用程式',
     'install.hideAria': '隱藏安裝提示',
     'install.notNow': '暫時不要',

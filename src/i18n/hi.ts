@@ -371,6 +371,7 @@ export const hi: Record<MsgKey, string> = {
     'push.nudgeBody': "अगर आपने नहीं खेला तो दिन में एक हल्की याद, बस इतना ही। सेटिंग्स में कभी भी बंद कर सकते हैं।",
     'push.nudgeYes': "रिमाइंडर चालू करें",
     'push.nudgeNo': "अभी नहीं",
+    'referral.welcomeBonus': "एक दोस्त ने आपको बुलाया — {days} अतिरिक्त दिन, हमारी ओर से।",
     'install.pill': 'ऐप इंस्टॉल करें',
     'install.hideAria': 'इंस्टॉल संकेत छिपाएँ',
     'install.notNow': 'अभी नहीं',
