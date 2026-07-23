@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { detectChannel, isAndroidApp } from '../utils/channel';
+import { detectChannel, isAndroidApp, isNativeAndroid, isNativeIOS } from '../utils/channel';
 import { getPurchaseChannel } from '../utils/checkout';
 
 /**
@@ -15,6 +15,20 @@ import { getPurchaseChannel } from '../utils/checkout';
 const CHANNEL_KEY = 'mc-session-channel';
 
 type DGWindow = Window & { getDigitalGoodsService?: (method: string) => Promise<unknown> };
+type BridgeWindow = Window & {
+    AndroidShell?: unknown;
+    AndroidBilling?: unknown;
+    AppleShell?: unknown;
+    AppleBilling?: unknown;
+};
+
+function clearBridges() {
+    const w = window as BridgeWindow;
+    delete w.AndroidShell;
+    delete w.AndroidBilling;
+    delete w.AppleShell;
+    delete w.AppleBilling;
+}
 
 function setSearch(search: string) {
     window.history.replaceState({}, '', `/${search}`);
@@ -29,6 +43,7 @@ beforeEach(() => {
     setSearch('');
     setReferrer('');
     delete (window as DGWindow).getDigitalGoodsService;
+    clearBridges();
 });
 
 afterEach(() => {
@@ -36,6 +51,7 @@ afterEach(() => {
     setSearch('');
     setReferrer('');
     delete (window as DGWindow).getDigitalGoodsService;
+    clearBridges();
 });
 
 describe('detectChannel', () => {
@@ -115,5 +131,70 @@ describe('getPurchaseChannel', () => {
             else delete (window as DGWindow).getDigitalGoodsService;
             expect(await getPurchaseChannel()).not.toBe('web');
         }
+    });
+});
+
+// ── Native Android shell (WebView + BillingClient bridge) ────────────────────
+
+describe('isNativeAndroid', () => {
+    it('detects via the ?src=android-native start param', () => {
+        setSearch('?src=android-native');
+        expect(isNativeAndroid()).toBe(true);
+    });
+
+    it('detects via injected bridges even when the URL was cleaned (the reload-toast regression)', () => {
+        // Boot URL cleanup can strip the query BEFORE any caller reads it;
+        // the injected bridges cannot be stripped. #189's root cause.
+        (window as BridgeWindow).AndroidShell = {};
+        expect(isNativeAndroid()).toBe(true);
+    });
+
+    it('is not fooled by a plain web session', () => {
+        expect(isNativeAndroid()).toBe(false);
+    });
+
+    it('native Android with the billing bridge → android-native channel', async () => {
+        (window as BridgeWindow).AndroidBilling = { buy: () => { }, restore: () => { }, isReady: () => true };
+        expect(await getPurchaseChannel()).toBe('android-native');
+    });
+
+    it('native Android WITHOUT the billing bridge → none, never web (Play policy)', async () => {
+        (window as BridgeWindow).AndroidShell = {};   // shell detected, billing absent
+        expect(await getPurchaseChannel()).toBe('none');
+    });
+});
+
+// ── Native iOS shell (WKWebView + StoreKit 2 bridge) ─────────────────────────
+
+describe('isNativeIOS', () => {
+    it('detects via the ?src=ios-native start param', () => {
+        setSearch('?src=ios-native');
+        expect(isNativeIOS()).toBe(true);
+    });
+
+    it('detects via injected bridges when the URL was cleaned', () => {
+        (window as BridgeWindow).AppleShell = {};
+        expect(isNativeIOS()).toBe(true);
+    });
+
+    it('is not fooled by a plain web session or the Android shell', () => {
+        expect(isNativeIOS()).toBe(false);
+        (window as BridgeWindow).AndroidShell = {};
+        expect(isNativeIOS()).toBe(false);
+    });
+
+    it('iOS shell with the billing bridge → ios-native channel', async () => {
+        (window as BridgeWindow).AppleBilling = { buy: () => { }, restore: () => { }, finish: () => { }, isReady: () => true };
+        expect(await getPurchaseChannel()).toBe('ios-native');
+    });
+
+    it('iOS shell with billing present but not READY still routes native (never web)', async () => {
+        (window as BridgeWindow).AppleBilling = { buy: () => { }, restore: () => { }, finish: () => { }, isReady: () => false };
+        expect(await getPurchaseChannel()).toBe('ios-native');
+    });
+
+    it('iOS shell WITHOUT the billing bridge → none, never web (App Store policy)', async () => {
+        (window as BridgeWindow).AppleShell = {};
+        expect(await getPurchaseChannel()).toBe('none');
     });
 });
