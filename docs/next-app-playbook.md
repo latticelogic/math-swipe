@@ -26,6 +26,17 @@ sections roughly mirrors the order you'll want to do things.
 4. **CLI-first, but know the genuine web-only steps** (KYC/KYB, card entry,
    signing-key custody, legal attestations, App Check registration). Flag
    those explicitly; automate everything else.
+5. **A native WebView shell is the right Android call, but it isn't free.**
+   Going native (WebView + native Play Billing) removes the android-browser-helper
+   PBL-8 lock and the Chrome-version dependency — but it opens a fresh crop of
+   device-only bugs: Google Sign-In needs the **app-signing SHA-1** in Firebase
+   (SHA-256 alone won't provision the OAuth Android client), don't draw
+   **edge-to-edge** (WebView doesn't feed `env(safe-area-inset-*)`), and PWA
+   service-worker toasts **leak into the shell**. See §4.
+6. **Preview in a mobile-emulated browser before the tester does.** `npm run
+   dev` + `?src=android-native` + a ~412×915 browser catches layout/gating bugs
+   (cramped headers, paywall-before-value, transparent overlays) in seconds.
+   Device testing is the bottleneck — spend it only on the truly native bits.
 
 ---
 
@@ -344,6 +355,65 @@ could be replaced by pre-installing a pinned Android SDK + accepting licenses
 in a setup step and pointing Bubblewrap at it via config — but Bubblewrap
 rejects a hand-written `~/.bubblewrap/config.json` and re-prompts, so it's
 non-trivial. The `expect` recipe above is proven; start there.
+
+### The native WebView shell (we pivoted off the TWA) — the device-only gotchas
+The TWA gets Play Billing via `androidbrowserhelper:billing`, which pins Billing
+Library 7.1.1 (fails Play's Aug-2026 PBL-8 flag) and routes purchasing through
+the device Chrome. Going **native** (a plain `WebView` + `billingclient:8` +
+Credential Manager sign-in + native FCM, one Gradle build, no Bubblewrap) fixes
+both. It's *not* a rewrite — same one web codebase, loaded with
+`?src=android-native`; only a thin Kotlin shell + a few JS bridges are native.
+But a fresh crop of bugs appears, every one found on-device:
+
+- **Google Sign-In needs the app-signing SHA-1 in Firebase — not just SHA-256.**
+  Credential Manager (`androidx.credentials` + `GetGoogleIdOption`) validates the
+  app against an OAuth **Android** client (`client_type: 1`), which Firebase only
+  provisions once a **SHA-1** is registered. Tell-tale: **billing works but
+  sign-in dead-ends** on "sign-in didn't complete," and `google-services.json`
+  has only the web client (`client_type: 3`). Fix:
+  `firebase apps:android:sha:create <appId> <SHA-1>` for **both** the app-signing
+  and upload certs (SHA-1 from Play Console → App integrity; grab the SHA-256s
+  too). Server-side — propagates in minutes, no rebuild. Billing never needed
+  this, which is why it's easy to miss.
+- **Do NOT draw edge-to-edge in a WebView shell.** Android WebView does not feed
+  `env(safe-area-inset-top)` reliably, so `WindowCompat.setDecorFitsSystemWindows(
+  window, false)` + transparent bars makes top-anchored web UI (page headers,
+  achievement toasts) ride up **into** the status bar. For a uniform-dark app a
+  **solid themed status bar** (the theme's `statusBarColor`, default
+  `setDecorFitsSystemWindows`) looks identical and lets Android inset the content.
+  Also audit the web app for screens with flat top padding (`pt-4`) — give them
+  `pt-[calc(env(safe-area-inset-top,16px)+N)]` like the others so they clear the
+  bar in either mode.
+- **PWA behaviors leak into the WebView — but only the ones that actually run
+  there.** Service workers DO run in a WebView, so the PWA "new version available"
+  reload toast fires *inside* the native app (baffling — they just updated the
+  binary via Play). `beforeinstallprompt` does NOT fire, so install prompts are
+  naturally inert. Detect the native shell by its **injected bridges**
+  (`typeof window.AndroidShell !== 'undefined'`), never by the `?src=` param alone
+  — boot URL-cleanup can strip the query before your code reads it. Then suppress
+  the reload toast / route billing to native.
+- **`rgb(var(--x))` is invalid if `--x` is a hex.** A full-screen celebration used
+  `bg-[rgb(var(--color-board))]`, but `--color-board` is `#000000` → `rgb(#000000)`
+  is dropped → transparent overlay, everything behind bleeds through. Know which
+  CSS vars are hex vs `R G B` triples before wrapping them in `rgb()`.
+
+### Preview in a mobile-emulated browser BEFORE the tester
+Device testing is the bottleneck, so don't debug visual bugs through tester
+screenshots. `npm run dev`, point a mobile-emulated browser at
+`http://127.0.0.1:PORT/?src=android-native` (the param makes the web app take the
+native channel path — bridges absent, so guard with `typeof`), resize to ~412×915,
+screenshot. Catches cramped headers, paywall-before-value, transparent overlays,
+gating-state bugs in seconds. The truly native bits (real status bar, Credential
+Manager, Play Billing, FCM delivery) still need a device — but most of what breaks
+is web layout/logic.
+
+### Gating lesson (product, but it bit us on native)
+Never wall a whole tab on entry — that's a paywall-before-value, the exact thing
+the value-anchored model avoids. Show the content (locked), and fire the paywall
+on the specific paid **action**. Gate free-tier surfaces on trial-or-paid
+(`hasAccess`), Pro surfaces on paid (`isPaid`); expired users then SEE the full
+library (locked) but can only play the always-free Daily — visible value converts
+better than a contextless popup.
 
 ---
 
