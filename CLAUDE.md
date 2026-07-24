@@ -284,6 +284,21 @@ business call, not a code blocker.
     *expressions* of this principle — not exceptions to it. This is the
     company posture (user-first, the way Google/Anthropic frame it), enshrined
     here so it governs code and copy, not just intentions.
+- **Docs discipline — keep them current *in the same change*, don't let them
+  sprawl.** The doc set rots if updates lag the code. The rules:
+  - **`docs/status.md` is the start-here living queue** (shipped / in-review /
+    blocked / waiting / deferred). Update it in the SAME change as any state
+    change — a merge, a deploy, a new blocker. If a turn changed project state
+    and didn't touch status.md, that's a miss.
+  - **`docs/README.md` indexes every doc, and it's CI-enforced**
+    (`docsIndex.test.ts` fails if a `docs/*.md` isn't listed, or the index links
+    a deleted doc). Add/remove the index row WITH the doc — never separately.
+  - **Prefer updating or deleting a doc over adding one.** One doc per concern.
+    When a doc's subject ships or is superseded, update its Status line or delete
+    the doc (git history keeps it) + note it in the README's "Deleted" list.
+    Don't create a new doc for something an existing one covers.
+  - Point-in-time reports (audits) get deleted once their findings ship; durable
+    docs are runbook / spec / decision-record / living-queue only.
 - **Prefer CLI over web dashboards** for all infra ops (GitHub, Cloudflare,
   Firebase, DNS, etc.). Reasons: reproducible, auditable in shell
   history, scriptable, and AI assistants can execute it directly. Use

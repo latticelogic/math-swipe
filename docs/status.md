@@ -34,6 +34,7 @@ _Last updated: 2026-07-24._
 
 ## 🔵 Strategic / deferred (owner call, no urgency)
 - PGS / Play Games reach (`deferred_pgs_integration`) · store promo video (design).
+- **Trademark "Math Challenge"** (Lattice Logic Pte. Ltd. via Singapore IPOS; consider US USPTO) — the clean legal lever against a same-name clone on either store. Business call, not code.
 
 ## Deploy cheatsheet
 - **Web** → merge to `master`, auto-deploys via CI.
