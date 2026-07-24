@@ -38,7 +38,7 @@ _Last updated: 2026-07-24._
 
 ## 🧹 Tech health / maintainability
 - Overall: healthy for size (~42K src lines, 30 test files, CI lint+types+tests+build, enforced docs index). Most large files are cohesive data/pure-fn (mathGenerator = 35 generators, mathTricks + i18n = data) — fine.
-- **One hotspot: `App.tsx` (~1,930 lines)** — god-component (boot params, tab routing, paywall orchestration, session lifecycle, many effects). Highest-leverage refactor: extract cohesive hooks (e.g. `useBootParams`, `usePaywallController`, session/tab state) in small, test-guarded PRs. Deliberate effort — not a squeeze-in (it's the core; churn is risky). Do with the suite as guardrail.
+- **One hotspot: `App.tsx` (~1,930 lines)** — god-component (boot params, tab routing, paywall orchestration, session lifecycle, many effects). **DEFERRED (owner call 2026-07-24)** — not urgent; it works and is test-covered. When revisited: extract cohesive hooks (e.g. `useBootParams`, `usePaywallController`, session/tab state) in small, test-guarded PRs, not a big-bang (it's the core; churn is risky).
 - Optional guard: a size-budget lint warning on new files > ~800 lines to stop new god-files forming.
 
 ## Deploy cheatsheet
