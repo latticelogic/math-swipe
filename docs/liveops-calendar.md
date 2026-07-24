@@ -1,14 +1,20 @@
-# LiveOps / Promotional Content calendar — DRAFT for owner review
+# LiveOps / Promotional Content calendar — APPROVED
 
 Play's Promotional Content (Grow → Store presence) lets us submit time-bound
 cards Google *may* feature on the store listing, Play home, the Events tab, and
 re-engagement notifications. Free promo real estate that drives **installs** (new
 users see an app that's alive) and **engagement** (pulls lapsed users back).
 
-**Status:** proposal only — nothing submitted. Owner reviews + approves before
-anything goes live. Cards likely can't be submitted until the app is **published**
-(post the 2007 launch review). Google reviews every card (needs quality image +
-copy + a real event + a working deep link).
+**Status: APPROVED by owner 2026-07-24** — all four decisions yes: (A) run the
+recurring engine, (B) commit the full seasonal tentpole calendar, (C) no price
+discounts, (D) Pi Day is the flagship. The ready-to-submit copy is in the
+"Approved cards" section below.
+
+**Remaining before a card goes live:** (1) the app must be **published**
+(Promotional Content requires it — gated on the 2007 review), (2) a **quality
+image per card** (design task — reuse the store-assets/ chalkboard style), (3)
+owner clickwork in Play Console + Google's per-card review. The deep links and
+copy are done.
 
 ---
 
@@ -37,6 +43,27 @@ copy + a real event + a working deep link).
 | **Offer** | **Constrained** — no price discounts. Skip by default. One non-price idea flagged below for owner call. | Rare / never |
 
 ---
+
+## Approved cards — ready-to-submit copy (tone-bar compliant: warm, restrained, no emoji, no price+possession-threat)
+
+Submit in this order once the app is live. Each still needs a chalkboard-style
+image. Types: E = Event, MU = Major update.
+
+| Card | Type | Title | Description | Deep link | Window |
+|---|---|---|---|---|---|
+| **Launch** | MU | Math Challenge is here | Mental math that feels like play. Swipe to answer, learn the tricks behind it. | `?daily=1` | at publish |
+| **Daily spotlight** (evergreen) | E | Today's Daily Challenge | A fresh set of problems, new every day. | `?daily=1` | always-on; refresh copy weekly |
+| **Back-to-School** (first tentpole) | E | Sharpen up for the new year | Ten minutes a day to get quick with mental math before school starts. | `?daily=1` | Aug–Sep |
+| **Times-Tables Week** (topic-week example) | E | Times-Tables Week | Drill the multiplication tables this week. | `?topic=tables` | rotating 7-day |
+| **New Year** | E | A sharper year | Start the year with a ten-minute daily habit. | `?daily=1` | Jan |
+| **★ Pi Day (flagship)** | E | It's Pi Day | Celebrate 3.14 with a special Pi Day challenge. | `?daily=1` | Mar 14 (±2 days) |
+| **Summer slide** | E | Beat the summer slide | A little mental math each day keeps skills sharp over the break. | `?daily=1` | Jun–Aug, weekly |
+| **Weekend Speedrun Cup** | E | Weekend Speedrun Cup | Race the clock this weekend and climb the league. | `?league=1` | Fri–Sun, periodic |
+| **Now in 12 languages** | MU | Now in 12 languages | Play in your language — twelve and counting. | `?daily=1` | after localized listings ship |
+
+Minor seasonal skins (Halloween, Dec holiday, Nov) run as themed Daily cards —
+same `?daily=1` link, copy drafted closer to each date. The `?trick=<id>` link
+is reserved for a future "new Magic Trick" content-drop card.
 
 ## A. Always-on recurring engine (evergreen — set up once, rotate)
 

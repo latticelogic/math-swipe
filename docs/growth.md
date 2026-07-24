@@ -69,7 +69,7 @@ server-side). Consume with `useExperiment(id, uid)` and branch.
   Likely unlocks only once the app is **published** (post-2007 review). Recurring
   content-ops (needs a card image + copy per event; Google reviews each). Also a
   retention lever (pulls lapsed users back). *Activate once live.* Detailed
-  calendar drafted for owner review: **`docs/liveops-calendar.md`**.
+  calendar **APPROVED** 2026-07-24: **`docs/liveops-calendar.md`** (ready-to-submit copy staged; needs images + publish).
 - Localized listings (staged) → measure per-market install-conversion lift.
 - Promo video; refreshed screenshots that show the *swipe* + streak moment.
 - ASO keyword pass on the full description (times tables, multiplication, mental
