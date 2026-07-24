@@ -2,7 +2,6 @@ import { memo, useState, useEffect, useRef, useCallback, type ReactNode } from '
 import { motion, AnimatePresence } from 'framer-motion';
 import { QuestionTypePicker } from './QuestionTypePicker';
 import type { QuestionType } from '../utils/mathGenerator';
-import type { AgeBand } from '../utils/questionTypes';
 import { t } from '../i18n';
 
 /**
@@ -65,7 +64,6 @@ interface Props {
     onTimedModeToggle: () => void;
     timedDurationMs: number;        // full-ring duration for the current level
     problemKey: string | number | null; // changes per problem → restarts the ring
-    ageBand: AgeBand;
     /** Advanced modes (Hard/Timed/Ultimate) are Pro. When false, the toggles
      *  show a lock and tap opens the upsell instead of toggling. */
     hasPro?: boolean;
@@ -135,7 +133,7 @@ function TimerRing({ active, durationMs }: { active: boolean; durationMs: number
 export const ActionButtons = memo(function ActionButtons({
     questionType, onTypeChange, hardMode, onHardModeToggle,
     timedMode, onTimedModeToggle, timedDurationMs, problemKey,
-    ageBand, hasPro = true, onProLocked, sharePayload,
+    hasPro = true, onProLocked, sharePayload,
 }: Props) {
     // Hard/Timed don't apply to the fixed daily/challenge/speedrun sets, so
     // hide the toggles there (App also neutralizes the flags for those types).
@@ -240,7 +238,7 @@ export const ActionButtons = memo(function ActionButtons({
             {/* Question type */}
             {!hideTopicPicker && (
                 <ActionTooltip label={t('rail.switchTopic')}>
-                    <QuestionTypePicker current={questionType} onChange={onTypeChange} ageBand={ageBand} />
+                    <QuestionTypePicker current={questionType} onChange={onTypeChange} />
                 </ActionTooltip>
             )}
 

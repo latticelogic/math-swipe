@@ -10,8 +10,7 @@ import { ScoreCounter } from './components/ScoreCounter';
 import { BottomNav } from './components/BottomNav';
 import { ActionButtons } from './components/ActionButtons';
 import { SwipeTrail } from './components/SwipeTrail';
-import type { AgeBand } from './utils/questionTypes';
-import { defaultTypeForBand, QUESTION_TYPES } from './utils/questionTypes';
+import { DEFAULT_QUESTION_TYPE, QUESTION_TYPES } from './utils/questionTypes';
 import { MAGIC_TRICKS } from './utils/mathTricks';
 import { useAutoSummary, usePersonalBest } from './hooks/useSessionUI';
 import { OfflineBanner } from './components/OfflineBanner';
@@ -951,11 +950,6 @@ function App() {
     setThemeMode(themeMode === 'dark' ? 'light' : 'dark');
   }, [themeMode, setThemeMode]);
   // ── Age band (removed as a user-facing concept 2026-07-15) ──
-  // Testers found the starter/full picker confusing and unnecessary, so
-  // everyone now gets the full topic set. Kept as a constant (rather than
-  // ripping typesForBand out everywhere) so the topic-filtering plumbing is
-  // untouched and a band could return later without a big refactor.
-  const ageBand: AgeBand = 'full';
 
 
   // NOTE: we intentionally do NOT block first paint on Firebase auth. The
@@ -1423,9 +1417,7 @@ function App() {
               timedMode={timedMode}
               onTimedModeToggle={toggleTimedMode}
               timedDurationMs={timedDurationMs}
-              problemKey={currentProblem?.id ?? null}
-              ageBand={ageBand}
-              hasPro={hasPro}
+              problemKey={currentProblem?.id ?? null}              hasPro={hasPro}
               onProLocked={requestPro}
               sharePayload={railSharePayload}
             />}
@@ -1522,9 +1514,7 @@ function App() {
               onLinkApple={linkApple}
               onSendEmailLink={sendEmailLink}
               authMessage={authMessage}
-              onClearAuthMessage={clearAuthMessage}
-              ageBand={ageBand}
-              activeTeacherId={savedTeacherId as string}
+              onClearAuthMessage={clearAuthMessage}              activeTeacherId={savedTeacherId as string}
               onTeacherChange={setSavedTeacherId}
               uid={uid}
               entitlementStatus={entitlement.status}
@@ -1572,7 +1562,7 @@ function App() {
             bankCurrentRun();
             if (questionType === 'speedrun') {
               setActiveTab('league');
-              setQuestionType(defaultTypeForBand(ageBand)); // category change resets the loop
+              setQuestionType(DEFAULT_QUESTION_TYPE); // category change resets the loop
             } else {
               resetSession();
             }

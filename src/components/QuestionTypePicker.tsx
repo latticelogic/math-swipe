@@ -1,8 +1,8 @@
 import { memo, useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { QuestionType, AgeBand } from '../utils/questionTypes';
-import { typesForBand, type QuestionGroup } from '../utils/questionTypes';
+import type { QuestionType } from '../utils/questionTypes';
+import { visibleQuestionTypes, type QuestionGroup } from '../utils/questionTypes';
 import { setFocusTable, getFocusTable } from '../utils/mathGenerator';
 import { CategoryIcon } from './CategoryIcon';
 import { t, type MsgKey } from '../i18n';
@@ -25,7 +25,6 @@ try {
 interface Props {
     current: QuestionType;
     onChange: (type: QuestionType) => void;
-    ageBand: AgeBand;
 }
 
 // Section order: everyday stuff first (Daily, the four operations), then the
@@ -33,11 +32,11 @@ interface Props {
 // Mixed last as the graduation. Labels live in GROUP_LABELS.
 const ALL_GROUPS: QuestionGroup[] = ['daily', 'young', 'whole', 'core', 'parts', 'powers', 'prealgebra', 'mixed'];
 
-export const QuestionTypePicker = memo(function QuestionTypePicker({ current, onChange, ageBand }: Props) {
+export const QuestionTypePicker = memo(function QuestionTypePicker({ current, onChange }: Props) {
     const [open, setOpen] = useState(false);
     // Second step for the Tables tile: pick WHICH table to drill (2–12).
     const [tableChooser, setTableChooser] = useState(false);
-    const bandTypes = useMemo(() => typesForBand(ageBand), [ageBand]);
+    const bandTypes = useMemo(() => visibleQuestionTypes(), []);
     const groups = useMemo(() => ALL_GROUPS.filter(g => bandTypes.some(t => t.group === g)), [bandTypes]);
     const currentEntry = bandTypes.find(t => t.id === current);
 
