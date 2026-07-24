@@ -18,7 +18,7 @@ passively (growthDigest weekly + errorSpike + uptime). **Re-entry triggers:**
 2. **Apple enrollment clears** → run the checklist in `native-ios-plan.md`
    (ASC app record → APP_APPLE_ID → IAP → TestFlight lane via
    `IOS_RELEASE_READY`).
-3. **Owner inputs, whenever:** LiveOps calendar approval (post-publish).
+3. **Owner inputs, whenever:** ~~LiveOps calendar approval~~ **APPROVED 2026-07-24** (all cards; ready-to-submit copy staged in liveops-calendar.md — needs only per-card images + publish).
    ~~Workspace app password~~ **DONE 2026-07-24: digest email channel LIVE**
    (app password created, SMTP secrets set, redeployed, test email verified
    received). First scheduled digest email: Monday 09:00 UTC.
@@ -41,7 +41,7 @@ run at app #2 start. Company context: `lattice-logic.md` + `next-app-playbook.md
 ## 🔴 Blocked on owner action
 - **`firebase login --reauth`** — CLI token expired mid-session (2026-07-24). Blocks: (a) pruning stale **deployed** Stripe functions, (b) **deploying the digest email**. Both are code-ready; just need a valid Firebase CLI session (interactive browser login) then I deploy.
 - **Digest email secrets** — after reauth, set `SMTP_USER` + `SMTP_APP_PASSWORD` (Workspace app password) then deploy `growthDigest`. Setup steps inline in `functions/src/index.ts`. Until then the digest **pushes** to admins + stores `opsDigests/` (works today).
-- **LiveOps calendar approval** — `liveops-calendar.md` drafted; owner reviews before any cards go out (also gated on the app being published).
+- ~~LiveOps calendar approval~~ **DONE 2026-07-24** — approved as drafted; ready-to-submit card copy staged. Remaining: per-card images (design) + submit once published.
 
 ## 🟣 Post-launch, metrics-gated
 - Play Integrity **enforcement** flip · Play Billing protection → 4/4 · R8 size shrink (tested) · read `paywall-cta` A/B + register the next experiment.
