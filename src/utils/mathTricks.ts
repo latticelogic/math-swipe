@@ -7,7 +7,6 @@ export interface MagicTrick {
     title: string;
     description: string;
     difficulty: number;
-    icon: string;       // emoji icon
     // Lesson steps presented by Mr. Chalk
     lesson: {
         equation: string;   // plain text fallback (shown in chalk font)
@@ -67,7 +66,6 @@ export const MAGIC_TRICKS: MagicTrick[] = [
         title: 'Squaring Ends in 5',
         description: 'Instantly square numbers ending in 5',
         difficulty: 1,
-        icon: '⚡',
         lesson: {
             equation: '65 × 65',
             latex: '65^2',
@@ -92,7 +90,6 @@ export const MAGIC_TRICKS: MagicTrick[] = [
         title: 'Difference of Squares',
         description: 'Two numbers the same distance from a friendly number (e.g. 98 × 102 from 100).',
         difficulty: 2,
-        icon: '🎯',
         lesson: {
             equation: '98 × 102',
             latex: '98 \\times 102',
@@ -119,7 +116,6 @@ export const MAGIC_TRICKS: MagicTrick[] = [
         title: 'Rule of 11',
         description: 'Split the digits and tuck their sum in the middle.',
         difficulty: 1,
-        icon: '🚀',
         lesson: {
             equation: '43 × 11',
             latex: '43 \\times 11',
@@ -144,7 +140,6 @@ export const MAGIC_TRICKS: MagicTrick[] = [
         title: 'Near 100 Squares',
         description: 'Square numbers near 100 (like 96 or 97) by anchoring on 100.',
         difficulty: 3,
-        icon: '🔥',
         lesson: {
             equation: '96²',
             latex: '96^2',
@@ -171,7 +166,6 @@ export const MAGIC_TRICKS: MagicTrick[] = [
         title: 'Sum of Consecutive Odds',
         description: 'The first N odd numbers always sum to N².',
         difficulty: 2,
-        icon: '✨',
         lesson: {
             equation: '1 + 3 + 5 + 7 + 9',
             latex: '\\sum_{k=1}^{N}(2k-1) = N^2',
@@ -202,7 +196,6 @@ export const MAGIC_TRICKS: MagicTrick[] = [
         title: 'Multiply by 5',
         description: 'Multiply by 5 by halving, then adding a zero.',
         difficulty: 1,
-        icon: '🖐️',
         lesson: {
             equation: '48 × 5',
             latex: '48 \\times 5 = \\frac{48}{2} \\times 10',
@@ -225,7 +218,6 @@ export const MAGIC_TRICKS: MagicTrick[] = [
         title: 'Multiply by 9',
         description: 'Multiply by 10, then subtract the original.',
         difficulty: 2,
-        icon: '➿',
         lesson: {
             equation: '48 × 9',
             latex: '48 \\times 9 = 48 \\times 10 - 48',
@@ -249,7 +241,6 @@ export const MAGIC_TRICKS: MagicTrick[] = [
         title: 'Multiply by 12',
         description: 'Multiply by 10, then add double the original.',
         difficulty: 2,
-        icon: '🕛',
         lesson: {
             equation: '34 × 12',
             latex: '34 \\times 12 = 34 \\times 10 + 34 \\times 2',
@@ -273,7 +264,6 @@ export const MAGIC_TRICKS: MagicTrick[] = [
         title: 'Multiply by 15',
         description: 'Multiply by 10, then add half of that result.',
         difficulty: 2,
-        icon: '⏱️',
         lesson: {
             equation: '34 × 15',
             latex: '34 \\times 15 = 34 \\times 10 + \\frac{34 \\times 10}{2}',
@@ -298,7 +288,6 @@ export const MAGIC_TRICKS: MagicTrick[] = [
         title: 'Multiply by 25',
         description: 'Multiply by 25 by quartering, then adding two zeros.',
         difficulty: 2,
-        icon: '🪙',
         lesson: {
             equation: '32 × 25',
             latex: '32 \\times 25 = \\frac{32}{4} \\times 100',
@@ -321,7 +310,6 @@ export const MAGIC_TRICKS: MagicTrick[] = [
         title: 'Double and Halve',
         description: 'Halve one side, double the other — the product stays the same.',
         difficulty: 3,
-        icon: '⚖️',
         lesson: {
             equation: '14 × 45',
             latex: '14 \\times 45 = 7 \\times 90',
@@ -349,7 +337,6 @@ export const MAGIC_TRICKS: MagicTrick[] = [
         title: 'Rule of 101',
         description: 'Just repeat the number — no mental math.',
         difficulty: 1,
-        icon: '🪞',
         lesson: {
             equation: '43 × 101',
             latex: '43 \\times 101',
@@ -373,7 +360,6 @@ export const MAGIC_TRICKS: MagicTrick[] = [
         title: 'Rule of 99',
         description: 'Multiply by 100, then subtract the original.',
         difficulty: 3,
-        icon: '⏬',
         lesson: {
             equation: '43 × 99',
             latex: '43 \\times 99 = 43 \\times 100 - 43',
@@ -397,7 +383,6 @@ export const MAGIC_TRICKS: MagicTrick[] = [
         title: 'Just Over 100',
         description: 'Multiply two numbers just above 100 in one quick step.',
         difficulty: 3,
-        icon: '📈',
         lesson: {
             equation: '104 × 106',
             latex: '(100+4)(100+6)',
@@ -424,7 +409,6 @@ export const MAGIC_TRICKS: MagicTrick[] = [
         title: 'Cross-Multiplication',
         description: 'Multiply 2-digit numbers in one pass — left to right.',
         difficulty: 5,
-        icon: '⚔️',
         lesson: {
             equation: '23 × 12',
             latex: '23 \\times 12',
@@ -451,7 +435,6 @@ export const MAGIC_TRICKS: MagicTrick[] = [
         title: 'Squares in the 50s',
         description: 'Square 51–59 by mixing 25 with the last digit.',
         difficulty: 2,
-        icon: '🧮',
         lesson: {
             equation: '54²',
             latex: '54^2',
@@ -476,7 +459,6 @@ export const MAGIC_TRICKS: MagicTrick[] = [
         title: 'Squares in the 40s',
         description: 'Square 41–49 by anchoring on 50.',
         difficulty: 3,
-        icon: '📉',
         lesson: {
             equation: '48²',
             latex: '48^2',
@@ -501,7 +483,6 @@ export const MAGIC_TRICKS: MagicTrick[] = [
         title: 'Squares Near 1000',
         description: 'Square numbers near 1000 by anchoring on 1000.',
         difficulty: 4,
-        icon: '🏔️',
         lesson: {
             equation: '996²',
             latex: '996^2',
@@ -526,7 +507,6 @@ export const MAGIC_TRICKS: MagicTrick[] = [
         title: 'Divide by 5',
         description: 'Divide by 5 by doubling, then dropping a zero.',
         difficulty: 1,
-        icon: '🍰',
         lesson: {
             equation: '130 ÷ 5',
             latex: '\\frac{130}{5} = \\frac{130 \\times 2}{10}',
@@ -551,7 +531,6 @@ export const MAGIC_TRICKS: MagicTrick[] = [
         title: 'Divide by 25',
         description: 'Divide by 25 by multiplying by 4, then dropping two zeros.',
         difficulty: 2,
-        icon: '🍫',
         lesson: {
             equation: '800 ÷ 25',
             latex: '\\frac{800}{25} = \\frac{800 \\times 4}{100}',
@@ -576,7 +555,6 @@ export const MAGIC_TRICKS: MagicTrick[] = [
         title: 'Subtract from 1000',
         description: 'No borrowing: take each digit from 9 — last one from 10.',
         difficulty: 1,
-        icon: '💵',
         lesson: {
             equation: '1000 - 473',
             latex: '1000 - 473',
@@ -600,7 +578,6 @@ export const MAGIC_TRICKS: MagicTrick[] = [
         title: 'Add Reversed Numbers',
         description: 'Algebraic shortcut: ab + ba = 11(a+b)',
         difficulty: 1,
-        icon: '🪞',
         lesson: {
             equation: '47 + 74',
             latex: '\\overline{ab} + \\overline{ba} = 11(a+b)',
@@ -627,7 +604,6 @@ export const MAGIC_TRICKS: MagicTrick[] = [
         title: 'Subtract Reversed Numbers',
         description: 'Algebraic shortcut: ab - ba = 9(a-b)',
         difficulty: 1,
-        icon: '📉',
         lesson: {
             equation: '82 - 28',
             latex: '\\overline{ab} - \\overline{ba} = 9(a-b)',
@@ -654,7 +630,6 @@ export const MAGIC_TRICKS: MagicTrick[] = [
         title: 'Ends in 5, 10 Apart',
         description: 'Multiply two ...5 numbers that are 10 apart (35×45, 65×75).',
         difficulty: 4,
-        icon: '🤝',
         lesson: {
             equation: '35 × 45',
             latex: '35 \\times 45',
@@ -681,7 +656,6 @@ export const MAGIC_TRICKS: MagicTrick[] = [
         title: 'Divide by 3',
         description: 'First check it divides evenly (digit-sum rule), then chunk through.',
         difficulty: 2,
-        icon: '🕵️',
         lesson: {
             equation: '5712 ÷ 3',
             latex: '\\frac{5712}{3}',
@@ -709,7 +683,6 @@ export const MAGIC_TRICKS: MagicTrick[] = [
         title: 'Near-100 Multiplication (Below)',
         description: 'Multiply two numbers just below 100, using their "distance from 100".',
         difficulty: 3,
-        icon: '🪞',
         lesson: {
             equation: '97 × 94',
             latex: '97 \\times 94',
@@ -735,7 +708,6 @@ export const MAGIC_TRICKS: MagicTrick[] = [
         title: 'Divisibility by 11',
         description: 'Alternate the digits + and −. If the total is 0 or ±11, it divides by 11.',
         difficulty: 3,
-        icon: '⚖️',
         lesson: {
             equation: 'Is 2728 div by 11?',
             latex: '2 - 7 + 2 - 8 = -11',
@@ -766,7 +738,6 @@ export const MAGIC_TRICKS: MagicTrick[] = [
         title: 'Flip the Percent',
         description: 'A% of B equals B% of A — pick whichever side is easier.',
         difficulty: 1,
-        icon: '🔄',
         lesson: {
             equation: '8% of 50',
             latex: 'A\\% \\text{ of } B = B\\% \\text{ of } A',
@@ -801,7 +772,6 @@ export const MAGIC_TRICKS: MagicTrick[] = [
         title: 'Telescoping Sums',
         description: 'Rewrite each term so almost everything cancels — only the ends survive.',
         difficulty: 4,
-        icon: '🔭',
         lesson: {
             equation: '1/(1x2) + 1/(2x3) + ... + 1/(NxN+1)',
             latex: '\\displaystyle\\sum_{k=1}^{N} \\frac{1}{k(k+1)}',
@@ -833,7 +803,6 @@ export const MAGIC_TRICKS: MagicTrick[] = [
         title: 'Zeno\'s Paradox (Geom Series)',
         description: 'Infinitely many halves still add up to exactly 1.',
         difficulty: 4,
-        icon: '🐢',
         lesson: {
             equation: '1/2 + 1/4 + 1/8 + ... to infinity',
             latex: '\\sum_{k=1}^{\\infty} \\frac{1}{2^k} = \\frac{a}{1-r}',
@@ -868,7 +837,6 @@ export const MAGIC_TRICKS: MagicTrick[] = [
         title: 'Digital Root (Mod 9)',
         description: 'A number\'s remainder mod 9 is the same as its digit sum\'s remainder.',
         difficulty: 2,
-        icon: '🔢',
         lesson: {
             equation: '4573 mod 9',
             latex: '4573 \\bmod 9',
@@ -903,7 +871,6 @@ export const MAGIC_TRICKS: MagicTrick[] = [
         title: 'Last Digit of Powers',
         description: 'Last digits cycle every few powers — pin the exponent to the cycle.',
         difficulty: 3,
-        icon: '🔮',
         lesson: {
             equation: 'Last digit of 7^43',
             latex: '7^{43} \\pmod{10}',
@@ -948,7 +915,6 @@ export const MAGIC_TRICKS: MagicTrick[] = [
         title: 'Last Digit of Products',
         description: 'Only the units digits matter — ignore the rest.',
         difficulty: 1,
-        icon: '🔎',
         lesson: {
             equation: 'Last digit of 347 × 893',
             latex: '347 \\times 893 \\pmod{10}',
@@ -983,7 +949,6 @@ export const MAGIC_TRICKS: MagicTrick[] = [
         title: 'Sum 1 to N (Gauss)',
         description: 'Sum 1 through N in one step: N × (N+1) ÷ 2.',
         difficulty: 2,
-        icon: '📐',
         lesson: {
             equation: '1 + 2 + 3 + ... + 100',
             latex: '\\sum_{k=1}^{N} k = \\dfrac{N(N+1)}{2}',
@@ -1008,7 +973,6 @@ export const MAGIC_TRICKS: MagicTrick[] = [
         title: 'The Golden Ratio (Continued Fraction)',
         description: 'Evaluate an infinite nested fraction',
         difficulty: 5,
-        icon: '🐚',
         lesson: {
             equation: 'x = 1 + 1 / (1 + 1 / (1 + ...))',
             latex: 'x = 1 + \\cfrac{1}{1 + \\cfrac{1}{1 + \\cfrac{1}{\\ddots}}}',
@@ -1039,7 +1003,6 @@ export const MAGIC_TRICKS: MagicTrick[] = [
         title: 'Large-Exponent Cycles',
         description: 'Find the last digit of huge powers like 7^100',
         difficulty: 5,
-        icon: '🌀',
         lesson: {
             equation: 'Last digit of 7^100',
             latex: '7^{100} \\bmod 10',

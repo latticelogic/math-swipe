@@ -4,7 +4,7 @@
  * Math-domain category definitions.
  * Moved from src/utils/questionTypes.ts — all math-specific, none engine-level.
  */
-import type { CategoryEntry, BandEntry } from '../../engine/categories';
+import type { CategoryEntry } from '../../engine/categories';
 
 // ── Question type union ───────────────────────────────────────────────────────
 
@@ -20,11 +20,6 @@ export type QuestionType =
     | 'daily' | 'challenge' | 'speedrun' | 'ghost';
 
 export type QuestionGroup = 'daily' | 'young' | 'whole' | 'core' | 'powers' | 'prealgebra' | 'parts' | 'mixed';
-
-/** Two-band system. "starter" is recognition + single-digit drills (the old k2
- *  band content); "full" is the complete arithmetic-and-beyond catalog (old
- *  35 + 6+ merged). Default is "full" — the majority audience. */
-export type AgeBand = 'starter' | 'full';
 
 // ── Renamed aliases for backward compatibility ────────────────────────────────
 /** @deprecated Use CategoryEntry from engine/categories */
@@ -52,104 +47,71 @@ export const GROUP_LABELS: Record<QuestionGroup, string> = {
 /** Single source of truth for all math category entries */
 export const QUESTION_TYPES: ReadonlyArray<CategoryEntry<QuestionType>> = [
     // Daily
-    { id: 'daily', icon: '📅', label: 'Daily', group: 'daily' },
+    { id: 'daily', label: 'Daily', group: 'daily' },
     // Young (Ages 5–7)
-    { id: 'add1', icon: '+', label: '1-Digit +', group: 'young' },
-    { id: 'sub1', icon: '−', label: '1-Digit −', group: 'young' },
-    { id: 'bonds', icon: '🔗', label: 'Bonds', group: 'young' },
-    { id: 'doubles', icon: '👯', label: 'Doubles', group: 'young' },
-    { id: 'compare', icon: '⚖️', label: 'Compare', group: 'young' },
-    { id: 'skip', icon: '🦘', label: 'Skip Count', group: 'young' },
-    { id: 'shapes', icon: '🔺', label: 'Shapes', group: 'young' },
-    { id: 'evenodd', icon: '½', label: 'Even/Odd', group: 'young' },
-    { id: 'tens', icon: '10', label: '10 More', group: 'young' },
+    { id: 'add1', label: '1-Digit +', group: 'young' },
+    { id: 'sub1', label: '1-Digit −', group: 'young' },
+    { id: 'bonds', label: 'Bonds', group: 'young' },
+    { id: 'doubles', label: 'Doubles', group: 'young' },
+    { id: 'compare', label: 'Compare', group: 'young' },
+    { id: 'skip', label: 'Skip Count', group: 'young' },
+    { id: 'shapes', label: 'Shapes', group: 'young' },
+    { id: 'evenodd', label: 'Even/Odd', group: 'young' },
+    { id: 'tens', label: '10 More', group: 'young' },
     // The Basics
-    { id: 'add', icon: '+', label: 'Add', group: 'whole' },
-    { id: 'subtract', icon: '−', label: 'Subtract', group: 'whole' },
-    { id: 'multiply', icon: '×', label: 'Multiply', group: 'whole' },
-    { id: 'divide', icon: '÷', label: 'Divide', group: 'whole' },
-    { id: 'tables', icon: '7×', label: 'Tables', group: 'whole' },
-    { id: 'missing', icon: '?', label: 'Missing', group: 'whole' },
+    { id: 'add', label: 'Add', group: 'whole' },
+    { id: 'subtract', label: 'Subtract', group: 'whole' },
+    { id: 'multiply', label: 'Multiply', group: 'whole' },
+    { id: 'divide', label: 'Divide', group: 'whole' },
+    { id: 'tables', label: 'Tables', group: 'whole' },
+    { id: 'missing', label: 'Missing', group: 'whole' },
     // Number Sense
-    { id: 'round', icon: '≈', label: 'Rounding', group: 'core' },
-    { id: 'orderops', icon: '🔢', label: 'PEMDAS', group: 'core' },
-    { id: 'estimate', icon: '≈?', label: 'Estimate', group: 'core' },
-    { id: 'sequence', icon: '1,2,…', label: 'Sequences', group: 'core' },
-    { id: 'time', icon: '3:15', label: 'Time', group: 'core' },
+    { id: 'round', label: 'Rounding', group: 'core' },
+    { id: 'orderops', label: 'PEMDAS', group: 'core' },
+    { id: 'estimate', label: 'Estimate', group: 'core' },
+    { id: 'sequence', label: 'Sequences', group: 'core' },
+    { id: 'time', label: 'Time', group: 'core' },
     // Powers & Roots (was the front half of the grab-bag 'advanced' group —
     // split so each section is small enough to scan and honestly named)
-    { id: 'square', icon: 'x²', label: 'Square', group: 'powers' },
-    { id: 'sqrt', icon: '√', label: 'Root', group: 'powers' },
-    { id: 'exponent', icon: 'xⁿ', label: 'Exponent', group: 'powers' },
+    { id: 'square', label: 'Square', group: 'powers' },
+    { id: 'sqrt', label: 'Root', group: 'powers' },
+    { id: 'exponent', label: 'Exponent', group: 'powers' },
     // Pre-Algebra (the back half — the term parents/teachers actually use)
-    { id: 'negatives', icon: '±', label: 'Negatives', group: 'prealgebra' },
-    { id: 'linear', icon: 'x=', label: 'Linear', group: 'prealgebra' },
-    { id: 'gcflcm', icon: 'GCF', label: 'GCF/LCM', group: 'prealgebra' },
-    { id: 'ratio', icon: 'a:b', label: 'Ratios', group: 'prealgebra' },
-    { id: 'primes', icon: 'p', label: 'Primes', group: 'prealgebra' },
+    { id: 'negatives', label: 'Negatives', group: 'prealgebra' },
+    { id: 'linear', label: 'Linear', group: 'prealgebra' },
+    { id: 'gcflcm', label: 'GCF/LCM', group: 'prealgebra' },
+    { id: 'ratio', label: 'Ratios', group: 'prealgebra' },
+    { id: 'primes', label: 'Primes', group: 'prealgebra' },
     // Parts of a Whole
-    { id: 'fraction', icon: '⅓', label: 'Fractions', group: 'parts' },
-    { id: 'decimal', icon: '.5', label: 'Decimals', group: 'parts' },
-    { id: 'percent', icon: '%', label: 'Percent', group: 'parts' },
-    { id: 'money', icon: '$', label: 'Money', group: 'parts' },
+    { id: 'fraction', label: 'Fractions', group: 'parts' },
+    { id: 'decimal', label: 'Decimals', group: 'parts' },
+    { id: 'percent', label: 'Percent', group: 'parts' },
+    { id: 'money', label: 'Money', group: 'parts' },
     // Mixed
-    { id: 'mix-basic', icon: '+-\n×÷', label: 'Basic Mix', group: 'mixed' },
-    { id: 'mix-all', icon: '🌀', label: 'All Mix', group: 'mixed' },
+    { id: 'mix-basic', label: 'Basic Mix', group: 'mixed' },
+    { id: 'mix-all', label: 'All Mix', group: 'mixed' },
 ] as const;
 
 // (The PEMDAS/GCF/LCM acronym-glossary footnotes were removed from the picker
 // 2026-07-16 — owner call, visual noise. Git history has the code if a
 // glossary surface ever returns.)
 
-// ── Band definitions ──────────────────────────────────────────────────────────
+// ── Visible categories ────────────────────────────────────────────────────────
+// The age-band system was removed 2026-07-24. The band picker was retired
+// 2026-07-15 and only the "full" band was ever selected, so the two-band
+// abstraction (starter/full, MATH_BANDS, migration) was dead machinery. What
+// remains is a single visible-group filter. The 'young' group (single-digit
+// recognition drills) stays in QUESTION_TYPES — its generators and deep links
+// (?topic=) still work — but is hidden from the picker, exactly as the old
+// 'full' band did.
+const VISIBLE_GROUPS = new Set<string>([
+    'daily', 'whole', 'core', 'powers', 'prealgebra', 'parts', 'mixed',
+]);
 
-export const AGE_BANDS: AgeBand[] = ['starter', 'full'];
+/** The default category when entering / resetting the game loop. */
+export const DEFAULT_QUESTION_TYPE: QuestionType = 'multiply';
 
-export const MATH_BANDS: ReadonlyArray<BandEntry<AgeBand>> = [
-    {
-        id: 'starter',
-        // emoji is kept on BandEntry for legacy callers; the UI uses SVG icons.
-        emoji: '🌱',
-        label: 'Starter',
-        groups: new Set(['daily', 'young']),
-        defaultCategoryId: 'add1',
-    },
-    {
-        id: 'full',
-        emoji: '🚀',
-        // The default band — chosen for the majority audience (older kids + adults).
-        label: 'Full',
-        groups: new Set(['daily', 'whole', 'core', 'powers', 'prealgebra', 'parts', 'mixed']),
-        defaultCategoryId: 'multiply',
-    },
-];
-
-/** Band display labels — kept for UI components that need only label+emoji */
-export const BAND_LABELS: Record<AgeBand, { emoji: string; label: string }> = {
-    'starter': { emoji: '🌱', label: 'Starter' },
-    'full': { emoji: '🚀', label: 'Full' },
-};
-
-/** Migrate a legacy band id from the old 3-band scheme to the new 2-band
- *  scheme. Used when reading stored preferences (localStorage / Firestore)
- *  that may still hold the old values. */
-export function migrateLegacyBand(stored: string | null | undefined): AgeBand {
-    if (stored === 'starter' || stored === 'full') return stored;
-    if (stored === 'k2') return 'starter';
-    // '35' and '6+' both fold into 'full'; anything unrecognized defaults to 'full'.
-    return 'full';
-}
-
-// ── Convenience wrappers (math-domain entry points) ───────────────────────────
-
-import { typesForBand as _typesForBand, defaultTypeForBand as _defaultTypeForBand } from '../../engine/categories';
-
-/** Returns question types visible for the given age band */
-export function typesForBand(band: AgeBand): ReadonlyArray<CategoryEntry<QuestionType>> {
-    return _typesForBand(band, MATH_BANDS, QUESTION_TYPES) as ReadonlyArray<CategoryEntry<QuestionType>>;
-}
-
-/** Returns the default question type for a band */
-export function defaultTypeForBand(band: AgeBand): QuestionType {
-    return _defaultTypeForBand(band, MATH_BANDS) as QuestionType;
+/** Question types shown in the picker (all groups except the hidden 'young'). */
+export function visibleQuestionTypes(): ReadonlyArray<CategoryEntry<QuestionType>> {
+    return QUESTION_TYPES.filter(qt => VISIBLE_GROUPS.has(qt.group));
 }

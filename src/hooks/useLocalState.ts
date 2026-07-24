@@ -8,7 +8,6 @@ const FIELD_MAP: Record<string, string> = {
     'math-swipe-costume': 'costume',
     'math-swipe-chalk-theme': 'chalkTheme',
     'math-swipe-theme': 'themeMode',
-    'math-swipe-age-band': 'ageBand',
     'math-swipe-trail': 'trailId',
     'math-swipe-teacher': 'teacher',
 };

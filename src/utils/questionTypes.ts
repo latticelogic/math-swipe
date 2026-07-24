@@ -9,18 +9,13 @@
  */
 export type {
     QuestionType,
-    AgeBand,
     QuestionGroup,
     QuestionTypeEntry,
 } from '../domains/math/mathCategories';
 
 export {
     QUESTION_TYPES,
-    AGE_BANDS,
-    MATH_BANDS,
-    BAND_LABELS,
     GROUP_LABELS,
-    typesForBand,
-    defaultTypeForBand,
-    migrateLegacyBand,
+    visibleQuestionTypes,
+    DEFAULT_QUESTION_TYPE,
 } from '../domains/math/mathCategories';

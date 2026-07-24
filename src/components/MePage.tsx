@@ -1,7 +1,7 @@
 import { memo, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { useStats } from '../hooks/useStats';
-import { typesForBand, type AgeBand } from '../utils/questionTypes';
+import { visibleQuestionTypes } from '../utils/questionTypes';
 import { isNativeAndroid, isNativeIOS } from '../utils/channel';
 import { t, tCount, type MsgKey } from '../i18n';
 import { GENERAL_ACHIEVEMENTS, HARD_MODE_ACHIEVEMENTS, TIMED_MODE_ACHIEVEMENTS, ULTIMATE_ACHIEVEMENTS, EVERY_ACHIEVEMENT } from '../utils/achievements';
@@ -48,7 +48,6 @@ interface Props {
      *  small banner and auto-cleared. */
     authMessage?: string | null;
     onClearAuthMessage?: () => void;
-    ageBand: AgeBand;
     activeTeacherId: string;
     onTeacherChange: (id: string) => void;
     uid: string | null;
@@ -115,7 +114,7 @@ function ModeAchievementGrid({ achievements, cols, unlocked }: {
     );
 }
 
-export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCostume, onCostumeChange, activeTheme, onThemeChange, activeTrailId, onTrailChange, displayName, onDisplayNameChange, isAnonymous, email, onLinkGoogle, onLinkApple, onSendEmailLink, authMessage, onClearAuthMessage, ageBand, activeTeacherId, onTeacherChange, uid, entitlementStatus, entitlementDaysLeft, onUnlock, hasPro = true, onRequestPro, themeMode, onToggleTheme, timedSecs, onTimedSecsChange, referralConversions = 0 }: Props) {
+export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCostume, onCostumeChange, activeTheme, onThemeChange, activeTrailId, onTrailChange, displayName, onDisplayNameChange, isAnonymous, email, onLinkGoogle, onLinkApple, onSendEmailLink, authMessage, onClearAuthMessage, activeTeacherId, onTeacherChange, uid, entitlementStatus, entitlementDaysLeft, onUnlock, hasPro = true, onRequestPro, themeMode, onToggleTheme, timedSecs, onTimedSecsChange, referralConversions = 0 }: Props) {
     const [showRanks, setShowRanks] = useState(false);
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [editingName, setEditingName] = useState(false);
@@ -449,7 +448,7 @@ export const MePage = memo(function MePage({ stats, accuracy, unlocked, activeCo
                     {t('me.byType')}
                 </div>
                 <div className="grid grid-cols-5 gap-2 justify-items-center">
-                    {typesForBand(ageBand).filter(qt => !qt.id.startsWith('mix-') && qt.id !== 'daily' && qt.id !== 'challenge').map(qt => {
+                    {visibleQuestionTypes().filter(qt => !qt.id.startsWith('mix-') && qt.id !== 'daily' && qt.id !== 'challenge').map(qt => {
                         const ts = stats.byType[qt.id] ?? { solved: 0, correct: 0 };
                         const pct = ts.solved > 0 ? Math.round((ts.correct / ts.solved) * 100) : 0;
                         return (
