@@ -12,7 +12,7 @@ import UserNotifications
 ///     Android; native ASAuthorization gives the branded system sheet)
 ///   - Push (web push does not exist inside WKWebView → native FCM/APNs)
 ///   - Crisp haptics (UIFeedbackGenerator)
-/// See docs/ios-native-plan.md.
+/// See docs/native-ios-plan.md.
 @main
 final class AppDelegate: UIResponder, UIApplicationDelegate, MessagingDelegate, UNUserNotificationCenterDelegate {
 

@@ -28,7 +28,7 @@
  * the app's numeric Apple ID (APP_APPLE_ID below), which is only assigned when
  * the app is created in App Store Connect. Until it's filled in, production
  * verification fails closed while sandbox (TestFlight/review) works — set it
- * during the App Store launch checklist (docs/ios-native-plan.md).
+ * during the App Store launch checklist (docs/native-ios-plan.md).
  */
 
 import { onCall, onRequest, HttpsError } from 'firebase-functions/v2/https';

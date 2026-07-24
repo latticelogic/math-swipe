@@ -7,7 +7,7 @@
 # Mirrors the Android shell (android-native/): a WKWebView renders the live PWA
 # (mathchallenge.app) with native bridges for the four things the web cannot do
 # in a WebView — StoreKit 2 payments, Sign in with Apple, APNs/FCM push, and
-# crisp haptics. See docs/ios-native-plan.md.
+# crisp haptics. See docs/native-ios-plan.md.
 name: MathChallenge
 options:
   bundleIdPrefix: app.mathchallenge
@@ -56,7 +56,7 @@ targets:
         # Association (AASA) file served at
         # https://mathchallenge.app/.well-known/apple-app-site-association listing
         # this app's <TeamID>.app.mathchallenge.ios — a post-enrollment follow-up
-        # (docs/ios-native-plan.md step 7). Harmless until then; iOS just won't
+        # (docs/native-ios-plan.md step 7). Harmless until then; iOS just won't
         # claim the domain's links.
         com.apple.developer.associated-domains:
           - applinks:mathchallenge.app

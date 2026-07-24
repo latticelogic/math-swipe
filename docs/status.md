@@ -17,7 +17,7 @@ _Last updated: 2026-07-24._
 
 ## 🟡 In review / waiting on external events (no action)
 - **Google Play review of 2007** — in progress. On approval → submit the 11 staged localized listings + trigger native build 2008 as the first update.
-- **Apple enrollment verification** — submitted 2026-07-23 (ID 325P468S9U), 1–3 wk. On clearance → run the iOS launch checklist (`ios-native-plan.md`).
+- **Apple enrollment verification** — submitted 2026-07-23 (ID 325P468S9U), 1–3 wk. On clearance → run the iOS launch checklist (`native-ios-plan.md`).
 
 ## 🔴 Blocked on owner action
 - **`firebase login --reauth`** — CLI token expired mid-session (2026-07-24). Blocks: (a) pruning stale **deployed** Stripe functions, (b) **deploying the digest email**. Both are code-ready; just need a valid Firebase CLI session (interactive browser login) then I deploy.
@@ -28,7 +28,7 @@ _Last updated: 2026-07-24._
 - Play Integrity **enforcement** flip · Play Billing protection → 4/4 · R8 size shrink (tested) · read `paywall-cta` A/B + register the next experiment.
 
 ## ⚪ Ready to ship the moment its gate clears (prepared ahead)
-- **iOS shell** — built, compiles on CI, Apple verify functions deployed fail-closed. **Pre-Apple prep done** (#210): app icon, associated-domains, StoreReview bridge, dormant TestFlight CI lane. Remaining = Apple-credential steps only (`ios-native-plan.md`).
+- **iOS shell** — built, compiles on CI, Apple verify functions deployed fail-closed. **Pre-Apple prep done** (#210): app icon, associated-domains, StoreReview bridge, dormant TestFlight CI lane. Remaining = Apple-credential steps only (`native-ios-plan.md`).
 - **Native build 2008** (Android) — has the Integrity bridge + all tier code; trigger as an update once 2007 is live.
 - **11 localized store listings** (Android) — staged; submit after 2007 review clears.
 

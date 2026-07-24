@@ -7,7 +7,7 @@
 #
 # Signing/archive/TestFlight upload comes after Apple enrollment clears
 # (needs DEVELOPMENT_TEAM + certificates + an App Store Connect API key) — see
-# docs/ios-native-plan.md for that checklist.
+# docs/native-ios-plan.md for that checklist.
 name: ios-native-build
 
 on:
@@ -61,7 +61,7 @@ jobs:
             build
 
       - name: Note
-        run: echo "Compile check passed. Archive/TestFlight is a follow-up gated on Apple enrollment (docs/ios-native-plan.md)."
+        run: echo "Compile check passed. Archive/TestFlight is a follow-up gated on Apple enrollment (docs/native-ios-plan.md)."
 
   # ── TestFlight archive + upload (DORMANT until Apple enrollment) ────────────
   # Stays skipped until the repo variable IOS_RELEASE_READY == 'true' is set,

@@ -1,7 +1,7 @@
 # Native Android (WebView + native Play Billing bridge) — plan
 
-**Type:** decision record + build plan · **Status:** APPROVED 2026-07-23 (owner), building
-**Supersedes for Android:** the Bubblewrap TWA (`android/`) — kept as fallback until the native build is device-proven.
+**Type:** decision record + build plan · **Status:** SHIPPED — native shell built + device-proven; build 2007 **submitted to production review** 2026-07-24 (all markets). This doc is retained as the decision record (why WebView, not TWA).
+**Supersedes for Android:** the Bubblewrap TWA (`android/`), now retired.
 
 ## Why we're doing this
 
