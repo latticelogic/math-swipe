@@ -449,6 +449,29 @@ export const errorSpike = onSchedule(
 // cadence bound the cost. TRIAL_DAYS mirrors src/utils/entitlement.ts (7).
 const DIGEST_TRIAL_DAYS = 7;
 
+// Compliance / ops deadline watch — the weekly digest nags BEFORE Google or
+// Apple do (lattice-logic.md §4.2: deadline-driven compliance is a first-class
+// process). Add entries as new bars are announced; remove them when resolved
+// (and say so in docs/status.md). Warnings fire within 60 days and get louder
+// once overdue.
+const COMPLIANCE_DEADLINES: ReadonlyArray<{ date: string; label: string }> = [
+    { date: '2026-09-30', label: 'Vault the Android upload keystore in the password manager (owner deferral due — memory/keystore_vault_deferred)' },
+    { date: '2026-10-15', label: 'Review App Check + Play Integrity metrics for the enforcement flip (staged log-only since launch)' },
+    { date: '2027-07-23', label: 'Apple Developer membership renewal (~1yr from 2026-07-23 enrollment)' },
+    { date: '2027-08-31', label: 'Expected annual Play targetSdk bar — verify the actual 2027 policy in spring and bump android-native' },
+];
+
+function complianceWarnings(nowMs: number): string[] {
+    const warnings: string[] = [];
+    for (const d of COMPLIANCE_DEADLINES) {
+        const due = Date.parse(`${d.date}T00:00:00Z`);
+        const daysLeft = Math.ceil((due - nowMs) / 86_400_000);
+        if (daysLeft < 0) warnings.push(`OVERDUE ${-daysLeft}d: ${d.label}`);
+        else if (daysLeft <= 60) warnings.push(`Due in ${daysLeft}d: ${d.label}`);
+    }
+    return warnings;
+}
+
 function toMs(v: unknown): number {
     if (typeof v === 'number') return v;
     if (v && typeof v === 'object' && 'toMillis' in v) return (v as { toMillis: () => number }).toMillis();
@@ -527,6 +550,9 @@ export const growthDigest = onSchedule(
             anomalies.push(`installs surged (${prev.funnel.firstOpen}->${fOpen})`);
         }
         if (prev?.paid != null && paid < prev.paid) anomalies.push(`ALERT paid count dropped ${prev.paid}->${paid} (refunds?)`);
+        // Deadline nags ride the same channel — they show in the push body,
+        // the email Flags line, and the log.
+        anomalies.push(...complianceWarnings(now));
 
         const snapshot = {
             at: admin.firestore.FieldValue.serverTimestamp(),

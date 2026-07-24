@@ -1,0 +1,35 @@
+# CodeQL static security analysis (SAST) — the missing piece of the
+# "Automated QA & Security" bucket (lattice-logic.md). Scans every PR + a
+# weekly sweep of master.
+#
+# Scope: javascript-typescript only, deliberately. CodeQL for Swift requires a
+# macOS build (10× minutes per PR) and java-kotlin needs a full Gradle build —
+# both shells are thin bridge layers (~a dozen files) that change rarely and
+# get human review; the TS web app + functions is where nearly all code churn
+# and all money-path logic lives. Revisit if the shells grow real logic.
+name: codeql
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  schedule:
+    - cron: '0 6 * * 1'   # weekly sweep, Mondays 06:00 UTC
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      security-events: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+          queries: security-and-quality
+      - uses: github/codeql-action/analyze@v3
+        with:
+          category: /language:javascript-typescript
