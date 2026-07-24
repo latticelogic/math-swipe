@@ -103,15 +103,17 @@ model, and it's a genuine owner call, not a default:
 
 ---
 
-## E. Deep-link gaps to build (prerequisite for some cards)
+## E. Deep-link targets — BUILT (#208)
 
-Today only `?daily=1` exists. To run topic/trick/mode cards, build boot params:
-- `?topic=<id>` → open a specific category (Topic Weeks).
-- `?trick=<id>` → open a specific Magic Trick lesson.
-- `?league=1` / `?speedrun=1` → open League / Speedrun (Cups).
-These mirror the existing `?daily=1` boot handling in App.tsx — small, well-scoped.
-**Until built, all cards must point at `?daily=1`** (which still covers the
-strongest evergreen + most seasonal tentpoles).
+The card deep links now exist (mirroring `?daily=1`):
+- `?topic=<id>` → start the game on a specific category (Topic Weeks).
+- `?trick=<id>` → open the Magic tab + that trick's lesson (if unlocked).
+- `?league=1` → open the League tab (Cups).
+- `?magic=1` → open the Magic tab.
+Category ids: `mathCategories.ts` (QUESTION_TYPES); trick ids: `mathTricks.ts`
+(MAGIC_TRICKS). All are stripped from the URL on arrival. No remaining
+deep-link blocker for the planned cards. (A `?speedrun=1` entry is the one not
+yet wired — add it if a Speedrun Cup card needs it.)
 
 ---
 
