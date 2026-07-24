@@ -54,6 +54,22 @@ Connect app record when created.
 - `haptics.ts` / `push.ts` accept the Apple bridges; funnel platform label
   `ios-native`
 
+## Prepared ahead of enrollment (2026-07-24) — no Apple credential needed
+
+Everything buildable before Apple clears is now in place:
+- **App icon** — `Assets.xcassets/AppIcon.appiconset` with a crisp opaque
+  1024² PNG rasterized from the vector source (`ASSETCATALOG_COMPILER_APPICON_NAME`
+  wired in project.yml). Archive-ready.
+- **Associated Domains entitlement** — `applinks:mathchallenge.app` in
+  project.yml (universal links). Needs the AASA file to activate (step 7).
+- **StoreReview bridge** — `ReviewBridge.swift` (SKStoreReviewController) +
+  `window.AppleReview`; `nativeShell.maybeRequestReview()` now fires the Apple
+  OR Android review prompt. The iOS analogue of the Play in-app-review nudge.
+- **TestFlight archive+upload CI lane** — a second `archive` job in
+  `ios-native-build.yml`, DORMANT behind `vars.IOS_RELEASE_READY == 'true'`.
+  Authored (Xcode automatic signing via an App Store Connect API key, export,
+  altool upload) but UNTESTED — validate on the first real run post-enrollment.
+
 ## Gated on Apple enrollment clearing — the launch checklist
 
 1. **Agree agreements** in App Store Connect; create the **app record**
@@ -62,10 +78,11 @@ Connect app record when created.
 2. **IAP product** `pro_lifetime` (non-consumable, $3.14 tier) + screenshot/review notes.
 3. **App Store Server Notifications V2** → point at the `appleNotifications`
    function URL (both prod + sandbox URLs in ASC).
-4. **Signing**: create the distribution cert + profile; set `DEVELOPMENT_TEAM`
-   in project.yml; extend CI with an archive + TestFlight upload lane (App
-   Store Connect API key as repo secrets — mirror the WIF keyless spirit:
-   ASC keys are scoped, revocable).
+4. **Signing / TestFlight**: the archive+upload CI lane already exists (dormant).
+   To arm it: set repo secrets `IOS_DEVELOPMENT_TEAM`, `ASC_KEY_ID`,
+   `ASC_ISSUER_ID`, `ASC_API_KEY_P8` (the .p8 contents), then set repo variable
+   `IOS_RELEASE_READY=true`. Automatic signing via the ASC API key — no cert/
+   profile juggling. (ASC keys are scoped + revocable — the keyless-ish spirit.)
 5. **Push**: APNs key (.p8) uploaded to **Firebase console → project settings →
    Cloud Messaging → Apple app** (one-time; needed before FCM can deliver).
 6. **Sign in with Apple**: enable the capability for the App ID in the
@@ -80,7 +97,10 @@ Connect app record when created.
 
 ## Known follow-ups (non-blocking)
 
-- App icon asset catalog (needed for archive validation, not compile).
-- SKStoreReviewController bridge (iOS analogue of the Play in-app review nudge).
-- Universal links (step 7) + widget/App-Shortcuts analogues if wanted.
+- **AASA file** to activate universal links: serve
+  `https://mathchallenge.app/.well-known/apple-app-site-association` with
+  `<TeamID>.app.mathchallenge.ios` once the Team ID exists (entitlement is
+  already in place).
+- Widget / App-Shortcuts analogues if wanted (Android has them).
 - `TARGETED_DEVICE_FAMILY` is iPhone-only v1 (same as Android mobile-only call).
+- App icon + StoreReview bridge: DONE (see "Prepared ahead of enrollment").

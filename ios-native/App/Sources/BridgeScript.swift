@@ -35,6 +35,9 @@ enum BridgeScript {
       window.AppleHaptics = {
         impact: function (type) { post('haptics', 'impact', { type: String(type || 'medium') }); }
       };
+      window.AppleReview = {
+        request: function () { post('review', 'request'); }
+      };
       window.AppleShell = {
         reload: function () { post('shell', 'reload'); }
       };

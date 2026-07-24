@@ -21,12 +21,23 @@ const REVIEW_MIN_INTERVAL_MS = 45 * 86_400_000; // ~45 days between asks, our si
 export function maybeRequestReview(good: boolean): void {
     if (!good) return;
     try {
-        const review = (window as unknown as { AndroidReview?: { requestReview(): void } }).AndroidReview;
-        if (!review || typeof review.requestReview !== 'function') return;
+        const w = window as unknown as {
+            AndroidReview?: { requestReview(): void };
+            AppleReview?: { request(): void };
+        };
+        // Fire whichever native shell we're in (Android Play In-App Review or
+        // iOS StoreKit review). Both are system-rate-limited; we still throttle
+        // our own ask to be polite.
+        const fire = w.AndroidReview?.requestReview
+            ? () => w.AndroidReview!.requestReview()
+            : w.AppleReview?.request
+            ? () => w.AppleReview!.request()
+            : null;
+        if (!fire) return;
         const last = Number(localStorage.getItem(REVIEW_ASKED_KEY) || 0);
         if (Date.now() - last < REVIEW_MIN_INTERVAL_MS) return;
         localStorage.setItem(REVIEW_ASKED_KEY, String(Date.now()));
-        review.requestReview();
+        fire();
     } catch {
         /* no-op */
     }
