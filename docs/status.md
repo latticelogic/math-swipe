@@ -36,6 +36,11 @@ _Last updated: 2026-07-24._
 - PGS / Play Games reach (`deferred_pgs_integration`) · store promo video (design).
 - **Trademark "Math Challenge"** (Lattice Logic Pte. Ltd. via Singapore IPOS; consider US USPTO) — the clean legal lever against a same-name clone on either store. Business call, not code.
 
+## 🧹 Tech health / maintainability
+- Overall: healthy for size (~42K src lines, 30 test files, CI lint+types+tests+build, enforced docs index). Most large files are cohesive data/pure-fn (mathGenerator = 35 generators, mathTricks + i18n = data) — fine.
+- **One hotspot: `App.tsx` (~1,930 lines)** — god-component (boot params, tab routing, paywall orchestration, session lifecycle, many effects). Highest-leverage refactor: extract cohesive hooks (e.g. `useBootParams`, `usePaywallController`, session/tab state) in small, test-guarded PRs. Deliberate effort — not a squeeze-in (it's the core; churn is risky). Do with the suite as guardrail.
+- Optional guard: a size-budget lint warning on new files > ~800 lines to stop new god-files forming.
+
 ## Deploy cheatsheet
 - **Web** → merge to `master`, auto-deploys via CI.
 - **Functions** → manual `firebase deploy --only functions:<name> --project math-swipe-prod --account tim@latticelogic.app` (needs valid CLI auth).
