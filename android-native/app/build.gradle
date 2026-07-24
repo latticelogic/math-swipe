@@ -64,7 +64,7 @@ dependencies {
     implementation 'androidx.webkit:webkit:1.12.1'
     // Native Play Billing — the whole point: BillingClient 8, no Digital Goods,
     // no android-browser-helper, no Chrome-version gate.
-    implementation 'com.android.billingclient:billing-ktx:8.0.0'
+    implementation 'com.android.billingclient:billing-ktx:9.1.0'
 
     // Play In-App Review — prompt for a Play rating at a peak moment without
     // leaving the app (window.AndroidReview). Native-only capability.
