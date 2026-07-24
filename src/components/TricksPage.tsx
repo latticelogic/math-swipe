@@ -18,6 +18,10 @@ interface Props {
      *  show a padlock and route to the value-anchored upsell on tap). */
     hasAccess?: boolean;
     onProLocked?: () => void;
+    /** Deep-link (LiveOps `?trick=<id>`): open this trick's lesson on mount if
+     *  it's unlocked for the user. Locked → we just land on the list (the card
+     *  already brought them to the Magic tab); no forced upsell. */
+    initialTrickId?: string;
 }
 
 /** Language-free difficulty badge: 1–3 gold dots (chili-pepper model), no
@@ -38,12 +42,31 @@ function DifficultyDots({ difficulty }: { difficulty: number }) {
     );
 }
 
-export function TricksPage({ onLessonActive, hasPro = true, hasAccess = true, onProLocked }: Props) {
+export function TricksPage({ onLessonActive, hasPro = true, hasAccess = true, onProLocked, initialTrickId }: Props) {
     const [selectedTrick, setSelectedTrick] = useState<MagicTrick | null>(null);
     const [mastered, setMastered] = useState(() => loadMastered());
     const [previewTrick, setPreviewTrick] = useState<MagicTrick | null>(null);
     const [openCats, setOpenCats] = useState<Set<string>>(() => new Set([TRICK_CATEGORIES[0]?.id]));
     const longPressTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+    // Deep-link open (once): a LiveOps `?trick=<id>` card lands here. Open the
+    // lesson only if the trick exists AND is unlocked for this user.
+    const deepLinkDone = useRef(false);
+    useEffect(() => {
+        if (deepLinkDone.current || !initialTrickId) return;
+        const trick = MAGIC_TRICKS.find(k => k.id === initialTrickId);
+        if (!trick) { deepLinkDone.current = true; return; } // bad id — give up
+        const locked = isFreeTrick(trick.id) ? !hasAccess : !hasPro;
+        // Don't settle while still locked: entitlement may resolve a beat after
+        // mount (hasAccess flips false→true), and this effect re-runs on that.
+        // Only a genuinely Pro-locked trick for a non-payer stays closed — which
+        // is the intended "land on the list" behavior.
+        if (locked) return;
+        deepLinkDone.current = true;
+        // Defer the state write out of the effect body (repo lint: no sync
+        // setState in effect — same pattern as the mastered refresh above).
+        queueMicrotask(() => setSelectedTrick(trick));
+    }, [initialTrickId, hasAccess, hasPro]);
 
     useEffect(() => {
         if (!selectedTrick) queueMicrotask(() => setMastered(loadMastered()));
