@@ -11,7 +11,8 @@ import { BottomNav } from './components/BottomNav';
 import { ActionButtons } from './components/ActionButtons';
 import { SwipeTrail } from './components/SwipeTrail';
 import type { AgeBand } from './utils/questionTypes';
-import { defaultTypeForBand } from './utils/questionTypes';
+import { defaultTypeForBand, QUESTION_TYPES } from './utils/questionTypes';
+import { MAGIC_TRICKS } from './utils/mathTricks';
 import { useAutoSummary, usePersonalBest } from './hooks/useSessionUI';
 import { OfflineBanner } from './components/OfflineBanner';
 import { ReloadPrompt } from './components/ReloadPrompt';
@@ -219,7 +220,27 @@ function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entitlement.status]);
 
-  const [activeTab, setActiveTab] = useState<Tab>('game');
+  // LiveOps / deep-link boot params (Promotional Content cards, docs/liveops-
+  // calendar.md): ?league=1 and ?magic=1 open a tab; ?trick=<id> opens the
+  // Magic tab and (in TricksPage) that lesson; ?topic=<id> starts the game on a
+  // specific category. All are stripped on mount alongside ?daily/?c below.
+  const [activeTab, setActiveTab] = useState<Tab>(() => {
+    const p = new URLSearchParams(window.location.search);
+    if (p.get('league') === '1') return 'league';
+    if (p.get('magic') === '1' || p.get('trick')) return 'magic';
+    return 'game';
+  });
+  const [bootTrickId] = useState<string | null>(() => {
+    const id = new URLSearchParams(window.location.search).get('trick');
+    return id && MAGIC_TRICKS.some(k => k.id === id) ? id : null;
+  });
+  const [bootTopic] = useState<QuestionType | null>(() => {
+    const id = new URLSearchParams(window.location.search).get('topic');
+    // Only genuine playable categories — exclude the special/synthetic types.
+    const EXCLUDED = new Set(['daily', 'challenge', 'speedrun', 'ghost']);
+    return id && !EXCLUDED.has(id) && QUESTION_TYPES.some(q => q.id === id)
+      ? (id as QuestionType) : null;
+  });
   const [isMagicLessonActive, setIsMagicLessonActive] = useState(false);
   const [hardMode, setHardMode] = useState(false);
   const [timedMode, setTimedMode] = useState(false);
@@ -280,12 +301,13 @@ function App() {
   // ghost-race / "Beat X" link lost its target silently. Do it once on mount.)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get('c') || params.get('daily') === '1' || params.get('target') || params.get('targetTime')) {
+    if (params.get('c') || params.get('daily') === '1' || params.get('target') || params.get('targetTime')
+        || params.get('league') || params.get('magic') || params.get('trick') || params.get('topic')) {
       window.history.replaceState({}, '', window.location.pathname);
     }
   }, []);
   const [questionType, setQuestionType] = useState<QuestionType>(
-    challengeId ? 'challenge' : bootDailyRequested ? 'daily' : 'multiply'
+    challengeId ? 'challenge' : bootDailyRequested ? 'daily' : bootTopic ?? 'multiply'
   );
 
   // Hard/Timed don't apply to daily/challenge — those are fixed, deterministic
@@ -1521,7 +1543,7 @@ function App() {
 
         {activeTab === 'magic' && (
           <motion.div className="flex-1 flex flex-col min-h-0" onPanEnd={!isMagicLessonActive ? handleTabSwipe : undefined}>
-            <TabErrorBoundary><Suspense fallback={<TabSkeleton variant="tricks" />}><TricksPage onLessonActive={setIsMagicLessonActive} hasPro={hasPro} hasAccess={entitlement.hasAccess} onProLocked={requestPro} /></Suspense></TabErrorBoundary>
+            <TabErrorBoundary><Suspense fallback={<TabSkeleton variant="tricks" />}><TricksPage onLessonActive={setIsMagicLessonActive} hasPro={hasPro} hasAccess={entitlement.hasAccess} onProLocked={requestPro} initialTrickId={bootTrickId ?? undefined} /></Suspense></TabErrorBoundary>
           </motion.div>
         )}
 
