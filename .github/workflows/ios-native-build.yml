@@ -62,3 +62,91 @@ jobs:
 
       - name: Note
         run: echo "Compile check passed. Archive/TestFlight is a follow-up gated on Apple enrollment (docs/ios-native-plan.md)."
+
+  # ── TestFlight archive + upload (DORMANT until Apple enrollment) ────────────
+  # Stays skipped until the repo variable IOS_RELEASE_READY == 'true' is set,
+  # which the owner does AFTER enrollment once these repo SECRETS exist:
+  #   IOS_DEVELOPMENT_TEAM        Apple Developer Team ID (10 chars)
+  #   ASC_KEY_ID                  App Store Connect API key id
+  #   ASC_ISSUER_ID              App Store Connect API issuer id (UUID)
+  #   ASC_API_KEY_P8             the .p8 private key CONTENTS (paste whole file)
+  # Signing uses Xcode automatic signing with the App Store Connect API key —
+  # no certificate/profile juggling in CI. Steps are authored but UNTESTED
+  # (no Apple account to run against yet); validate on the first real run.
+  archive:
+    runs-on: macos-14
+    timeout-minutes: 40
+    if: ${{ vars.IOS_RELEASE_READY == 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select latest Xcode
+        run: |
+          LATEST=$(ls -d /Applications/Xcode*.app | sort -V | tail -1)
+          sudo xcode-select -s "$LATEST"
+          xcodebuild -version
+
+      - name: Install XcodeGen (if missing)
+        run: which xcodegen || brew install xcodegen || true
+
+      - name: Generate Xcode project
+        working-directory: ios-native
+        run: xcodegen generate
+
+      - name: Write App Store Connect API key
+        env:
+          ASC_API_KEY_P8: ${{ secrets.ASC_API_KEY_P8 }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+        run: |
+          mkdir -p ~/.appstoreconnect/private_keys
+          echo "$ASC_API_KEY_P8" > "~/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8"
+          # xcodebuild -allowProvisioningUpdates also reads this location.
+          mkdir -p ~/private_keys && echo "$ASC_API_KEY_P8" > "$HOME/private_keys/AuthKey_${ASC_KEY_ID}.p8"
+
+      - name: Archive
+        working-directory: ios-native
+        env:
+          TEAM: ${{ secrets.IOS_DEVELOPMENT_TEAM }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          set -o pipefail
+          xcodebuild -project MathChallenge.xcodeproj -scheme MathChallenge \
+            -destination 'generic/platform=iOS' -archivePath build/MathChallenge.xcarchive \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$HOME/private_keys/AuthKey_${ASC_KEY_ID}.p8" \
+            -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+            DEVELOPMENT_TEAM="$TEAM" CODE_SIGN_STYLE=Automatic \
+            archive | xcbeautify --renderer github-actions
+
+      - name: Export IPA
+        working-directory: ios-native
+        env:
+          TEAM: ${{ secrets.IOS_DEVELOPMENT_TEAM }}
+        run: |
+          cat > exportOptions.plist <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>teamID</key><string>${TEAM}</string>
+            <key>uploadSymbols</key><true/>
+            <key>signingStyle</key><string>automatic</string>
+          </dict></plist>
+          PLIST
+          xcodebuild -exportArchive -archivePath build/MathChallenge.xcarchive \
+            -exportOptionsPlist exportOptions.plist -exportPath build/export \
+            -allowProvisioningUpdates
+
+      - name: Upload to TestFlight
+        working-directory: ios-native
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          xcrun altool --upload-app --type ios \
+            -f "$(ls build/export/*.ipa | head -1)" \
+            --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID"
+
+      - name: Note
+        run: echo "Uploaded to TestFlight. Promote to App Store review is a deliberate owner action in App Store Connect."

@@ -98,6 +98,8 @@ final class MainViewController: UIViewController, WKNavigationDelegate, WKScript
             requestNotificationPermission()
         case ("haptics", "impact"):
             HapticsBridge.impact(type: args["type"] as? String ?? "medium")
+        case ("review", "request"):
+            ReviewBridge.request()
         case ("shell", "reload"):
             webView.load(URLRequest(url: startURL))
         default:

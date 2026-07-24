@@ -26,8 +26,12 @@ targets:
     platform: iOS
     sources:
       - path: App/Sources
-      - path: App/Resources
-        type: folder        # GoogleService-Info.plist, offline.html copied into the bundle
+      # Compiled asset catalog (supplies the app icon). Must be a real group,
+      # NOT a folder reference, or Xcode won't run the asset compiler.
+      - path: App/Resources/Assets.xcassets
+      # Bundle resources copied as-is.
+      - path: App/Resources/GoogleService-Info.plist
+      - path: App/Resources/offline.html
     info:
       path: App/Info.plist
       properties:
@@ -48,6 +52,14 @@ targets:
       properties:
         aps-environment: production
         com.apple.developer.applesignin: [Default]
+        # Universal Links / referral deep links. Requires an Apple App Site
+        # Association (AASA) file served at
+        # https://mathchallenge.app/.well-known/apple-app-site-association listing
+        # this app's <TeamID>.app.mathchallenge.ios — a post-enrollment follow-up
+        # (docs/ios-native-plan.md step 7). Harmless until then; iOS just won't
+        # claim the domain's links.
+        com.apple.developer.associated-domains:
+          - applinks:mathchallenge.app
     dependencies:
       - package: Firebase
         product: FirebaseMessaging
@@ -58,6 +70,7 @@ targets:
         TARGETED_DEVICE_FAMILY: "1"                        # iPhone (mobile-only v1, same as Android)
         MARKETING_VERSION: "1.0.0"
         CURRENT_PROJECT_VERSION: "1"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon   # from Assets.xcassets/AppIcon.appiconset
         # Signing is configured on the Mac / release CI once Apple enrollment
         # clears (DEVELOPMENT_TEAM + certs). The compile-check CI builds with
         # CODE_SIGNING_ALLOWED=NO.
