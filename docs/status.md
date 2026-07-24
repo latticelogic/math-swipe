@@ -58,6 +58,20 @@ For app #2: copy `lattice-logic.md` + `next-app-playbook.md` (§7 checklist,
 - Optional guard: a size-budget lint warning on new files > ~800 lines to stop new god-files forming.
 - **Visual regression in CI** (Playwright pixel-diff of ~6 key screens) — the one remaining QA-map gap; PENDING OWNER CALL (adds ongoing baseline maintenance to every intentional UI change).
 
+## Dependency policy (Dependabot, from 2026-07-24)
+- **Minor/patch groups** (weekly, Mondays): take promptly — verify locally if the
+  Dependabot CI run predates trust, else merge on green. Security advisories: immediately.
+- **Majors: never bot-merged.** Deliberate upgrades only — server stack
+  (firebase-admin/functions, google-auth) with support-window review; TypeScript 7
+  as a migration; native-shell majors (billingclient, firebase-bom) only inside a
+  device-QA build cycle. Ignored majors are re-proposed by bumping manually.
+- **android-native minor/patch group**: held open, taken with the next shell build
+  (no per-PR compile check — the macOS lane is manual-dispatch).
+- **Parked lint rules**: eslint-plugin-react-hooks 7.1's compiler rules
+  (set-state-in-effect, purity, refs, preserve-manual-memoization) are at WARN
+  (~21 findings, mostly App.tsx) — flip to error when the deferred App.tsx
+  refactor lands (#237).
+
 ## Deploy cheatsheet
 - **Web** → merge to `master`, auto-deploys via CI.
 - **Functions** → manual `firebase deploy --only functions:<name> --project math-swipe-prod --account tim@latticelogic.app` (needs valid CLI auth).
