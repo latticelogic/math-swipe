@@ -23,7 +23,7 @@ generic ("Sharp." > "AMAZING! 🎉").
 |---|---|---|
 | Tabs (bottom nav) | 4 | Let's Go / League / Magic / Me — wired in `src/App.tsx` |
 | Question topics | 35 | `src/domains/math/mathCategories.ts` (catalog) + `src/utils/mathGenerator.ts` (per-topic generators) |
-| Age bands | 1 in use | `full` only (default, ages 8+). The `starter`/`AgeBand` machinery survives in `mathCategories.ts` but the picker was removed 2026-07-15 — `ageBand` is hardcoded `full`. |
+| Age bands | 1 in use | `full` only (default, ages 8+). The band machinery was fully removed 2026-07-24 (visibleQuestionTypes filter; 'young' group hidden but generators + ?topic= links work). |
 | Difficulty levels | 5 | Auto-adjusted by `useDifficulty.ts` based on response time |
 | Magic tricks | 36 | `src/utils/mathTricks.ts` (lessons + practice generators) |
 | Achievements | 28 math + share + early-trial ladder | `src/utils/achievements.ts` (base engine) + `src/domains/math/mathAchievements.ts` (math-specific list, includes the 6-rung early-trial ladder + `spread-the-word` share achievement) |
@@ -375,11 +375,10 @@ business call, not a code blocker.
   `TrickIcon.tsx`, `MilestoneBurst.tsx`, etc.) or by clean text. The
   chalkboard aesthetic is hand-drawn end to end; emoji break the visual
   consistency. The only exception is the transient emoji-rain on the
-  perfect-session screen (it's decorative, not chrome). Per-trick `icon`
-  fields in `mathTricks.ts` still hold legacy emoji strings — that data
-  is *unused at runtime* (TrickIcon renders SVGs keyed by `trick.id`)
-  but kept for backward-compat. Don't add a new emoji-icon field; key
-  off the id.
+  perfect-session screen (it's decorative, not chrome). The legacy emoji
+  `icon` fields on tricks/categories were deleted 2026-07-24 — icons are
+  hand-drawn SVGs keyed by id (TrickIcon/CategoryIcon). Don't add an
+  emoji-icon field; key off the id.
 - **Magic Tricks lessons must explain "why", not just "how".** Every
   lesson's first step should name the underlying principle (algebraic
   identity, visual intuition, or historical anecdote). Bare recipes

@@ -1,9 +1,15 @@
 # Next-app playbook — lessons from shipping Math Challenge
 
 Written 2026-07-22 after taking Math Challenge from code-complete to a live,
-paying web product + a Google Play TWA build. Everything here is meant to be
-**reused on the next app under the same company (Lattice Logic Pte. Ltd.) and
-the same dev/cloud accounts.** It's the stuff that cost hours to discover.
+paying web product + a Google Play build; **updated 2026-07-24** after the
+native-Android pivot shipped to production review and the iOS shell was built.
+Everything here is meant to be **reused on the next app under the same company
+(Lattice Logic Pte. Ltd.) and the same dev/cloud accounts.** It's the stuff
+that cost hours to discover.
+
+**Companion doc: `lattice-logic.md`** — the company-level context (the full
+shared-accounts registry, firm principles, and the business-process map). This
+playbook is the *how*; that doc is the *who/what*. Copy BOTH into each new repo.
 
 Read this before starting the next app's launch work. The order of the top
 sections roughly mirrors the order you'll want to do things.
@@ -37,6 +43,19 @@ sections roughly mirrors the order you'll want to do things.
    dev` + `?src=android-native` + a ~412×915 browser catches layout/gating bugs
    (cramped headers, paywall-before-value, transparent overlays) in seconds.
    Device testing is the bottleneck — spend it only on the truly native bits.
+7. **The native shells are finished, reusable IP.** `android-native/` (WebView +
+   Play Billing 8 + Credential Manager + FCM) and `ios-native/` (WKWebView +
+   StoreKit 2 + Sign in with Apple + FCM, XcodeGen so it's authorable from
+   Windows) both wrap ANY of our PWAs with ~a dozen small files changed (start
+   URL, bundle/package ids, icons, Firebase config). The bridge contract
+   (`window.Android*/Apple*` + shared `__mcOn*` callbacks) and the fail-closed
+   server verifies (`verifyPlayPurchase` / `verifyAppleTransaction`) port
+   as-is. Don't rebuild these — copy them. (§8)
+8. **Ship the growth/ops stack on day one, dormant.** The A/B engine
+   (deterministic per-uid assignment + kill switch), funnel milestones, the
+   weekly growthDigest (push + Workspace-SMTP email), error-spike alerts, and
+   uptime probes are all app-agnostic. Wiring them before launch means the
+   first install cohort is already measured. (§8)
 
 ---
 
@@ -196,6 +215,13 @@ policies bit you the first time:
 ---
 
 ## 4. Android TWA + Bubblewrap in CI — the long one (read before touching it)
+
+> **2026-07-24 status: the TWA is RETIRED for our own apps.** Math Challenge
+> pivoted to the native WebView shell (see the native subsection below + §8) and
+> deleted `android/` + `android-build.yml`. **For app #2, start from
+> `android-native/` — do NOT redo Bubblewrap.** The recipe below is kept because
+> it's hard-won knowledge that applies if a future project ever genuinely wants
+> a TWA (no billing, no native needs).
 
 This took ~10 CI iterations. The build shipped in app #1 (#74) but was
 **never actually run green**, so every latent issue surfaced at once. Here's
@@ -584,7 +610,10 @@ better than a contextless popup.
 
 **Google Play (additive, after web is earning):**
 - [ ] Bootstrap keystore → 3 secrets → **vault the keystore**
-- [ ] `expect`-driven Bubblewrap CI (copy §4 recipe), `minSdkVersion` ≥ 23
+- [ ] **Copy `android-native/`** (WebView shell + Play Billing 8 + Credential
+      Manager + FCM) + `android-native-build.yml`; change package id, start
+      URL, icons, `google-services.json`. Register **app-signing + upload
+      SHA-1s AND SHA-256s** in Firebase (sign-in needs the SHA-1!). No Bubblewrap.
 - [ ] Create app (**Game → Educational category**, Free w/ IAP, target 9–12 &
       13+, 5 tags, "no financial features")
 - [ ] Google Payments merchant profile (gates products + RTDN) + 15% fee tier
@@ -601,12 +630,38 @@ better than a contextless popup.
       overview → Send for review (stays private; flips "(unreviewed)" name,
       unblocks the catalog). Don't recreate an empty release — promote.
 
-**Apple: deferred/last by standing rule** (enroll as Lattice Logic w/ DUNS,
-$99/yr, 1–3 week verification; external-link entitlement to route purchases
-back to Airwallex and bypass the 15–30% rake, after 60+ days of clean web
-revenue data).
+**Apple (enrollment already held by the company — reuse it):**
+- [ ] **Copy `ios-native/`** (WKWebView shell + StoreKit 2 + Sign in with Apple
+      + FCM; XcodeGen `project.yml`, authorable from Windows) + `ios-native-build.yml`
+      (compile check + dormant TestFlight archive lane behind `IOS_RELEASE_READY`).
+- [ ] Register the Firebase iOS app (`firebase apps:create IOS`) — works
+      pre-Apple; commit GoogleService-Info.plist.
+- [ ] Copy `functions/appleBilling.ts` (offline x5c JWS verify vs the checked-in
+      Apple root certs — fail-closed until `APP_APPLE_ID` from ASC) + the
+      `appleNotifications` refund endpoint.
+- [ ] ASC clickwork once the app record exists: numeric Apple ID → const +
+      redeploy, IAP product, Server Notifications URL, APNs key into Firebase,
+      Apple provider in Firebase Auth, AASA file for universal links.
+- [ ] The original "Apple last, external-link entitlement" stance was replaced
+      2026-07-23: enroll EARLY (copycat defense — occupy the shelf) and use
+      **StoreKit IAP** (Small Business Program 15%), not external-link.
 
 ---
+
+## 8. Reusable assets built in app #1 (copy, don't rebuild)
+
+| Asset | Where | Adaptation needed |
+|---|---|---|
+| Android native shell | `android-native/` + `android-native-build.yml` | package id, start URL, icons, google-services.json, SHAs |
+| iOS native shell | `ios-native/` + `ios-native-build.yml` | bundle id, start URL, icons, GoogleService-Info, LaunchScreen color |
+| Bridge contract + web glue | `channel.ts`, `checkout.ts`, `useFirebaseAuth.ts`, `push.ts`, `haptics.ts`, `nativeShell.ts` | none — channel routing is app-agnostic |
+| Server billing verifies | `functions/playBilling.ts`, `appleBilling.ts`, `airwallex.ts` | SKU/product ids, bundle/package ids, `APP_APPLE_ID` |
+| Growth stack | `experiments.ts` (A/B) + `funnel.ts` + `growthDigest` (weekly push/email + anomaly flags) + `errorSpike` + uptime probe | experiment registry, digest recipient |
+| LiveOps deep links | `?daily/?topic/?trick/?league` boot-param pattern in App.tsx | map to app #2's surfaces |
+| Docs discipline | `status.md` living queue + CI-enforced `docs/README.md` index (`docsIndex.test.ts`) | copy the test + convention verbatim |
+| Entitlement model | source-agnostic `paidAt`/`source` + trial + `shouldFirePaywall` + **rules: client may only move `trialStartedAt` BACKWARD** (eternal-trial hole) | trial length, SKU |
+| i18n core | tiny `t()/tCount()` + **lazy locale catalogs** (initI18n before app modules; locale chunks out of precache) | catalogs |
+| Email | Workspace SMTP via nodemailer (no vendor); secrets `SMTP_USER`/`SMTP_APP_PASSWORD` | recipient |
 
 *Keep this doc updated as app #2 teaches you new things. The goal is that
 app #3 is a checklist, not an investigation.*

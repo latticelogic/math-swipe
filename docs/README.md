@@ -14,6 +14,7 @@ once their findings ship (git keeps them). **This index is CI-enforced** — eve
 | [status.md](status.md) | **living queue** | **Start here.** Single source of truth: shipped / in-review / blocked / waiting / deferred + a deploy cheatsheet | Keep current every change |
 | [growth.md](growth.md) | living queue | Growth ideation + the A/B experiment tracker + the passive-monitoring (growthDigest) setup + the idea backlog per lever | Active |
 | [liveops-calendar.md](liveops-calendar.md) | plan | The Play Promotional Content / LiveOps calendar (events / major updates; offers constrained) — for owner review before any card ships | Draft for review |
+| [lattice-logic.md](lattice-logic.md) | company context | Lattice Logic itself: shared account registry, firm principles, the business-process map + adopted gap additions. Copy into every project alongside the playbook | Reference — keep in sync across projects |
 | [next-app-playbook.md](next-app-playbook.md) | playbook | Every reusable lesson from shipping v1 (architecture, payments sequence, infra, native/CI recipes, process) — for the next app on the same accounts | Reference |
 | [release-sync.md](release-sync.md) | decision/runbook | How one web deploy updates web + Play + iOS at once; what needs a store release; versioning + rollback + do-not-break invariants (native-shell reality) | Live |
 | [native-android-plan.md](native-android-plan.md) | decision record | Why Android went native (WebView + Play Billing 8) instead of the Bubblewrap TWA | Shipped |
