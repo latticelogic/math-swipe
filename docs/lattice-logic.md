@@ -41,21 +41,25 @@ project's CLAUDE.md in the same change.
    present an action we can't honor; make the paid path WORK for every reachable
    user (conversion is a target, not "degrade gracefully"); friction at the
    moment of intent is the most expensive failure.
-2. **Web-first, thin native shells.** The deployed web app IS the product;
+2. **One monorepo for all apps** (decided 2026-07-24): `latticelogic/lattice`
+   — apps/ + packages/ (platform-web, platform-functions, game-engine, ui),
+   extract-on-second-use, atomic fleet-wide fixes, one dependency surface.
+   Plan: math-swipe `docs/monorepo-plan.md`.
+3. **Web-first, thin native shells.** The deployed web app IS the product;
    stores ship a WebView/WKWebView shell around the live site (native code only
    for what a WebView can't do: store billing, native sign-in, push, haptics).
    One deploy updates every channel.
-3. **Monetization is decided once, recorded, and not relitigated.** Default
+4. **Monetization is decided once, recorded, and not relitigated.** Default
    posture: one-time lifetime unlock, no subscription, a free daily-habit
    surface that is never gated. Revenue lever = conversion UX, never price/tiers.
-4. **CLI-first ops; keyless CI** (WIF, ASC API keys); the genuinely web-only
+5. **CLI-first ops; keyless CI** (WIF, ASC API keys); the genuinely web-only
    steps (KYC, card entry, attestations, 2FA, real-money clicks) are named and
    handed to the owner explicitly.
-5. **Low-HITL agentic development** with hard automation boundaries: agents
+6. **Low-HITL agentic development** with hard automation boundaries: agents
    never move money, write signing keys, grant themselves IAM, or check legal
    attestations. One fix per PR, squash-merge, verify-before-push, docs updated
    in the same change (`status.md` + CI-enforced docs index).
-6. **Tone bar** for all user-facing copy: warm, restrained, specific; never
+7. **Tone bar** for all user-facing copy: warm, restrained, specific; never
    pressure-y, childish, or motivational-poster hype.
 
 ## 3. Business process map (owner's diagram, 2026-07)
