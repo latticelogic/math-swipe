@@ -20,8 +20,9 @@ passively (growthDigest weekly + errorSpike + uptime). **Re-entry triggers:**
    `IOS_RELEASE_READY`).
 3. **Owner inputs, whenever:** Workspace app password (email digest — code
    deployed, no-op until secrets), LiveOps calendar approval (post-publish).
-For app #2: copy `lattice-logic.md` + `next-app-playbook.md` (§7 checklist,
-§8 reusable assets).
+For app #2: **monorepo decided** — execute `monorepo-plan.md` (owner creates
+`latticelogic/lattice`; math-swipe subtree-imports in; extractions start with
+app #2's needs). Company context: `lattice-logic.md` + `next-app-playbook.md`.
 
 ## 🟢 Live / shipped
 - **Web PWA** — production at https://mathchallenge.app (Cloudflare Pages, auto-deploy on `master`).
