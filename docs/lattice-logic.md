@@ -147,3 +147,6 @@ the shared accounts above, then run `next-app-playbook.md` §7 (the launch
 checklist). Copy into the new repo: this doc, the playbook, the docs-discipline
 convention (`status.md` + CI-enforced `docs/README.md` index), and the CLAUDE.md
 skeleton (registry pointer, principles, monetization record, tone bar).
+Dependencies: add a 2-line `renovate.json` extending the shared org preset
+(currently `github>latticelogic/math-swipe//renovate-preset.json`) — do NOT
+write a per-repo dependabot.yml.

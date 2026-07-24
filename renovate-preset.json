@@ -1,0 +1,41 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "Lattice Logic shared dependency policy — ALL apps extend this (github>latticelogic/math-swipe//renovate-preset.json). One change here applies fleet-wide. Policy rationale: math-swipe docs/status.md 'Dependency policy'. Migrate to a dedicated latticelogic/renovate-config repo when the owner creates it (one-line extends change per app).",
+  "extends": [
+    "config:recommended",
+    ":dependencyDashboard",
+    "schedule:monthly"
+  ],
+  "timezone": "Asia/Singapore",
+  "minimumReleaseAge": "14 days",
+  "prConcurrentLimit": 3,
+  "prHourlyLimit": 2,
+  "packageRules": [
+    {
+      "description": "One grouped PR per repo per cycle for minor+patch — verified by CI, merged promptly",
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "all non-major dependencies",
+      "groupSlug": "all-minor-patch"
+    },
+    {
+      "description": "Majors are deliberate migrations, never auto-proposed — they wait on the Dependency Dashboard until a human/agent ticks them",
+      "matchUpdateTypes": ["major"],
+      "dependencyDashboardApproval": true,
+      "labels": ["major", "deliberate-upgrade"]
+    },
+    {
+      "description": "Native-shell deps ride device-QA build cycles, not calendar time — dashboard-approval even for minors",
+      "matchFileNames": ["android-native/**", "ios-native/**"],
+      "dependencyDashboardApproval": true,
+      "labels": ["needs-device-qa"]
+    }
+  ],
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "schedule": ["at any time"],
+    "minimumReleaseAge": null,
+    "dependencyDashboardApproval": false,
+    "labels": ["security"]
+  },
+  "osvVulnerabilityAlerts": true
+}
