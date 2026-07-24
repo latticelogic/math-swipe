@@ -22,10 +22,9 @@ passively (growthDigest weekly + errorSpike + uptime). **Re-entry triggers:**
    ~~Workspace app password~~ **DONE 2026-07-24: digest email channel LIVE**
    (app password created, SMTP secrets set, redeployed, test email verified
    received). First scheduled digest email: Monday 09:00 UTC.
-For app #2: **monorepo decided** — execute `monorepo-plan.md`. NOTE 2026-07-24:
-owner reported creating the monorepo repo, but no `lattice` (or similar new)
-repo is visible in the org or the admin account — confirm name/owner with the
-owner before migration starts. Company context: `lattice-logic.md` + `next-app-playbook.md`.
+For app #2: **monorepo decided** — execute `monorepo-plan.md`.
+`latticelogic/lattice` (private) EXISTS as of 2026-07-24; migration steps 2-7
+run at app #2 start. Company context: `lattice-logic.md` + `next-app-playbook.md`.
 
 ## 🟢 Live / shipped
 - **Web PWA** — production at https://mathchallenge.app (Cloudflare Pages, auto-deploy on `master`).
