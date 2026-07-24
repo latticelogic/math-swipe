@@ -108,7 +108,6 @@ export const Teacher = memo(function Teacher({
         // state-change (which is exactly when this branch runs).
         const stateVoicePool = pickStateVoice(teacher, state);
         if (stateVoicePool && stateVoicePool.length > 0) {
-            // eslint-disable-next-line react-hooks/purity
             setMessage(stateVoicePool[Math.floor(Math.random() * stateVoicePool.length)]);
         } else {
             const ctx: ChalkContext = { state, streak, totalAnswered, categoryId: questionType, hardMode, timedMode };

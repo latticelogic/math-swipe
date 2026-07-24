@@ -47,7 +47,6 @@ export function useAutoSummary(
                 processedTimeRef.current = speedrunFinalTime;
                 // Read best BEFORE the update on this same tick (prop still holds
                 // the previous best here).
-                // eslint-disable-next-line react-hooks/set-state-in-effect
                 setIsNewSpeedrunRecord(bestSpeedrunTime === 0 || speedrunFinalTime < bestSpeedrunTime);
                 updateBestSpeedrunTime(speedrunFinalTime, hardMode);
             }
@@ -92,14 +91,12 @@ export function usePersonalBest(sessionBest: number, allTimeBest: number) {
     // loop; it's actually a one-shot one-way sync.
     useEffect(() => {
         if (!exceeded) return;
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         setVisible(true);
         const t = setTimeout(() => setVisible(false), 2000);
         return () => clearTimeout(t);
     }, [exceeded]);
 
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         if (allTimeBest > anchorBest) setAnchorBest(allTimeBest);
     }, [allTimeBest, anchorBest]);
 
