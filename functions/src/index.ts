@@ -71,34 +71,47 @@ const VAPID_PUBLIC = defineSecret('VAPID_PUBLIC');
 const VAPID_PRIVATE = defineSecret('VAPID_PRIVATE');
 const VAPID_SUBJECT = defineSecret('VAPID_SUBJECT');
 
-// Resend transactional email — used to email the weekly growth digest.
-const RESEND_API_KEY = defineSecret('RESEND_API_KEY');
-// Recipient + sender. FROM uses Resend's shared domain so it works with ZERO DNS
-// setup; TO must be the Resend account's own email UNLESS latticelogic.app is
-// verified in Resend (then FROM can be branded + TO can be anyone). One-line
-// change + redeploy to update either.
-const DIGEST_EMAIL_TO = 'support@latticelogic.app';
-const DIGEST_EMAIL_FROM = 'Math Challenge <onboarding@resend.dev>';
+// Weekly growth-digest email via Google Workspace SMTP (owner call: no
+// third-party email vendor — reuse the Workspace we already pay for).
+// ────────────────────────────────────────────────────────────────────────────
+// SETUP (one-time, when ready to turn the email on):
+//   1. In the Google Workspace admin/account for the SENDER address (e.g.
+//      support@latticelogic.app or a dedicated noreply@), enable 2-Step
+//      Verification, then create an App Password:
+//        https://myaccount.google.com/apppasswords  (App: "Mail", any device)
+//      Copy the 16-char password.
+//   2. Store it as the SMTP_APP_PASSWORD secret (spaces stripped is fine):
+//        firebase functions:secrets:set SMTP_APP_PASSWORD --data-file -
+//   3. Set the sender login as the SMTP_USER secret (the full email address):
+//        firebase functions:secrets:set SMTP_USER --data-file -
+//   4. Redeploy: firebase deploy --only functions:growthDigest
+//   Recipient defaults to support@latticelogic.app (DIGEST_EMAIL_TO). Sending
+//   from your own domain via Workspace SMTP has good deliverability with no DNS
+//   work (Workspace already publishes SPF/DKIM for the domain).
+const SMTP_USER = defineSecret('SMTP_USER');            // full sender email (SMTP login)
+const SMTP_APP_PASSWORD = defineSecret('SMTP_APP_PASSWORD'); // Workspace app password
+const DIGEST_EMAIL_TO = 'support@latticelogic.app';     // where the weekly digest lands
 
-/** Best-effort digest email via Resend. Never throws — a mail failure must not
- *  break the digest (which also pushes + stores the snapshot). No-ops if the
- *  RESEND_API_KEY secret isn't set yet. */
+/** Best-effort digest email via Workspace SMTP (nodemailer). Never throws — a
+ *  mail failure must not break the digest (which also pushes + stores the
+ *  snapshot). No-ops until BOTH SMTP secrets are set to real values (the
+ *  'unset' placeholder keeps deploys unblocked without firing doomed sends). */
 async function sendDigestEmail(subject: string, html: string): Promise<boolean> {
-    let key: string | undefined;
-    try { key = RESEND_API_KEY.value(); } catch { key = undefined; }
-    // 'unset' is the deploy-unblocking placeholder (secrets can't be empty);
-    // treat it as not-configured so we don't fire doomed requests weekly.
-    if (!key || key === 'unset') return false;
+    let user: string | undefined, pass: string | undefined;
+    try { user = SMTP_USER.value(); pass = SMTP_APP_PASSWORD.value(); } catch { /* unset */ }
+    if (!user || !pass || user === 'unset' || pass === 'unset') return false;
     try {
-        const res = await fetch('https://api.resend.com/emails', {
-            method: 'POST',
-            headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ from: DIGEST_EMAIL_FROM, to: [DIGEST_EMAIL_TO], subject, html }),
+        const nodemailer = await import('nodemailer');
+        const transport = nodemailer.createTransport({
+            service: 'gmail',                 // smtp.gmail.com:465, TLS — works for Workspace too
+            auth: { user, pass: pass.replace(/\s+/g, '') },
         });
-        if (!res.ok) {
-            logger.warn('growthDigest: email send failed', { status: res.status, body: (await res.text()).slice(0, 200) });
-            return false;
-        }
+        await transport.sendMail({
+            from: `Math Challenge <${user}>`,
+            to: DIGEST_EMAIL_TO,
+            subject,
+            html,
+        });
         return true;
     } catch (e) {
         logger.warn('growthDigest: email error', { err: String(e) });
@@ -446,7 +459,7 @@ export const growthDigest = onSchedule(
     {
         schedule: '0 9 * * 1',
         timeZone: 'Etc/UTC',
-        secrets: [VAPID_PUBLIC, VAPID_PRIVATE, VAPID_SUBJECT, RESEND_API_KEY],
+        secrets: [VAPID_PUBLIC, VAPID_PRIVATE, VAPID_SUBJECT, SMTP_USER, SMTP_APP_PASSWORD],
         maxInstances: 1,
     },
     async () => {
@@ -538,7 +551,7 @@ export const growthDigest = onSchedule(
         logger.info('growthDigest', { ...snapshot, at: now, anomalies });
 
         // Email the digest (the reliable weekly channel). Best-effort; no-ops
-        // until RESEND_API_KEY is set.
+        // until the SMTP_USER + SMTP_APP_PASSWORD secrets are set.
         const emailHtml = `
             <div style="font-family:system-ui,sans-serif;max-width:520px">
               <h2 style="margin:0 0 12px">Math Challenge — weekly growth digest</h2>
