@@ -1,5 +1,11 @@
 # Math Challenge
 
+> ⚠️ **This repository has moved.** Development continues in the Lattice Logic
+> monorepo: **[latticelogic/lattice](https://github.com/latticelogic/lattice)**
+> → `apps/math-swipe/` (full history preserved). This repo is **archived**
+> (read-only) as of 2026-07-24; production deploys from the monorepo. Do not
+> open PRs here.
+
 A fast-paced mental math game with a chalkboard aesthetic. Built with React, TypeScript, Vite, and Firebase.
 
 ## Quick Start
