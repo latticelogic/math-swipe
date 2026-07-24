@@ -74,7 +74,7 @@ production should be owned by the company account, not Tim's personal.**
 | Cloudflare Pages | `tim@latticelogic.app`, account id `00e07444cae65d675a140f8560429fad` | Project `math-swipe`, production URL `https://mathchallenge.app`. Production branch `master`. Env vars `FIREBASE_PROJECT_ID`, `PUBLIC_ORIGIN`, `NODE_VERSION` set on both production + preview configs. Custom domain `mathchallenge.app` attached (live). |
 | Airwallex | **LIVE 2026-07-22** | Payments are Airwallex-only (Stripe removed 2026-07-15). KYB approved, all 6 methods active, real purchase+refund verified. Functions `functions/src/airwallex.ts` deployed; secrets `AIRWALLEX_CLIENT_ID/API_KEY/WEBHOOK_SECRET`, `PUBLIC_ORIGIN` set. Webhook events: `payment_intent.succeeded` + `refund.settled`. Config record: code comments in `airwallex.ts`; reusable playbook: `next-app-playbook.md` §2. |
 | Apple Developer | not yet enrolled | Must enroll as Lattice Logic with company DUNS, $99/yr. 1-3 week verification window. Deliberately LAST of the three channels. |
-| Google Play Console | **enrolled (org), verified** 2026-07-15 | Lattice Logic organization account — company + representative verified (org accounts skip the 20-tester gate). Package `app.mathchallenge.twa`. Code complete (#74): TWA via Bubblewrap, CI `.aab` build (`android-build.yml`), Play Billing (Digital Goods API) + `verifyPlayPurchase`/`playRtdn` functions. Remaining: Console clickwork per `docs/google-play-launch.md`. |
+| Google Play Console | **enrolled (org), verified** 2026-07-15 | Lattice Logic organization account — company + representative verified (org accounts skip the 20-tester gate). Package `app.mathchallenge.twa`. Package now ships as a **native WebView shell** (`android-native/` + `android-native-build.yml`, native Play Billing 8) — the original Bubblewrap TWA + `android-build.yml` + Digital Goods API were superseded and deleted 2026-07-24. `verifyPlayPurchase`/`playRtdn` functions unchanged. |
 
 ### Firebase CLI
 
@@ -307,7 +307,7 @@ business call, not a code blocker.
   org, accepting an invite as a different account, Apple/Play identity
   verification), call that out explicitly — don't silently route around it.
 - **Play `.aab` uploads are CI-driven and KEYLESS, NOT manual Console upload**
-  (owner call 2026-07-23). `android-build.yml` builds the bundle and publishes
+  (owner call 2026-07-23). `android-native-build.yml` builds the bundle and publishes
   it to the Play **internal** track via the Play Developer API, authenticated
   by **Workload Identity Federation** — no exported SA key (the org enforces
   `iam.disableServiceAccountKeyCreation`, and keyless is best practice). A
@@ -431,7 +431,7 @@ What's **left for a full multi-channel launch** (web is DONE and earning):
 - **Airwallex payments: DONE 2026-07-22.** KYB approved, all six methods active; a real $3.14 purchase → grant (verified: paidAt, Pro unlocked, referral credit) → dashboard refund. The Payment-Link-intent-has-no-metadata gap was found and fixed (#137, `resolveUidForIntent`/`resolveUidForRefund`). Merchant info saved (ASCII-only — em-dash was rejected). 4%/30-day rolling reserve on early settlements. The web product takes real money now.
 - **Pre-launch billing safety: all 10 steps DONE** (see "Pre-launch checklist" above; reusable version in `next-app-playbook.md` §7). Only App Check *enforcement* is a deliberate future flip (when metrics show ~100% verified traffic).
 - **Google Play: signed `.aab` builds green** (2026-07-22, after the Bubblewrap CI odyssey — recipe in `next-app-playbook.md` §4). App created, service account invited (Gen2 **compute** SA, not appspot), Google Payments merchant account + 15% fee tier done, listing assets ready (`store-assets/`). Remaining Console clickwork + internal-track QA: `docs/google-play-launch.md`.
-- **Play Aug-31-2026 compliance (found 2026-07-23):** two "action required" flags. (1) **targetSdk 36** — Bubblewrap templates hardcode `targetSdkVersion 35`; `android-build.yml` now force-patches the generated `app/build.gradle` to 36 with a fail-loud guard (compileSdk was already 36). (2) **Play Billing Library 8** — BLOCKED upstream: every TWA gets Play Billing via `com.google.androidbrowserhelper:billing`, whose latest release (2.7.2) + `main` still pin `com.android.billingclient:billing 7.1.1`. No fix ships until Google bumps their library; forcing 8 breaks their 7.x-era delegate. Neither flag blocks the *initial* listing (they only reject *updates* after Aug 31); Google offers an extension to **Nov 1**. Plan: monitor `android-browser-helper` for the PBL-8 bump → rebuild; take the extension if it's late. See `next-app-playbook.md` §4.
+- **Play Aug-31-2026 compliance — RESOLVED by the native pivot.** Two TWA flags (targetSdk 36; Play Billing Library 8) drove the move off Bubblewrap: PBL 8 was blocked upstream in `android-browser-helper` (pinned billingclient 7.1.1), and the TWA hardcoded targetSdk 35. The **native WebView shell** (`android-native/`) uses **PBL 8 directly** and sets sdk 36 in Gradle, so both are moot. The TWA (`android/` + `android-build.yml`) was deleted 2026-07-24. History + the TWA build recipe: `next-app-playbook.md` §4.
 - App Store enrollment — defer per the hybrid-distribution rule (Apple is last).
 
 What's **deferred** (not blocking):

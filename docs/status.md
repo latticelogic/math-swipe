@@ -45,5 +45,5 @@ _Last updated: 2026-07-24._
 - **Web** → merge to `master`, auto-deploys via CI.
 - **Functions** → manual `firebase deploy --only functions:<name> --project math-swipe-prod --account tim@latticelogic.app` (needs valid CLI auth).
 - **Firestore rules** → `firebase deploy --only firestore:rules ...`; the emulator **rules test lane runs in CI on rule changes — wait for it green before merging** (needs Java, not in `npm run verify`).
-- **Android `.aab`** → CI (`android-build.yml`) auto-publishes to internal via WIF; internal→production is a manual owner action.
+- **Android `.aab`** → CI (`android-native-build.yml`) auto-publishes to internal via WIF; internal→production is a manual owner action. (The Bubblewrap TWA `android/` + `android-build.yml` were deleted 2026-07-24 — native shell superseded them; git history retains them.)
 - **iOS** → `ios-native-build.yml` (manual dispatch): compile check always; archive+TestFlight dormant behind `vars.IOS_RELEASE_READY`.

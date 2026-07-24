@@ -44,9 +44,9 @@ Only changes to the wrapper itself:
 - Store listing assets/copy (Console only, no build at all)
 
 Shell release procedure:
-- **Android** — bump `versionCode`; `android-build.yml` builds the `.aab` and
-  auto-publishes to the internal track via WIF; internal→production is a manual
-  owner action. Web channel untouched.
+- **Android** — bump `versionCode`; `android-native-build.yml` builds the `.aab`
+  and auto-publishes to the internal track via WIF; internal→production is a
+  manual owner action. Web channel untouched.
 - **iOS** — bump the build number; the `archive` job in `ios-native-build.yml`
   uploads to TestFlight (once armed post-enrollment); promote in App Store
   Connect + submit for review.
