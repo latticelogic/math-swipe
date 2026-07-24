@@ -95,7 +95,10 @@ Learned the hard way on app #1; treat these as first-class processes:
 2. **Store-policy & privacy compliance (recurring, deadline-driven)** — the
    annual Play bars (targetSdk, Billing Library), Apple review guideline
    shifts, Data-safety/App-privacy declarations, PDPA/COPPA posture, legal
-   pages. Missing a deadline rejects your updates.
+   pages. Missing a deadline rejects your updates. *Partially automated
+   2026-07-24: the weekly growthDigest carries a `COMPLIANCE_DEADLINES` watch
+   (warns 60 days out, escalates when overdue) — keep the list current as new
+   bars are announced.*
 3. **Live incident response** — error-spike push alerts, uptime probes,
    post-deploy smoke checks, one-click rollback (web rollback fixes ALL
    channels at once under the thin-shell model). QA is pre-ship; this is after.
@@ -116,9 +119,28 @@ Learned the hard way on app #1; treat these as first-class processes:
    calendar as a store-presence lever.
 9. **Portfolio go/no-go** — a recorded rule for when an app gets more
    investment vs maintenance-mode vs sunset (RICE covers features; this covers
-   apps). Owner decision, reviewed against the funnel/digest numbers.
+   apps). Owner decision, reviewed against the funnel/digest numbers — the
+   recorded rule is §5 below.
 
-## 5. Per-project bootstrap
+## 5. Portfolio go/no-go rule (recorded 2026-07-24; owner may tune numbers)
+
+Review each app **4 weeks after full store availability**, then **quarterly**,
+against the weekly digest + store stats. Defaults (deliberately rough — the
+point is that the decision is scheduled and criteria-driven, not vibes):
+
+- **INVEST** (active feature work + growth spend) if ANY of: D7 retention ≥ 15%
+  · trial→paid ≥ 2% · installs growing ≥ 20%/wk for 3+ consecutive weeks.
+- **MAINTAIN** (compliance updates + incident response only; no new features)
+  if it's cash-positive vs its own infra but metrics are flat — the passive
+  stack (digest, alerts, Dependabot, deadline watch) makes this cheap.
+- **SUNSET** (delist from stores; web stays up read-only; honor all lifetime
+  purchases forever — user-first survives the product) after **2 consecutive
+  MAINTAIN reviews** with declining installs AND revenue below infra cost.
+  Sunsetting never claws back paid entitlements.
+
+Each review's verdict + numbers goes in the app's `status.md`.
+
+## 6. Per-project bootstrap
 
 New app = new Firebase project + Cloudflare Pages project + GitHub repo under
 the shared accounts above, then run `next-app-playbook.md` §7 (the launch

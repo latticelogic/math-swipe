@@ -20,6 +20,8 @@ once their findings ship (git keeps them). **This index is CI-enforced** — eve
 | [native-android-plan.md](native-android-plan.md) | decision record | Why Android went native (WebView + Play Billing 8) instead of the Bubblewrap TWA | Shipped |
 | [native-ios-plan.md](native-ios-plan.md) | decision/build plan | The iOS WKWebView shell (StoreKit 2 + Sign in with Apple + FCM), bridge architecture, fail-closed server verify, and the Apple-gated launch checklist | Built; awaiting enrollment |
 | [google-play-launch.md](google-play-launch.md) | runbook | Google Play Console steps (product, service account, RTDN, assetlinks, Data safety), rollout, and the Teacher-Approved / Play Pass strategy | Active — final Console steps |
+| [rollback.md](rollback.md) | runbook | Incident rollback: web (Cloudflare dashboard/API — fixes all channels at once) + the rare shell rollback | Run on incident |
+| [prd-template.md](prd-template.md) | template | The structured-PRD shape for substantive features (stories → testable acceptance criteria → rollout/risk); starts with app #2 | Reference |
 | [native-qa-checklist.md](native-qa-checklist.md) | runbook | Single-pass device QA for a native shell release (splash/offline/app-links/haptics + billing/sign-in/push regression) | Run per native build |
 | [paywall-e2e.md](paywall-e2e.md) | runbook | Manual visual e2e checklist for the trial/paywall UX (complements the `shouldFirePaywall` truth-table unit tests) | Run before releases |
 | [difficulty-curves.md](difficulty-curves.md) | spec | What Easy/Medium/Hard means per topic — the contract `mathGenerator.ts` + its tests implement | Live spec |
