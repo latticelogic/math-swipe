@@ -7,6 +7,22 @@ of each list. (Conventions live in `CLAUDE.md`; growth specifics in `growth.md`.
 
 _Last updated: 2026-07-24._
 
+## ⏸️ PROJECT PAUSED (2026-07-24, owner call)
+
+Everything doable without external input is DONE; development shifts to **app
+#2** until a gate opens. The product is live + earning on web, monitored
+passively (growthDigest weekly + errorSpike + uptime). **Re-entry triggers:**
+1. **Google Play review clears** (2007 auto-publishes) → submit the 11 staged
+   localized listings; trigger native build 2008 (internal → QA → promote);
+   later: Integrity enforcement + Billing protection 4/4 + R8.
+2. **Apple enrollment clears** → run the checklist in `native-ios-plan.md`
+   (ASC app record → APP_APPLE_ID → IAP → TestFlight lane via
+   `IOS_RELEASE_READY`).
+3. **Owner inputs, whenever:** Workspace app password (email digest — code
+   deployed, no-op until secrets), LiveOps calendar approval (post-publish).
+For app #2: copy `lattice-logic.md` + `next-app-playbook.md` (§7 checklist,
+§8 reusable assets).
+
 ## 🟢 Live / shipped
 - **Web PWA** — production at https://mathchallenge.app (Cloudflare Pages, auto-deploy on `master`).
 - **Payments** — Airwallex (web) LIVE; native Play Billing 8 (Android) + StoreKit 2 (iOS) wired.
