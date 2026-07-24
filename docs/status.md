@@ -18,11 +18,14 @@ passively (growthDigest weekly + errorSpike + uptime). **Re-entry triggers:**
 2. **Apple enrollment clears** → run the checklist in `native-ios-plan.md`
    (ASC app record → APP_APPLE_ID → IAP → TestFlight lane via
    `IOS_RELEASE_READY`).
-3. **Owner inputs, whenever:** Workspace app password (email digest — code
-   deployed, no-op until secrets), LiveOps calendar approval (post-publish).
-For app #2: **monorepo decided** — execute `monorepo-plan.md` (owner creates
-`latticelogic/lattice`; math-swipe subtree-imports in; extractions start with
-app #2's needs). Company context: `lattice-logic.md` + `next-app-playbook.md`.
+3. **Owner inputs, whenever:** LiveOps calendar approval (post-publish).
+   ~~Workspace app password~~ **DONE 2026-07-24: digest email channel LIVE**
+   (app password created, SMTP secrets set, redeployed, test email verified
+   received). First scheduled digest email: Monday 09:00 UTC.
+For app #2: **monorepo decided** — execute `monorepo-plan.md`. NOTE 2026-07-24:
+owner reported creating the monorepo repo, but no `lattice` (or similar new)
+repo is visible in the org or the admin account — confirm name/owner with the
+owner before migration starts. Company context: `lattice-logic.md` + `next-app-playbook.md`.
 
 ## 🟢 Live / shipped
 - **Web PWA** — production at https://mathchallenge.app (Cloudflare Pages, auto-deploy on `master`).
@@ -64,11 +67,11 @@ app #2's needs). Company context: `lattice-logic.md` + `next-app-playbook.md`.
 At ~1 app/2 weeks the portfolio needs ONE shared dependency policy, not N
 dependabot.yml copies. The shared preset is live at `renovate-preset.json`
 (every future app's `renovate.json` = one `extends` line; policy changes land
-fleet-wide). **Owner steps to activate:** (1) install the Mend Renovate GitHub
-App → https://github.com/apps/renovate → Install → `latticelogic` org → All
-repositories (browser-only, org-grant). (2) Optionally create a dedicated
-`latticelogic/renovate-config` repo later (agent was classifier-blocked from
-creating org repos) and move the preset — one-line change per app. **After
+fleet-wide). **ACTIVATED 2026-07-24:** Renovate app installed on the
+`latticelogic` org (Mend onboarding completed, mode = Scan and Alert — NOT the
+silent default). Awaiting first scan → Dependency Dashboard issue appears →
+THEN delete `.github/dependabot.yml`. Optional later: dedicated
+`latticelogic/renovate-config` repo (one-line preset move). **After
 Renovate's first successful run here: delete `.github/dependabot.yml`**
 (version-update half; GitHub security alerts stay on regardless). Until the app
 is installed, Dependabot remains active — no coverage gap.
