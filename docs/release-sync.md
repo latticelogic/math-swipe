@@ -1,11 +1,18 @@
 # Keeping web, Google Play and the App Store in sync
 
 The short version: **there is one app — the deployed web app at
-mathchallenge.app.** Google Play ships it inside a Trusted Web Activity
-(Chrome rendering the live site); the future iOS app will be the same thin
-shell. So for almost every change, "keeping the channels in sync" is not a
-process — it's automatic, because the stores distribute a *shell*, not the
-app.
+mathchallenge.app.** Google Play ships it inside a **native Android WebView
+shell** (`android-native/`) and the App Store ships it inside a **native
+WKWebView shell** (`ios-native/`) — both render the live site. So for almost
+every change, "keeping the channels in sync" is not a process — it's automatic,
+because the stores distribute a *shell*, not the app.
+
+> Updated 2026-07-24 for the native pivot. Android moved from a Bubblewrap TWA
+> (Chrome + Digital Goods API) to a native WebView shell with **native Play
+> Billing 8**; iOS is now BUILT as a native WKWebView shell with **StoreKit 2**
+> (was "future"). The thin-shell model below is unchanged — only the wrapper
+> tech and the billing mechanism changed. See `native-android-plan.md` /
+> `native-ios-plan.md`.
 
 ## What happens on a normal update (99% of changes)
 
@@ -15,8 +22,8 @@ Merge to `master` → CI deploys to Cloudflare Pages. Then:
 |---|---|---|
 | Web (browser) | Next page load; open sessions get the service-worker "v1.x · tap to update" chip (Me tab) | Instant–minutes |
 | Web (installed PWA) | Same service-worker prompt flow | Instant–minutes |
-| Google Play (TWA) | Identical — the TWA renders the same deployed site with the same service worker | Instant–minutes |
-| iOS (future shell) | Identical, provided the shell stays thin (renders the live site) | Instant–minutes |
+| Google Play (native shell) | Identical — the WebView renders the same deployed site with the same service worker | Instant–minutes |
+| iOS (native shell) | Identical — the WKWebView renders the same deployed site | Instant–minutes |
 
 No Play/App Store submission, no review, no version bump. Content, gameplay,
 copy, paywall UX, bug fixes, new topics/tricks — all of it reaches every
@@ -26,17 +33,23 @@ channel from the one deploy.
 
 Only changes to the wrapper itself:
 
-- `android/twa-manifest.json`: app name, icons, theme colors, `startUrl`,
-  orientation, `features` (e.g. playBilling), min/target SDK
-- Signing/assetlinks changes (new keys)
+- **Native shell code** — `android-native/` (Kotlin bridges, manifest, Gradle)
+  or `ios-native/` (Swift bridges, `project.yml`, entitlements). Bumping a
+  bridge, a permission, an SDK/deployment target, etc.
+- Signing / assetlinks / AASA changes (new keys, associated-domains)
 - Google's periodic **target-SDK mandates** (~yearly; Play Console nags with a
-  deadline — budget one shell release per year for this alone)
-- Play Billing **product/price** config (Play Console, not code)
+  deadline — budget one shell release per year for this alone). Apple has an
+  equivalent min-SDK cadence.
+- Billing **product/price** config (Play Console / App Store Connect, not code)
 - Store listing assets/copy (Console only, no build at all)
 
-Shell release procedure: bump `versionCode` via the `android-build` workflow
-input → upload the `.aab` to Play Console → staged rollout. The web channel is
-untouched. (iOS analogue later: bump build number, submit for review.)
+Shell release procedure:
+- **Android** — bump `versionCode`; `android-build.yml` builds the `.aab` and
+  auto-publishes to the internal track via WIF; internal→production is a manual
+  owner action. Web channel untouched.
+- **iOS** — bump the build number; the `archive` job in `ios-native-build.yml`
+  uploads to TestFlight (once armed post-enrollment); promote in App Store
+  Connect + submit for review.
 
 ## Versioning policy
 
@@ -52,20 +65,22 @@ untouched. (iOS analogue later: bump build number, submit for review.)
 
 1. **Never fork features by channel.** The ONLY permitted divergence is the
    payment path (`src/utils/channel.ts` + `checkout.ts` routing: web→Airwallex,
-   TWA→Play Billing, Apple→TBD), and it's pinned by tests. Everything else
-   renders identically everywhere.
-2. **Stable shell-facing URLs.** The shell depends on
-   `/manifest.json`, `/.well-known/assetlinks.json`, and the `/?src=twa`
-   start_url. Moving or renaming any of these silently breaks installed
-   Android apps (URL bar appears, channel detection fails). Same will apply to
-   Apple's `apple-app-site-association` later.
+   `android-native`→native Play Billing 8, `ios-native`→StoreKit 2), and it's
+   pinned by tests. Everything else renders identically everywhere.
+2. **Stable shell-facing URLs.** The shells depend on `/manifest.json`,
+   `/.well-known/assetlinks.json` (Android), the future
+   `/.well-known/apple-app-site-association` (iOS), and the
+   `?src=android-native` / `?src=ios-native` start params. Moving or renaming
+   any of these silently breaks installed apps (channel detection falls back;
+   note detection ALSO keys on the injected bridges, so a stripped param alone
+   is survivable — see `isNativeAndroid`/`isNativeIOS`).
 3. **The domain is the app's identity.** `mathchallenge.app` is baked into the
    TWA (host + assetlinks). A domain change is a migration project with a
    mandatory shell release, not a config tweak.
 4. **Keep the web deploy backward-compatible with old shells.** An installed
-   TWA from months ago must still work against today's site — which it will,
-   as long as (2) holds and the Digital Goods sku (`pro_lifetime`) keeps
-   existing.
+   shell from months ago must still work against today's site — which it will,
+   as long as (2) holds and the billing sku (`pro_lifetime`) keeps existing on
+   both stores.
 5. **Payments live server-side.** Price/product changes on Play are Console
    config; on web they're the Airwallex callable. Neither requires a shell
    release, but they must be changed TOGETHER (both channels present the same
@@ -83,6 +98,7 @@ untouched. (iOS analogue later: bump build number, submit for review.)
 
 Web-side code that assumes a NEW shell capability (e.g. a future shell adds a
 share-target or push delegation) must feature-detect, never version-check —
-Play rollouts take days and users update shells slowly. Feature-detection is
-already the house pattern (`getDigitalGoodsService` probe in checkout.ts);
-keep it that way and the channels can't drift.
+Play/App Store rollouts take days and users update shells slowly.
+Feature-detection is already the house pattern (bridge-presence probes —
+`isNativeAndroid`/`isNativeIOS`, `nativeBilling()`/`appleBilling()` in
+checkout.ts); keep it that way and the channels can't drift.
