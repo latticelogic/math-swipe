@@ -30,28 +30,25 @@ boot-time `restorePlayPurchases()`.
 
 ### A1. Build the `.aab` (CI, ~10 min)
 
-1. GitHub → Actions → **android-build** → Run workflow (no inputs).
-   First run has no keystore secret → **bootstrap mode**: generates the
-   upload keystore, uploads it as the `upload-keystore` artifact, prints
-   instructions + the upload-key SHA-256 in the run summary.
-2. Download the artifact; store keystore + password in the company password
-   manager. Set repo secrets `ANDROID_KEYSTORE_B64`,
-   `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_PASSWORD`. **Delete the
-   artifact.**
-3. Re-run the workflow → **build mode** → download
-   `math-challenge-android` artifact: `app-release-bundle.aab` (Play upload)
-   + `app-release-signed.apk` (sideload testing).
-4. Version bumps for later releases: run with `versionCode` input
-   (must strictly increase; `versionName` free-form). Or bump
-   `appVersionCode`/`appVersionName` in `android/twa-manifest.json` and run
-   with no input.
-5. **targetSdk override is automatic** — the build force-patches the generated
-   `app/build.gradle` to `targetSdkVersion 36` (Bubblewrap hardcodes 35) and
-   fails the run if the patch doesn't take. See `next-app-playbook.md` §4.
+> The Bubblewrap TWA build (`android-build.yml` + `android/twa-manifest.json`)
+> was **deleted 2026-07-24** — the app now ships as a **native WebView shell**
+> (`android-native/`, see `native-android-plan.md`). Build via
+> **`android-native-build.yml`** below. (The old TWA build recipe survives in
+> `next-app-playbook.md` §4 as reusable knowledge for the next app.)
+
+1. GitHub → Actions → **android-native-build** → Run workflow. Optional
+   `versionCode` input (blank → `2000 + run_number`; must exceed the last Play
+   upload). A normal Gradle Android build — no Bubblewrap.
+2. Keystore: same signing as before — repo secrets `ANDROID_KEYSTORE_B64`,
+   `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_PASSWORD` (so Play accepts it as
+   an update to `app.mathchallenge.twa`).
+3. Output artifact `math-challenge-native` → `*.aab`. targetSdk/compileSdk 36
+   are set in the Gradle config (no force-patch needed — that was a Bubblewrap
+   workaround).
 
 ### A1b. CI auto-upload to the internal track (keyless, no manual upload)
 
-`android-build.yml` publishes the built `.aab` straight to the Play **internal**
+`android-native-build.yml` publishes the built `.aab` straight to the Play **internal**
 track via the Play Developer API, authenticated with **Workload Identity
 Federation (WIF)** — no exported service-account key (the org enforces
 `constraints/iam.disableServiceAccountKeyCreation`, and keyless is best practice
