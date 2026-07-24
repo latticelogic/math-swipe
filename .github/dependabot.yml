@@ -1,0 +1,41 @@
+# Dependency-update automation (lattice-logic.md §"Automated QA & Security").
+# Makes dependency CVEs push-based instead of "when someone runs npm audit".
+# Weekly, grouped minor+patch to keep PR noise down; majors arrive solo so
+# breaking bumps get individual review. Security advisories always open PRs
+# immediately regardless of schedule.
+#
+# NOTE: the iOS shell's SPM deps live in ios-native/project.yml (XcodeGen), not
+# a Package.swift — Dependabot can't parse that; Firebase-iOS bumps ride the
+# `from:` range at project-generation time instead.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule: { interval: weekly, day: monday }
+    groups:
+      web-minor-patch:
+        update-types: [minor, patch]
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: npm
+    directory: /functions
+    schedule: { interval: weekly, day: monday }
+    groups:
+      functions-minor-patch:
+        update-types: [minor, patch]
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly, day: monday }
+    groups:
+      actions:
+        update-types: [minor, patch, major]
+
+  - package-ecosystem: gradle
+    directory: /android-native
+    schedule: { interval: weekly, day: monday }
+    groups:
+      android-minor-patch:
+        update-types: [minor, patch]
+    open-pull-requests-limit: 3
