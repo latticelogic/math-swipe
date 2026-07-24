@@ -85,6 +85,6 @@ dependencies {
     implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.8.7'
     // Native FCM (web push doesn't work in a WebView) — register the token into
     // pushSubscriptions so the existing server send-logic can target the device.
-    implementation platform('com.google.firebase:firebase-bom:33.7.0')
+    implementation platform('com.google.firebase:firebase-bom:34.16.0')
     implementation 'com.google.firebase:firebase-messaging-ktx'
 }
